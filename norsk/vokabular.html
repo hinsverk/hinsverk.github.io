@@ -15,13 +15,11 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-  <a href="../index.html" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-indigo-600 transition mb-6">
-    <i class="fa-solid fa-arrow-left mr-2"></i> Tilbake til hovedmenyen </a>
 
     <div id="app" class="max-w-3xl mx-auto px-4 py-8">
         <header id="main-header" class="text-center mb-10">
             <h1 class="text-5xl font-extrabold tracking-tight text-slate-900 mb-2">Vokabulær</h1>
-            <p class="text-slate-600">Bli en mester i norsk rettskriving gjennom ordjakten</p>
+            <p class="text-slate-600">Bli en mester i norsk rettskriving gjennom Ordjakten</p>
         </header>
 
         <!-- Mode Selection (Nå kun Ordjakten) -->
@@ -30,7 +28,7 @@
                 <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <h2 class="text-2xl font-bold mb-2">Start ordjakten</h2>
+                <h2 class="text-2xl font-bold mb-2">Start Ordjakten</h2>
                 <p class="text-slate-500">Gjett ordet basert på definisjonen. Du får +5 sekunder per riktig svar!</p>
             </button>
         </div>
@@ -68,9 +66,12 @@
                 <h3 id="word-definition" class="text-2xl font-medium text-slate-800 leading-relaxed mb-8 italic min-h-[4rem]">Laster...</h3>
                 <div class="flex flex-col items-center">
                     <div id="dots-container" class="mb-6 flex justify-center flex-wrap gap-2"></div>
+                    <div class="mb-4 text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-blue-100 shadow-sm">
+                        <span>Hint (første bokstav):</span>
+                        <span id="first-letter-hint" class="font-bold text-base uppercase text-blue-700">?</span>
+                    </div>
                     <div class="relative w-full max-w-sm">
-                        <span id="first-letter-hint" class="absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-bold text-blue-500 opacity-50">?</span>
-                        <input type="text" id="word-input" autocomplete="off" class="w-full text-3xl font-bold text-center tracking-widest border-b-4 border-slate-200 py-4 focus:outline-none focus:border-blue-500 transition-all uppercase pl-10">
+                        <input type="text" id="word-input" autocomplete="off" class="w-full text-3xl font-bold text-center tracking-widest border-b-4 border-slate-200 py-4 focus:outline-none focus:border-blue-500 transition-all uppercase px-4">
                     </div>
                 </div>
             </div>
@@ -113,7 +114,7 @@
                 { ord: "KATT", def: "Liten tiger som bor i huset.", kat: "SUBSTANTIV" },
                 { ord: "SPISE", def: "Å putte mat i munnen.", kat: "VERB" },
                 { ord: "DRIKKE", def: "Å svelge væske.", kat: "VERB" },
-                { ord: "HOPPE", def: "Bevege seg opp fra bakken med kraft.", kat: "VERB" },
+                { ord: "HOPE", def: "Bevege seg opp fra bakken med kraft.", kat: "VERB" },
                 { ord: "SØT", def: "Smaker som sukker.", kat: "ADJEKTIV" },
                 { ord: "BLÅ", def: "Fargen på himmelen.", kat: "ADJEKTIV" },
                 { ord: "RØD", def: "Fargen på en tomat.", kat: "ADJEKTIV" },
@@ -156,13 +157,13 @@
                 { ord: "DAG", def: "Når sola er oppe.", kat: "SUBSTANTIV" },
                 { ord: "NATT", def: "Når vi sover og det er mørkt.", kat: "SUBSTANTIV" },
                 { ord: "KLOKKE", def: "Viser hva tiden er.", kat: "SUBSTANTIV" },
-                { ord: "PENGER", def: "Det man betaler med i butikken.", kat: "SUBSTANTIV" },
+                { ord: "PENGENE", def: "Det man betaler med i butikken.", kat: "SUBSTANTIV" },
                 { ord: "KJØKKEN", def: "Rommet der man lager mat.", kat: "SUBSTANTIV" },
                 { ord: "BAD", def: "Rommet der man vasker seg.", kat: "SUBSTANTIV" },
                 { ord: "BORD", def: "Møbel man spiser ved.", kat: "SUBSTANTIV" },
                 { ord: "SOFA", def: "Møbel man slapper av i.", kat: "SUBSTANTIV" },
                 { ord: "HATT", def: "Noe man har på hodet.", kat: "SUBSTANTIV" },
-                { ord: "VOTT", def: "Varmer hendene om vinteren.", kat: "SUBSTANTIV" },
+                { ord: "VANT", def: "Varmer hendene om vinteren.", kat: "SUBSTANTIV" },
                 { ord: "JAKKE", def: "Ytterplagg når det er kaldt.", kat: "SUBSTANTIV" },
                 { ord: "LEKE", def: "Det barn gjør med lekene sine.", kat: "VERB" },
                 { ord: "SYNGE", def: "Bruke stemmen til musikk.", kat: "VERB" },
@@ -464,9 +465,7 @@
         }
 
         document.getElementById('word-input').addEventListener('input', (e) => {
-            const val = e.target.value.toUpperCase();
-            // Ordet starter alltid med den gitte bokstaven (hint)
-            const currentGuess = currentWord.ord[0] + val;
+            const currentGuess = e.target.value.toUpperCase();
             
             const dots = document.querySelectorAll('.word-dot');
             dots.forEach((d, i) => d.classList.toggle('active', i < currentGuess.length));
@@ -474,7 +473,7 @@
             if (!currentWord.ord.startsWith(currentGuess)) {
                 e.target.classList.add('shake'); 
                 setTimeout(() => e.target.classList.remove('shake'), 400);
-                e.target.value = val.slice(0, -1);
+                e.target.value = currentGuess.slice(0, -1);
             } else if (currentGuess === currentWord.ord) {
                 score += 10; solvedCount++; timeLeft += 5;
                 document.getElementById('score').innerText = score;
@@ -500,5 +499,13 @@
             backToMenu(); 
         }
     </script>
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til lærerverktøy</span>
+</a>
+
+</body>
+</html>
 </body>
 </html>
