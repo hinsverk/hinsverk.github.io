@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Øvingsapp & Sandkasse</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CodeMirror for Python editing -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <!-- Pyodide CDN -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <style>
+        .CodeMirror {
+            height: 340px;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 14px;
+            border-radius: 0.5rem;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-amber-500 to-blue-500 p-2 rounded-xl text-slate-900 font-bold text-xl flex items-center justify-center shadow-lg">
+                    <i class="fa-brands fa-python text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-none flex items-center gap-2">
+                        Python Øvingsrom & Sandkasse
+                    </h1>
+                    <p class="text-xs text-slate-400 mt-1">Lær programmering og test egen kode direkte i nettleseren</p>
+                </div>
+            </div>
+
+            <!-- Pyodide Load Status & Actions -->
+            <div class="flex items-center gap-4">
+                <div id="statusBadge" class="flex items-center gap-2 bg-slate-700/80 px-3 py-1.5 rounded-full text-xs font-medium text-amber-300 border border-amber-500/30">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    <span id="statusText">Laster inn Python-motoren...</span>
+                </div>
+                
+                <button id="resetProgressBtn" class="text-xs text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-1 bg-slate-700/40 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-rotate-right"></i> Nullstill
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Application Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Navigation Sidebar (Tasks & Sandbox) -->
+        <aside class="lg:col-span-4 flex flex-col gap-4">
+            
+            <!-- Sandbox Quick Launch Card -->
+            <button id="sandboxLaunchBtn" class="w-full text-left p-3.5 bg-gradient-to-r from-indigo-900/80 via-purple-900/80 to-slate-800 border-2 border-indigo-500/50 hover:border-indigo-400 rounded-xl transition-all shadow-lg group">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-indigo-600/30 border border-indigo-400/30 rounded-lg text-indigo-300 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-cubes-stacked text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-indigo-300 uppercase tracking-wider block">Fri Modus</span>
+                            <h3 class="font-bold text-white text-sm">⚡ Fri Python Sandkasse</h3>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-indigo-400 group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </button>
+
+            <!-- Tasks Overview List -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-semibold text-slate-200 flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-list-check text-emerald-400"></i> Velg oppgave
+                    </h2>
+                    <span id="progressPercent" class="text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">0% fullført</span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden mb-3">
+                    <div id="progressBar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+                </div>
+
+                <!-- Task Select Dropdown -->
+                <select id="taskSelect" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:outline-none cursor-pointer">
+                    <!-- Dynamic task options generated here -->
+                </select>
+            </div>
+        </aside>
+
+        <!-- Right Column: Code Editor, Instructions, and Execution Output -->
+        <section class="lg:col-span-8 flex flex-col gap-6">
+            
+            <!-- Task Detail & Theory Card -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <span id="taskLevel" class="text-xs font-bold uppercase tracking-wider text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2.5 py-1 rounded-md">
+                        Nivå 1
+                    </span>
+                    <span id="taskStatusTag" class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                        <i class="fa-regular fa-circle"></i> Ikke fullført
+                    </span>
+                </div>
+
+                <h2 id="taskTitle" class="text-xl font-bold text-white mb-3">
+                    Tittel på oppgaven
+                </h2>
+
+                <!-- Theory Box -->
+                <div id="taskTheory" class="bg-slate-900/80 border-l-4 border-sky-500 text-slate-300 p-3.5 rounded-r-lg text-sm mb-4 leading-relaxed">
+                    Teoriforklaring vises her...
+                </div>
+
+                <!-- Instruction Box -->
+                <div id="instructionContainer" class="mb-2">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <i class="fa-solid fa-bullseye text-amber-400"></i> Oppdrag:
+                    </h3>
+                    <div id="taskInstruction" class="text-slate-200 text-sm leading-relaxed bg-slate-700/30 p-3 rounded-lg border border-slate-700">
+                        Instruksjon for oppgaven...
+                    </div>
+                </div>
+
+                <!-- Hint Drawer -->
+                <div id="hintContainer" class="mt-3">
+                    <button id="toggleHintBtn" class="text-xs font-medium text-amber-400 hover:text-amber-300 flex items-center gap-1 focus:outline-none">
+                        <i class="fa-solid fa-lightbulb"></i> <span id="hintBtnText">Vis hint</span>
+                    </button>
+                    <div id="hintBox" class="hidden mt-2 p-3 bg-amber-950/40 border border-amber-500/30 rounded-lg text-amber-200 text-xs leading-relaxed">
+                        <!-- Hint text -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor & Execution Controls -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-lg flex flex-col">
+                <div class="bg-slate-850 px-4 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-code text-indigo-400"></i>
+                        <span class="text-sm font-semibold text-slate-200">Python Kodeeditor</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="resetCodeBtn" class="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> Tilbakestill kode
+                        </button>
+                        <button id="runBtn" disabled class="px-4 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white rounded-md transition-all shadow flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-play"></i> Kjør kode (Ctrl+Enter)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Mirror Textarea wrapper -->
+                <div class="p-2 bg-slate-900">
+                    <textarea id="codeEditor"></textarea>
+                </div>
+            </div>
+
+            <!-- Output / Result Window -->
+            <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-lg">
+                <div class="bg-slate-850 px-4 py-2.5 border-b border-slate-700 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-terminal text-slate-400"></i>
+                        <span class="text-sm font-semibold text-slate-200">Utskrift (Konsoll)</span>
+                    </div>
+                    <button id="clearConsoleBtn" class="text-xs text-slate-400 hover:text-slate-200">
+                        Tøm konsoll
+                    </button>
+                </div>
+
+                <div class="p-4 bg-slate-950 font-mono text-xs text-slate-300 min-h-[120px] max-h-[220px] overflow-y-auto whitespace-pre-wrap leading-relaxed" id="consoleOutput">
+                    Klikk på "Kjør kode" for å teste programmet ditt...
+                </div>
+
+                <!-- Plot container if Matplotlib generated an image -->
+                <div id="plotContainer" class="hidden p-4 bg-slate-900 border-t border-slate-800 flex flex-col items-center">
+                    <span class="text-xs font-semibold text-slate-400 mb-2">Generert Graf / Figur (Matplotlib):</span>
+                    <img id="plotImage" class="max-w-full h-auto rounded-lg border border-slate-700 shadow" alt="Generert graf">
+                </div>
+
+                <!-- Validation Status Alert -->
+                <div id="validationResult" class="hidden p-4 border-t border-slate-700 flex items-start gap-3">
+                    <div id="validationIcon" class="text-lg mt-0.5"></div>
+                    <div>
+                        <h4 id="validationTitle" class="font-bold text-sm"></h4>
+                        <p id="validationMessage" class="text-xs mt-1 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Custom Interactive Input Modal (Replaces browser prompt for Google Sites iframe compatibility) -->
+    <div id="inputModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-sky-500/20 border border-sky-500/30 rounded-lg text-sky-400">
+                    <i class="fa-solid fa-terminal text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-100 text-base">Inndata kreves</h3>
+                    <p class="text-xs text-slate-400">Programmet ber om brukerinput</p>
+                </div>
+            </div>
+
+            <div id="modalPromptText" class="text-sm font-medium text-slate-200 bg-slate-900/80 p-3 rounded-lg border border-slate-700 font-mono">
+                Skriv inn verdi:
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <input type="text" id="modalInputField" placeholder="Skriv inn svaret ditt her..." class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg p-3 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:outline-none font-mono" />
+            </div>
+
+            <div class="flex items-center justify-end gap-3 mt-1">
+                <button id="submitInputBtn" class="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-all shadow flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Send inn</span>
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (No browser alert/confirm) -->
+    <div id="resetModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 class="font-bold text-slate-100 text-lg mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Nullstill framgang?
+            </h3>
+            <p class="text-xs text-slate-300 leading-relaxed mb-6">
+                Dette vil slette alle dine lagrede kodesvar og framgang i oppgavene. Er du sikker på at du vil fortsette?
+            </p>
+            <div class="flex items-center justify-end gap-3">
+                <button id="cancelResetBtn" class="px-3.5 py-1.5 text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors">
+                    Avbryt
+                </button>
+                <button id="confirmResetBtn" class="px-3.5 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors">
+                    Ja, nullstill alt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- STREAMING_CHUNK:Defining task curriculum and sandbox configs... ---
+        // --- Free Sandbox Task Definition ---
+        const SANDBOX_TASK = {
+            id: 'sandbox',
+            level: 'Fri Modus',
+            title: '⚡ Fri Python Sandkasse',
+            theory: 'I sandkassen står du helt fritt! Her kan du skrive og teste din egen Python-kode, eksperimentere med matematiske formler, lage grafikk med <code>matplotlib</code> eller be om brukerinput med <code>input()</code>.',
+            instruction: 'Skriv hvilken som helst Python-kode i editoren og trykk på **Kjør kode (Ctrl+Enter)** for å evaluere programmet ditt.',
+            starterCode: `# --- FRI PYTHON SANDKASSE ---
+# Skriv og test din egen Python-kode her!
+
+import random
+
+print("Velkommen til Python-sandkassen! 🚀")
+
+# Eksempel: Lag et tilfeldig lykketall
+lykketall = random.randint(1, 100)
+print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
+`,
+            hint: 'Tips: Du kan importere moduler som math, random, datetime, eller lage figurer med matplotlib.pyplot!',
+            validate: (py, output) => {
+                return true; // Always valid in sandbox mode
+            }
+        };
+
+        // --- Structured Learning Tasks ---
+        const tasks = [
+            {
+                id: 1,
+                level: "Nivå 1: Grunnleggende",
+                title: "Skriv ut en melding",
+                theory: "I Python bruker vi funksjonen <code>print()</code> for å skrive ut tekst på skjermen.<br>Tekst må skrives i anførselstegn: <code>print(\"Hallo verden!\")</code>.",
+                instruction: "Lag et program som skriver ut teksten: <code>Jeg lærer Python!</code>",
+                starterCode: "# Skriv koden din her\n",
+                hint: "Bruk print(\"Jeg lærer Python!\")",
+                validate: (py, output) => {
+                    return output.trim().includes("Jeg lærer Python!");
+                }
+            },
+            {
+                id: 2,
+                level: "Nivå 1: Grunnleggende",
+                title: "Opprett en variabel",
+                theory: "En <b>variabel</b> brukes til å lagre en verdi.<br>Eksempel: <code>navn = \"Anna\"</code> eller <code>alder = 16</code>.",
+                instruction: "1. Opprett en variabel med navn <code>by</code> og gi den verdien <code>\"Oslo\"</code>.<br>2. Skriv ut variabelen med <code>print(by)</code>.",
+                starterCode: "# Lag variabelen 'by' og skriv den ut\n",
+                hint: "by = \"Oslo\"\nprint(by)",
+                validate: (py, output) => {
+                    const by = py.globals.get('by');
+                    return (by === 'Oslo' && output.trim().includes('Oslo'));
+                }
+            },
+            {
+                id: 3,
+                level: "Nivå 2: Matematikk",
+                title: "Regn ut summen",
+                theory: "Python kan brukes som en kalkulator med pluss (<code>+</code>), minus (<code>-</code>), gange (<code>*</code>) og dele (<code>/</code>).",
+                instruction: "1. Lag en variabel <code>tall1 = 15</code> og <code>tall2 = 25</code>.<br>2. Regn ut summen i variabelen <code>summen = tall1 + tall2</code>.<br>3. Skriv ut <code>summen</code>.",
+                starterCode: "tall1 = 15\ntall2 = 25\n# Regn ut og skriv ut summen\n",
+                hint: "summen = tall1 + tall2\nprint(summen)",
+                validate: (py, output) => {
+                    const summen = py.globals.get('summen');
+                    return (summen === 40 && output.trim().includes('40'));
+                }
+            },
+            {
+                id: 4,
+                level: "Nivå 3: Betingelser",
+                title: "If / Else test",
+                theory: "Betingelser gjør at koden kan ta valg:<br><pre class=\"bg-slate-950 p-2 rounded text-amber-300 font-mono text-xs mt-1\">if alder >= 18:\n    print(\"Myndig\")\nelse:\n    print(\"Ikke myndig\")</pre>",
+                instruction: "Sett <code>poeng = 75</code>.<br>Skriv en <code>if/else</code>-setning som sjekker om <code>poeng >= 50</code>.<br>Hvis ja: skriv ut <code>\"Bestått\"</code>. Ellers: skriv ut <code>\"Ikke bestått\"</code>.",
+                starterCode: "poeng = 75\n\n# Skriv din if-setning her\n",
+                hint: "if poeng >= 50:\n    print(\"Bestått\")\nelse:\n    print(\"Ikke bestått\")",
+                validate: (py, output) => {
+                    return output.trim().includes("Bestått");
+                }
+            },
+            {
+                id: 5,
+                level: "Nivå 4: Løkker",
+                title: "For-løkke med range()",
+                theory: "En <code>for</code>-løkke kaller en kodeblokk flere ganger.<br><code>range(5)</code> gir tallene 0, 1, 2, 3, 4.",
+                instruction: "Bruk en <code>for</code>-løkke med <code>range(1, 6)</code> for å skrive ut tallene 1 til 5.",
+                starterCode: "# Skriv for-løkken her\n",
+                hint: "for i in range(1, 6):\n    print(i)",
+                validate: (py, output) => {
+                    const lines = output.trim().split('\n').map(l => l.trim());
+                    return lines.join(',') === "1,2,3,4,5";
+                }
+            },
+            {
+                id: 6,
+                level: "Nivå 5: Lister",
+                title: "Jobbe med lister",
+                theory: "En liste lagrer flere verdier i en samling: <code>frukter = [\"Eple\", \"Banan\", \"Appelsin\"]</code>.",
+                instruction: "1. Opprett en liste <code>farger = [\"Rød\", \"Grønn\", \"Blå\"]</code>.<br>2. Legg til <code>\"Gul\"</code> i listen med <code>farger.append(\"Gul\")</code>.<br>3. Skriv ut antall elementer med <code>print(len(farger))</code>.",
+                starterCode: "# Lag og skriv ut listen\n",
+                hint: "farger = [\"Rød\", \"Grønn\", \"Blå\"]\nfarger.append(\"Gul\")\nprint(len(farger))",
+                validate: (py, output) => {
+                    const farger = py.globals.get('farger');
+                    return (Array.isArray(farger?.toJs?.() || farger) && output.trim().includes('4'));
+                }
+            },
+            {
+                id: 7,
+                level: "Nivå 5: Funksjoner",
+                title: "Lag din egen funksjon",
+                theory: "En funksjon defineres med <code>def</code> og tar inn parametere:<br><pre class=\"bg-slate-950 p-2 rounded text-amber-300 font-mono text-xs mt-1\">def hils(navn):\n    return \"Hei \" + navn</pre>",
+                instruction: "1. Lag en funksjon <code>doble(tall)</code> som returnerer tallet ganget med 2.<br>2. Test funksjonen ved å skrive ut <code>print(doble(7))</code>.",
+                starterCode: "# Definer funksjonen doble(tall) her\n",
+                hint: "def doble(tall):\n    return tall * 2\n\nprint(doble(7))",
+                validate: (py, output) => {
+                    const doble = py.globals.get('doble');
+                    return (typeof doble === 'function' && output.trim().includes('14'));
+                }
+            },
+            {
+                id: 8,
+                level: "Nivå 6: Interaktiv oppgave",
+                title: "Kalkulator: Gallon til liter",
+                theory: "<b>Brukerinput (input):</b><br>Med <code>input(\"Tekst\")</code> ber vi brukeren om å skrive inn en verdi. Siden <code>input()</code> returnerer tekst (str), må vi omforme den til et tall med <code>float(...)</code> for beregninger.<br>Eksempel: <code>tall = float(input(\"Skriv et tall: \"))</code>",
+                instruction: "I USA oppgis bensinpriser og volum i gallon i stedet for liter (1 gallon = 3,785 liter).<br><br>" +
+                             "Lag et interaktivt program som omregner fra gallon til liter:<br>" +
+                             "1. Be brukeren oppgi antall gallon: <code>gallon = float(input(\"Oppgi antall gallon: \"))</code>.<br>" +
+                             "2. Regn ut mengden i liter i variabelen <code>liter</code> med formelen: <code>liter = gallon * 3.785</code>.<br>" +
+                             "3. Skriv ut svaret med en forklarende tekst, for eksempel: <code>print(\"Antall liter:\", liter)</code>.",
+                starterCode: "# 1. Be brukeren om input for gallon\n# 2. Regn ut variabelen liter\n# 3. Skriv ut svaret\n",
+                hint: "gallon = float(input(\"Oppgi antall gallon: \"))\nliter = gallon * 3.785\nprint(\"Antall liter:\", liter)",
+                validate: (py, output) => {
+                    const liter = py.globals.get('liter');
+                    return (typeof liter === 'number' && !isNaN(liter) && liter > 0 && output.trim().length > 0);
+                }
+            }
+        ];
+
+        // --- STREAMING_CHUNK:Initializing Pyodide runtime engine and input handlers... ---
+        // Global State Variables
+        let currentActiveTask = tasks[0]; // Active task or SANDBOX_TASK
+        let pyodideInstance = null;
+        let editor = null;
+        let completedTasks = new Set(JSON.parse(localStorage.getItem('py_app_completed') || '[]'));
+        let inputResolver = null;
+
+        // Custom function called by Python to open the in-app input modal and return a Promise
+        function showCustomInputModal(promptMsg) {
+            return new Promise((resolve) => {
+                inputResolver = resolve;
+                const modal = document.getElementById('inputModal');
+                const promptText = document.getElementById('modalPromptText');
+                const inputField = document.getElementById('modalInputField');
+                
+                promptText.innerText = promptMsg || "Skriv inn verdi:";
+                inputField.value = "";
+                modal.classList.remove('hidden');
+                setTimeout(() => inputField.focus(), 50);
+            });
+        }
+
+        function handleInputSubmit() {
+            const modal = document.getElementById('inputModal');
+            const inputField = document.getElementById('modalInputField');
+            const value = inputField.value;
+            modal.classList.add('hidden');
+            if (inputResolver) {
+                const resolve = inputResolver;
+                inputResolver = null;
+                resolve(value);
+            }
+        }
+
+        async function initPyodideEngine() {
+            const statusBadge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const runBtn = document.getElementById('runBtn');
+
+            try {
+                pyodideInstance = await loadPyodide();
+                // Load matplotlib for plotting support
+                await pyodideInstance.loadPackage(["matplotlib"]);
+                
+                // Redirection & AST Transformer to turn input(...) calls into async modal prompts
+                await pyodideInstance.runPythonAsync(`
+                    import sys
+                    import io
+                    import textwrap
+                    import ast
+                    import matplotlib
+                    matplotlib.use("Agg")
+                    import matplotlib.pyplot as plt
+                    import builtins
+                    import js
+
+                    class InputTransformer(ast.NodeTransformer):
+                        def visit_Call(self, node):
+                            self.generic_visit(node)
+                            if isinstance(node.func, ast.Name) and node.func.id == 'input':
+                                return ast.Await(
+                                    value=ast.Call(
+                                        func=ast.Name(id='custom_input_async', ctx=ast.Load()),
+                                        args=node.args,
+                                        keywords=node.keywords
+                                    )
+                                )
+                            return node
+
+                    async def custom_input_async(prompt_text=""):
+                        prompt_msg = str(prompt_text) if prompt_text else "Skriv inn en verdi:"
+                        res = await js.showCustomInputModal(prompt_msg)
+                        if res is None:
+                            raise ValueError("Ingen verdi ble skrevet inn.")
+                        return str(res).strip()
+
+                    async def run_student_code(code_str):
+                        plt.close('all')
+                        buf = io.StringIO()
+                        old_stdout = sys.stdout
+                        sys.stdout = buf
+                        err_msg = None
+                        has_plot = False
+                        
+                        try:
+                            clean_code = textwrap.dedent(code_str).strip()
+                            parsed_ast = ast.parse(clean_code, mode='exec')
+                            
+                            # Transform input(...) calls into await custom_input_async(...)
+                            transformer = InputTransformer()
+                            transformed_ast = transformer.visit(parsed_ast)
+                            ast.fix_missing_locations(transformed_ast)
+                            
+                            # Wrap transformed body inside an async main function
+                            main_func = ast.AsyncFunctionDef(
+                                name='__student_async_main__',
+                                args=ast.arguments(
+                                    posonlyargs=[], args=[], vararg=None, kwonlyargs=[],
+                                    kw_defaults=[], kwarg=None, defaults=[]
+                                ),
+                                body=transformed_ast.body,
+                                decorator_list=[]
+                            )
+                            
+                            module = ast.Module(body=[main_func], type_ignores=[])
+                            ast.fix_missing_locations(module)
+                            
+                            exec_scope = globals()
+                            compiled_code = compile(module, filename="<student_code>", mode="exec")
+                            exec(compiled_code, exec_scope)
+                            
+                            # Execute the student code asynchronously
+                            await exec_scope['__student_async_main__']()
+                            
+                            has_plot = len(plt.get_fignums()) > 0
+                            if has_plot:
+                                plt.savefig('output_plot.png', bbox_inches='tight')
+                        except Exception as e:
+                            import traceback
+                            err_msg = traceback.format_exc()
+                        finally:
+                            sys.stdout = old_stdout
+                            
+                        return (buf.getvalue(), has_plot, err_msg)
+                `);
+
+                statusBadge.className = "flex items-center gap-2 bg-emerald-950/80 px-3 py-1.5 rounded-full text-xs font-medium text-emerald-300 border border-emerald-500/30";
+                statusText.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Python 3.11 er klar';
+                runBtn.disabled = false;
+            } catch (err) {
+                console.error("Feil ved lasting av Pyodide:", err);
+                statusBadge.className = "flex items-center gap-2 bg-rose-950/80 px-3 py-1.5 rounded-full text-xs font-medium text-rose-300 border border-rose-500/30";
+                statusText.innerText = "Kunne ikke laste Python-motoren.";
+            }
+        }
+
+        // --- STREAMING_CHUNK:Setting up CodeMirror editor and event handlers... ---
+        function initEditor() {
+            const textarea = document.getElementById('codeEditor');
+            editor = CodeMirror.fromTextArea(textarea, {
+                mode: 'python',
+                theme: 'dracula',
+                lineNumbers: true,
+                indentUnit: 4,
+                tabSize: 4,
+                autoCloseBrackets: true,
+                lineWrapping: true
+            });
+
+            // Keyboard shortcut Ctrl+Enter or Cmd+Enter to run code
+            editor.setOption("extraKeys", {
+                "Ctrl-Enter": function() { runCode(); },
+                "Cmd-Enter": function() { runCode(); }
+            });
+        }
+
+        function renderTaskList() {
+            const select = document.getElementById('taskSelect');
+            select.innerHTML = '';
+
+            tasks.forEach((task) => {
+                const isCompleted = completedTasks.has(task.id);
+                const option = document.createElement('option');
+                option.value = task.id;
+                option.textContent = `${isCompleted ? '✓ ' : ''}${task.level} – ${task.id}. ${task.title}`;
+                if (currentActiveTask.id === task.id) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            select.onchange = (e) => {
+                const selectedId = parseInt(e.target.value, 10);
+                const foundTask = tasks.find(t => t.id === selectedId);
+                if (foundTask) selectTask(foundTask);
+            };
+
+            // Update Progress Bar
+            const percent = Math.round((completedTasks.size / tasks.length) * 100);
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            document.getElementById('progressPercent').innerText = `${percent}% fullført`;
+        }
+
+        // --- STREAMING_CHUNK:Managing UI state and task execution... ---
+        function selectTask(taskObj) {
+            currentActiveTask = taskObj;
+
+            document.getElementById('taskLevel').innerText = taskObj.level;
+            document.getElementById('taskTitle').innerText = taskObj.id === 'sandbox' ? taskObj.title : `${taskObj.id}. ${taskObj.title}`;
+            document.getElementById('taskTheory').innerHTML = taskObj.theory;
+            document.getElementById('taskInstruction').innerHTML = taskObj.instruction;
+            document.getElementById('hintBox').innerHTML = taskObj.hint;
+            document.getElementById('hintBox').classList.add('hidden');
+            document.getElementById('hintBtnText').innerText = "Vis hint";
+
+            const isSandbox = taskObj.id === 'sandbox';
+            const statusTag = document.getElementById('taskStatusTag');
+
+            if (isSandbox) {
+                statusTag.className = "text-xs font-medium text-indigo-300 flex items-center gap-1 bg-indigo-950/60 border border-indigo-500/30 px-2 py-0.5 rounded";
+                statusTag.innerHTML = '<i class="fa-solid fa-infinity"></i> Ubegrenset Modus';
+            } else {
+                const isCompleted = completedTasks.has(taskObj.id);
+                if (isCompleted) {
+                    statusTag.className = "text-xs font-medium text-emerald-400 flex items-center gap-1 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded";
+                    statusTag.innerHTML = '<i class="fa-solid fa-circle-check"></i> Fullført';
+                } else {
+                    statusTag.className = "text-xs font-medium text-slate-400 flex items-center gap-1 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded";
+                    statusTag.innerHTML = '<i class="fa-regular fa-circle"></i> Ikke fullført';
+                }
+            }
+
+            // Restore saved code or load starter code
+            const savedCode = localStorage.getItem(`py_task_code_${taskObj.id}`);
+            editor.setValue(savedCode !== null ? savedCode : taskObj.starterCode);
+
+            // Reset execution status and output boxes
+            document.getElementById('validationResult').classList.add('hidden');
+            document.getElementById('plotContainer').classList.add('hidden');
+            document.getElementById('consoleOutput').innerText = "Klikk på \"Kjør kode\" for å teste programmet ditt...";
+
+            // Update dropdown selection sync
+            const selectElem = document.getElementById('taskSelect');
+            if (selectElem && !isSandbox) {
+                selectElem.value = taskObj.id;
+            }
+
+            // Update UI list highlight
+            renderTaskList();
+            
+            // Highlight sandbox button if active
+            const sandboxBtn = document.getElementById('sandboxLaunchBtn');
+            if (isSandbox) {
+                sandboxBtn.classList.add('ring-2', 'ring-indigo-400', 'bg-indigo-900/90');
+            } else {
+                sandboxBtn.classList.remove('ring-2', 'ring-indigo-400', 'bg-indigo-900/90');
+            }
+        }
+
+        async function runCode() {
+            if (!pyodideInstance) return;
+
+            const code = editor.getValue();
+            const task = currentActiveTask;
+
+            // Save user code locally for the current task/sandbox
+            localStorage.setItem(`py_task_code_${task.id}`, code);
+
+            const consoleElem = document.getElementById('consoleOutput');
+            const plotContainer = document.getElementById('plotContainer');
+            const plotImg = document.getElementById('plotImage');
+
+            consoleElem.innerText = "Kjører koden...";
+            plotContainer.classList.add('hidden');
+
+            try {
+                // Execute Python code asynchronously in Pyodide
+                const runPy = pyodideInstance.globals.get('run_student_code');
+                const resultPy = await runPy(code);
+
+                const outputText = resultPy.get(0) || "";
+                const hasPlot = resultPy.get(1);
+                const errMsg = resultPy.get(2);
+                resultPy.destroy(); // Free memory
+
+                if (errMsg) {
+                    consoleElem.innerText = (outputText ? outputText + "\n" : "") + errMsg;
+                    showValidation(false, "Kjørefeil i koden", "Sjekk feilmeldingen i utskriften ovenfor og prøv på nytt.");
+                    return;
+                }
+
+                consoleElem.innerText = outputText || "(Ingen utskrift skjedde)";
+
+                // Show plot image if pyplot was used
+                if (hasPlot) {
+                    const plotData = pyodideInstance.FS.readFile('output_plot.png');
+                    const blob = new Blob([plotData], { type: 'image/png' });
+                    plotImg.src = URL.createObjectURL(blob);
+                    plotContainer.classList.remove('hidden');
+                }
+
+                // Handle sandbox mode output vs task validation
+                if (task.id === 'sandbox') {
+                    showValidation(true, "Koden kjørte uten feil! 🚀", "Du kan fortsette å teste mer Python-kode i sandkassen.");
+                } else {
+                    const isValid = task.validate(pyodideInstance, outputText);
+                    if (isValid) {
+                        completedTasks.add(task.id);
+                        localStorage.setItem('py_app_completed', JSON.stringify([...completedTasks]));
+                        showValidation(true, "Utmerket jobbet! 🎉", "Koden din ga riktig resultat.");
+                        renderTaskList();
+                    } else {
+                        showValidation(false, "Ikke helt i mål ennå", "Koden din kjører, men oppfyller ikke alle kriteriene i oppgaven.");
+                    }
+                }
+
+            } catch (e) {
+                consoleElem.innerText = "Feil under kjøring:\n" + e.message;
+                showValidation(false, "Systemfeil", e.message);
+            }
+        }
+
+        function showValidation(success, title, message) {
+            const valBox = document.getElementById('validationResult');
+            const valIcon = document.getElementById('validationIcon');
+            const valTitle = document.getElementById('validationTitle');
+            const valMsg = document.getElementById('validationMessage');
+
+            valBox.classList.remove('hidden');
+
+            if (success) {
+                valBox.className = "p-4 border-t border-emerald-500/40 bg-emerald-950/40 text-emerald-200 flex items-start gap-3 rounded-b-xl";
+                valIcon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+                valTitle.innerText = title;
+                valTitle.className = "font-bold text-sm text-emerald-300";
+                valMsg.innerText = message;
+            } else {
+                valBox.className = "p-4 border-t border-rose-500/40 bg-rose-950/40 text-rose-200 flex items-start gap-3 rounded-b-xl";
+                valIcon.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-400"></i>';
+                valTitle.innerText = title;
+                valTitle.className = "font-bold text-sm text-rose-300";
+                valMsg.innerText = message;
+            }
+        }
+
+        window.onload = function() {
+            initEditor();
+            renderTaskList();
+            selectTask(tasks[0]);
+            initPyodideEngine();
+
+            // Run Code Button
+            document.getElementById('runBtn').onclick = runCode;
+
+            // Input Submit Handlers (Button + Enter Key inside input)
+            document.getElementById('submitInputBtn').onclick = handleInputSubmit;
+            document.getElementById('modalInputField').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleInputSubmit();
+                }
+            });
+
+            // Launch Sandbox Mode Button
+            document.getElementById('sandboxLaunchBtn').onclick = function() {
+                selectTask(SANDBOX_TASK);
+            };
+
+            // Reset Task Code Button
+            document.getElementById('resetCodeBtn').onclick = function() {
+                localStorage.removeItem(`py_task_code_${currentActiveTask.id}`);
+                editor.setValue(currentActiveTask.starterCode);
+            };
+
+            // Toggle Task Hint Drawer
+            document.getElementById('toggleHintBtn').onclick = function() {
+                const hintBox = document.getElementById('hintBox');
+                const btnText = document.getElementById('hintBtnText');
+                if (hintBox.classList.contains('hidden')) {
+                    hintBox.classList.remove('hidden');
+                    btnText.innerText = "Skjul hint";
+                } else {
+                    hintBox.classList.add('hidden');
+                    btnText.innerText = "Vis hint";
+                }
+            };
+
+            // Clear Console Output
+            document.getElementById('clearConsoleBtn').onclick = function() {
+                document.getElementById('consoleOutput').innerText = "";
+            };
+
+            // Reset Progress Modal Handlers
+            const resetModal = document.getElementById('resetModal');
+            document.getElementById('resetProgressBtn').onclick = function() {
+                resetModal.classList.remove('hidden');
+            };
+
+            document.getElementById('cancelResetBtn').onclick = function() {
+                resetModal.classList.add('hidden');
+            };
+
+            document.getElementById('confirmResetBtn').onclick = function() {
+                completedTasks.clear();
+                localStorage.removeItem('py_app_completed');
+                tasks.forEach(t => localStorage.removeItem(`py_task_code_${t.id}`));
+                localStorage.removeItem(`py_task_code_sandbox`);
+                resetModal.classList.add('hidden');
+                selectTask(tasks[0]);
+            };
+        };
+    </script>
+</body>
+</html>
