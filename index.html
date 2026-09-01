@@ -1,95 +1,63 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Klassens Apper</title>
-  <style>
-    /* Bakgrunn og skrifttype */
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #f4f6f9;
-      color: #333;
-      margin: 0;
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* Hovedoverskrift */
-    h1 {
-      color: #1e293b;
-      margin-bottom: 8px;
-    }
-    
-    p.undertittel {
-      color: #64748b;
-      margin-bottom: 32px;
-    }
-
-    /* Rutenett for app-knappene */
-    .app-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      width: 100%;
-      max-width: 800px;
-    }
-
-    /* Kort/knapper for hver app */
-    .app-card {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      text-decoration: none;
-      color: #1e293b;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s, box-shadow 0.2s;
-      text-align: center;
-      border: 1px solid #e2e8f0;
-    }
-
-    /* Effekter når musen peker på knappen */
-    .app-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      border-color: #3b82f6;
-    }
-
-    .app-icon {
-      font-size: 2.5rem;
-      margin-bottom: 12px;
-    }
-
-    .app-title {
-      font-weight: bold;
-      font-size: 1.1rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Min Skoleportal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-slate-100 min-h-screen text-slate-800 p-6 md:p-12">
 
-  <h1>Velkommen til læringsappene!</h1>
-  <p class="undertittel">Velg appen du skal jobbe med i dag:</p>
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-10 text-center md:text-left">
+            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">Klasseromsportalen</h1>
+            <p class="text-slate-600 mt-2">Velg en kategori for å åpne verktøyene du trenger.</p>
+        </header>
 
-  <div class="app-grid">
-    
-    <!-- App 1 -->
-    <a href="Klasseromskjerm.html" class="app-card">
-      <div class="app-icon">📐</div>
-      <div class="app-title">Klasseromskjerm</div>
-    </a>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-    <!-- App 2 -->
-    <a href="Programmering.html" class="app-card">
-      <div class="app-icon">🌍</div>
-      <div class="app-title">Programmering</div>
-    </a>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
+                <div>
+                    <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl mb-4">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900 mb-2">Lærerverktøy</h2>
+                    <p class="text-slate-500 text-sm mb-4">Diverse lærerverktøy.</p>
+                </div>
+                <a href="laererverktoy/index.html" class="inline-flex items-center justify-center w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition">
+                    Åpne skjerm <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </a>
+            </div>
 
-    <!-- Legg til flere apper ved å kopiere blokkene over -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
+                <div>
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl mb-4">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900 mb-2">Matematikk</h2>
+                    <p class="text-slate-500 text-sm mb-4">Diverse matematikkspill og øvinger.</p>
+                </div>
+                <a href="matematikk/index.html" class="inline-flex items-center justify-center w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition">
+                    Gå til Matematikk <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </a>
+            </div>
 
-  </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
+                <div>
+                    <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center text-xl mb-4">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900 mb-2">Norsk</h2>
+                    <p class="text-slate-500 text-sm mb-4">Diverse norskspill og øvinger.</p>
+                </div>
+                <a href="norsk/index.html" class="inline-flex items-center justify-center w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-sm transition">
+                    Gå til Norsk <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                </a>
+            </div>
+
+        </div>
+    </div>
 
 </body>
 </html>
