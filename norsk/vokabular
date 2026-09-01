@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vokabulær - Ordjakten</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .word-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin: 0 3px; background-color: #d1d5db; transition: all 0.2s ease; }
+        .word-dot.active { background-color: #3b82f6; box-shadow: 0 0 8px #3b82f6; transform: scale(1.2); }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; border-color: #ef4444 !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <a href="../index.html" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-indigo-600 transition mb-6">
+    <i class="fa-solid fa-arrow-left mr-2"></i> Tilbake til hovedmenyen </a>
+
+    <div id="app" class="max-w-3xl mx-auto px-4 py-8">
+        <header id="main-header" class="text-center mb-10">
+            <h1 class="text-5xl font-extrabold tracking-tight text-slate-900 mb-2">Vokabulær</h1>
+            <p class="text-slate-600">Bli en mester i norsk rettskriving gjennom ordjakten</p>
+        </header>
+
+        <!-- Mode Selection (Nå kun Ordjakten) -->
+        <div id="mode-selection" class="max-w-md mx-auto mb-8">
+            <button onclick="showDifficultySelection()" class="w-full group p-8 bg-white border-2 border-slate-200 rounded-2xl hover:border-blue-500 hover:shadow-xl transition-all text-center">
+                <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Start ordjakten</h2>
+                <p class="text-slate-500">Gjett ordet basert på definisjonen. Du får +5 sekunder per riktig svar!</p>
+            </button>
+        </div>
+
+        <!-- Difficulty Selection -->
+        <div id="difficulty-ui" class="hidden bg-white rounded-3xl shadow-lg p-8">
+            <button onclick="backToMenu()" class="mb-6 flex items-center text-slate-500 hover:text-blue-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg> Tilbake
+            </button>
+            <h2 class="text-2xl font-bold mb-6 text-center">Velg vanskelighetsgrad</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="startOrdjakt('lett')" class="p-4 rounded-xl border-2 border-green-100 hover:bg-green-50 transition-colors flex justify-between items-center">
+                    <div class="text-left"><div class="font-bold text-green-700">Lett</div><div class="text-xs text-green-600">Hverdagsord og enkle begreper</div></div>
+                    <span class="text-2xl">🌱</span>
+                </button>
+                <button onclick="startOrdjakt('middels')" class="p-4 rounded-xl border-2 border-blue-100 hover:bg-blue-50 transition-colors flex justify-between items-center">
+                    <div class="text-left"><div class="font-bold text-blue-700">Middels</div><div class="text-xs text-blue-600">Vanlige bruksord og abstrakte termer</div></div>
+                    <span class="text-2xl">🚀</span>
+                </button>
+                <button onclick="startOrdjakt('vanskelig')" class="p-4 rounded-xl border-2 border-purple-100 hover:bg-purple-50 transition-colors flex justify-between items-center">
+                    <div class="text-left"><div class="font-bold text-purple-700">Vanskelig</div><div class="text-xs text-purple-600">Akademiske og sjeldne ord</div></div>
+                    <span class="text-2xl">🧠</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Ordjakt Interface -->
+        <div id="ordjakt-ui" class="hidden bg-white rounded-3xl shadow-lg p-8">
+            <div class="flex justify-between items-center mb-8">
+                <div class="text-2xl font-mono font-bold text-blue-600" id="timer">01:00</div>
+                <div class="text-2xl font-mono font-bold text-slate-800" id="score">0</div>
+            </div>
+            <div class="text-center py-10" id="game-content-area">
+                <div id="word-category" class="text-xs font-bold uppercase mb-4 tracking-widest text-slate-400">KATEGORI</div>
+                <h3 id="word-definition" class="text-2xl font-medium text-slate-800 leading-relaxed mb-8 italic min-h-[4rem]">Laster...</h3>
+                <div class="flex flex-col items-center">
+                    <div id="dots-container" class="mb-6 flex justify-center flex-wrap gap-2"></div>
+                    <div class="relative w-full max-w-sm">
+                        <span id="first-letter-hint" class="absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-bold text-blue-500 opacity-50">?</span>
+                        <input type="text" id="word-input" autocomplete="off" class="w-full text-3xl font-bold text-center tracking-widest border-b-4 border-slate-200 py-4 focus:outline-none focus:border-blue-500 transition-all uppercase pl-10">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-between mt-8">
+                <button onclick="backToMenu()" class="text-slate-400 font-medium hover:text-slate-600">Avslutt</button>
+                <button onclick="nextWord(currentDiff)" class="bg-slate-100 px-6 py-2 rounded-xl font-bold hover:bg-slate-200 transition-colors">Hopp over</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
+            <h2 class="text-3xl font-extrabold mb-2">Tiden er ute!</h2>
+            <p id="final-stats-summary" class="text-slate-500 mb-6"></p>
+            <div class="bg-slate-50 rounded-2xl p-4 mb-6 text-left border border-slate-100">
+                <div class="text-xs font-bold text-slate-400 uppercase">Riktig ord var:</div>
+                <div id="last-word-reveal" class="text-xl font-bold text-blue-600"></div>
+                <div id="last-def-reveal" class="text-sm text-slate-600 italic"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeGameOver()" class="bg-slate-100 py-3 rounded-xl font-bold">Meny</button>
+                <button onclick="restartGame()" class="bg-blue-600 text-white py-3 rounded-xl font-bold">Prøv igjen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ordlister = {
+            lett: [
+                { ord: "SYKKEL", def: "To hjul drevet av pedaler.", kat: "SUBSTANTIV" },
+                { ord: "EPLE", def: "Rund frukt fra tre.", kat: "SUBSTANTIV" },
+                { ord: "LØPE", def: "Bevege seg raskt til fots.", kat: "VERB" },
+                { ord: "BOK", def: "Mange sider med tekst inni et omslag.", kat: "SUBSTANTIV" },
+                { ord: "SOL", def: "Stjernen i midten av vårt solsystem.", kat: "SUBSTANTIV" },
+                { ord: "IS", def: "Frossent vann eller en kald dessert.", kat: "SUBSTANTIV" },
+                { ord: "BIL", def: "Kjøretøy med fire hjul.", kat: "SUBSTANTIV" },
+                { ord: "HUND", def: "Menneskets beste venn (dyr).", kat: "SUBSTANTIV" },
+                { ord: "SKOLE", def: "Stedet der barn lærer.", kat: "SUBSTANTIV" },
+                { ord: "KATT", def: "Liten tiger som bor i huset.", kat: "SUBSTANTIV" },
+                { ord: "SPISE", def: "Å putte mat i munnen.", kat: "VERB" },
+                { ord: "DRIKKE", def: "Å svelge væske.", kat: "VERB" },
+                { ord: "HOPPE", def: "Bevege seg opp fra bakken med kraft.", kat: "VERB" },
+                { ord: "SØT", def: "Smaker som sukker.", kat: "ADJEKTIV" },
+                { ord: "BLÅ", def: "Fargen på himmelen.", kat: "ADJEKTIV" },
+                { ord: "RØD", def: "Fargen på en tomat.", kat: "ADJEKTIV" },
+                { ord: "GLAD", def: "Følelsen når du smiler.", kat: "ADJEKTIV" },
+                { ord: "STOR", def: "Motsatt av liten.", kat: "ADJEKTIV" },
+                { ord: "MOR", def: "En kvinnelig forelder.", kat: "SUBSTANTIV" },
+                { ord: "FAR", def: "En mannlig forelder.", kat: "SUBSTANTIV" },
+                { ord: "HUS", def: "Bygning man bor i.", kat: "SUBSTANTIV" },
+                { ord: "TRE", def: "En plante med stamme og blader.", kat: "SUBSTANTIV" },
+                { ord: "SENG", def: "Møbel man sover i.", kat: "SUBSTANTIV" },
+                { ord: "STOL", def: "Noe man sitter på.", kat: "SUBSTANTIV" },
+                { ord: "KNIV", def: "Redskap til å skjære med.", kat: "SUBSTANTIV" },
+                { ord: "SKJE", def: "Redskap til å spise suppe med.", kat: "SUBSTANTIV" },
+                { ord: "GRØNN", def: "Fargen på gresset.", kat: "ADJEKTIV" },
+                { ord: "REGN", def: "Vann som faller fra skyene.", kat: "SUBSTANTIV" },
+                { ord: "SNØ", def: "Hvit, kald nedbør.", kat: "SUBSTANTIV" },
+                { ord: "VINDU", def: "Glass i veggen man kan se ut av.", kat: "SUBSTANTIV" },
+                { ord: "DØR", def: "Åpning inn til et rom.", kat: "SUBSTANTIV" },
+                { ord: "LAMPE", def: "Noe som gir lys i et mørkt rom.", kat: "SUBSTANTIV" },
+                { ord: "BUKSE", def: "Klesplagg for bena.", kat: "SUBSTANTIV" },
+                { ord: "SKO", def: "Noe man har på føttene ute.", kat: "SUBSTANTIV" },
+                { ord: "HÅR", def: "Vokser på hodet.", kat: "SUBSTANTIV" },
+                { ord: "NESE", def: "Den bruker du til å lukte med.", kat: "SUBSTANTIV" },
+                { ord: "ØYE", def: "Det du ser med.", kat: "SUBSTANTIV" },
+                { ord: "MUNN", def: "Det du snakker og spiser med.", kat: "SUBSTANTIV" },
+                { ord: "ØRE", def: "Det du hører med.", kat: "SUBSTANTIV" },
+                { ord: "HÅND", def: "Sitter ytterst på armen.", kat: "SUBSTANTIV" },
+                { ord: "FOT", def: "Sitter nederst på benet.", kat: "SUBSTANTIV" },
+                { ord: "MELK", def: "Hvit drikke fra kuer.", kat: "SUBSTANTIV" },
+                { ord: "BRØD", def: "Mat laget av mel og vann.", kat: "SUBSTANTIV" },
+                { ord: "OST", def: "Gult pålegg laget av melk.", kat: "SUBSTANTIV" },
+                { ord: "FISK", def: "Dyr som svømmer i vann.", kat: "SUBSTANTIV" },
+                { ord: "FUGL", def: "Dyr med fjær og vinger.", kat: "SUBSTANTIV" },
+                { ord: "SKOG", def: "Mange trær sammen.", kat: "SUBSTANTIV" },
+                { ord: "HAV", def: "Veldig mye saltvann.", kat: "SUBSTANTIV" },
+                { ord: "ELV", def: "Vann som renner i naturen.", kat: "SUBSTANTIV" },
+                { ord: "BERG", def: "Stor stein i naturen.", kat: "SUBSTANTIV" },
+                { ord: "MÅNE", def: "Lyser på himmelen om natten.", kat: "SUBSTANTIV" },
+                { ord: "STJERNE", def: "Liten lysprikk på nattehimmelen.", kat: "SUBSTANTIV" },
+                { ord: "DAG", def: "Når sola er oppe.", kat: "SUBSTANTIV" },
+                { ord: "NATT", def: "Når vi sover og det er mørkt.", kat: "SUBSTANTIV" },
+                { ord: "KLOKKE", def: "Viser hva tiden er.", kat: "SUBSTANTIV" },
+                { ord: "PENGER", def: "Det man betaler med i butikken.", kat: "SUBSTANTIV" },
+                { ord: "KJØKKEN", def: "Rommet der man lager mat.", kat: "SUBSTANTIV" },
+                { ord: "BAD", def: "Rommet der man vasker seg.", kat: "SUBSTANTIV" },
+                { ord: "BORD", def: "Møbel man spiser ved.", kat: "SUBSTANTIV" },
+                { ord: "SOFA", def: "Møbel man slapper av i.", kat: "SUBSTANTIV" },
+                { ord: "HATT", def: "Noe man har på hodet.", kat: "SUBSTANTIV" },
+                { ord: "VOTT", def: "Varmer hendene om vinteren.", kat: "SUBSTANTIV" },
+                { ord: "JAKKE", def: "Ytterplagg når det er kaldt.", kat: "SUBSTANTIV" },
+                { ord: "LEKE", def: "Det barn gjør med lekene sine.", kat: "VERB" },
+                { ord: "SYNGE", def: "Bruke stemmen til musikk.", kat: "VERB" },
+                { ord: "TEGNE", def: "Lage bilder med blyant.", kat: "VERB" },
+                { ord: "SKRIVE", def: "Lage bokstaver på papir.", kat: "VERB" },
+                { ord: "LESE", def: "Forstå ord i en bok.", kat: "VERB" },
+                { ord: "SOVE", def: "Slappe helt av om natten.", kat: "VERB" },
+                { ord: "VÅKNE", def: "Slutte å sove.", kat: "VERB" },
+                { ord: "SMILE", def: "Vise at man er glad med munn.", kat: "VERB" },
+                { ord: "GRÅTE", def: "Vann fra øynene når man er trist.", kat: "VERB" },
+                { ord: "VARME", def: "Motsatt av kulde.", kat: "SUBSTANTIV" },
+                { ord: "KULDE", def: "Når det er veldig kaldt.", kat: "SUBSTANTIV" },
+                { ord: "SOMMER", def: "Den varmeste årstiden.", kat: "SUBSTANTIV" },
+                { ord: "VINTER", def: "Når det er snø og kaldt.", kat: "SUBSTANTIV" },
+                { ord: "HØST", def: "Når bladene faller av trærne.", kat: "SUBSTANTIV" },
+                { ord: "VÅR", def: "Når blomstene begynner å vokse.", kat: "SUBSTANTIV" },
+                { ord: "HJERTE", def: "Pumper blod i kroppen.", kat: "SUBSTANTIV" },
+                { ord: "MAGE", def: "Der maten havner.", kat: "SUBSTANTIV" },
+                { ord: "RYGG", def: "Baksiden av overkroppen.", kat: "SUBSTANTIV" },
+                { ord: "KNE", def: "Ledd midt på benet.", kat: "SUBSTANTIV" },
+                { ord: "ALBUE", def: "Ledd midt på armen.", kat: "SUBSTANTIV" },
+                { ord: "HALS", def: "Mellom hodet og kroppen.", kat: "SUBSTANTIV" },
+                { ord: "TANN", def: "Hvit ting i munnen til å tygge med.", kat: "SUBSTANTIV" },
+                { ord: "TUNGE", def: "Den du smaker med.", kat: "SUBSTANTIV" },
+                { ord: "SØPPEL", def: "Ting vi kaster.", kat: "SUBSTANTIV" },
+                { ord: "POSE", def: "Noe man bærer varer i.", kat: "SUBSTANTIV" },
+                { ord: "NØKKEL", def: "Brukes til å låse opp døra.", kat: "SUBSTANTIV" },
+                { ord: "RADIO", def: "Noe man hører musikk fra.", kat: "SUBSTANTIV" },
+                { ord: "BILDE", def: "Et fotografi eller maleri.", kat: "SUBSTANTIV" },
+                { ord: "AVIS", def: "Papir med nyheter.", kat: "SUBSTANTIV" },
+                { ord: "SYKKEL", def: "Kjøretøy uten motor.", kat: "SUBSTANTIV" },
+                { ord: "BUSS", def: "Stor bil for mange mennesker.", kat: "SUBSTANTIV" },
+                { ord: "TOG", def: "Kjører på skinner.", kat: "SUBSTANTIV" },
+                { ord: "BÅT", def: "Kjører på vannet.", kat: "SUBSTANTIV" },
+                { ord: "FLY", def: "Reiser gjennom lufta.", kat: "SUBSTANTIV" },
+                { ord: "VEI", def: "Der biler kjører.", kat: "SUBSTANTIV" },
+                { ord: "GATE", def: "En vei i en by.", kat: "SUBSTANTIV" },
+                { ord: "BY", def: "Et sted med mange hus og folk.", kat: "SUBSTANTIV" }
+            ],
+            middels: [
+                { ord: "KOMPETANSE", def: "Kunnskap og ferdigheter i kombinasjon.", kat: "SUBSTANTIV" },
+                { ord: "VURDERE", def: "Tenke nøye gjennom og bedømme en situasjon.", kat: "VERB" },
+                { ord: "DEMOKRATI", def: "Folkestyre, der folket bestemmer.", kat: "SUBSTANTIV" },
+                { ord: "AMBISJON", def: "Lyst til å oppnå noe stort.", kat: "SUBSTANTIV" },
+                { ord: "KONSEKVENS", def: "Følgen av en handling.", kat: "SUBSTANTIV" },
+                { ord: "EFFEKTIV", def: "Å få mye gjort på kort tid.", kat: "ADJEKTIV" },
+                { ord: "MOTIVASJON", def: "Drivkraften bak det vi gjør.", kat: "SUBSTANTIV" },
+                { ord: "UTFORDRING", def: "Noe som er vanskelig, men lærerikt.", kat: "SUBSTANTIV" },
+                { ord: "RESSURS", def: "Kilde til hjelp eller forsyning.", kat: "SUBSTANTIV" },
+                { ord: "ANALYSE", def: "Grundig undersøkelse av noe.", kat: "SUBSTANTIV" },
+                { ord: "ERFARING", def: "Læring man får gjennom opplevelser.", kat: "SUBSTANTIV" },
+                { ord: "PROSESS", def: "En rekke hendelser som fører til noe.", kat: "SUBSTANTIV" },
+                { ord: "IDENTITET", def: "Hvem man er som person.", kat: "SUBSTANTIV" },
+                { ord: "STRATEGI", def: "En plan for å nå et mål.", kat: "SUBSTANTIV" },
+                { ord: "TEORI", def: "En antakelse eller forklaring på noe.", kat: "SUBSTANTIV" },
+                { ord: "KREATIV", def: "Evne til å skape noe nytt.", kat: "ADJEKTIV" },
+                { ord: "KOMMUNIKASJON", def: "Uveksling av informasjon.", kat: "SUBSTANTIV" },
+                { ord: "KONFLIKT", def: "Uenighet mellom to eller flere.", kat: "SUBSTANTIV" },
+                { ord: "TOLERANSE", def: "Evne til å tåle andres meninger.", kat: "SUBSTANTIV" },
+                { ord: "REAKSJON", def: "Svaret på en påvirkning.", kat: "SUBSTANTIV" },
+                { ord: "KONTAKT", def: "Forbindelse med noen.", kat: "SUBSTANTIV" },
+                { ord: "SYSTEM", def: "Ordnet helhet av deler.", kat: "SUBSTANTIV" },
+                { ord: "KVALITET", def: "Hvor god eller dårlig noe er.", kat: "SUBSTANTIV" },
+                { ord: "MULIGHET", def: "Sjanse til å gjøre noe.", kat: "SUBSTANTIV" },
+                { ord: "ANSVAR", def: "Plikt til å stå til rette for noe.", kat: "SUBSTANTIV" },
+                { ord: "RESPEKT", def: "Å akte eller sette pris på noe.", kat: "SUBSTANTIV" },
+                { ord: "KUNNSKAP", def: "Læring og innsikt i et tema.", kat: "SUBSTANTIV" },
+                { ord: "SAMFUNN", def: "Mennesker som lever sammen.", kat: "SUBSTANTIV" },
+                { ord: "ØKONOMI", def: "Læren om husholdning av ressurser.", kat: "SUBSTANTIV" },
+                { ord: "MILJØ", def: "Omgivelsene vi lever i.", kat: "SUBSTANTIV" },
+                { ord: "KULTUR", def: "Tradisjoner og verdier i en gruppe.", kat: "SUBSTANTIV" },
+                { ord: "REVOLUSJON", def: "Brå og stor endring.", kat: "SUBSTANTIV" },
+                { ord: "UTVIKLING", def: "Vekst eller endring over tid.", kat: "SUBSTANTIV" },
+                { ord: "FORSKNING", def: "Systematisk søk etter ny viten.", kat: "SUBSTANTIV" },
+                { ord: "LITTERATUR", def: "Skrevne verker som bøker.", kat: "SUBSTANTIV" },
+                { ord: "FILOSOFI", def: "Kjærlighet til visdom.", kat: "SUBSTANTIV" },
+                { ord: "PSYKOLOGI", def: "Læren om sjelelivet.", kat: "SUBSTANTIV" },
+                { ord: "HISTORIE", def: "Fortellinger om fortiden.", kat: "SUBSTANTIV" },
+                { ord: "POLITIKK", def: "Styring av land og kommune.", kat: "SUBSTANTIV" },
+                { ord: "RELIGION", def: "Tro på guddommelige makter.", kat: "SUBSTANTIV" },
+                { ord: "VITENSKAP", def: "Kunnskap basert på metoder.", kat: "SUBSTANTIV" },
+                { ord: "TEKNOLOGI", def: "Læren om tekniske metoder.", kat: "SUBSTANTIV" },
+                { ord: "MEDISIN", def: "Læren om sykdom og helbredelse.", kat: "SUBSTANTIV" },
+                { ord: "DIALOG", def: "Samtale mellom to parter.", kat: "SUBSTANTIV" },
+                { ord: "ARGUMENT", def: "Grunn til å mene noe.", kat: "SUBSTANTIV" },
+                { ord: "PRODUKT", def: "Resultatet av en produksjon.", kat: "SUBSTANTIV" },
+                { ord: "MARKED", def: "Sted for kjøp og salg.", kat: "SUBSTANTIV" },
+                { ord: "BEDRIFT", def: "En virksomhet som selger varer.", kat: "SUBSTANTIV" },
+                { ord: "FORBRUKER", def: "En som kjøper og bruker varer.", kat: "SUBSTANTIV" },
+                { ord: "INVESTERE", def: "Sette penger i noe for profitt.", kat: "VERB" },
+                { ord: "KONKURRANSE", def: "Kamp om å være best.", kat: "SUBSTANTIV" },
+                { ord: "PROSJEKT", def: "Oppgave med tidsfrist og mål.", kat: "SUBSTANTIV" },
+                { ord: "LEDELSE", def: "De som styrer en gruppe.", kat: "SUBSTANTIV" },
+                { ord: "SAMARBEID", def: "Jobbe sammen mot et mål.", kat: "SUBSTANTIV" },
+                { ord: "KONTAKT", def: "Forbindelse eller berøring.", kat: "SUBSTANTIV" },
+                { ord: "AVTALE", def: "Enighet mellom to parter.", kat: "SUBSTANTIV" },
+                { ord: "REGLER", def: "Bestemmelser som må følges.", kat: "SUBSTANTIV" },
+                { ord: "LOV", def: "Vedtak som gjelder for alle.", kat: "SUBSTANTIV" },
+                { ord: "RETTIGHET", def: "Noe man har krav på.", kat: "SUBSTANTIV" },
+                { ord: "FRIHET", def: "Tilstand uten tvang.", kat: "SUBSTANTIV" },
+                { ord: "LIKESTILLING", def: "Samme verdi uavhengig av kjønn.", kat: "SUBSTANTIV" },
+                { ord: "SOLIDARITET", def: "Samhold og støtte til andre.", kat: "SUBSTANTIV" },
+                { ord: "MORAL", def: "Læren om rett og galt.", kat: "SUBSTANTIV" },
+                { ord: "ETIKK", def: "Refleksjon over moralen.", kat: "SUBSTANTIV" },
+                { ord: "VERDIER", def: "Det som er viktig for oss.", kat: "SUBSTANTIV" },
+                { ord: "HOLYWOOD", def: "Filmbyen i USA.", kat: "EGENNAVN" },
+                { ord: "INTERNETT", def: "Globalt datanettverk.", kat: "SUBSTANTIV" },
+                { ord: "DATA", def: "Informasjon i digital form.", kat: "SUBSTANTIV" },
+                { ord: "PROGRAM", def: "Instruksjoner for en datamaskin.", kat: "SUBSTANTIV" },
+                { ord: "SERVER", def: "Sentral datamaskin i et nett.", kat: "SUBSTANTIV" },
+                { ord: "KLIENT", def: "Mottaker av tjenester.", kat: "SUBSTANTIV" },
+                { ord: "DOMENE", def: "Navn på en nettside.", kat: "SUBSTANTIV" },
+                { ord: "BROWSER", def: "Program til å se nettsider.", kat: "SUBSTANTIV" },
+                { ord: "DATABASE", def: "Samling av organiserte data.", kat: "SUBSTANTIV" },
+                { ord: "ALGORITME", def: "Oppskrift på en løsning.", kat: "SUBSTANTIV" },
+                { ord: "DESIGN", def: "Utforming av et produkt.", kat: "SUBSTANTIV" },
+                { ord: "ARKITEKTUR", def: "Læren om byggekunst.", kat: "SUBSTANTIV" },
+                { ord: "ESTETIKK", def: "Læren om det vakre.", kat: "SUBSTANTIV" },
+                { ord: "MODERNE", def: "Noe som er i tiden.", kat: "ADJEKTIV" },
+                { ord: "KLASSISK", def: "Noe som har varig verdi.", kat: "ADJEKTIV" },
+                { ord: "ORIGINAL", def: "Den første versjonen.", kat: "ADJEKTIV" },
+                { ord: "KOPI", def: "Etterligning av originalen.", kat: "SUBSTANTIV" },
+                { ord: "SYMBOL", def: "Tegn som betyr noe annet.", kat: "SUBSTANTIV" },
+                { ord: "METAFOR", def: "Bildebruk i språket.", kat: "SUBSTANTIV" },
+                { ord: "IRONI", def: "Å si det motsatte av det man mener.", kat: "SUBSTANTIV" },
+                { ord: "SARKASME", def: "Hånlig eller bitende ironi.", kat: "SUBSTANTIV" },
+                { ord: "HUMOR", def: "Evne til å se det morsomme.", kat: "SUBSTANTIV" },
+                { ord: "ALVOR", def: "Motsatt av lek.", kat: "SUBSTANTIV" },
+                { ord: "TRAGEDIE", def: "Trist eller ulykkelig hendelse.", kat: "SUBSTANTIV" },
+                { ord: "KOMEDIE", def: "Morsomt teaterstykke.", kat: "SUBSTANTIV" },
+                { ord: "ROMAN", def: "Lang oppdiktede fortelling.", kat: "SUBSTANTIV" },
+                { ord: "POESI", def: "Diktning på vers.", kat: "SUBSTANTIV" },
+                { ord: "DRAMA", def: "Spennende handling.", kat: "SUBSTANTIV" },
+                { ord: "OPERA", def: "Musikkteater med sang.", kat: "SUBSTANTIV" },
+                { ord: "BALLETT", def: "Kunstnerisk dans.", kat: "SUBSTANTIV" },
+                { ord: "KONSERT", def: "Musikkframføring for publikum.", kat: "SUBSTANTIV" },
+                { ord: "UTSTILLING", def: "Fremvisning av kunst.", kat: "SUBSTANTIV" },
+                { ord: "MUSEUM", def: "Samling av historiske gjenstander.", kat: "SUBSTANTIV" },
+                { ord: "TURISME", def: "Reisevirksomhet for fornøyelse.", kat: "SUBSTANTIV" },
+                { ord: "HOTELL", def: "Sted for overnatting.", kat: "SUBSTANTIV" }
+            ],
+            vanskelig: [
+                { ord: "PARADIGME", def: "Et grunnleggende mønster eller en måte å se verden på.", kat: "SUBSTANTIV" },
+                { ord: "EKSISTENSIELL", def: "Noe som angår selve menneskets tilværelse.", kat: "ADJEKTIV" },
+                { ord: "DIKOTOMI", def: "En todeling mellom to gjensidig utelukkende ting.", kat: "SUBSTANTIV" },
+                { ord: "HEGEMONI", def: "Lederskap eller overherredømme over andre.", kat: "SUBSTANTIV" },
+                { ord: "DISTINKSJON", def: "Et tydelig skille eller forskjell.", kat: "SUBSTANTIV" },
+                { ord: "LEGITIMITET", def: "Rettsmessighet eller gyldighet.", kat: "SUBSTANTIV" },
+                { ord: "AMBIVALENT", def: "Å ha to motstridende følelser samtidig.", kat: "ADJEKTIV" },
+                { ord: "KOGNITIV", def: "Som har med erkjennelse og tenkning å gjøre.", kat: "ADJEKTIV" },
+                { ord: "AKKUMULERE", def: "Å samle opp over tid.", kat: "VERB" },
+                { ord: "KONSOLIDERE", def: "Å styrke eller gjøre mer solid.", kat: "VERB" },
+                { ord: "IMPLEMENTERE", def: "Å sette ut i livet eller iverksette.", kat: "VERB" },
+                { ord: "INTERPRETASJON", def: "En tolkning eller utleggelse.", kat: "SUBSTANTIV" },
+                { ord: "EKSPLISITT", def: "Uttalt helt tydelig og direkte.", kat: "ADJEKTIV" },
+                { ord: "IMPLISITT", def: "Underforstått, ikke sagt direkte.", kat: "ADJEKTIV" },
+                { ord: "KONSEPTUALISERE", def: "Å forme begreper om noe.", kat: "VERB" },
+                { ord: "MANIFESTASJON", def: "Tilkomst eller fremtredelse av noe.", kat: "SUBSTANTIV" },
+                { ord: "POLARISERING", def: "Økende avstand mellom grupper.", kat: "SUBSTANTIV" },
+                { ord: "RESONANS", def: "Gjenklang eller medvirkning.", kat: "SUBSTANTIV" },
+                { ord: "SUBSTANSIELL", def: "Vesentlig eller betydelig.", kat: "ADJEKTIV" },
+                { ord: "SYNERGI", def: "Samspill som gir mer enn summen av delene.", kat: "SUBSTANTIV" },
+                { ord: "TRANSFORMASJON", def: "Fullstendig omforming.", kat: "SUBSTANTIV" },
+                { ord: "VERIFISERE", def: "Å bekrefte at noe er sant.", kat: "VERB" },
+                { ord: "AUTONOM", def: "Selvstendig eller selvstyrt.", kat: "ADJEKTIV" },
+                { ord: "DETERMINISME", def: "Tro på at alt er forutbestemt.", kat: "SUBSTANTIV" },
+                { ord: "EMPRISK", def: "Basert på erfaring og observasjon.", kat: "ADJEKTIV" },
+                { ord: "FRAGMENTERING", def: "Oppsplatting i mindre deler.", kat: "SUBSTANTIV" },
+                { ord: "INNOVASJON", def: "Nyskaping eller fornyelse.", kat: "SUBSTANTIV" },
+                { ord: "JUSTIFISERE", def: "Å rettferdiggjøre noe.", kat: "VERB" },
+                { ord: "KONTEKSTUELL", def: "Avhengig av sammenhengen.", kat: "ADJEKTIV" },
+                { ord: "MODALITET", def: "Måten noe fremtrer på.", kat: "SUBSTANTIV" },
+                { ord: "NORMATIV", def: "Retningsgivende for hva som bør gjøres.", kat: "ADJEKTIV" },
+                { ord: "OBJEKTIVITET", def: "Upartiskhet eller saklighet.", kat: "SUBSTANTIV" },
+                { ord: "PARADOKS", def: "Noe som virker selvmotsigende.", kat: "SUBSTANTIV" },
+                { ord: "REPRODUKSJON", def: "Gjenskaping av noe eksisterende.", kat: "SUBSTANTIV" },
+                { ord: "SUBJEKTIVITET", def: "Personlig oppfatning.", kat: "SUBSTANTIV" },
+                { ord: "TRANSSENDENS", def: "Overskridelse av gitte grenser.", kat: "SUBSTANTIV" },
+                { ord: "UTOPISK", def: "Urealistisk perfekt samfunn.", kat: "ADJEKTIV" },
+                { ord: "VALIDITET", def: "Gyldighet eller holdbarhet.", kat: "SUBSTANTIV" },
+                { ord: "ANALOGI", def: "Samsvar eller likhet.", kat: "SUBSTANTIV" },
+                { ord: "BIBLIOGRAFI", def: "Liste over kilder.", kat: "SUBSTANTIV" },
+                { ord: "CYBERNETIKK", def: "Læren om styring og kommunikasjon.", kat: "SUBSTANTIV" },
+                { ord: "DEKONSTRUKSJON", def: "Oppløsning av sammenhenger.", kat: "SUBSTANTIV" },
+                { ord: "EPISTEMOLOGI", def: "Læren om kunnskapens grunnlag.", kat: "SUBSTANTIV" },
+                { ord: "FENOMENOLOGI", def: "Læren om fenomener slik de fremtrer.", kat: "SUBSTANTIV" },
+                { ord: "GENEALOGI", def: "Læren om slekt og opprinnelse.", kat: "SUBSTANTIV" },
+                { ord: "HERMENEUTIKK", def: "Læren om tolkning av tekster.", kat: "SUBSTANTIV" },
+                { ord: "IDIOSYNKRASI", def: "Særegent reaksjonsmønster.", kat: "SUBSTANTIV" },
+                { ord: "JURISPRUDENS", def: "Rettsvitenskap.", kat: "SUBSTANTIV" },
+                { ord: "KALEIDOSKOP", def: "Noe som stadig endrer mønster.", kat: "SUBSTANTIV" },
+                { ord: "LEKSIKOGRAFI", def: "Læren om ordboksarbeid.", kat: "SUBSTANTIV" },
+                { ord: "METODOLOGI", def: "Læren om metoder.", kat: "SUBSTANTIV" },
+                { ord: "NOMINALISME", def: "Tro på at begreper kun er navn.", kat: "SUBSTANTIV" },
+                { ord: "ONTOLOGI", def: "Læren om hva som eksisterer.", kat: "SUBSTANTIV" },
+                { ord: "PRAGMATISME", def: "Praktisk innstilling.", kat: "SUBSTANTIV" },
+                { ord: "KVANTIFISERING", def: "Å uttrykke noe i tall.", kat: "SUBSTANTIV" },
+                { ord: "REDUKSJONISME", def: "Å forenkle for mye.", kat: "SUBSTANTIV" },
+                { ord: "SEMIOTIKK", def: "Læren om tegn.", kat: "SUBSTANTIV" },
+                { ord: "TAKSONOMI", def: "Systematisk inndeling.", kat: "SUBSTANTIV" },
+                { ord: "UNIVERSELL", def: "Som gjelder for alle.", kat: "ADJEKTIV" },
+                { ord: "VIRTUELL", def: "Tilsynelatende, ofte digital.", kat: "ADJEKTIV" },
+                { ord: "XENOFOBI", def: "Frykt for fremmede.", kat: "SUBSTANTIV" },
+                { ord: "YTRESTYRT", def: "Kontrollert av ytre krefter.", kat: "ADJEKTIV" },
+                { ord: "ZEITGEIST", def: "Tidens ånd.", kat: "SUBSTANTIV" },
+                { ord: "ABSORBSJON", def: "Opptaking av noe.", kat: "SUBSTANTIV" },
+                { ord: "BIODIVERSITET", def: "Mangfold av arter.", kat: "SUBSTANTIV" },
+                { ord: "CORIOLISEFFEKTEN", def: "Avbøyning grunnet rotasjon.", kat: "SUBSTANTIV" },
+                { ord: "DIVERGENS", def: "Forskjell eller sprik.", kat: "SUBSTANTIV" },
+                { ord: "ENTROPI", def: "Grad av uorden i et system.", kat: "SUBSTANTIV" },
+                { ord: "FLUKTUASJON", def: "Ustadige svingninger.", kat: "SUBSTANTIV" },
+                { ord: "GLOBALISERING", def: "Verdensomspennende integrasjon.", kat: "SUBSTANTIV" },
+                { ord: "HYPOTETISK", def: "Bygget på en antakelse.", kat: "ADJEKTIV" },
+                { ord: "INFERENS", def: "Slutning basert på fakta.", kat: "SUBSTANTIV" },
+                { ord: "JUKSTAPOSISJON", def: "Sideordning av kontraster.", kat: "SUBSTANTIV" },
+                { ord: "KINEMATIKK", def: "Læren om bevegelse.", kat: "SUBSTANTIV" },
+                { ord: "LIQUIDITET", def: "Tilgang på kontanter.", kat: "SUBSTANTIV" },
+                { ord: "MAKROKOSMOS", def: "Universet sett i stort.", kat: "SUBSTANTIV" },
+                { ord: "NARRATIV", def: "En fortelling eller fremstilling.", kat: "SUBSTANTIV" },
+                { ord: "OSMOSE", def: "Væsketransport gjennom hinne.", kat: "SUBSTANTIV" },
+                { ord: "PROLIFERASJON", def: "Hurtig spredning.", kat: "SUBSTANTIV" },
+                { ord: "REDUNDANS", def: "Overflødig informasjon.", kat: "SUBSTANTIV" },
+                { ord: "SYNKRONT", def: "Samtidig.", kat: "ADJEKTIV" },
+                { ord: "TERMODYNAMIKK", def: "Læren om varmeenergi.", kat: "SUBSTANTIV" },
+                { ord: "URBANISERING", def: "Folk flytter til byene.", kat: "SUBSTANTIV" },
+                { ord: "VOLATILITET", def: "Svingningsrisiko.", kat: "SUBSTANTIV" },
+                { ord: "WEBBASERT", def: "Som kjører på nettet.", kat: "ADJEKTIV" },
+                { ord: "XYLOGRAFI", def: "Tresnittkunst.", kat: "SUBSTANTIV" },
+                { ord: "YRKESETIKK", def: "Moral i arbeidslivet.", kat: "SUBSTANTIV" },
+                { ord: "ZENIT", def: "Høyeste punkt på himmelen.", kat: "SUBSTANTIV" },
+                { ord: "ANTROPOLOGI", def: "Læren om mennesket.", kat: "SUBSTANTIV" },
+                { ord: "BILATERAL", def: "Som gjelder to sider.", kat: "ADJEKTIV" },
+                { ord: "CHAUVINISME", def: "Overdreven patriotisme.", kat: "SUBSTANTIV" },
+                { ord: "DELEGERING", def: "Overføring av myndighet.", kat: "SUBSTANTIV" },
+                { ord: "EFFEKTUERING", def: "Gjennomføring av vedtak.", kat: "SUBSTANTIV" },
+                { ord: "FACILITERE", def: "Å legge til rette for.", kat: "VERB" },
+                { ord: "GRATIFIKASJON", def: "Belønning eller påskjønnelse.", kat: "SUBSTANTIV" },
+                { ord: "HABITUS", def: "Sum av tillærte handlingsmønstre.", kat: "SUBSTANTIV" },
+                { ord: "INHIBERING", def: "Hemming eller hindring.", kat: "SUBSTANTIV" },
+                { ord: "KLIENTELISME", def: "Gjenytelser for lojalitet.", kat: "SUBSTANTIV" },
+                { ord: "LITURGI", def: "Fastlagte former for gudstjeneste.", kat: "SUBSTANTIV" },
+                { ord: "MERITOKRATI", def: "Styre basert på evner.", kat: "SUBSTANTIV" }
+            ]
+        };
+
+        let currentWord, score = 0, solvedCount = 0, timeLeft = 60, timerInterval, currentDiff = 'lett';
+
+        function showDifficultySelection() { 
+            document.getElementById('mode-selection').classList.add('hidden'); 
+            document.getElementById('difficulty-ui').classList.remove('hidden'); 
+        }
+
+        function backToMenu() { 
+            clearInterval(timerInterval);
+            document.getElementById('difficulty-ui').classList.add('hidden');
+            document.getElementById('ordjakt-ui').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
+            document.getElementById('mode-selection').classList.remove('hidden');
+        }
+
+        function startOrdjakt(diff) {
+            currentDiff = diff;
+            document.getElementById('difficulty-ui').classList.add('hidden');
+            document.getElementById('main-header').classList.add('hidden');
+            document.getElementById('ordjakt-ui').classList.remove('hidden');
+            score = 0; solvedCount = 0; timeLeft = 60;
+            document.getElementById('score').innerText = score;
+            nextWord(diff);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const mins = Math.floor(timeLeft / 60), secs = timeLeft % 60;
+                document.getElementById('timer').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+            document.getElementById('word-input').focus();
+        }
+
+        function nextWord(diff) {
+            const list = ordlister[diff] || ordlister.lett;
+            // Unngå samme ord to ganger på rad hvis mulig
+            let newWord;
+            do {
+                newWord = list[Math.floor(Math.random() * list.length)];
+            } while (newWord === currentWord && list.length > 1);
+            
+            currentWord = newWord;
+            document.getElementById('word-definition').innerText = currentWord.def;
+            document.getElementById('word-category').innerText = currentWord.kat;
+            document.getElementById('first-letter-hint').innerText = currentWord.ord[0];
+            document.getElementById('word-input').value = "";
+            
+            const dc = document.getElementById('dots-container');
+            dc.innerHTML = "";
+            for (let i = 0; i < currentWord.ord.length; i++) {
+                const dot = document.createElement('span');
+                dot.className = "word-dot" + (i === 0 ? " active" : "");
+                dc.appendChild(dot);
+            }
+        }
+
+        document.getElementById('word-input').addEventListener('input', (e) => {
+            const val = e.target.value.toUpperCase();
+            // Ordet starter alltid med den gitte bokstaven (hint)
+            const currentGuess = currentWord.ord[0] + val;
+            
+            const dots = document.querySelectorAll('.word-dot');
+            dots.forEach((d, i) => d.classList.toggle('active', i < currentGuess.length));
+            
+            if (!currentWord.ord.startsWith(currentGuess)) {
+                e.target.classList.add('shake'); 
+                setTimeout(() => e.target.classList.remove('shake'), 400);
+                e.target.value = val.slice(0, -1);
+            } else if (currentGuess === currentWord.ord) {
+                score += 10; solvedCount++; timeLeft += 5;
+                document.getElementById('score').innerText = score;
+                nextWord(currentDiff);
+            }
+        });
+
+        function endGame() {
+            clearInterval(timerInterval);
+            document.getElementById('last-word-reveal').innerText = currentWord.ord;
+            document.getElementById('last-def-reveal').innerText = currentWord.def;
+            document.getElementById('final-stats-summary').innerText = `Poeng: ${score} | Løste ord: ${solvedCount}`;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
+        function restartGame() { 
+            document.getElementById('game-over-modal').classList.add('hidden'); 
+            startOrdjakt(currentDiff); 
+        }
+        
+        function closeGameOver() { 
+            document.getElementById('game-over-modal').classList.add('hidden'); 
+            backToMenu(); 
+        }
+    </script>
+</body>
+</html>
