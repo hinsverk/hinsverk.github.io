@@ -60,13 +60,19 @@
     <div id="workspace" class="w-full h-full relative overflow-hidden">
         <div id="welcome-msg" class="absolute inset-0 flex flex-col items-center justify-center text-white text-center pointer-events-none p-4 drop-shadow-md transition-opacity duration-300">
             <i class="fa-solid font-bold text-6xl mb-4 fa-chalkboard-user"></i>
-            <h1 class="text-4xl font-bold mb-2">Velkommen til Klasseromskjerm</h1>
+            <h1 class="text-4xl font-bold mb-2">Velkommen til klasseromskjerm</h1>
             <p class="text-xl max-w-md">Velg verktøy fra menyen nederst for å komme i gang!</p>
         </div>
     </div>
 
     <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md border border-white/40 shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-2 z-50 overflow-x-auto max-w-[95vw]">
-        
+        <!-- TILBAKE-KNAPP (Oppe i venstre hjørne) -->
+<div class="fixed top-4 left-4 z-50">
+    <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-slate-700/90 text-slate-200 hover:text-white rounded-xl backdrop-blur-md border border-slate-700/60 shadow-lg transition-all transform hover:-translate-x-0.5 text-sm font-medium">
+        <i class="fa-solid fa-arrow-left text-xs"></i>
+        <span>Tilbake til lærerverktøy</span>
+    </a>
+</div>
         <button onclick="createWidget('clock')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Klokke og Dato">
             <i class="fa-regular fa-clock text-xl text-indigo-600 group-hover:scale-110 transition-transform"></i>
             <span class="text-[10px] font-medium mt-1">Klokke</span>
