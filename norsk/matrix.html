@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Glose-Duell: Matrix Edition</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --matrix-green: #00FF41; --matrix-dark: #000800; --matrix-glow: rgba(0, 255, 65, 0.2); }
+        
+        /* EMBED FIX: 
+           Vi låser html og body fullstendig til 100% av iFrame-vinduet og skrur av all scrolling på body-nivå.
+           Dette gjør det fysisk umulig for Google Sites å rulle iFramen oppover!
+        */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden !important;
+            background-color: var(--matrix-dark);
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--matrix-green);
+        }
+
+        /* En intern, kontrollert rullebeholder som holder spillet stabilt på toppen */
+        .scroll-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 15px 0 80px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .matrix-border { border: 1px solid var(--matrix-green); box-shadow: 0 0 15px var(--matrix-glow); }
+        .btn-matrix { border: 1px solid var(--matrix-green); background: transparent; color: var(--matrix-green); transition: all 0.2s; text-transform: uppercase; cursor: pointer; }
+        .btn-matrix:hover:not(:disabled) { background: var(--matrix-green); color: var(--matrix-dark); box-shadow: 0 0 20px var(--matrix-green); }
+        .btn-matrix:disabled { opacity: 0.3; cursor: not-allowed; border-color: #004400; color: #004400; }
+        input, select { background: rgba(0, 20, 0, 0.8) !important; border: 1px solid var(--matrix-green) !important; color: var(--matrix-green) !important; outline: none; }
+        
+        .console-log { font-size: 10px; height: 120px; overflow-y: auto; background: rgba(0, 5, 0, 0.95); border-top: 2px solid #004400; width: 100%; position: fixed; bottom: 0; left: 0; z-index: 100; transition: transform 0.3s ease-in-out; }
+        .console-collapsed { transform: translateY(120px); }
+        .console-expanded { transform: translateY(0); }
+        
+        .scanline { width: 100%; height: 2px; background: rgba(0, 255, 65, 0.1); position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; animation: scan 8s linear infinite; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .result-text { font-size: clamp(1.2rem, 6.5vw, 3rem); white-space: nowrap; text-align: center; display: block; width: 100%; }
+
+        @keyframes glitch-flash {
+            0% { background-color: rgba(239, 68, 68, 0.4); border-color: #ef4444; }
+            100% { background-color: transparent; }
+        }
+        .damage-flash {
+            animation: glitch-flash 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas for Matrix Digital Rain bakgrunnseffekt -->
+    <canvas id="matrix-rain" class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none opacity-65"></canvas>
+
+    <div class="scanline"></div>
+    <div id="root" style="width: 100%; height: 100%; position: relative;"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1DWXb3N2JkkTSRBM6LCGtzq8O-axTexg",
+            authDomain: "norskspill-564a7.firebaseapp.com",
+            projectId: "norskspill-564a7",
+            databaseURL: "https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app",
+            storageBucket: "norskspill-564a7.firebasestorage.app",
+            messagingSenderId: "613491554297",
+            appId: "1:613491554297:web:ee9b629fbcf306aeaeaf28"
+        };
+
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxizUHlznWobXctoxE-UHXw63s0IBWHymy3eYOcVCM49eoil0XzTLPJB5xiPquhyvBy/exec";
+
+        const LOCAL_FALLBACKS = {
+            NORSK1: {
+                name: "Basic Protocol (Backup-liste)",
+                words: [
+                    { q: "Katt", a: "Cat" },
+                    { q: "Hund", a: "Dog" },
+                    { q: "Hus", a: "House" },
+                    { q: "Bok", a: "Book" },
+                    { q: "Bord", a: "Table" },
+                    { q: "Eple", a: "Apple" },
+                    { q: "Venn", a: "Friend" },
+                    { q: "Skole", a: "School" },
+                    { q: "Vann", a: "Water" },
+                    { q: "Brød", a: "Bread" }
+                ]
+            },
+            NORSK2: {
+                name: "Advanced Protocol (Backup-liste)",
+                words: [
+                    { q: "Beslutning", a: "Decision" },
+                    { q: "Utvikling", a: "Development" },
+                    { q: "Erfaring", a: "Experience" },
+                    { q: "Kunnskap", a: "Knowledge" },
+                    { q: "Mulighet", a: "Opportunity" },
+                    { q: "Suksess", a: "Success" },
+                    { q: "Samfunn", a: "Society" },
+                    { q: "Forståelse", a: "Understanding" },
+                    { q: "Fremtid", a: "Future" },
+                    { q: "Utfordring", a: "Challenge" }
+                ]
+            }
+        };
+
+        const App = () => {
+            const [view, setView] = useState('landing');
+            const [logs, setLogs] = useState(["[SYS] Core Init..."]);
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState("");
+            const [isRefreshing, setIsRefreshing] = useState(false);
+            const [showConsole, setShowConsole] = useState(false); 
+            
+            const [playerName, setPlayerName] = useState(() => sessionStorage.getItem('glose_name') || "Operator_" + Math.floor(Math.random()*99));
+            const [listCode, setListCode] = useState("NORSK1");
+            const [gamePin, setGamePin] = useState("");
+            const [isMultiplayer, setIsMultiplayer] = useState(false);
+            const [isHost, setIsHost] = useState(false);
+            const [gameMode, setGameMode] = useState("duel");
+            const [playerHP, setPlayerHP] = useState(100);
+            const [opponentHP, setOpponentHP] = useState(100);
+            const [opponentName, setOpponentName] = useState("Sentinel");
+            const [allGloser, setAllGloser] = useState([]);
+            const [listTitle, setListTitle] = useState("");
+            const [gameState, setGameState] = useState({ input: "", currentGlose: null, feedback: null });
+            const [playersInRoom, setPlayersInRoom] = useState([]);
+            const [showHint, setShowHint] = useState(false);
+            
+            const prevPlayersHP = useRef({});
+            const scrollContainerRef = useRef(null);
+            
+            const [playerId] = useState(() => {
+                const id = sessionStorage.getItem('glose_uid') || "usr_" + Math.random().toString(36).substring(2, 8);
+                sessionStorage.setItem('glose_uid', id);
+                return id;
+            });
+
+            const [availableLists, setAvailableLists] = useState([
+                { code: "NORSK1", name: LOCAL_FALLBACKS.NORSK1.name },
+                { code: "NORSK2", name: LOCAL_FALLBACKS.NORSK2.name }
+            ]);
+            
+            const [authToken, setAuthToken] = useState("");
+            const logEndRef = useRef(null);
+
+            const addLog = (msg) => {
+                const time = new Date().toLocaleTimeString();
+                setLogs(prev => [...prev.slice(-25), `[${time}] ${msg}`]);
+            };
+
+            // EMBED-FIX: Gjenoppretter skrollposisjon til toppen i den interne boksen ved skjermbytte
+            useEffect(() => {
+                if (scrollContainerRef.current) {
+                    scrollContainerRef.current.scrollTop = 0;
+                }
+            }, [view]);
+
+            // Matrix Rain Bakgrunnseffekt
+            useEffect(() => {
+                const canvas = document.getElementById('matrix-rain');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                
+                const resizeCanvas = () => {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                };
+                
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                
+                const katakana = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                const alphabet = katakana.split("");
+                
+                const fontSize = 14;
+                let columns = canvas.width / fontSize;
+                
+                let rainDrops = [];
+                for (let x = 0; x < columns; x++) {
+                    rainDrops[x] = Math.random() * -100;
+                }
+                
+                const draw = () => {
+                    ctx.fillStyle = 'rgba(0, 8, 0, 0.08)'; 
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = 'rgba(0, 255, 65, 0.35)'; 
+                    ctx.font = fontSize + 'px monospace';
+                    
+                    for (let i = 0; i < rainDrops.length; i++) {
+                        const text = alphabet[Math.floor(Math.random() * alphabet.length)];
+                        ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+                        
+                        if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                            rainDrops[i] = 0;
+                        }
+                        rainDrops[i]++;
+                    }
+                };
+                
+                const interval = setInterval(draw, 33);
+                
+                return () => {
+                    clearInterval(interval);
+                    window.removeEventListener('resize', resizeCanvas);
+                };
+            }, []);
+
+            useEffect(() => {
+                if (logEndRef.current) logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            }, [logs]);
+
+            useEffect(() => {
+                sessionStorage.setItem('glose_name', playerName);
+            }, [playerName]);
+
+            useEffect(() => {
+                const initSecureRESTAuth = async () => {
+                    try {
+                        addLog("Configuring DB transport rules...");
+                        addLog("HTTPS Long-Polling protocol FORCED.");
+                        
+                        const signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`;
+                        const res = await fetch(signUpUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ returnSecureToken: true })
+                        });
+                        
+                        if (res.ok) {
+                            const data = await res.json();
+                            setAuthToken(data.idToken);
+                            addLog("Network ONLINE (Encrypted Bridge Active)");
+                        }
+                    } catch (e) {
+                        addLog(`REST Auth Bypass active: ${e.message}`);
+                    }
+                };
+                initSecureRESTAuth();
+            }, []);
+
+            useEffect(() => {
+                const loadListTitles = async () => {
+                    const codes = ["NORSK1", "NORSK2"];
+                    for (const code of codes) {
+                        try {
+                            const data = await fetchWords(code, false); 
+                            if (data && data.name) {
+                                setAvailableLists(prev => prev.map(item => 
+                                    item.code === code ? { ...item, name: data.name } : item
+                                ));
+                            }
+                        } catch (e) {}
+                    }
+                };
+                if (authToken) { loadListTitles(); }
+            }, [authToken]);
+
+            useEffect(() => {
+                if (!isMultiplayer || !gamePin) return;
+
+                let active = true;
+                const pollDatabase = async () => {
+                    try {
+                        const tokenParam = authToken ? `?auth=${authToken}` : '';
+                        const res = await fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}.json${tokenParam}`);
+                        if (!res.ok) return;
+                        
+                        const data = await res.json();
+                        if (!active) return;
+
+                        if (data) {
+                            if (data.gameMode && data.gameMode !== gameMode) {
+                                setGameMode(data.gameMode);
+                            }
+                            if (data.status === 'active' && view === 'lobby') {
+                                addLog("Sequence STARTING...");
+                                setNextGlose();
+                                setView('game');
+                            }
+                            const playersMap = data.players || {};
+                            const playersList = Object.keys(playersMap).map(id => ({
+                                id,
+                                name: playersMap[id].name || "Anonymous",
+                                hp: playersMap[id].hp !== undefined ? playersMap[id].hp : 100
+                            }));
+                            setPlayersInRoom(playersList);
+
+                            const myStatus = playersMap[playerId];
+                            if (myStatus && myStatus.hp !== undefined) {
+                                setPlayerHP(myStatus.hp);
+                            }
+                            if (data.gameMode === 'duel') {
+                                const opponent = playersList.find(p => p.id !== playerId);
+                                if (opponent) {
+                                    setOpponentHP(opponent.hp);
+                                    setOpponentName(opponent.name);
+                                }
+                            }
+                        }
+                    } catch (err) {}
+                };
+
+                const interval = setInterval(pollDatabase, 1200);
+                pollDatabase();
+
+                return () => {
+                    active = false;
+                    clearInterval(interval);
+                };
+            }, [isMultiplayer, gamePin, isHost, view, authToken, gameMode, playerId]);
+
+            useEffect(() => {
+                if (view === 'game') {
+                    if (gameMode === 'duel') {
+                        if (playerHP <= 0 || opponentHP <= 0) {
+                            setTimeout(() => setView('result'), 800);
+                        }
+                    } else if (gameMode === 'royale') {
+                        const activePlayers = playersInRoom.filter(p => p.hp > 0);
+                        if (playersInRoom.length > 1 && activePlayers.length <= 1) {
+                            setTimeout(() => setView('result'), 800);
+                        }
+                    }
+                }
+            }, [playerHP, opponentHP, playersInRoom, view, gameMode]);
+
+            const cacheListToFirebase = async (code, listData) => {
+                try {
+                    const tokenParam = authToken ? `?auth=${authToken}` : '';
+                    const url = `https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/lists/${code}.json${tokenParam}`;
+                    await fetch(url, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(listData)
+                    });
+                    addLog(`Cached ${code} globally in Firebase.`);
+                } catch (e) {
+                    addLog("Cache write skipped.");
+                }
+            };
+
+            const fetchWords = async (code, forceRefresh = false) => {
+                const cleanCode = code.toUpperCase().trim();
+
+                if (!forceRefresh) {
+                    try {
+                        const tokenParam = authToken ? `?auth=${authToken}` : '';
+                        const dbRes = await fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/lists/${cleanCode}.json${tokenParam}`);
+                        if (dbRes.ok) {
+                            const cachedData = await dbRes.json();
+                            if (cachedData && cachedData.words) {
+                                addLog(`Loaded from Firebase Cache [${cleanCode}]`);
+                                return cachedData;
+                            }
+                        }
+                    } catch (e) {}
+                } else {
+                    addLog(`BYPASSING CACHE: Requesting fresh assets for [${cleanCode}] from Sheets...`);
+                }
+
+                try {
+                    const response = await fetch(`${SCRIPT_URL}?action=getList&code=${encodeURIComponent(cleanCode)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.words) {
+                            addLog("Fresh assets pulled from Google Sheets API.");
+                            cacheListToFirebase(cleanCode, data);
+                            return data;
+                        }
+                    }
+                } catch (err) {}
+
+                return new Promise((resolve, reject) => {
+                    const callbackName = 'cb_' + Math.random().toString(36).substr(2, 9);
+                    const script = document.createElement('script');
+                    
+                    const timeout = setTimeout(() => {
+                        script.remove();
+                        window[callbackName] = () => { delete window[callbackName]; };
+                        if (LOCAL_FALLBACKS[cleanCode]) {
+                            addLog("Sheets timed out. Using emergency local fallback.");
+                            resolve(LOCAL_FALLBACKS[cleanCode]);
+                        } else { reject(new Error("Timeout")); }
+                    }, 6000);
+
+                    window[callbackName] = (data) => { 
+                        clearTimeout(timeout);
+                        script.remove();
+                        delete window[callbackName];
+                        if (data && data.words) {
+                            addLog("Fresh assets pulled via JSONP.");
+                            cacheListToFirebase(cleanCode, data);
+                            resolve(data);
+                        } else {
+                            resolve(LOCAL_FALLBACKS[cleanCode] || reject(new Error("Data error")));
+                        }
+                    };
+
+                    script.src = `${SCRIPT_URL}?action=getList&code=${encodeURIComponent(cleanCode)}&callback=${callbackName}`;
+                    document.body.appendChild(script);
+                });
+            };
+
+            const forceRefreshCurrentList = async () => {
+                if (isRefreshing) return;
+                setIsRefreshing(true);
+                setError("");
+                try {
+                    const freshData = await fetchWords(listCode, true);
+                    if (freshData) {
+                        setAvailableLists(prev => prev.map(item => 
+                            item.code === listCode ? { ...item, name: freshData.name || item.name } : item
+                        ));
+                        addLog(`SUCCESS: Cache cleared & updated for ${listCode}!`);
+                        alert(`Liste '${listCode}' ble oppdatert med nye ord fra regnearket ditt!`);
+                    }
+                } catch (e) {
+                    setError("Kunne ikke synkronisere med Sheets. Sjekk koden.");
+                } finally {
+                    setIsRefreshing(false);
+                }
+            };
+
+            const handleHost = async () => {
+                if (isLoading) return;
+                setIsLoading(true); setError("");
+                try {
+                    const data = await fetchWords(listCode, false);
+                    const pin = Math.floor(1000 + Math.random() * 8999).toString();
+                    
+                    setAllGloser(data.words);
+                    setListTitle(data.name || "Glose-Liste");
+                    setGamePin(pin);
+                    setIsHost(true);
+                    setIsMultiplayer(true);
+                    setPlayerHP(100);
+                    setOpponentHP(100);
+                    setView('lobby'); 
+
+                    const tokenParam = authToken ? `?auth=${authToken}` : '';
+                    await fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${pin}.json${tokenParam}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            host: playerName,
+                            listCode: listCode,
+                            listTitle: data.name || "Glose-Liste",
+                            status: 'waiting',
+                            gameMode: gameMode,
+                            players: { [playerId]: { name: playerName, hp: 100 } }
+                        })
+                    });
+                } catch (e) {
+                    setError("Host feilet.");
+                } finally { setIsLoading(false); }
+            };
+
+            const handleJoin = async () => {
+                if (!gamePin || isLoading) return setError("PIN required.");
+                setIsLoading(true); setError("");
+                try {
+                    const tokenParam = authToken ? `?auth=${authToken}` : '';
+                    const roomRes = await fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}.json${tokenParam}`);
+                    const room = await roomRes.json();
+                    if (!room) throw new Error("Node ikke funnet.");
+
+                    if (room.gameMode === 'duel' && room.players && Object.keys(room.players).length >= 2 && !room.players[playerId]) {
+                        throw new Error("Duell-rommet er fullt (Kun 2 spillere).");
+                    }
+
+                    const data = await fetchWords(room.listCode, false);
+                    setAllGloser(data.words);
+                    setListTitle(room.listTitle);
+                    setGameMode(room.gameMode || 'duel');
+                    setIsHost(false);
+                    setIsMultiplayer(true);
+                    setPlayerHP(100);
+                    setOpponentHP(100);
+                    setView('lobby');
+
+                    await fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${playerId}.json${tokenParam}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: playerName, hp: 100 })
+                    });
+                } catch (e) { setError(e.message || "Tilkobling feilet."); }
+                finally { setIsLoading(false); }
+            };
+
+            const handleSingle = async () => {
+                setIsLoading(true); setError("");
+                try {
+                    const data = await fetchWords(listCode, false);
+                    setAllGloser(data.words);
+                    setListTitle(data.name || "Solo");
+                    setIsMultiplayer(false);
+                    setIsHost(false);
+                    setOpponentName("Sentinel");
+                    setPlayerHP(100);
+                    setOpponentHP(100);
+                    
+                    const rand = data.words[Math.floor(Math.random()*data.words.length)];
+                    setGameState({ input: "", currentGlose: rand, feedback: null });
+                    setView('game');
+                } catch (e) {}
+                finally { setIsLoading(false); }
+            };
+
+            const startGame = () => {
+                if (isHost && gamePin) {
+                    const tokenParam = authToken ? `?auth=${authToken}` : '';
+                    fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/status.json${tokenParam}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify("active")
+                    });
+                }
+            };
+
+            const exitGame = () => {
+                setIsMultiplayer(false);
+                setView('landing');
+            };
+
+            const setNextGlose = () => {
+                if (allGloser.length === 0) return;
+                const rand = allGloser[Math.floor(Math.random()*allGloser.length)];
+                setGameState({ input: "", currentGlose: rand, feedback: null });
+                setShowHint(false); 
+            };
+
+            const checkAnswer = (e) => {
+                e.preventDefault();
+                if (gameState.feedback || !gameState.currentGlose || (isMultiplayer && playerHP <= 0)) return;
+
+                const user = gameState.input.trim().toLowerCase();
+                
+                const correctAnswers = gameState.currentGlose.a.split(/[/,;]/).map(ans => ans.trim().toLowerCase());
+                const isCorrect = correctAnswers.includes(user);
+                
+                if (isCorrect) {
+                    setGameState(p => ({ ...p, feedback: "✓ DATA MATCHED" }));
+                    
+                    const newMyHP = Math.min(200, playerHP + 10);
+                    setPlayerHP(newMyHP);
+
+                    if (isMultiplayer) {
+                        const tokenParam = authToken ? `?auth=${authToken}` : '';
+                        
+                        fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${playerId}/hp.json${tokenParam}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(newMyHP)
+                        });
+
+                        if (gameMode === 'duel') {
+                            const newOppHP = Math.max(0, opponentHP - 20);
+                            setOpponentHP(newOppHP);
+                            const targetId = playersInRoom.find(p => p.id !== playerId)?.id;
+                            if (targetId) {
+                                fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${targetId}/hp.json${tokenParam}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newOppHP) });
+                            }
+                        } else if (gameMode === 'royale') {
+                            const activeOpponents = playersInRoom.filter(p => p.id !== playerId && p.hp > 0);
+                            if (activeOpponents.length > 0) {
+                                const target = activeOpponents[Math.floor(Math.random() * activeOpponents.length)];
+                                const targetNewHP = Math.max(0, target.hp - 20);
+                                fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${target.id}/hp.json${tokenParam}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(targetNewHP) });
+                            }
+                        }
+                    } else { 
+                        setOpponentHP(prev => Math.max(0, prev - 20)); 
+                    }
+                    setTimeout(setNextGlose, 600);
+                } else {
+                    setGameState(p => ({ ...p, feedback: "✗ BREACH DETECTED" }));
+                    const newHP = Math.max(0, playerHP - 20);
+                    setPlayerHP(newHP);
+                    if (isMultiplayer) {
+                        const tokenParam = authToken ? `?auth=${authToken}` : '';
+                        fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${playerId}/hp.json${tokenParam}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newHP) });
+                    } else {
+                        setOpponentHP(prev => Math.min(200, prev + 20));
+                    }
+                    setTimeout(() => setGameState(p => ({ ...p, feedback: null })), 1000);
+                }
+            };
+
+            const getRoyaleWinner = () => {
+                const active = playersInRoom.filter(p => p.hp > 0);
+                if (active.length === 1) return active[0].name;
+                return "Unknown Node";
+            };
+
+            const getHPColorClass = (hp) => {
+                if (hp <= 0) return 'text-zinc-600';
+                if (hp <= 30) return 'text-red-500';
+                if (hp <= 100) return 'text-yellow-400';
+                return 'text-green-400'; 
+            };
+
+            const getHPBarColorClass = (hp) => {
+                if (hp <= 30) return 'bg-red-500';
+                if (hp <= 100) return 'bg-yellow-400';
+                return 'bg-green-400';
+            };
+
+            useEffect(() => {
+                if (playersInRoom.length > 0) {
+                    const currentHPMap = {};
+                    playersInRoom.forEach(p => { currentHPMap[p.id] = p.hp; });
+                    prevPlayersHP.current = currentHPMap;
+                }
+            }, [playersInRoom]);
+
+            return (
+                /* EMBED SIKKER LYTTER-VIEWPORT 
+                   Hele applikasjonen er nå lukket inne i en scroll-container som starter på piksel y=0,
+                   og er fullstendig uavhengig av ekstern scrolling. Ingen elementer vil noen gang dyttes
+                   opp og ut av syne igjen i Google Sites.
+                */
+                <div ref={scrollContainerRef} className="scroll-container">
+                    <div className="w-full max-w-xl mx-auto px-4 space-y-4">
+                        {view === 'landing' && (
+                            <div className="bg-black/85 p-6 sm:p-8 matrix-border text-center space-y-6">
+                                <h1 className="text-3xl font-bold text-white tracking-tighter">NEURAL_DECODER v2.4</h1>
+                                <input className="w-full p-3 text-center" placeholder="ID" value={playerName} onChange={e => setPlayerName(e.target.value)} />
+                                <div className="grid grid-cols-1 gap-4">
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                                        <div className="flex flex-col space-y-1">
+                                            <span className="text-[10px] text-green-500/60 uppercase tracking-widest font-mono">Ordliste:</span>
+                                            <select className="p-3 w-full" value={listCode} onChange={e => setListCode(e.target.value)}>
+                                                {availableLists.map(list => (
+                                                    <option key={list.code} value={list.code}>{list.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col space-y-1">
+                                            <span className="text-[10px] text-green-500/60 uppercase tracking-widest font-mono">Modus:</span>
+                                            <select className="p-3 bg-black text-green-400 border border-green-400 font-mono w-full" value={gameMode} onChange={e => setGameMode(e.target.value)}>
+                                                <option value="duel">Duell (1v1)</option>
+                                                <option value="royale">Battle Royale</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-xs border border-green-950/60 bg-green-950/10 p-2.5 rounded font-mono">
+                                        <span className="text-[10px] text-green-500/40 uppercase tracking-wider">Tilkobling: REST-Proxy</span>
+                                        <button 
+                                            onClick={forceRefreshCurrentList}
+                                            disabled={isRefreshing}
+                                            title="Hent endringer direkte fra Google Sheets"
+                                            className="py-1 px-3 border border-yellow-600/80 text-yellow-500 hover:bg-yellow-600 hover:text-black font-bold text-[10px] uppercase transition-all duration-200"
+                                        >
+                                            {isRefreshing ? "SYNCING..." : "⟳ Oppdater fra Sheets"}
+                                        </button>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button onClick={handleHost} disabled={isLoading || isRefreshing} className="btn-matrix flex-1 p-3">
+                                            Host Node
+                                        </button>
+                                        <div className="flex flex-1 gap-1">
+                                            <input className="w-16 text-center" placeholder="PIN" value={gamePin} onChange={e => setGamePin(e.target.value)} />
+                                            <button onClick={handleJoin} disabled={isLoading || isRefreshing} className="btn-matrix flex-1 p-3">
+                                                Join
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button onClick={handleSingle} disabled={isLoading || isRefreshing} className="btn-matrix p-4 font-bold bg-green-900/10">Solo Game</button>
+                                    
+                                    <p className="text-[9px] text-yellow-500/70 uppercase font-mono tracking-widest text-center">
+                                        💡 Google Sites Tips: Sett iFrame-høyden til minst 650px i Sites-editoren!
+                                    </p>
+
+                                    {error && (
+                                            <div className="p-3 border border-red-900 bg-red-950/20">
+                                                <p className="text-red-500 text-[10px] uppercase font-bold animate-pulse">{error}</p>
+                                            </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'lobby' && (
+                            <div className="bg-black/90 p-10 matrix-border text-center space-y-6">
+                                <div>
+                                    <p className="text-[10px] opacity-50 mb-1">NODE_ADDRESS</p>
+                                    <h2 className="text-6xl font-bold text-white tracking-widest">{gamePin}</h2>
+                                    <p className="text-[10px] text-green-500/80 mt-1">MODUS: {gameMode === 'duel' ? '1v1 DUELL' : 'BATTLE ROYALE'}</p>
+                                </div>
+                                <p className="text-xl uppercase border-y border-green-900 py-2">{listTitle}</p>
+                                
+                                <div className="space-y-2 max-h-48 overflow-y-auto p-2 border border-green-900/50 bg-black/40">
+                                    <p className="text-[10px] opacity-40 text-left uppercase">Connected Nodes ({playersInRoom.length}):</p>
+                                    {playersInRoom.map((p, index) => (
+                                        <div key={p.id} className="flex justify-between items-center text-xs border-b border-green-950/40 py-1">
+                                            <p className="font-mono text-white">[{index + 1}] {p.name} {p.id === playerId && " (YOU)"}</p>
+                                            <p className="text-[10px] px-1.5 py-0.5 bg-green-950 text-green-300 rounded font-bold">READY</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-4 pt-2">
+                                    {isHost ? (
+                                        <button onClick={startGame} className="btn-matrix p-5 w-full font-bold text-2xl">Execute Duel</button>
+                                    ) : (
+                                        <div className="py-4">
+                                            <p className="animate-pulse text-sm uppercase tracking-widest">Awaiting Host Authorization...</p>
+                                        </div>
+                                    )}
+                                    <button onClick={exitGame} className="text-[10px] uppercase opacity-40 hover:opacity-100 transition-colors">Abort Session</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'game' && gameState.currentGlose && (
+                            <div className="space-y-4">
+                                {gameMode === 'duel' ? (
+                                    <div className="flex justify-between items-center bg-black/80 p-4 matrix-border">
+                                        <div className="w-5/12">
+                                            <p className="text-[10px] truncate">{playerName} [{playerHP}/200 HP]</p>
+                                            <div className="h-1.5 bg-gray-900"><div className="h-full bg-green-500 transition-all duration-500" style={{width: `${(playerHP / 200) * 100}%`}}></div></div>
+                                        </div>
+                                        <div className="px-2 text-red-500 font-bold text-xs uppercase">1v1</div>
+                                        <div className="w-5/12 text-right">
+                                            <p className="text-[10px] truncate">{opponentName} [{opponentHP}/200 HP]</p>
+                                            <div className="h-1.5 bg-gray-900"><div className="h-full bg-red-600 transition-all duration-500" style={{width: `${(opponentHP / 200) * 100}%`}}></div></div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-black/80 p-3 matrix-border space-y-1.5">
+                                        <p className="text-[9px] opacity-40 uppercase">Battle Royale Monitor (Max 200 HP):</p>
+                                        <div className="grid grid-cols-2 gap-2 text-[10px] max-h-32 overflow-y-auto font-mono">
+                                            {playersInRoom.map(p => {
+                                                const prevHP = prevPlayersHP.current[p.id];
+                                                const tookDamage = prevHP !== undefined && p.hp < prevHP;
+                                                const colorClass = getHPColorClass(p.hp);
+                                                return (
+                                                    <div key={p.id} className={`flex flex-col p-1.5 border transition-all duration-300 ${tookDamage ? 'damage-flash' : ''} ${p.id === playerId ? 'border-green-400 bg-green-950/10' : p.hp <= 0 ? 'border-zinc-800 bg-zinc-950/20' : 'border-green-950'} rounded`}>
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className={`truncate max-w-[110px] font-bold ${colorClass}`}>{p.name} {p.id === playerId && " (YOU)"}</span>
+                                                            <span className={`font-black ${colorClass}`}>{p.hp <= 0 ? "DEAD" : `${p.hp}/200`}</span>
+                                                        </div>
+                                                        {p.hp > 0 && (
+                                                            <div className="h-1 bg-zinc-900 w-full overflow-hidden rounded-sm">
+                                                                <div className={`h-full transition-all duration-500 ${getHPBarColorClass(p.hp)}`} style={{ width: `${(p.hp / 200) * 100}%` }}></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="bg-black/85 p-6 sm:p-10 matrix-border text-center relative">
+                                    {playerHP <= 0 ? (
+                                        <div className="py-12 space-y-2 animate-pulse text-red-500">
+                                            <h2 className="text-3xl font-black italic tracking-wide">NODE_ELIMINATED</h2>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-[10px] uppercase text-green-500/40 font-mono tracking-widest mb-1">Oversett / Finn synonym:</p>
+                                            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white uppercase tracking-tight">{gameState.currentGlose.q}</h2>
+                                            
+                                            <div className="flex flex-col items-center justify-center min-h-[40px] mb-6">
+                                                {showHint ? (
+                                                    <div className="text-xs text-yellow-500 font-mono tracking-widest bg-yellow-950/20 border border-yellow-900/30 px-3 py-1.5 rounded animate-pulse">
+                                                        DEKRYPTERT: {(() => {
+                                                            const primary = gameState.currentGlose.a.split(/[/,;]/)[0].trim();
+                                                            return primary[0].toUpperCase() + " " + "_ ".repeat(primary.length - 1).trim() + ` (${primary.length} tegn)`;
+                                                        })()}
+                                                    </div>
+                                                ) : (
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => setShowHint(true)} 
+                                                        className="text-[10px] text-yellow-500/60 border border-yellow-900/30 px-3 py-1.5 hover:bg-yellow-950/40 hover:text-yellow-400 transition-all duration-200 uppercase rounded font-mono"
+                                                    >
+                                                        [ Dekrypter Glose-Hint ]
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <form onSubmit={checkAnswer}>
+                                                <input 
+                                                    className="w-full bg-transparent text-2xl sm:text-3xl text-center p-2 border-b-2 border-green-900 focus:border-white transition-colors" 
+                                                    value={gameState.input} 
+                                                    onChange={e => setGameState(p => ({...p, input: e.target.value}))} 
+                                                    spellCheck="false" 
+                                                    autoComplete="off" 
+                                                    placeholder="SKRIV SVAR HER..."
+                                                />
+                                            </form>
+                                        </>
+                                    )}
+                                    {gameState.feedback && (
+                                        <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-20">
+                                            <p className={`text-3xl font-black tracking-tighter ${gameState.feedback.includes('✓') ? 'text-green-400' : 'text-red-500'}`}>{gameState.feedback}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'result' && (
+                            <div className="bg-black/95 p-12 matrix-border text-center space-y-8">
+                                <h2 className="result-text font-black italic text-green-400 animate-pulse">
+                                    {playerHP > 0 ? 'MISSION_ACCOMPLISHED' : 'SYSTEM_FAILURE'}
+                                </h2>
+                                {gameMode === 'royale' && (
+                                    <p className="text-yellow-500 font-mono font-bold mt-2">WINNER: {getRoyaleWinner()}</p>
+                                )}
+                                <button onClick={exitGame} className="btn-matrix w-full p-5 font-bold text-xl">Return to Base</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render((<App />));
+    </script>
+</body>
+</html>
