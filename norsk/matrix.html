@@ -15,10 +15,6 @@
     <style>
         :root { --matrix-green: #00FF41; --matrix-dark: #000800; --matrix-glow: rgba(0, 255, 65, 0.2); }
         
-        /* EMBED FIX: 
-           Vi låser html og body fullstendig til 100% av iFrame-vinduet og skrur av all scrolling på body-nivå.
-           Dette gjør det fysisk umulig for Google Sites å rulle iFramen oppover!
-        */
         html, body {
             margin: 0;
             padding: 0;
@@ -30,7 +26,6 @@
             color: var(--matrix-green);
         }
 
-        /* En intern, kontrollert rullebeholder som holder spillet stabilt på toppen */
         .scroll-container {
             position: absolute;
             top: 0;
@@ -67,7 +62,6 @@
     </style>
 </head>
 <body>
-    <!-- Canvas for Matrix Digital Rain bakgrunnseffekt -->
     <canvas id="matrix-rain" class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none opacity-65"></canvas>
 
     <div class="scanline"></div>
@@ -121,6 +115,9 @@
             }
         };
 
+        const START_HP = 150; // Økt start-HP for lengre kamper
+        const DAMAGE_PER_HIT = 10; // Redusert skade per treff/feil for bedre balanse
+
         const App = () => {
             const [view, setView] = useState('landing');
             const [logs, setLogs] = useState(["[SYS] Core Init..."]);
@@ -135,8 +132,8 @@
             const [isMultiplayer, setIsMultiplayer] = useState(false);
             const [isHost, setIsHost] = useState(false);
             const [gameMode, setGameMode] = useState("duel");
-            const [playerHP, setPlayerHP] = useState(100);
-            const [opponentHP, setOpponentHP] = useState(100);
+            const [playerHP, setPlayerHP] = useState(START_HP);
+            const [opponentHP, setOpponentHP] = useState(START_HP);
             const [opponentName, setOpponentName] = useState("Sentinel");
             const [allGloser, setAllGloser] = useState([]);
             const [listTitle, setListTitle] = useState("");
@@ -166,14 +163,12 @@
                 setLogs(prev => [...prev.slice(-25), `[${time}] ${msg}`]);
             };
 
-            // EMBED-FIX: Gjenoppretter skrollposisjon til toppen i den interne boksen ved skjermbytte
             useEffect(() => {
                 if (scrollContainerRef.current) {
                     scrollContainerRef.current.scrollTop = 0;
                 }
             }, [view]);
 
-            // Matrix Rain Bakgrunnseffekt
             useEffect(() => {
                 const canvas = document.getElementById('matrix-rain');
                 if (!canvas) return;
@@ -300,7 +295,7 @@
                             const playersList = Object.keys(playersMap).map(id => ({
                                 id,
                                 name: playersMap[id].name || "Anonymous",
-                                hp: playersMap[id].hp !== undefined ? playersMap[id].hp : 100
+                                hp: playersMap[id].hp !== undefined ? playersMap[id].hp : START_HP
                             }));
                             setPlayersInRoom(playersList);
 
@@ -328,20 +323,28 @@
                 };
             }, [isMultiplayer, gamePin, isHost, view, authToken, gameMode, playerId]);
 
+            // KAMPSTATUS-SJEKK (OPPDATERT FOR A UNNGA SOLO-FEIL OG GI RIKTIG VINDER)
             useEffect(() => {
                 if (view === 'game') {
-                    if (gameMode === 'duel') {
+                    if (!isMultiplayer) {
+                        // Solo-modus: Sjekker kun at din egen HP ikke har nådd 0
+                        if (playerHP <= 0) {
+                            setTimeout(() => setView('result'), 800);
+                        }
+                    } else if (gameMode === 'duel') {
+                        // Flerspiller 1v1
                         if (playerHP <= 0 || opponentHP <= 0) {
                             setTimeout(() => setView('result'), 800);
                         }
                     } else if (gameMode === 'royale') {
+                        // Battle Royale
                         const activePlayers = playersInRoom.filter(p => p.hp > 0);
                         if (playersInRoom.length > 1 && activePlayers.length <= 1) {
                             setTimeout(() => setView('result'), 800);
                         }
                     }
                 }
-            }, [playerHP, opponentHP, playersInRoom, view, gameMode]);
+            }, [playerHP, opponentHP, playersInRoom, view, gameMode, isMultiplayer]);
 
             const cacheListToFirebase = async (code, listData) => {
                 try {
@@ -452,8 +455,8 @@
                     setGamePin(pin);
                     setIsHost(true);
                     setIsMultiplayer(true);
-                    setPlayerHP(100);
-                    setOpponentHP(100);
+                    setPlayerHP(START_HP);
+                    setOpponentHP(START_HP);
                     setView('lobby'); 
 
                     const tokenParam = authToken ? `?auth=${authToken}` : '';
@@ -466,7 +469,7 @@
                             listTitle: data.name || "Glose-Liste",
                             status: 'waiting',
                             gameMode: gameMode,
-                            players: { [playerId]: { name: playerName, hp: 100 } }
+                            players: { [playerId]: { name: playerName, hp: START_HP } }
                         })
                     });
                 } catch (e) {
@@ -493,14 +496,14 @@
                     setGameMode(room.gameMode || 'duel');
                     setIsHost(false);
                     setIsMultiplayer(true);
-                    setPlayerHP(100);
-                    setOpponentHP(100);
+                    setPlayerHP(START_HP);
+                    setOpponentHP(START_HP);
                     setView('lobby');
 
                     await fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${playerId}.json${tokenParam}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: playerName, hp: 100 })
+                        body: JSON.stringify({ name: playerName, hp: START_HP })
                     });
                 } catch (e) { setError(e.message || "Tilkobling feilet."); }
                 finally { setIsLoading(false); }
@@ -511,12 +514,10 @@
                 try {
                     const data = await fetchWords(listCode, false);
                     setAllGloser(data.words);
-                    setListTitle(data.name || "Solo");
+                    setListTitle(data.name || "Solo Trening");
                     setIsMultiplayer(false);
                     setIsHost(false);
-                    setOpponentName("Sentinel");
-                    setPlayerHP(100);
-                    setOpponentHP(100);
+                    setPlayerHP(START_HP);
                     
                     const rand = data.words[Math.floor(Math.random()*data.words.length)];
                     setGameState({ input: "", currentGlose: rand, feedback: null });
@@ -560,7 +561,7 @@
                 if (isCorrect) {
                     setGameState(p => ({ ...p, feedback: "✓ DATA MATCHED" }));
                     
-                    const newMyHP = Math.min(200, playerHP + 10);
+                    const newMyHP = Math.min(START_HP * 1.5, playerHP + 5); // Får litt bonus HP ved riktig svar
                     setPlayerHP(newMyHP);
 
                     if (isMultiplayer) {
@@ -573,7 +574,7 @@
                         });
 
                         if (gameMode === 'duel') {
-                            const newOppHP = Math.max(0, opponentHP - 20);
+                            const newOppHP = Math.max(0, opponentHP - DAMAGE_PER_HIT);
                             setOpponentHP(newOppHP);
                             const targetId = playersInRoom.find(p => p.id !== playerId)?.id;
                             if (targetId) {
@@ -583,23 +584,19 @@
                             const activeOpponents = playersInRoom.filter(p => p.id !== playerId && p.hp > 0);
                             if (activeOpponents.length > 0) {
                                 const target = activeOpponents[Math.floor(Math.random() * activeOpponents.length)];
-                                const targetNewHP = Math.max(0, target.hp - 20);
+                                const targetNewHP = Math.max(0, target.hp - DAMAGE_PER_HIT);
                                 fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${target.id}/hp.json${tokenParam}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(targetNewHP) });
                             }
                         }
-                    } else { 
-                        setOpponentHP(prev => Math.max(0, prev - 20)); 
                     }
                     setTimeout(setNextGlose, 600);
                 } else {
                     setGameState(p => ({ ...p, feedback: "✗ BREACH DETECTED" }));
-                    const newHP = Math.max(0, playerHP - 20);
+                    const newHP = Math.max(0, playerHP - DAMAGE_PER_HIT);
                     setPlayerHP(newHP);
                     if (isMultiplayer) {
                         const tokenParam = authToken ? `?auth=${authToken}` : '';
                         fetch(`https://norskspill-564a7-default-rtdb.europe-west1.firebasedatabase.app/rooms/${gamePin}/players/${playerId}/hp.json${tokenParam}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newHP) });
-                    } else {
-                        setOpponentHP(prev => Math.min(200, prev + 20));
                     }
                     setTimeout(() => setGameState(p => ({ ...p, feedback: null })), 1000);
                 }
@@ -613,13 +610,13 @@
 
             const getHPColorClass = (hp) => {
                 if (hp <= 0) return 'text-zinc-600';
-                if (hp <= 30) return 'text-red-500';
+                if (hp <= 40) return 'text-red-500';
                 if (hp <= 100) return 'text-yellow-400';
                 return 'text-green-400'; 
             };
 
             const getHPBarColorClass = (hp) => {
-                if (hp <= 30) return 'bg-red-500';
+                if (hp <= 40) return 'bg-red-500';
                 if (hp <= 100) return 'bg-yellow-400';
                 return 'bg-green-400';
             };
@@ -633,16 +630,11 @@
             }, [playersInRoom]);
 
             return (
-                /* EMBED SIKKER LYTTER-VIEWPORT 
-                   Hele applikasjonen er nå lukket inne i en scroll-container som starter på piksel y=0,
-                   og er fullstendig uavhengig av ekstern scrolling. Ingen elementer vil noen gang dyttes
-                   opp og ut av syne igjen i Google Sites.
-                */
                 <div ref={scrollContainerRef} className="scroll-container">
                     <div className="w-full max-w-xl mx-auto px-4 space-y-4">
                         {view === 'landing' && (
                             <div className="bg-black/85 p-6 sm:p-8 matrix-border text-center space-y-6">
-                                <h1 className="text-3xl font-bold text-white tracking-tighter">NEURAL_DECODER v2.4</h1>
+                                <h1 className="text-3xl font-bold text-white tracking-tighter">NEURAL_DECODER v2.5</h1>
                                 <input className="w-full p-3 text-center" placeholder="ID" value={playerName} onChange={e => setPlayerName(e.target.value)} />
                                 <div className="grid grid-cols-1 gap-4">
                                     
@@ -687,12 +679,8 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <button onClick={handleSingle} disabled={isLoading || isRefreshing} className="btn-matrix p-4 font-bold bg-green-900/10">Solo Game</button>
+                                    <button onClick={handleSingle} disabled={isLoading || isRefreshing} className="btn-matrix p-4 font-bold bg-green-900/10">Solo Trening</button>
                                     
-                                    <p className="text-[9px] text-yellow-500/70 uppercase font-mono tracking-widest text-center">
-                                        💡 Google Sites Tips: Sett iFrame-høyden til minst 650px i Sites-editoren!
-                                    </p>
-
                                     {error && (
                                             <div className="p-3 border border-red-900 bg-red-950/20">
                                                 <p className="text-red-500 text-[10px] uppercase font-bold animate-pulse">{error}</p>
@@ -736,41 +724,47 @@
 
                         {view === 'game' && gameState.currentGlose && (
                             <div className="space-y-4">
-                                {gameMode === 'duel' ? (
-                                    <div className="flex justify-between items-center bg-black/80 p-4 matrix-border">
-                                        <div className="w-5/12">
-                                            <p className="text-[10px] truncate">{playerName} [{playerHP}/200 HP]</p>
-                                            <div className="h-1.5 bg-gray-900"><div className="h-full bg-green-500 transition-all duration-500" style={{width: `${(playerHP / 200) * 100}%`}}></div></div>
+                                {isMultiplayer ? (
+                                    gameMode === 'duel' ? (
+                                        <div className="flex justify-between items-center bg-black/80 p-4 matrix-border">
+                                            <div className="w-5/12">
+                                                <p className="text-[10px] truncate">{playerName} [{playerHP}/{START_HP} HP]</p>
+                                                <div className="h-1.5 bg-gray-900"><div className="h-full bg-green-500 transition-all duration-500" style={{width: `${Math.min(100, (playerHP / START_HP) * 100)}%`}}></div></div>
+                                            </div>
+                                            <div className="px-2 text-red-500 font-bold text-xs uppercase">1v1</div>
+                                            <div className="w-5/12 text-right">
+                                                <p className="text-[10px] truncate">{opponentName} [{opponentHP}/{START_HP} HP]</p>
+                                                <div className="h-1.5 bg-gray-900"><div className="h-full bg-red-600 transition-all duration-500" style={{width: `${Math.min(100, (opponentHP / START_HP) * 100)}%`}}></div></div>
+                                            </div>
                                         </div>
-                                        <div className="px-2 text-red-500 font-bold text-xs uppercase">1v1</div>
-                                        <div className="w-5/12 text-right">
-                                            <p className="text-[10px] truncate">{opponentName} [{opponentHP}/200 HP]</p>
-                                            <div className="h-1.5 bg-gray-900"><div className="h-full bg-red-600 transition-all duration-500" style={{width: `${(opponentHP / 200) * 100}%`}}></div></div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-black/80 p-3 matrix-border space-y-1.5">
-                                        <p className="text-[9px] opacity-40 uppercase">Battle Royale Monitor (Max 200 HP):</p>
-                                        <div className="grid grid-cols-2 gap-2 text-[10px] max-h-32 overflow-y-auto font-mono">
-                                            {playersInRoom.map(p => {
-                                                const prevHP = prevPlayersHP.current[p.id];
-                                                const tookDamage = prevHP !== undefined && p.hp < prevHP;
-                                                const colorClass = getHPColorClass(p.hp);
-                                                return (
-                                                    <div key={p.id} className={`flex flex-col p-1.5 border transition-all duration-300 ${tookDamage ? 'damage-flash' : ''} ${p.id === playerId ? 'border-green-400 bg-green-950/10' : p.hp <= 0 ? 'border-zinc-800 bg-zinc-950/20' : 'border-green-950'} rounded`}>
-                                                        <div className="flex justify-between items-center mb-1">
-                                                            <span className={`truncate max-w-[110px] font-bold ${colorClass}`}>{p.name} {p.id === playerId && " (YOU)"}</span>
-                                                            <span className={`font-black ${colorClass}`}>{p.hp <= 0 ? "DEAD" : `${p.hp}/200`}</span>
-                                                        </div>
-                                                        {p.hp > 0 && (
-                                                            <div className="h-1 bg-zinc-900 w-full overflow-hidden rounded-sm">
-                                                                <div className={`h-full transition-all duration-500 ${getHPBarColorClass(p.hp)}`} style={{ width: `${(p.hp / 200) * 100}%` }}></div>
+                                    ) : (
+                                        <div className="bg-black/80 p-3 matrix-border space-y-1.5">
+                                            <p className="text-[9px] opacity-40 uppercase">Battle Royale Monitor:</p>
+                                            <div className="grid grid-cols-2 gap-2 text-[10px] max-h-32 overflow-y-auto font-mono">
+                                                {playersInRoom.map(p => {
+                                                    const prevHP = prevPlayersHP.current[p.id];
+                                                    const tookDamage = prevHP !== undefined && p.hp < prevHP;
+                                                    const colorClass = getHPColorClass(p.hp);
+                                                    return (
+                                                        <div key={p.id} className={`flex flex-col p-1.5 border transition-all duration-300 ${tookDamage ? 'damage-flash' : ''} ${p.id === playerId ? 'border-green-400 bg-green-950/10' : p.hp <= 0 ? 'border-zinc-800 bg-zinc-950/20' : 'border-green-950'} rounded`}>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <span className={`truncate max-w-[110px] font-bold ${colorClass}`}>{p.name} {p.id === playerId && " (YOU)"}</span>
+                                                                <span className={`font-black ${colorClass}`}>{p.hp <= 0 ? "DEAD" : `${p.hp}/${START_HP}`}</span>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
+                                                            {p.hp > 0 && (
+                                                                <div className="h-1 bg-zinc-900 w-full overflow-hidden rounded-sm">
+                                                                    <div className={`h-full transition-all duration-500 ${getHPBarColorClass(p.hp)}`} style={{ width: `${Math.min(100, (p.hp / START_HP) * 100)}%` }}></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
+                                    )
+                                ) : (
+                                    <div className="bg-black/80 p-3 matrix-border text-center">
+                                        <p className="text-[10px] text-green-400 uppercase font-mono tracking-widest">SOLO TRENINGSMODUS [{playerHP} HP]</p>
                                     </div>
                                 )}
 
@@ -829,7 +823,7 @@
                                 <h2 className="result-text font-black italic text-green-400 animate-pulse">
                                     {playerHP > 0 ? 'MISSION_ACCOMPLISHED' : 'SYSTEM_FAILURE'}
                                 </h2>
-                                {gameMode === 'royale' && (
+                                {isMultiplayer && gameMode === 'royale' && (
                                     <p className="text-yellow-500 font-mono font-bold mt-2">WINNER: {getRoyaleWinner()}</p>
                                 )}
                                 <button onClick={exitGame} className="btn-matrix w-full p-5 font-bold text-xl">Return to Base</button>
