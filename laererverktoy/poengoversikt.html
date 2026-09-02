@@ -1,396 +1,472 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { Trophy, Users, Plus, Trash2, Award, TrendingUp, AlertCircle, Save, Share2, Loader2, X, ArrowLeft } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klasse-Konkurranse Oversikt</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome ikoner -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel compiler for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
+  <div id="root"></div>
 
-// Firebase-konfigurasjon
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'klasse-konkurranse-default';
+  <!-- Firebase Scripts (ES Modules bridge) -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-const App = () => {
-  // Autentisering og Sky-status
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // App-tilstand
-  const [students, setStudents] = useState([]);
-  const [newStudentName, setNewStudentName] = useState('');
-  const [weeklyResults, setWeeklyResults] = useState([]);
-  const [activeTab, setActiveTab] = useState('summary');
-
-  // Skjema-tilstand for ny uke
-  const [currentWeek, setCurrentWeek] = useState(1);
-  const [tempWinners, setTempWinners] = useState([{ name: '', points: 10, rank: 1 }]);
-  const [error, setError] = useState('');
-
-  // 1. Initialiser Autentisering (Regel 3)
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("Autentiseringsfeil:", err);
-      }
+    // Gjør Firebase tilgjengelig globalt slik at Babel/React kan bruke det uten import-problemer
+    window.FirebaseBridge = {
+      initializeApp,
+      getAuth,
+      signInAnonymously,
+      onAuthStateChanged,
+      signInWithCustomToken,
+      getFirestore,
+      doc,
+      setDoc,
+      onSnapshot
     };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        setUser(u);
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
-  // 2. Lytt til Firestore-data (Regel 1 og 3)
-  useEffect(() => {
-    if (!user) return;
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'competition', 'state');
-    
-    const unsubscribe = onSnapshot(docRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data.students) setStudents(data.students);
-        if (data.weeklyResults) {
-          setWeeklyResults(data.weeklyResults);
-          setCurrentWeek(data.weeklyResults.length + 1);
+    // Utløs en event slik at React-appen vet at Firebase er klart
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
+
+  <!-- Applikasjonslogikk (React + JSX) -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const App = () => {
+      const [fb, setFb] = useState(window.FirebaseBridge || null);
+      const [user, setUser] = useState(null);
+      const [loading, setLoading] = useState(true);
+
+      // App-tilstand
+      const [students, setStudents] = useState([]);
+      const [newStudentName, setNewStudentName] = useState('');
+      const [weeklyResults, setWeeklyResults] = useState([]);
+      const [activeTab, setActiveTab] = useState('summary');
+
+      // Skjema-tilstand for ny uke
+      const [currentWeek, setCurrentWeek] = useState(1);
+      const [tempWinners, setTempWinners] = useState([{ name: '', points: 10, rank: 1 }]);
+      const [error, setError] = useState('');
+
+      // Vent på Firebase bridge
+      useEffect(() => {
+        if (!fb) {
+          const handleReady = () => setFb(window.FirebaseBridge);
+          window.addEventListener('firebase-ready', handleReady);
+          return () => window.removeEventListener('firebase-ready', handleReady);
         }
-      }
-    }, (err) => {
-      console.error("Firestore-feil:", err);
-    });
+      }, [fb]);
 
-    return () => unsubscribe();
-  }, [user]);
-
-  // 3. Lagre til skyen
-  const saveToCloud = async (newStudents, newResults) => {
-    if (!user) return;
-    try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'competition', 'state');
-      await setDoc(docRef, {
-        students: newStudents || students,
-        weeklyResults: newResults || weeklyResults,
-        lastUpdated: new Date().toISOString()
-      }, { merge: true });
-    } catch (err) {
-      console.error("Lagringsfeil:", err);
-      setError('Kunne ikke lagre til skyen.');
-    }
-  };
-
-  // Elev-handlinger
-  const addStudent = () => {
-    const trimmed = newStudentName.trim();
-    if (trimmed && !students.includes(trimmed)) {
-      const updated = [...students, trimmed];
-      setStudents(updated);
-      setNewStudentName('');
-      saveToCloud(updated, null);
-    }
-  };
-
-  const removeStudent = (name) => {
-    const updated = students.filter(s => s !== name);
-    setStudents(updated);
-    saveToCloud(updated, null);
-  };
-
-  // Resultat-handlinger (Nå med støtte for delte plasser)
-  const addWinnerRow = () => {
-    const lastRank = tempWinners.length > 0 ? tempWinners[tempWinners.length - 1].rank : 0;
-    const nextPoints = Math.max(0, 10 - (tempWinners.length * 2)); // Forslag til poeng
-    setTempWinners([...tempWinners, { name: '', points: nextPoints, rank: lastRank + 1 }]);
-  };
-
-  const removeWinnerRow = (index) => {
-    setTempWinners(tempWinners.filter((_, i) => i !== index));
-  };
-
-  const updateWinnerRow = (index, field, value) => {
-    const updated = [...tempWinners];
-    updated[index][field] = field === 'points' || field === 'rank' ? Number(value) : value;
-    setTempWinners(updated);
-  };
-
-  const addWeeklyResult = () => {
-    setError('');
-    const validWinners = tempWinners.filter(w => w.name !== '');
-    
-    if (validWinners.length === 0) {
-      setError('Du må legge til minst én elev med navn.');
-      return;
-    }
-
-    const names = validWinners.map(w => w.name);
-    if (new Set(names).size !== names.length) {
-      setError('Samme elev kan ikke registreres flere ganger samme uke.');
-      return;
-    }
-
-    const updatedResults = [...weeklyResults, { 
-      week: Number(currentWeek), 
-      winners: validWinners 
-    }];
-    
-    setWeeklyResults(updatedResults);
-    saveToCloud(null, updatedResults);
-    
-    // Reset skjema
-    setTempWinners([{ name: '', points: 10, rank: 1 }]);
-    setCurrentWeek(updatedResults.length + 1);
-  };
-
-  // Beregninger
-  const leaderboard = useMemo(() => {
-    const scores = {};
-    students.forEach(s => scores[s] = 0);
-    
-    weeklyResults.forEach(week => {
-      week.winners.forEach(winner => {
-        if (scores.hasOwnProperty(winner.name)) {
-          scores[winner.name] += winner.points;
+      // Firebase instanser
+      const { app, auth, db, appId } = useMemo(() => {
+        if (!fb) return {};
+        
+        let firebaseConfig = {};
+        try {
+          if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+          }
+        } catch (e) {
+          console.warn("Ingen global Firebase-konfigurasjon funnet.");
         }
-      });
-    });
 
-    return Object.entries(scores)
-      .map(([name, score]) => ({ name, score }))
-      .sort((a, b) => b.score - a.score);
-  }, [students, weeklyResults]);
+        const appInstance = Object.keys(firebaseConfig).length > 0 ? fb.initializeApp(firebaseConfig) : null;
+        const authInstance = appInstance ? fb.getAuth(appInstance) : null;
+        const dbInstance = appInstance ? fb.getFirestore(appInstance) : null;
+        const id = typeof __app_id !== 'undefined' ? __app_id : 'klasse-konkurranse-default';
 
-  const top3 = leaderboard.slice(0, 3);
+        return { app: appInstance, auth: authInstance, db: dbInstance, appId: id };
+      }, [fb]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">Laster konkurranse...</p>
-        </div>
-      </div>
-    );
-  }
+      // 1. Initialiser Autentisering
+      useEffect(() => {
+        if (!fb || !auth) {
+          setLoading(false);
+          return;
+        }
 
-  // Pall-komponent
-  const Podium = () => {
-    const displayOrder = [
-      top3[1] || { name: '-', score: 0 },
-      top3[0] || { name: '-', score: 0 },
-      top3[2] || { name: '-', score: 0 }
-    ];
+        const initAuth = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await fb.signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await fb.signInAnonymously(auth);
+            }
+          } catch (err) {
+            console.error("Autentiseringsfeil:", err);
+          }
+        };
+        initAuth();
+        const unsubscribe = fb.onAuthStateChanged(auth, (u) => {
+          if (u) {
+            setUser(u);
+            setLoading(false);
+          }
+        });
+        return () => unsubscribe();
+      }, [fb, auth]);
 
-    const heights = ['h-32', 'h-48', 'h-24'];
-    const colors = ['bg-slate-300', 'bg-yellow-400', 'bg-orange-400'];
-    const labels = ['2', '1', '3'];
+      // 2. Lytt til Firestore-data
+      useEffect(() => {
+        if (!user || !db || !fb) return;
+        const docRef = fb.doc(db, 'artifacts', appId, 'public', 'data', 'competition', 'state');
+        
+        const unsubscribe = fb.onSnapshot(docRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            if (data.students) setStudents(data.students);
+            if (data.weeklyResults) {
+              setWeeklyResults(data.weeklyResults);
+              setCurrentWeek(data.weeklyResults.length + 1);
+            }
+          }
+        }, (err) => {
+          console.error("Firestore-feil:", err);
+        });
 
-    return (
-      <div className="flex items-end justify-center gap-2 my-8 h-64">
-        {displayOrder.map((student, i) => (
-          <div key={`podium-${i}`} className="flex flex-col items-center flex-1 max-w-[120px]">
-            <div className="mb-2 text-center font-bold truncate w-full text-slate-700 px-1">
-              {student.name}
-            </div>
-            <div className={`w-full ${heights[i]} ${colors[i]} rounded-t-lg shadow-lg flex flex-col items-center justify-center relative transition-all duration-500`}>
-              <span className="text-4xl font-black text-white opacity-50">{labels[i]}</span>
-              <span className="absolute bottom-2 font-bold text-slate-800">{student.score} p</span>
+        return () => unsubscribe();
+      }, [user, db, fb, appId]);
+
+      // 3. Lagre til skyen
+      const saveToCloud = async (newStudents, newResults) => {
+        if (!user || !db || !fb) return;
+        try {
+          const docRef = fb.doc(db, 'artifacts', appId, 'public', 'data', 'competition', 'state');
+          await fb.setDoc(docRef, {
+            students: newStudents || students,
+            weeklyResults: newResults || weeklyResults,
+            lastUpdated: new Date().toISOString()
+          }, { merge: true });
+        } catch (err) {
+          console.error("Lagringsfeil:", err);
+          setError('Kunne ikke lagre til skyen.');
+        }
+      };
+
+      // Elev-handlinger
+      const addStudent = () => {
+        const trimmed = newStudentName.trim();
+        if (trimmed && !students.includes(trimmed)) {
+          const updated = [...students, trimmed];
+          setStudents(updated);
+          setNewStudentName('');
+          saveToCloud(updated, null);
+        }
+      };
+
+      const removeStudent = (name) => {
+        const updated = students.filter(s => s !== name);
+        setStudents(updated);
+        saveToCloud(updated, null);
+      };
+
+      // Resultat-handlinger
+      const addWinnerRow = () => {
+        const lastRank = tempWinners.length > 0 ? tempWinners[tempWinners.length - 1].rank : 0;
+        const nextPoints = Math.max(0, 10 - (tempWinners.length * 2));
+        setTempWinners([...tempWinners, { name: '', points: nextPoints, rank: lastRank + 1 }]);
+      };
+
+      const removeWinnerRow = (index) => {
+        setTempWinners(tempWinners.filter((_, i) => i !== index));
+      };
+
+      const updateWinnerRow = (index, field, value) => {
+        const updated = [...tempWinners];
+        updated[index][field] = field === 'points' || field === 'rank' ? Number(value) : value;
+        setTempWinners(updated);
+      };
+
+      const addWeeklyResult = () => {
+        setError('');
+        const validWinners = tempWinners.filter(w => w.name !== '');
+        
+        if (validWinners.length === 0) {
+          setError('Du må legge til minst én elev med navn.');
+          return;
+        }
+
+        const names = validWinners.map(w => w.name);
+        if (new Set(names).size !== names.length) {
+          setError('Samme elev kan ikke registreres flere ganger samme uke.');
+          return;
+        }
+
+        const updatedResults = [...weeklyResults, { 
+          week: Number(currentWeek), 
+          winners: validWinners 
+        }];
+        
+        setWeeklyResults(updatedResults);
+        saveToCloud(null, updatedResults);
+        
+        // Reset skjema
+        setTempWinners([{ name: '', points: 10, rank: 1 }]);
+        setCurrentWeek(updatedResults.length + 1);
+      };
+
+      // Beregninger
+      const leaderboard = useMemo(() => {
+        const scores = {};
+        students.forEach(s => scores[s] = 0);
+        
+        weeklyResults.forEach(week => {
+          week.winners.forEach(winner => {
+            if (scores.hasOwnProperty(winner.name)) {
+              scores[winner.name] += winner.points;
+            }
+          });
+        });
+
+        return Object.entries(scores)
+          .map(([name, score]) => ({ name, score }))
+          .sort((a, b) => b.score - a.score);
+      }, [students, weeklyResults]);
+
+      const top3 = leaderboard.slice(0, 3);
+
+      if (loading) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="text-center">
+              <i className="fa-solid fa-spinner fa-spin text-3xl text-indigo-600 mb-4"></i>
+              <p className="text-slate-600 font-medium">Laster konkurranse...</p>
             </div>
           </div>
-        ))}
-      </div>
-    );
-  };
+        );
+      }
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 relative">
-      {/* Tilbake-knapp (Svever øverst til venstre på store skjermer, eller øverst på mobil) */}
-      <a 
-        href="index.html" 
-        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-lg transition-all text-xs font-semibold mb-6 sm:fixed sm:top-4 sm:left-4 sm:z-50 sm:mb-0 cursor-pointer"
-      >
-        <ArrowLeft size={16} />
-        <span>Tilbake til Lærerverktøy</span>
-      </a>
+      // Pall-komponent
+      const Podium = () => {
+        const displayOrder = [
+          top3[1] || { name: '-', score: 0 },
+          top3[0] || { name: '-', score: 0 },
+          top3[2] || { name: '-', score: 0 }
+        ];
 
-      <div className="max-w-4xl mx-auto">
-        <header className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-indigo-900">Klasse-Konkurranse</h1>
-            <div className="flex items-center gap-2 text-slate-500 text-sm mt-1">
-              <Share2 size={14} />
-              <span>ID: {appId}</span>
-              <span className="text-green-600 flex items-center gap-1 ml-2">
-                <Save size={14} /> Synkronisert
-              </span>
-            </div>
+        const heights = ['h-32', 'h-48', 'h-24'];
+        const colors = ['bg-slate-300', 'bg-yellow-400', 'bg-orange-400'];
+        const labels = ['2', '1', '3'];
+
+        return (
+          <div className="flex items-end justify-center gap-2 my-8 h-64">
+            {displayOrder.map((student, i) => (
+              <div key={`podium-${i}`} className="flex flex-col items-center flex-1 max-w-[120px]">
+                <div className="mb-2 text-center font-bold truncate w-full text-slate-700 px-1">
+                  {student.name}
+                </div>
+                <div className={`w-full ${heights[i]} ${colors[i]} rounded-t-lg shadow-lg flex flex-col items-center justify-center relative transition-all duration-500`}>
+                  <span className="text-4xl font-black text-white opacity-50">{labels[i]}</span>
+                  <span className="absolute bottom-2 font-bold text-slate-800">{student.score} p</span>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-            <Trophy className="text-yellow-500 w-8 h-8" />
-          </div>
-        </header>
+        );
+      };
 
-        <nav className="flex gap-2 mb-6 bg-slate-200/50 p-1 rounded-xl">
-          <button onClick={() => setActiveTab('summary')} className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'summary' ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-600 hover:bg-slate-200'}`}>
-            <TrendingUp size={18} /> Sammenlagt
-          </button>
-          <button onClick={() => setActiveTab('results')} className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'results' ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-600 hover:bg-slate-200'}`}>
-            <Award size={18} /> Registrer
-          </button>
-          <button onClick={() => setActiveTab('students')} className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'students' ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-600 hover:bg-slate-200'}`}>
-            <Users size={18} /> Elever
-          </button>
-        </nav>
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 relative">
+          {/* TILBAKE-KNAPP */}
+          <a 
+            href="index.html" 
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-lg transition-all text-xs font-semibold mb-6 sm:fixed sm:top-4 sm:left-4 sm:z-50 sm:mb-0 cursor-pointer"
+          >
+            <i className="fa-solid fa-arrow-left"></i>
+            <span>Tilbake til Lærerverktøy</span>
+          </a>
 
-        <main className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
-          {activeTab === 'summary' && (
-            <div className="space-y-8">
-              <section>
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Award className="text-indigo-500" /> Topp 3 Lederne
-                </h2>
-                <Podium />
-              </section>
-              <section>
-                <h2 className="text-xl font-bold mb-4">Poengtavle</h2>
-                <div className="divide-y divide-slate-100">
-                  {leaderboard.length === 0 ? (
-                    <p className="text-slate-400 italic py-4">Ingen elever registrert.</p>
-                  ) : (
-                    leaderboard.map((student, index) => (
-                      <div key={`leader-${student.name}`} className="flex items-center py-4 px-2 hover:bg-slate-50 rounded-xl transition-colors">
-                        <span className="w-8 font-bold text-slate-400">{index + 1}.</span>
-                        <span className="flex-1 font-semibold">{student.name}</span>
-                        <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-sm font-bold">
-                          {student.score} poeng
-                        </span>
-                      </div>
-                    ))
-                  )}
+          <div className="max-w-4xl mx-auto">
+            <header className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-indigo-900">Klasse-Konkurranse</h1>
+                <div className="flex items-center gap-2 text-slate-500 text-sm mt-1">
+                  <i className="fa-solid fa-share-nodes text-xs"></i>
+                  <span>ID: {appId || 'Lokal'}</span>
+                  <span className="text-green-600 flex items-center gap-1 ml-2">
+                    <i className="fa-solid fa-floppy-disk text-xs"></i> Synkronisert
+                  </span>
                 </div>
-              </section>
-            </div>
-          )}
+              </div>
+              <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
+                <i className="fa-solid fa-trophy text-yellow-500 text-2xl"></i>
+              </div>
+            </header>
 
-          {activeTab === 'results' && (
-            <div className="space-y-8">
-              <section className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold flex items-center gap-2 text-indigo-900">
-                    <Plus className="text-indigo-600" /> Registrer poeng
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-bold text-slate-600">Uke:</label>
-                    <input type="number" value={currentWeek} onChange={(e) => setCurrentWeek(e.target.value)} className="w-16 p-2 rounded-lg border border-slate-200 outline-none" />
-                  </div>
-                </div>
+            <nav className="flex gap-2 mb-6 bg-slate-200/50 p-1 rounded-xl">
+              <button onClick={() => setActiveTab('summary')} className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'summary' ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-600 hover:bg-slate-200'}`}>
+                <i className="fa-solid fa-chart-line"></i> Sammenlagt
+              </button>
+              <button onClick={() => setActiveTab('results')} className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'results' ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-600 hover:bg-slate-200'}`}>
+                <i className="fa-solid fa-award"></i> Registrer
+              </button>
+              <button onClick={() => setActiveTab('students')} className={`flex-1 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'students' ? 'bg-white shadow-sm text-indigo-600 font-semibold' : 'text-slate-600 hover:bg-slate-200'}`}>
+                <i className="fa-solid fa-users"></i> Elever
+              </button>
+            </nav>
 
-                {error && (
-                  <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center gap-2 text-sm font-medium">
-                    <AlertCircle size={16} /> {error}
-                  </div>
-                )}
-
-                <div className="space-y-4 mb-6">
-                  <div className="hidden md:grid grid-cols-12 gap-2 px-2 text-xs font-bold text-slate-500 uppercase">
-                    <div className="col-span-2">Plass</div>
-                    <div className="col-span-6">Elev</div>
-                    <div className="col-span-3">Poeng</div>
-                    <div className="col-span-1"></div>
-                  </div>
-                  
-                  {tempWinners.map((winner, idx) => (
-                    <div key={`row-${idx}`} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-3 md:p-0 md:bg-transparent rounded-xl border md:border-0 border-slate-100 shadow-sm md:shadow-none">
-                      <div className="md:col-span-2 flex items-center gap-2">
-                        <span className="md:hidden text-xs font-bold text-slate-400">Plass:</span>
-                        <input type="number" value={winner.rank} onChange={(e) => updateWinnerRow(idx, 'rank', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200" placeholder="Plass" />
-                      </div>
-                      <div className="md:col-span-6 flex items-center gap-2">
-                        <span className="md:hidden text-xs font-bold text-slate-400">Elev:</span>
-                        <select value={winner.name} onChange={(e) => updateWinnerRow(idx, 'name', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200">
-                          <option value="">Velg elev...</option>
-                          {students.map(s => <option key={`s-opt-${s}`} value={s}>{s}</option>)}
-                        </select>
-                      </div>
-                      <div className="md:col-span-3 flex items-center gap-2">
-                        <span className="md:hidden text-xs font-bold text-slate-400">Poeng:</span>
-                        <input type="number" value={winner.points} onChange={(e) => updateWinnerRow(idx, 'points', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200" placeholder="Poeng" />
-                      </div>
-                      <div className="md:col-span-1 flex justify-end">
-                        <button onClick={() => removeWinnerRow(idx)} className="text-slate-300 hover:text-red-500 p-2">
-                          <X size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={addWinnerRow} className="flex-1 border-2 border-dashed border-indigo-200 text-indigo-600 py-3 rounded-xl font-bold hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2">
-                    <Plus size={20} /> Legg til deltaker (delt plass?)
-                  </button>
-                  <button onClick={addWeeklyResult} disabled={students.length === 0} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:bg-slate-300 transition-colors shadow-lg shadow-indigo-200">
-                    Lagre ukesresultat
-                  </button>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="font-bold text-slate-700 mb-4">Siste registreringer</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[...weeklyResults].reverse().map((res, i) => (
-                    <div key={`history-${res.week}-${i}`} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-bold text-indigo-900">Uke {res.week}</span>
-                        <span className="text-xs text-slate-400">{res.winners.length} deltakere</span>
-                      </div>
-                      <div className="space-y-1">
-                        {res.winners.sort((a,b) => a.rank - b.rank).map((w, idx) => (
-                          <div key={`win-${i}-${idx}`} className="flex justify-between text-sm">
-                            <span className="text-slate-600">{w.rank}. {w.name}</span>
-                            <span className="font-bold text-indigo-600">+{w.points}p</span>
+            <main className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
+              {activeTab === 'summary' && (
+                <div className="space-y-8">
+                  <section>
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                      <i className="fa-solid fa-award text-indigo-500"></i> Topp 3 Lederne
+                    </h2>
+                    <Podium />
+                  </section>
+                  <section>
+                    <h2 className="text-xl font-bold mb-4">Poengtavle</h2>
+                    <div className="divide-y divide-slate-100">
+                      {leaderboard.length === 0 ? (
+                        <p className="text-slate-400 italic py-4">Ingen elever registrert.</p>
+                      ) : (
+                        leaderboard.map((student, index) => (
+                          <div key={`leader-${student.name}`} className="flex items-center py-4 px-2 hover:bg-slate-50 rounded-xl transition-colors">
+                            <span className="w-8 font-bold text-slate-400">{index + 1}.</span>
+                            <span className="flex-1 font-semibold">{student.name}</span>
+                            <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-sm font-bold">
+                              {student.score} poeng
+                            </span>
                           </div>
-                        ))}
+                        ))
+                      )}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {activeTab === 'results' && (
+                <div className="space-y-8">
+                  <section className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-bold flex items-center gap-2 text-indigo-900">
+                        <i className="fa-solid fa-plus text-indigo-600"></i> Registrer poeng
+                      </h2>
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm font-bold text-slate-600">Uke:</label>
+                        <input type="number" value={currentWeek} onChange={(e) => setCurrentWeek(e.target.value)} className="w-16 p-2 rounded-lg border border-slate-200 outline-none" />
                       </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-          )}
 
-          {activeTab === 'students' && (
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-xl font-bold mb-4">Elever i klassen</h2>
-                <div className="flex gap-2 mb-6">
-                  <input type="text" placeholder="Navn på elev..." className="flex-1 p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addStudent()} />
-                  <button onClick={addStudent} className="bg-indigo-600 text-white px-6 rounded-xl hover:bg-indigo-700 font-bold">Legg til</button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {students.map(name => (
-                    <div key={`student-${name}`} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                      <span className="font-medium text-slate-700">{name}</span>
-                      <button onClick={() => removeStudent(name)} className="text-slate-300 hover:text-red-500 transition-colors">
-                        <Trash2 size={18} />
+                    {error && (
+                      <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center gap-2 text-sm font-medium">
+                        <i className="fa-solid fa-circle-exclamation"></i> {error}
+                      </div>
+                    )}
+
+                    <div className="space-y-4 mb-6">
+                      <div className="hidden md:grid grid-cols-12 gap-2 px-2 text-xs font-bold text-slate-500 uppercase">
+                        <div className="col-span-2">Plass</div>
+                        <div className="col-span-6">Elev</div>
+                        <div className="col-span-3">Poeng</div>
+                        <div className="col-span-1"></div>
+                      </div>
+                      
+                      {tempWinners.map((winner, idx) => (
+                        <div key={`row-${idx}`} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-white p-3 md:p-0 md:bg-transparent rounded-xl border md:border-0 border-slate-100 shadow-sm md:shadow-none">
+                          <div className="md:col-span-2 flex items-center gap-2">
+                            <span className="md:hidden text-xs font-bold text-slate-400">Plass:</span>
+                            <input type="number" value={winner.rank} onChange={(e) => updateWinnerRow(idx, 'rank', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200" placeholder="Plass" />
+                          </div>
+                          <div className="md:col-span-6 flex items-center gap-2">
+                            <span className="md:hidden text-xs font-bold text-slate-400">Elev:</span>
+                            <select value={winner.name} onChange={(e) => updateWinnerRow(idx, 'name', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200">
+                              <option value="">Velg elev...</option>
+                              {students.map(s => <option key={`s-opt-${s}`} value={s}>{s}</option>)}
+                            </select>
+                          </div>
+                          <div className="md:col-span-3 flex items-center gap-2">
+                            <span className="md:hidden text-xs font-bold text-slate-400">Poeng:</span>
+                            <input type="number" value={winner.points} onChange={(e) => updateWinnerRow(idx, 'points', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200" placeholder="Poeng" />
+                          </div>
+                          <div className="md:col-span-1 flex justify-end">
+                            <button onClick={() => removeWinnerRow(idx)} className="text-slate-300 hover:text-red-500 p-2">
+                              <i className="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button onClick={addWinnerRow} className="flex-1 border-2 border-dashed border-indigo-200 text-indigo-600 py-3 rounded-xl font-bold hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-plus"></i> Legg til deltaker (delt plass?)
+                      </button>
+                      <button onClick={addWeeklyResult} disabled={students.length === 0} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:bg-slate-300 transition-colors shadow-lg shadow-indigo-200">
+                        Lagre ukesresultat
                       </button>
                     </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-          )}
-        </main>
-      </div>
-    </div>
-  );
-};
+                  </section>
 
-export default App;
+                  <section>
+                    <h3 className="font-bold text-slate-700 mb-4">Siste registreringer</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[...weeklyResults].reverse().map((res, i) => (
+                        <div key={`history-${res.week}-${i}`} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-bold text-indigo-900">Uke {res.week}</span>
+                            <span className="text-xs text-slate-400">{res.winners.length} deltakere</span>
+                          </div>
+                          <div className="space-y-1">
+                            {res.winners.sort((a,b) => a.rank - b.rank).map((w, idx) => (
+                              <div key={`win-${i}-${idx}`} className="flex justify-between text-sm">
+                                <span className="text-slate-600">{w.rank}. {w.name}</span>
+                                <span className="font-bold text-indigo-600">+{w.points}p</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {activeTab === 'students' && (
+                <div className="space-y-6">
+                  <section>
+                    <h2 className="text-xl font-bold mb-4">Elever i klassen</h2>
+                    <div className="flex gap-2 mb-6">
+                      <input type="text" placeholder="Navn på elev..." className="flex-1 p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addStudent()} />
+                      <button onClick={addStudent} className="bg-indigo-600 text-white px-6 rounded-xl hover:bg-indigo-700 font-bold">Legg til</button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {students.map(name => (
+                        <div key={`student-${name}`} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                          <span className="font-medium text-slate-700">{name}</span>
+                          <button onClick={() => removeStudent(name)} className="text-slate-300 hover:text-red-500 transition-colors">
+                            <i className="fa-solid fa-trash-can"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
