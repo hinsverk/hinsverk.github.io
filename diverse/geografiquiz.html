@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="no" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperQuiz - Geografi & Kartutfordringer</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .country-boundary {
+            fill: #334155;
+            stroke: #0f172a;
+            stroke-width: 0.8px;
+            transition: fill 0.2s ease;
+            cursor: pointer;
+        }
+        .country-boundary:hover {
+            fill: #475569;
+        }
+        .light .country-boundary {
+            fill: #cbd5e1;
+            stroke: #f8fafc;
+        }
+        .light .country-boundary:hover {
+            fill: #94a3b8;
+        }
+        .active-target {
+            animation: pulse-active 1.2s infinite alternate;
+        }
+        @keyframes pulse-active {
+            0% { fill: #d97706; }
+            100% { fill: #dc2626; }
+        }
+        .correct-answer {
+            fill: #10b981 !important;
+            stroke: #047857 !important;
+            stroke-width: 1px;
+        }
+        .wrong-answer {
+            fill: #ef4444 !important;
+        }
+        .map-btn {
+            @apply bg-slate-200 hover:bg-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-800 dark:text-white p-2 rounded-lg border border-slate-300 dark:border-slate-700 transition flex items-center justify-center font-bold text-lg w-10 h-10 shadow-sm;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="goHome()">
+                <span class="text-2xl">🌍</span>
+                <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-emerald-500 to-cyan-500 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent">
+                    SuperQuiz
+                </span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="theme-btn" onclick="toggleTheme()" class="bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-300 dark:hover:bg-slate-700 text-lg w-10 h-10 rounded-lg flex items-center justify-center transition shadow-sm">☀️</button>
+                <div id="header-score" class="hidden text-sm font-semibold bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+                    Poeng: <span id="header-score-val" class="text-emerald-500 dark:text-emerald-400 font-extrabold">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+        
+        <!-- ================= MENY-SKJERM ================= -->
+        <section id="menu-screen" class="space-y-8 animate-fade-in">
+            <div class="text-center max-w-2xl mx-auto space-y-4">
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">Hvor god er du i <span class="text-emerald-500 dark:text-emerald-400">geografi</span>?</h1>
+                <p class="text-slate-600 dark:text-slate-400 text-lg">Test kunnskapene dine på et interaktivt kart!</p>
+            </div>
+
+            <!-- Verden -->
+            <div class="space-y-4">
+                <h2 class="text-lg font-bold border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><span>🌍</span> Verden</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                    <div onclick="selectDifficulty('map')" class="group relative bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all shadow-lg">
+                        <div class="absolute top-4 right-4 bg-amber-500/10 text-amber-500 text-xs px-2.5 py-1 rounded-full font-semibold">⏱️ Kart</div>
+                        <div class="text-4xl mb-4">🗺️</div>
+                        <h3 class="text-lg font-bold mb-2">Ekte Kart-utfordring</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs">Skriv inn navnet på landet som lyser opp!</p>
+                    </div>
+                    <div onclick="selectDifficulty('all_countries')" class="group bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all">
+                        <div class="text-4xl mb-4">🏆</div>
+                        <h3 class="text-lg font-bold mb-2">Skriv alle landene</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs">Hvor mange av verdens land husker du?</p>
+                    </div>
+                    <div onclick="openLetterModal()" class="group bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all">
+                        <div class="text-4xl mb-4">🔠</div>
+                        <h3 class="text-lg font-bold mb-2">Bokstav-Maraton</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs">Finn alle landene på din valgte bokstav.</p>
+                    </div>
+                    <div onclick="openFlagSettings('flags')" class="group bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all">
+                        <div class="text-4xl mb-4">🇳🇴</div>
+                        <h3 class="text-lg font-bold mb-2">Flagg-Quiz</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs">Kjenner du igjen flaggene?</p>
+                    </div>
+                    <div onclick="selectDifficulty('capitals')" class="group bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all">
+                        <div class="text-4xl mb-4">🏛️</div>
+                        <h3 class="text-lg font-bold mb-2">Hovedsteder</h3>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs">Hva heter hovedstaden i Palau?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Norge, USA & Tyskland -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Norge -->
+                <div class="space-y-4">
+                    <h2 class="text-lg font-bold border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><span>🇳🇴</span> Norge Spesial</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div onclick="startQuizWithDirectMode('no_click')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">🎯</div>
+                            <h3 class="font-bold text-sm">Fylker: Klikk-test</h3>
+                            <p class="text-xs text-slate-500 mt-1">Kartet fylles med grønt etter hvert!</p>
+                        </div>
+                        <div onclick="startQuizWithDirectMode('no_maraton')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">✍️</div>
+                            <h3 class="font-bold text-sm">Fylker: Skriv navn</h3>
+                            <p class="text-xs text-slate-500 mt-1">Skriv alle fylkesnavnene.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USA -->
+                <div class="space-y-4">
+                    <h2 class="text-lg font-bold border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><span>🇺🇸</span> USA Spesial</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div onclick="startQuizWithDirectMode('us_click')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">🎯</div>
+                            <h3 class="font-bold text-sm">Klikk Statene</h3>
+                        </div>
+                        <div onclick="startQuizWithDirectMode('us_maraton')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">🇺🇸</div>
+                            <h3 class="font-bold text-sm">Skriv Statene</h3>
+                        </div>
+                        <div onclick="startQuizWithDirectMode('us_state_capitals')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">🏛️</div>
+                            <h3 class="font-bold text-sm">Hovedsteder</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tyskland -->
+                <div class="space-y-4">
+                    <h2 class="text-lg font-bold border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><span>🇩🇪</span> Tyskland Spesial</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div onclick="startQuizWithDirectMode('de_click')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">🎯</div>
+                            <h3 class="font-bold text-sm">Klikk Delstater</h3>
+                        </div>
+                        <div onclick="startQuizWithDirectMode('de_maraton')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">✍️</div>
+                            <h3 class="font-bold text-sm">Skriv Delstater</h3>
+                        </div>
+                        <div onclick="startQuizWithDirectMode('de_state_capitals')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer transition-all">
+                            <div class="text-3xl mb-2">🏛️</div>
+                            <h3 class="font-bold text-sm">Hovedsteder</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typografisk utfordring -->
+            <div class="space-y-4 pt-4">
+                <h2 class="text-lg font-bold border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><span>🔤</span> Typografisk Utfordring</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+                    <div onclick="startQuizWithDirectMode('open_countries_maraton')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all">
+                        <div class="text-3xl mb-3">🧩</div>
+                        <h3 class="font-bold text-sm">Land uten lukkede bokstaver</h3>
+                    </div>
+                    <div onclick="startQuizWithDirectMode('open_capitals_maraton')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 cursor-pointer transition-all">
+                        <div class="text-3xl mb-3">🏛️</div>
+                        <h3 class="font-bold text-sm">Hovedsteder uten lukkede bokstaver</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SPILLE-SKJERM ================= -->
+        <section id="game-screen" class="hidden max-w-5xl mx-auto w-full bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6 animate-fade-in">
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <button onclick="triggerExitConfirm()" class="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition">&larr; Meny</button>
+                <div class="flex items-center gap-4">
+                    <span id="difficulty-badge" class="text-xs font-bold px-2.5 py-1 rounded-full uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"></span>
+                    <div class="bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-bold text-amber-500"><span id="timer-text">0:00</span></div>
+                    <div class="bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-bold text-emerald-500">Poeng: <span id="score-text">0</span></div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="text-center space-y-1">
+                    <div id="game-instruction" class="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-xs font-bold">KART-UTFORDRING</div>
+                    <h2 id="game-question" class="text-2xl font-bold text-slate-900 dark:text-white">Hvilket sted er markert?</h2>
+                </div>
+
+                <div id="map-container" class="hidden w-full flex flex-col items-center justify-center bg-sky-100 dark:bg-slate-950 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 relative overflow-hidden h-[480px] shadow-inner">
+                    <div class="absolute top-4 right-4 flex flex-col gap-2 z-10">
+                        <button onclick="zoomIn()" class="map-btn">+</button>
+                        <button onclick="zoomOut()" class="map-btn">-</button>
+                        <button onclick="resetMapZoom()" class="map-btn">🔄</button>
+                    </div>
+                    <svg id="d3-world-map" class="w-full h-full select-none cursor-grab active:cursor-grabbing"></svg>
+                </div>
+
+                <div id="media-container" class="hidden text-center py-6 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <div id="flag-display" class="text-8xl md:text-9xl my-4 select-none animate-bounce">🇳🇴</div>
+                </div>
+
+                <div id="text-input-container" class="hidden max-w-md mx-auto space-y-3">
+                    <input type="text" id="answer-input" oninput="checkMapInputInline()" autocomplete="off" placeholder="Skriv svaret ditt..." class="w-full bg-white dark:bg-slate-950 border-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl py-3.5 px-5 text-lg font-medium text-center uppercase outline-none focus:border-emerald-500">
+                    <div id="skip-btn-container" class="flex gap-2">
+                        <button onclick="skipQuestion()" class="w-full bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 py-3 rounded-xl transition text-sm font-semibold">Hopp over</button>
+                    </div>
+                </div>
+
+                <div id="multiple-choice-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto"></div>
+            </div>
+        </section>
+
+        <!-- ================= RESULTAT-SKJERM ================= -->
+        <section id="result-screen" class="hidden max-w-md mx-auto text-center bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl space-y-6 animate-fade-in">
+            <div class="text-5xl">🏆</div>
+            <h2 class="text-3xl font-extrabold">Quizen er ferdig!</h2>
+            <div class="bg-slate-100 dark:bg-slate-900 p-6 rounded-2xl border dark:border-slate-800 grid grid-cols-2 gap-4">
+                <div class="text-center"><span class="text-xs block font-bold uppercase text-slate-500">Poeng</span><span id="final-score" class="text-3xl font-black text-emerald-500">0</span></div>
+                <div class="text-center"><span class="text-xs block font-bold uppercase text-slate-500">Riktige</span><span id="final-correct" class="text-3xl font-black text-cyan-500">0 / 0</span></div>
+            </div>
+            <div id="missing-countries-container" class="hidden text-left bg-red-500/10 border border-red-200 dark:border-red-900/50 p-4 rounded-2xl space-y-2">
+                <span id="missing-label" class="text-red-500 text-xs font-bold uppercase block">Manglet:</span>
+                <p id="missing-countries-list" class="text-sm max-h-[150px] overflow-y-auto font-semibold text-slate-800 dark:text-slate-200"></p>
+            </div>
+            <div class="space-y-3">
+                <button onclick="restartQuiz()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3.5 rounded-xl transition">Spill igjen</button>
+                <button onclick="goHome()" class="w-full bg-slate-100 dark:bg-slate-800 py-3.5 rounded-xl transition font-semibold">Hovedmeny</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur flex items-center justify-center p-4 z-[100] animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 max-w-sm w-full rounded-2xl p-6 shadow-2xl space-y-6 text-center">
+            <h3 class="text-xl font-bold">Avbryte quizen?</h3>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-100 dark:bg-slate-800 py-2.5 rounded-xl text-sm font-semibold">Fortsett</button>
+                <button onclick="confirmExit()" class="flex-1 bg-red-500 text-slate-950 font-bold py-2.5 rounded-xl text-sm">Ja, avslutt</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="difficulty-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur flex items-center justify-center p-4 z-[90] animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 max-w-md w-full rounded-3xl p-8 shadow-2xl space-y-6">
+            <h3 class="text-2xl font-black text-center">Vanskelighetsgrad</h3>
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="confirmStartWithDifficulty('normal')" class="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 p-5 rounded-2xl text-left transition">
+                    <span class="text-3xl">🟢</span><div><h4 class="font-bold">Normal</h4><p class="text-xs text-slate-500">Mest kjente land.</p></div>
+                </button>
+                <button onclick="confirmStartWithDifficulty('expert')" class="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 hover:border-red-500 p-5 rounded-2xl text-left transition">
+                    <span class="text-3xl">🔥</span><div><h4 class="font-bold">Ekspert (Alle stater)</h4><p class="text-xs text-slate-500">Alle verdens 197 suverene stater og småstater.</p></div>
+                </button>
+            </div>
+            <button onclick="closeDifficultyModal()" class="w-full text-slate-400 text-xs font-semibold">Avbryt</button>
+        </div>
+    </div>
+
+    <div id="letter-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur flex items-center justify-center p-4 z-[90] animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 max-w-2xl w-full rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+            <h3 class="text-2xl font-black">Velg en bokstav</h3>
+            <div id="letter-buttons-container" class="grid grid-cols-4 sm:grid-cols-6 gap-3 max-h-[300px] overflow-y-auto"></div>
+            <button onclick="closeLetterModal()" class="w-full text-slate-400 text-xs font-semibold">Avbryt</button>
+        </div>
+    </div>
+
+    <div id="flag-settings-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur flex items-center justify-center p-4 z-[95] animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 max-w-md w-full rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+            <h3 class="text-2xl font-black">Flagg-Quiz Instillinger</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="setFlagInputType('choice')" id="btn-input-choice" class="p-3 border-2 border-emerald-500 bg-emerald-500/10 rounded-xl font-bold">Flervalg</button>
+                <button onclick="setFlagInputType('write')" id="btn-input-write" class="p-3 border-2 border-slate-200 dark:border-slate-800 rounded-xl font-bold">Skriv svar</button>
+            </div>
+            <button onclick="confirmStartFlagQuiz()" class="w-full bg-emerald-500 text-slate-950 font-extrabold py-3.5 rounded-xl">Start Quiz</button>
+            <button onclick="closeFlagSettingsModal()" class="w-full text-slate-400 text-xs font-semibold">Avbryt</button>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = ""; 
+        let currentDifficulty = "normal";
+        let selectedLetter = ""; 
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer = null;
+        let timeRemaining = 60;
+        let correctAnswersCount = 0;
+        let gameActive = false;
+        let guessedCountries = []; 
+        let clickTransitionActive = false;
+        let flagInputType = "choice";
+        let attemptsForCurrentQuestion = 0;
+
+        // Kart- og SVG-variabler
+        let activeMapType = null;
+        let svg = null;
+        let g = null;
+        let zoomBehavior = null;
+        let projection = null;
+        let path = null;
+        let germanyData = null;
+        let usData = null;
+        let norwayData = null;
+        let worldData = null;
+
+        // Web Audio lyd-effekter
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                if (type === 'correct') {
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); 
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                } else if (type === 'wrong') {
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime); 
+                    osc.frequency.setValueAtTime(147, audioCtx.currentTime + 0.08); 
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                }
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+            } catch (e) {}
+        }
+
+        // Håndtering av klikk på stater/fylker/delstater
+        function handleRegionClick(clickedId, element) {
+            if (!gameActive || clickTransitionActive) return;
+            const currentQ = currentQuestions[currentQuestionIndex];
+            if (!currentQ) return;
+
+            const targetId = String(currentQ.id);
+            const rawId = String(clickedId);
+            const paddedId = rawId.padStart(2, '0');
+
+            const isCorrect = (rawId === targetId || paddedId === targetId || rawId === targetId.padStart(2, '0'));
+
+            if (isCorrect) {
+                playSound('correct');
+                
+                // Poeng beregnes basert på antall forsøk
+                let pts = 10;
+                if (attemptsForCurrentQuestion === 1) pts = 5;
+                else if (attemptsForCurrentQuestion >= 2) pts = 2;
+
+                score += pts;
+                
+                // Kun ren full pott / 1. try teller som 100% riktig i sluttstatistikk
+                if (attemptsForCurrentQuestion === 0) {
+                    correctAnswersCount++;
+                }
+                
+                guessedCountries.push(currentQ.id);
+                d3.select(element).attr("class", "country-boundary correct-answer");
+                updateScoreUI();
+                
+                clickTransitionActive = true;
+                setTimeout(() => {
+                    clickTransitionActive = false;
+                    attemptsForCurrentQuestion = 0;
+                    currentQuestionIndex++;
+                    showNextQuestion();
+                }, 400);
+            } else {
+                playSound('wrong');
+                attemptsForCurrentQuestion++;
+                const sel = d3.select(element);
+                sel.classed('wrong-answer', true);
+                setTimeout(() => {
+                    sel.classed('wrong-answer', false);
+                }, 500);
+
+                // Hvis spilleren har tippet feil 3 ganger: Vis fasit i grønt og gå videre
+                if (attemptsForCurrentQuestion >= 3) {
+                    clickTransitionActive = true;
+                    
+                    // Uthev riktig sted på kartet slik at spilleren lærer plasseringen
+                    const targetEl = d3.select(`#country-${targetId}`);
+                    if (targetEl && targetEl.node()) {
+                        targetEl.attr("class", "country-boundary correct-answer");
+                    }
+
+                    setTimeout(() => {
+                        clickTransitionActive = false;
+                        attemptsForCurrentQuestion = 0;
+                        currentQuestionIndex++;
+                        showNextQuestion();
+                    }, 1400); // Vises i 1.4 sekunder så man rekker å studere kartet
+                }
+            }
+        }
+
+        function handleStateClick(id, element) { handleRegionClick(id, element); }
+        function handleGermanClick(id, element) { handleRegionClick(id, element); }
+        function handleCountyClick(id, element) { handleRegionClick(id, element); }
+
+        // Tyske delstater
+        const ALL_GERMAN_STATES = [
+            { id: "DE-SH", name: "Schleswig-Holstein", synonyms: ["schleswig-holstein", "schleswig holstein"], capital: "Kiel" },
+            { id: "DE-HH", name: "Hamburg", synonyms: ["hamburg"], capital: "Hamburg" },
+            { id: "DE-NI", name: "Niedersachsen", synonyms: ["niedersachsen", "lower saxony"], capital: "Hannover" },
+            { id: "DE-HB", name: "Bremen", synonyms: ["bremen"], capital: "Bremen" },
+            { id: "DE-NRW", name: "Nordrhein-Westfalen", synonyms: ["nordrhein-westfalen", "nordrhein westfalen", "north rhine-westphalia"], capital: "Düsseldorf" },
+            { id: "DE-HE", name: "Hessen", synonyms: ["hessen", "hesse"], capital: "Wiesbaden" },
+            { id: "DE-RP", name: "Rheinland-Pfalz", synonyms: ["rheinland-pfalz", "rhineland-palatinate"], capital: "Mainz" },
+            { id: "DE-BW", name: "Baden-Württemberg", synonyms: ["baden-württemberg", "baden wurttemberg", "baden-wurttemberg"], capital: "Stuttgart" },
+            { id: "DE-BY", name: "Bayern", synonyms: ["bayern", "bavaria"], capital: "München" },
+            { id: "DE-SL", name: "Saarland", synonyms: ["saarland"], capital: "Saarbrücken" },
+            { id: "DE-BE", name: "Berlin", synonyms: ["berlin"], capital: "Berlin" },
+            { id: "DE-BB", name: "Brandenburg", synonyms: ["brandenburg"], capital: "Potsdam" },
+            { id: "DE-MV", name: "Mecklenburg-Vorpommern", synonyms: ["mecklenburg-vorpommern", "mecklenburg vorpommern"], capital: "Schwerin" },
+            { id: "DE-SN", name: "Sachsen", synonyms: ["sachsen", "saxony"], capital: "Dresden" },
+            { id: "DE-ST", name: "Sachsen-Anhalt", synonyms: ["sachsen-anhalt", "saxony-anhalt"], capital: "Magdeburg" },
+            { id: "DE-TH", name: "Thüringen", synonyms: ["thüringen", "thuringia"], capital: "Erfurt" }
+        ];
+
+        function getGermanStateId(props) {
+            if (!props) return null;
+            if (props.id && ALL_GERMAN_STATES.some(s => s.id === props.id)) return props.id;
+            
+            const candidates = [props.NAME_1, props.name, props.GEN, props.NAME, props.lan_name, props.state].filter(Boolean);
+            for (const cand of candidates) {
+                const norm = cand.toString().toLowerCase().trim().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss');
+                const found = ALL_GERMAN_STATES.find(s => {
+                    const sNorm = s.name.toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss');
+                    return sNorm === norm || s.synonyms.some(syn => syn.toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss') === norm);
+                });
+                if (found) return found.id;
+            }
+            return null;
+        }
+
+        // Amerikanske stater
+        const ALL_US_STATES = [
+            { id: "01", name: "Alabama", synonyms: ["alabama"], capital: "Montgomery" },
+            { id: "02", name: "Alaska", synonyms: ["alaska"], capital: "Juneau" },
+            { id: "04", name: "Arizona", synonyms: ["arizona"], capital: "Phoenix" },
+            { id: "05", name: "Arkansas", synonyms: ["arkansas"], capital: "Little Rock" },
+            { id: "06", name: "California", synonyms: ["california", "kalifornia"], capital: "Sacramento" },
+            { id: "08", name: "Colorado", synonyms: ["colorado"], capital: "Denver" },
+            { id: "09", name: "Connecticut", synonyms: ["connecticut"], capital: "Hartford" },
+            { id: "10", name: "Delaware", synonyms: ["delaware"], capital: "Dover" },
+            { id: "12", name: "Florida", synonyms: ["florida"], capital: "Tallahassee" },
+            { id: "13", name: "Georgia", synonyms: ["georgia"], capital: "Atlanta" },
+            { id: "15", name: "Hawaii", synonyms: ["hawaii"], capital: "Honolulu" },
+            { id: "16", name: "Idaho", synonyms: ["idaho"], capital: "Boise" },
+            { id: "17", name: "Illinois", synonyms: ["illinois"], capital: "Springfield" },
+            { id: "18", name: "Indiana", synonyms: ["indiana"], capital: "Indianapolis" },
+            { id: "19", name: "Iowa", synonyms: ["iowa"], capital: "Des Moines" },
+            { id: "20", name: "Kansas", synonyms: ["kansas"], capital: "Topeka" },
+            { id: "21", name: "Kentucky", synonyms: ["kentucky"], capital: "Frankfort" },
+            { id: "22", name: "Louisiana", synonyms: ["louisiana"], capital: "Baton Rouge" },
+            { id: "23", name: "Maine", synonyms: ["maine"], capital: "Augusta" },
+            { id: "24", name: "Maryland", synonyms: ["maryland"], capital: "Annapolis" },
+            { id: "25", name: "Massachusetts", synonyms: ["massachusetts"], capital: "Boston" },
+            { id: "26", name: "Michigan", synonyms: ["michigan"], capital: "Lansing" },
+            { id: "27", name: "Minnesota", synonyms: ["minnesota"], capital: "Saint Paul" },
+            { id: "28", name: "Mississippi", synonyms: ["mississippi"], capital: "Jackson" },
+            { id: "29", name: "Missouri", synonyms: ["missouri"], capital: "Jefferson City" },
+            { id: "30", name: "Montana", synonyms: ["montana"], capital: "Helena" },
+            { id: "31", name: "Nebraska", synonyms: ["nebraska"], capital: "Lincoln" },
+            { id: "32", name: "Nevada", synonyms: ["nevada"], capital: "Carson City" },
+            { id: "33", name: "New Hampshire", synonyms: ["new hampshire"], capital: "Concord" },
+            { id: "34", name: "New Jersey", synonyms: ["new jersey"], capital: "Trenton" },
+            { id: "35", name: "New Mexico", synonyms: ["new mexico"], capital: "Santa Fe" },
+            { id: "36", name: "New York", synonyms: ["new york"], capital: "Albany" },
+            { id: "37", name: "North Carolina", synonyms: ["nord-carolina", "north carolina"], capital: "Raleigh" },
+            { id: "38", name: "North Dakota", synonyms: ["nord-dakota", "north dakota"], capital: "Bismarck" },
+            { id: "39", name: "Ohio", synonyms: ["ohio"], capital: "Columbus" },
+            { id: "40", name: "Oklahoma", synonyms: ["oklahoma"], capital: "Oklahoma City" },
+            { id: "41", name: "Oregon", synonyms: ["oregon"], capital: "Salem" },
+            { id: "42", name: "Pennsylvania", synonyms: ["pennsylvania"], capital: "Harrisburg" },
+            { id: "44", name: "Rhode Island", synonyms: ["rhode island"], capital: "Providence" },
+            { id: "45", name: "South Carolina", synonyms: ["sør-carolina", "south carolina"], capital: "Columbia" },
+            { id: "46", name: "South Dakota", synonyms: ["sør-dakota", "south dakota"], capital: "Pierre" },
+            { id: "47", name: "Tennessee", synonyms: ["tennessee"], capital: "Nashville" },
+            { id: "48", name: "Texas", synonyms: ["texas"], capital: "Austin" },
+            { id: "49", name: "Utah", synonyms: ["utah"], capital: "Salt Lake City" },
+            { id: "50", name: "Vermont", synonyms: ["vermont"], capital: "Montpelier" },
+            { id: "51", name: "Virginia", synonyms: ["virginia"], capital: "Richmond" },
+            { id: "53", name: "Washington", synonyms: ["washington"], capital: "Olympia" },
+            { id: "54", name: "West Virginia", synonyms: ["vest-virginia", "west virginia"], capital: "Charleston" },
+            { id: "55", name: "Wisconsin", synonyms: ["wisconsin"], capital: "Madison" },
+            { id: "56", name: "Wyoming", synonyms: ["wyoming"], capital: "Cheyenne" }
+        ];
+
+        // Norske fylker
+        const ALL_NORWAY_COUNTIES = [
+            { id: "03", name: "Oslo", synonyms: ["oslo"] },
+            { id: "11", name: "Rogaland", synonyms: ["rogaland"] },
+            { id: "15", name: "Møre og Romsdal", synonyms: ["møre og romsdal", "møre", "romsdal"] },
+            { id: "18", name: "Nordland", synonyms: ["nordland"] },
+            { id: "31", name: "Østfold", synonyms: ["østfold"] },
+            { id: "32", name: "Akershus", synonyms: ["akershus"] },
+            { id: "33", name: "Buskerud", synonyms: ["buskerud"] },
+            { id: "34", name: "Innlandet", synonyms: ["innlandet"] },
+            { id: "39", name: "Vestfold", synonyms: ["vestfold"] },
+            { id: "40", name: "Telemark", synonyms: ["telemark"] },
+            { id: "42", name: "Agder", synonyms: ["agder"] },
+            { id: "46", name: "Vestland", synonyms: ["vestland"] },
+            { id: "50", name: "Trøndelag", synonyms: ["trøndelag"] },
+            { id: "55", name: "Troms", synonyms: ["troms"] },
+            { id: "56", name: "Finnmark", synonyms: ["finnmark"] }
+        ];
+
+        // Fullstendig oversikt over ALLE 197 verifiserte suverene stater og observatørstater i verden
+        const ALL_COUNTRIES = [
+            // Europa (46 stater)
+            { id: "578", name: "Norge", synonyms: ["norge", "norway"], flag: "🇳🇴", capital: "Oslo", difficulty: "normal" },
+            { id: "752", name: "Sverige", synonyms: ["sverige", "sweden"], flag: "🇸🇪", capital: "Stockholm", difficulty: "normal" },
+            { id: "208", name: "Danmark", synonyms: ["danmark", "denmark"], flag: "🇩🇰", capital: "København", difficulty: "normal" },
+            { id: "246", name: "Finland", synonyms: ["finland"], flag: "🇫🇮", capital: "Helsinki", difficulty: "normal" },
+            { id: "352", name: "Island", synonyms: ["island", "iceland"], flag: "🇮🇸", capital: "Reykjavík", difficulty: "normal" },
+            { id: "826", name: "Storbritannia", synonyms: ["storbritannia", "uk", "england", "united kingdom"], flag: "🇬🇧", capital: "London", difficulty: "normal" },
+            { id: "372", name: "Irland", synonyms: ["irland", "ireland"], flag: "🇮🇪", capital: "Dublin", difficulty: "normal" },
+            { id: "250", name: "Frankrike", synonyms: ["frankrike", "france"], flag: "🇫🇷", capital: "Paris", difficulty: "normal" },
+            { id: "276", name: "Tyskland", synonyms: ["tyskland", "germany"], flag: "🇩🇪", capital: "Berlin", difficulty: "normal" },
+            { id: "380", name: "Italia", synonyms: ["italia", "italy"], flag: "🇮🇹", capital: "Roma", difficulty: "normal" },
+            { id: "724", name: "Spania", synonyms: ["spania", "spain"], flag: "🇪🇸", capital: "Madrid", difficulty: "normal" },
+            { id: "620", name: "Portugal", synonyms: ["portugal"], flag: "🇵🇹", capital: "Lisboa", difficulty: "normal" },
+            { id: "528", name: "Nederland", synonyms: ["nederland", "holland", "netherlands"], flag: "🇳🇱", capital: "Amsterdam", difficulty: "normal" },
+            { id: "056", name: "Belgia", synonyms: ["belgia", "belgium"], flag: "🇧🇪", capital: "Brussel", difficulty: "normal" },
+            { id: "442", name: "Luxembourg", synonyms: ["luxembourg", "luxemburg"], flag: "🇱🇺", capital: "Luxembourg", difficulty: "expert" },
+            { id: "040", name: "Østerrike", synonyms: ["østerrike", "austria"], flag: "🇦🇹", capital: "Wien", difficulty: "normal" },
+            { id: "756", name: "Sveits", synonyms: ["sveits", "switzerland"], flag: "🇨🇭", capital: "Bern", difficulty: "normal" },
+            { id: "616", name: "Polen", synonyms: ["polen", "poland"], flag: "🇵🇱", capital: "Warszawa", difficulty: "normal" },
+            { id: "203", name: "Tsjekkia", synonyms: ["tsjekkia", "czechia", "czech republic"], flag: "🇨🇿", capital: "Praha", difficulty: "normal" },
+            { id: "703", name: "Slovakia", synonyms: ["slovakia"], flag: "🇸🇰", capital: "Bratislava", difficulty: "normal" },
+            { id: "348", name: "Ungarn", synonyms: ["ungarn", "hungary"], flag: "🇭🇺", capital: "Budapest", difficulty: "normal" },
+            { id: "642", name: "Romania", synonyms: ["romania"], flag: "🇷🇴", capital: "București", difficulty: "normal" },
+            { id: "100", name: "Bulgaria", synonyms: ["bulgaria"], flag: "🇧🇬", capital: "Sofia", difficulty: "normal" },
+            { id: "300", name: "Hellas", synonyms: ["hellas", "greece"], flag: "🇬🇷", capital: "Athen", difficulty: "normal" },
+            { id: "008", name: "Albania", synonyms: ["albania"], flag: "🇦🇱", capital: "Tirana", difficulty: "expert" },
+            { id: "807", name: "Nord-Makedonia", synonyms: ["nord-makedonia", "makedonia", "north macedonia"], flag: "🇲🇰", capital: "Skopje", difficulty: "expert" },
+            { id: "688", name: "Serbia", synonyms: ["serbia"], flag: "🇷🇸", capital: "Beograd", difficulty: "normal" },
+            { id: "191", name: "Kroatia", synonyms: ["kroatia", "croatia"], flag: "🇭🇷", capital: "Zagreb", difficulty: "normal" },
+            { id: "070", name: "Bosnia-Hercegovina", synonyms: ["bosnia-hercegovina", "bosnia", "bosnia and herzegovina"], flag: "🇧🇦", capital: "Sarajevo", difficulty: "normal" },
+            { id: "705", name: "Slovenia", synonyms: ["slovenia"], flag: "🇸🇮", capital: "Ljubljana", difficulty: "expert" },
+            { id: "499", name: "Montenegro", synonyms: ["montenegro"], flag: "🇲🇪", capital: "Podgorica", difficulty: "expert" },
+            { id: "383", name: "Kosovo", synonyms: ["kosovo"], flag: "🇽🇰", capital: "Pristina", difficulty: "expert" },
+            { id: "233", name: "Estland", synonyms: ["estland", "estonia"], flag: "🇪🇪", capital: "Tallinn", difficulty: "normal" },
+            { id: "428", name: "Latvia", synonyms: ["lettland", "latvia"], flag: "🇱🇻", capital: "Riga", difficulty: "normal" },
+            { id: "440", name: "Litauen", synonyms: ["litauen", "lithuania"], flag: "🇱🇹", capital: "Vilnius", difficulty: "normal" },
+            { id: "112", name: "Hviterussland", synonyms: ["hviterussland", "belarus"], flag: "🇧🇾", capital: "Minsk", difficulty: "normal" },
+            { id: "804", name: "Ukraina", synonyms: ["ukraina", "ukraine"], flag: "🇺🇦", capital: "Kyiv", difficulty: "normal" },
+            { id: "498", name: "Moldova", synonyms: ["moldova"], flag: "🇲🇩", capital: "Chișinău", difficulty: "expert" },
+            { id: "643", name: "Russland", synonyms: ["russland", "russia"], flag: "🇷🇺", capital: "Moskva", difficulty: "normal" },
+            { id: "020", name: "Andorra", synonyms: ["andorra"], flag: "🇦🇩", capital: "Andorra la Vella", difficulty: "expert" },
+            { id: "438", name: "Liechtenstein", synonyms: ["liechtenstein"], flag: "🇱🇮", capital: "Vaduz", difficulty: "expert" },
+            { id: "492", name: "Monaco", synonyms: ["monaco"], flag: "🇲🇨", capital: "Monaco", difficulty: "expert" },
+            { id: "674", name: "San Marino", synonyms: ["san marino"], flag: "🇸🇲", capital: "San Marino", difficulty: "expert" },
+            { id: "336", name: "Vatikanstaten", synonyms: ["vatikanstaten", "vatican city", "vvatikanet"], flag: "🇻🇦", capital: "Vatikanstaten", difficulty: "expert" },
+            { id: "470", name: "Malta", synonyms: ["malta"], flag: "🇲🇹", capital: "Valletta", difficulty: "expert" },
+
+            // Asia & Midtøsten (48 stater)
+            { id: "792", name: "Tyrkia", synonyms: ["tyrkia", "turkey", "türkiye"], flag: "🇹🇷", capital: "Ankara", difficulty: "normal" },
+            { id: "196", name: "Kypros", synonyms: ["kypros", "cyprus"], flag: "🇨🇾", capital: "Nikosia", difficulty: "normal" },
+            { id: "268", name: "Georgia", synonyms: ["georgia"], flag: "🇬🇪", capital: "Tbilisi", difficulty: "expert" },
+            { id: "051", name: "Armenia", synonyms: ["armenia"], flag: "🇦🇲", capital: "Jerevan", difficulty: "expert" },
+            { id: "031", name: "Aserbajdsjan", synonyms: ["aserbajdsjan", "azerbaijan"], flag: "🇦🇿", capital: "Baku", difficulty: "expert" },
+            { id: "760", name: "Syria", synonyms: ["syria"], flag: "🇸🇾", capital: "Damaskus", difficulty: "normal" },
+            { id: "422", name: "Libanon", synonyms: ["libanon", "lebanon"], flag: "🇱🇧", capital: "Beirut", difficulty: "normal" },
+            { id: "376", name: "Israel", synonyms: ["israel"], flag: "🇮🇱", capital: "Jerusalem", difficulty: "normal" },
+            { id: "275", name: "Palestina", synonyms: ["palestina", "palestine"], flag: "🇵🇸", capital: "Ramallah", difficulty: "expert" },
+            { id: "400", name: "Jordan", synonyms: ["jordan"], flag: "🇯🇴", capital: "Amman", difficulty: "normal" },
+            { id: "368", name: "Irak", synonyms: ["irak", "iraq"], flag: "🇮🇶", capital: "Bagdad", difficulty: "normal" },
+            { id: "364", name: "Iran", synonyms: ["iran"], flag: "🇮🇷", capital: "Teheran", difficulty: "normal" },
+            { id: "414", name: "Kuwait", synonyms: ["kuwait"], flag: "🇰🇼", capital: "Kuwait by", difficulty: "expert" },
+            { id: "682", name: "Saudi-Arabia", synonyms: ["saudi-arabia", "saudi arabia"], flag: "🇸🇦", capital: "Riyadh", difficulty: "normal" },
+            { id: "887", name: "Jemen", synonyms: ["jemen", "yemen"], flag: "🇾🇪", capital: "Sanaa", difficulty: "expert" },
+            { id: "512", name: "Oman", synonyms: ["oman"], flag: "🇴🇲", capital: "Muskat", difficulty: "expert" },
+            { id: "784", name: "De forente arabiske emirater", synonyms: ["de forente arabiske emirater", "uae", "emirates", "emiraten"], flag: "🇦🇪", capital: "Abu Dhabi", difficulty: "normal" },
+            { id: "634", name: "Qatar", synonyms: ["qatar"], flag: "🇶🇦", capital: "Doha", difficulty: "normal" },
+            { id: "048", name: "Bahrain", synonyms: ["bahrain"], flag: "🇧🇭", capital: "Manama", difficulty: "expert" },
+            { id: "004", name: "Afghanistan", synonyms: ["afghanistan"], flag: "🇦🇫", capital: "Kabul", difficulty: "normal" },
+            { id: "586", name: "Pakistan", synonyms: ["pakistan"], flag: "🇵🇰", capital: "Islamabad", difficulty: "normal" },
+            { id: "356", name: "India", synonyms: ["india"], flag: "🇮🇳", capital: "New Delhi", difficulty: "normal" },
+            { id: "524", name: "Nepal", synonyms: ["nepal"], flag: "🇳🇵", capital: "Kathmandu", difficulty: "normal" },
+            { id: "064", name: "Bhutan", synonyms: ["bhutan"], flag: "🇧🇹", capital: "Thimphu", difficulty: "expert" },
+            { id: "050", name: "Bangladesh", synonyms: ["bangladesh"], flag: "🇧🇩", capital: "Dhaka", difficulty: "normal" },
+            { id: "144", name: "Sri Lanka", synonyms: ["sri lanka"], flag: "🇱🇰", capital: "Colombo", difficulty: "normal" },
+            { id: "462", name: "Maldivene", synonyms: ["maldivene", "maldives"], flag: "🇲🇻", capital: "Malé", difficulty: "expert" },
+            { id: "104", name: "Myanmar", synonyms: ["myanmar", "burma"], flag: "🇲🇲", capital: "Naypyidaw", difficulty: "expert" },
+            { id: "764", name: "Thailand", synonyms: ["thailand"], flag: "🇹🇭", capital: "Bangkok", difficulty: "normal" },
+            { id: "418", name: "Laos", synonyms: ["laos"], flag: "🇱🇦", capital: "Vientiane", difficulty: "expert" },
+            { id: "704", name: "Vietnam", synonyms: ["vietnam"], flag: "🇻🇳", capital: "Hanoi", difficulty: "normal" },
+            { id: "116", name: "Kambodsja", synonyms: ["kambodsja", "cambodia"], flag: "🇰🇭", capital: "Phnom Penh", difficulty: "normal" },
+            { id: "458", name: "Malaysia", synonyms: ["malaysia"], flag: "🇲🇾", capital: "Kuala Lumpur", difficulty: "normal" },
+            { id: "702", name: "Singapore", synonyms: ["singapore", "singapor"], flag: "🇸🇬", capital: "Singapore", difficulty: "normal" },
+            { id: "096", name: "Brunei", synonyms: ["brunei"], flag: "🇧🇳", capital: "Bandar Seri Begawan", difficulty: "expert" },
+            { id: "360", name: "Indonesia", synonyms: ["indonesia"], flag: "🇮🇩", capital: "Jakarta", difficulty: "normal" },
+            { id: "626", name: "Øst-Timor", synonyms: ["øst-timor", "east timor", "timor-leste"], flag: "🇹🇱", capital: "Dili", difficulty: "expert" },
+            { id: "608", name: "Filippinene", synonyms: ["filippinene", "philippines"], flag: "🇵🇭", capital: "Manila", difficulty: "normal" },
+            { id: "158", name: "Taiwan", synonyms: ["taiwan"], flag: "🇹🇼", capital: "Taipei", difficulty: "normal" },
+            { id: "156", name: "Kina", synonyms: ["kina", "china"], flag: "🇨🇳", capital: "Beijing", difficulty: "normal" },
+            { id: "496", name: "Mongolia", synonyms: ["mongolia"], flag: "🇲🇳", capital: "Ulaanbaatar", difficulty: "normal" },
+            { id: "408", name: "Nord-Korea", synonyms: ["nord-korea", "north korea"], flag: "🇰🇵", capital: "Pyongyang", difficulty: "normal" },
+            { id: "410", name: "Sør-Korea", synonyms: ["sør-korea", "south korea"], flag: "🇰🇷", capital: "Seoul", difficulty: "normal" },
+            { id: "392", name: "Japan", synonyms: ["japan"], flag: "🇯🇵", capital: "Tokyo", difficulty: "normal" },
+            { id: "398", name: "Kasakhstan", synonyms: ["kasakhstan", "kazakhstan"], flag: "🇰🇿", capital: "Astana", difficulty: "normal" },
+            { id: "860", name: "Usbekistan", synonyms: ["usbekistan", "uzbekistan"], flag: "🇺🇿", capital: "Tasjkent", difficulty: "expert" },
+            { id: "795", name: "Turkmenistan", synonyms: ["turkmenistan"], flag: "🇹🇲", capital: "Asjkhabad", difficulty: "expert" },
+            { id: "417", name: "Kirgisistan", synonyms: ["kirgisistan", "kyrgyzstan"], flag: "🇰🇬", capital: "Bisjkek", difficulty: "expert" },
+            { id: "762", name: "Tadsjikistan", synonyms: ["tadsjikistan", "tajikistan"], flag: "🇹🇯", capital: "Dusjanbe", difficulty: "expert" },
+
+            // Afrika (54 stater)
+            { id: "818", name: "Egypt", synonyms: ["egypt"], flag: "🇪🇬", capital: "Kairo", difficulty: "normal" },
+            { id: "434", name: "Libya", synonyms: ["libya"], flag: "🇱🇾", capital: "Tripoli", difficulty: "normal" },
+            { id: "788", name: "Tunisia", synonyms: ["tunisia"], flag: "🇹🇳", capital: "Tunis", difficulty: "normal" },
+            { id: "012", name: "Algerie", synonyms: ["algerie", "algeria"], flag: "🇩🇿", capital: "Aljis", difficulty: "normal" },
+            { id: "504", name: "Marokko", synonyms: ["marokko", "morocco"], flag: "🇲🇦", capital: "Rabat", difficulty: "normal" },
+            { id: "729", name: "Sudan", synonyms: ["sudan"], flag: "🇸🇩", capital: "Khartoum", difficulty: "normal" },
+            { id: "728", name: "Sør-Sudan", synonyms: ["sør-sudan", "south sudan"], flag: "🇸🇸", capital: "Juba", difficulty: "expert" },
+            { id: "231", name: "Etiopia", synonyms: ["etiopia", "ethiopia"], flag: "🇪🇹", capital: "Addis Abeba", difficulty: "normal" },
+            { id: "232", name: "Eritrea", synonyms: ["eritrea"], flag: "🇪🇷", capital: "Asmara", difficulty: "expert" },
+            { id: "262", name: "Djibouti", synonyms: ["djibouti"], flag: "🇩🇯", capital: "Djibouti", difficulty: "expert" },
+            { id: "706", name: "Somalia", synonyms: ["somalia"], flag: "🇸🇴", capital: "Mogadishu", difficulty: "normal" },
+            { id: "404", name: "Kenya", synonyms: ["kenya"], flag: "🇰🇪", capital: "Nairobi", difficulty: "normal" },
+            { id: "800", name: "Uganda", synonyms: ["uganda"], flag: "🇺🇬", capital: "Kampala", difficulty: "normal" },
+            { id: "834", name: "Tanzania", synonyms: ["tanzania"], flag: "🇹🇿", capital: "Dodoma", difficulty: "normal" },
+            { id: "646", name: "Rwanda", synonyms: ["rwanda"], flag: "🇷🇼", capital: "Kigali", difficulty: "expert" },
+            { id: "108", name: "Burundi", synonyms: ["burundi"], flag: "🇧🇮", capital: "Gitega", difficulty: "expert" },
+            { id: "180", name: "Den demokratiske republikken Kongo", synonyms: ["dr kongo", "kongo", "dr congo", "congo"], flag: "🇨🇩", capital: "Kinshasa", difficulty: "normal" },
+            { id: "178", name: "Republikken Kongo", synonyms: ["kongo-brazzaville", "congo-brazzaville"], flag: "🇨🇬", capital: "Brazzaville", difficulty: "expert" },
+            { id: "266", name: "Gabon", synonyms: ["gabon"], flag: "🇬🇦", capital: "Libreville", difficulty: "expert" },
+            { id: "226", name: "Ekvatorial-Guinea", synonyms: ["ekvatorial-guinea", "equatorial guinea"], flag: "🇬🇶", capital: "Malabo", difficulty: "expert" },
+            { id: "120", name: "Kamerun", synonyms: ["kamerun", "cameroon"], flag: "🇨🇲", capital: "Yaoundé", difficulty: "normal" },
+            { id: "140", name: "Den sentralafrikanske republikk", synonyms: ["den sentralafrikanske republikk", "central african republic"], flag: "🇨🇫", capital: "Bangui", difficulty: "expert" },
+            { id: "148", name: "Tsjad", synonyms: ["tsjad", "chad"], flag: "🇹🇩", capital: "N'Djamena", difficulty: "expert" },
+            { id: "562", name: "Niger", synonyms: ["niger"], flag: "🇳🇪", capital: "Niamey", difficulty: "expert" },
+            { id: "566", name: "Nigeria", synonyms: ["nigeria"], flag: "🇳🇬", capital: "Abuja", difficulty: "normal" },
+            { id: "204", name: "Benin", synonyms: ["benin"], flag: "🇧🇯", capital: "Porto-Novo", difficulty: "expert" },
+            { id: "768", name: "Togo", synonyms: ["togo"], flag: "🇹🇬", capital: "Lomé", difficulty: "expert" },
+            { id: "288", name: "Ghana", synonyms: ["ghana"], flag: "🇬🇭", capital: "Accra", difficulty: "normal" },
+            { id: "384", name: "Elfenbenskysten", synonyms: ["elfenbenskysten", "ivory coast", "côte d'ivoire"], flag: "🇨🇮", capital: "Yamoussoukro", difficulty: "normal" },
+            { id: "430", name: "Liberia", synonyms: ["liberia"], flag: "🇱🇷", capital: "Monrovia", difficulty: "expert" },
+            { id: "694", name: "Sierra Leone", synonyms: ["sierra leone"], flag: "🇸🇱", capital: "Freetown", difficulty: "expert" },
+            { id: "324", name: "Guinea", synonyms: ["guinea"], flag: "🇬🇳", capital: "Conakry", difficulty: "expert" },
+            { id: "624", name: "Guinea-Bissau", synonyms: ["guinea-bissau"], flag: "🇬🇼", capital: "Bissau", difficulty: "expert" },
+            { id: "270", name: "Gambia", synonyms: ["gambia"], flag: "🇬🇲", capital: "Banjul", difficulty: "expert" },
+            { id: "686", name: "Senegal", synonyms: ["senegal"], flag: "🇸🇳", capital: "Dakar", difficulty: "normal" },
+            { id: "478", name: "Mauritania", synonyms: ["mauritania"], flag: "🇲🇷", capital: "Nouakchott", difficulty: "expert" },
+            { id: "466", name: "Mali", synonyms: ["mali"], flag: "🇲🇱", capital: "Bamako", difficulty: "expert" },
+            { id: "854", name: "Burkina Faso", synonyms: ["burkina faso"], flag: "🇧🇫", capital: "Ouagadougou", difficulty: "expert" },
+            { id: "024", name: "Angola", synonyms: ["angola"], flag: "🇦🇴", capital: "Luanda", difficulty: "normal" },
+            { id: "894", name: "Zambia", synonyms: ["zambia"], flag: "🇿🇲", capital: "Lusaka", difficulty: "expert" },
+            { id: "716", name: "Zimbabwe", synonyms: ["zimbabwe"], flag: "🇿🇼", capital: "Harare", difficulty: "normal" },
+            { id: "454", name: "Malawi", synonyms: ["malawi"], flag: "🇲🇼", capital: "Lilongwe", difficulty: "expert" },
+            { id: "508", name: "Mosambik", synonyms: ["mosambik", "mozambique"], flag: "🇲🇿", capital: "Maputo", difficulty: "expert" },
+            { id: "516", name: "Namibia", synonyms: ["namibia"], flag: "🇳🇦", capital: "Windhoek", difficulty: "normal" },
+            { id: "072", name: "Botswana", synonyms: ["botswana"], flag: "🇧🇼", capital: "Gaborone", difficulty: "expert" },
+            { id: "710", name: "Sør-Afrika", synonyms: ["sør-afrika", "south africa"], flag: "🇿🇦", capital: "Pretoria", difficulty: "normal" },
+            { id: "426", name: "Lesotho", synonyms: ["lesotho"], flag: "🇱🇸", capital: "Maseru", difficulty: "expert" },
+            { id: "748", name: "Eswatini", synonyms: ["eswatini", "swaziland"], flag: "🇸🇿", capital: "Mbabane", difficulty: "expert" },
+            { id: "450", name: "Madagaskar", synonyms: ["madagaskar", "madagascar"], flag: "🇲🇬", capital: "Antananarivo", difficulty: "normal" },
+            { id: "480", name: "Mauritius", synonyms: ["mauritius"], flag: "🇲🇺", capital: "Port Louis", difficulty: "expert" },
+            { id: "174", name: "Komorene", synonyms: ["komorene", "comoros"], flag: "🇰🇲", capital: "Moroni", difficulty: "expert" },
+            { id: "690", name: "Seychellene", synonyms: ["seychellene", "seychelles"], flag: "🇸🇨", capital: "Victoria", difficulty: "expert" },
+            { id: "678", name: "São Tomé og Príncipe", synonyms: ["são tomé og príncipe", "sao tome og principe", "sao tome"], flag: "🇸🇹", capital: "São Tomé", difficulty: "expert" },
+            { id: "132", name: "Kapp Verde", synonyms: ["kapp verde", "cape verde"], flag: "🇨🇻", capital: "Praia", difficulty: "expert" },
+
+            // Nord- & Sentral-Amerika & Karibia (23 stater)
+            { id: "840", name: "USA", synonyms: ["usa", "united states"], flag: "🇺🇸", capital: "Washington D.C.", difficulty: "normal" },
+            { id: "124", name: "Canada", synonyms: ["canada", "kanada"], flag: "🇨🇦", capital: "Ottawa", difficulty: "normal" },
+            { id: "484", name: "Mexico", synonyms: ["mexico"], flag: "🇲🇽", capital: "Mexico By", difficulty: "normal" },
+            { id: "320", name: "Guatemala", synonyms: ["guatemala"], flag: "🇬🇹", capital: "Guatemala By", difficulty: "normal" },
+            { id: "084", name: "Belize", synonyms: ["belize"], flag: "🇧🇿", capital: "Belmopan", difficulty: "expert" },
+            { id: "222", name: "El Salvador", synonyms: ["el salvador"], flag: "🇸🇻", capital: "San Salvador", difficulty: "expert" },
+            { id: "340", name: "Honduras", synonyms: ["honduras"], flag: "🇭🇳", capital: "Tegucigalpa", difficulty: "expert" },
+            { id: "558", name: "Nicaragua", synonyms: ["nicaragua"], flag: "🇳🇮", capital: "Managua", difficulty: "expert" },
+            { id: "188", name: "Costa Rica", synonyms: ["costa rica"], flag: "🇨🇷", capital: "San José", difficulty: "normal" },
+            { id: "591", name: "Panama", synonyms: ["panama"], flag: "🇵🇦", capital: "Panama By", difficulty: "normal" },
+            { id: "192", name: "Kuba", synonyms: ["kuba", "cuba"], flag: "🇨🇺", capital: "Havana", difficulty: "normal" },
+            { id: "388", name: "Jamaica", synonyms: ["jamaica"], flag: "🇯🇲", capital: "Kingston", difficulty: "normal" },
+            { id: "332", name: "Haiti", synonyms: ["haiti"], flag: "🇭🇹", capital: "Port-au-Prince", difficulty: "normal" },
+            { id: "214", name: "Den dominikanske republikk", synonyms: ["den dominikanske republikk", "dominican republic"], flag: "🇩🇴", capital: "Santo Domingo", difficulty: "normal" },
+            { id: "044", name: "Bahamas", synonyms: ["bahamas"], flag: "🇧🇸", capital: "Nassau", difficulty: "expert" },
+            { id: "780", name: "Trinidad og Tobago", synonyms: ["trinidad og tobago", "trinidad and tobago"], flag: "🇹🇹", capital: "Port of Spain", difficulty: "expert" },
+            { id: "028", name: "Antigua og Barbuda", synonyms: ["antigua og barbuda", "antigua"], flag: "🇦🇬", capital: "St. John's", difficulty: "expert" },
+            { id: "052", name: "Barbados", synonyms: ["barbados"], flag: "🇧🇧", capital: "Bridgetown", difficulty: "expert" },
+            { id: "212", name: "Dominica", synonyms: ["dominica"], flag: "🇩🇲", capital: "Roseau", difficulty: "expert" },
+            { id: "308", name: "Grenada", synonyms: ["grenada"], flag: "🇬🇩", capital: "St. George's", difficulty: "expert" },
+            { id: "659", name: "Saint Kitts og Nevis", synonyms: ["saint kitts og nevis", "st kitts og nevis", "st kitts and nevis"], flag: "🇰🇳", capital: "Basseterre", difficulty: "expert" },
+            { id: "662", name: "Saint Lucia", synonyms: ["saint lucia", "st lucia", "st. lucia"], flag: "🇱🇨", capital: "Castries", difficulty: "expert" },
+            { id: "670", name: "Saint Vincent og Grenadinene", synonyms: ["saint vincent og grenadinene", "st vincent og grenadinene", "st vincent and grenadines", "st. vincent", "saint vincent and grenadines"], flag: "🇻🇨", capital: "Kingstown", difficulty: "expert" },
+
+            // Sør-Amerika (12 stater)
+            { id: "170", name: "Colombia", synonyms: ["colombia"], flag: "🇨🇴", capital: "Bogotá", difficulty: "normal" },
+            { id: "862", name: "Venezuela", synonyms: ["venezuela"], flag: "🇻🇪", capital: "Caracas", difficulty: "normal" },
+            { id: "328", name: "Guyana", synonyms: ["guyana"], flag: "🇬🇾", capital: "Georgetown", difficulty: "expert" },
+            { id: "740", name: "Surinam", synonyms: ["surinam", "suriname"], flag: "🇸🇷", capital: "Paramaribo", difficulty: "expert" },
+            { id: "218", name: "Ecuador", synonyms: ["ecuador"], flag: "🇪🇨", capital: "Quito", difficulty: "normal" },
+            { id: "604", name: "Peru", synonyms: ["peru"], flag: "🇵🇪", capital: "Lima", difficulty: "normal" },
+            { id: "076", name: "Brasil", synonyms: ["brasil", "brazil"], flag: "🇧🇷", capital: "Brasília", difficulty: "normal" },
+            { id: "068", name: "Bolivia", synonyms: ["bolivia"], flag: "🇧🇴", capital: "Sucre", difficulty: "normal" },
+            { id: "600", name: "Paraguay", synonyms: ["paraguay"], flag: "🇵🇾", capital: "Asunción", difficulty: "normal" },
+            { id: "152", name: "Chile", synonyms: ["chile"], flag: "🇨🇱", capital: "Santiago", difficulty: "normal" },
+            { id: "032", name: "Argentina", synonyms: ["argentina"], flag: "🇦🇷", capital: "Buenos Aires", difficulty: "normal" },
+            { id: "858", name: "Uruguay", synonyms: ["uruguay"], flag: "🇺🇾", capital: "Montevideo", difficulty: "normal" },
+
+            // Oseania (14 stater)
+            { id: "036", name: "Australia", synonyms: ["australia"], flag: "🇦🇺", capital: "Canberra", difficulty: "normal" },
+            { id: "554", name: "New Zealand", synonyms: ["new zealand", "ny-zealand"], flag: "🇳🇿", capital: "Wellington", difficulty: "normal" },
+            { id: "598", name: "Papua Ny-Guinea", synonyms: ["papua ny-guinea", "papua new guinea"], flag: "🇵🇬", capital: "Port Moresby", difficulty: "expert" },
+            { id: "242", name: "Fiji", synonyms: ["fiji"], flag: "🇫🇯", capital: "Suva", difficulty: "expert" },
+            { id: "090", name: "Salomonøyene", synonyms: ["salomonøyene", "solomon islands"], flag: "🇸🇧", capital: "Honiara", difficulty: "expert" },
+            { id: "548", name: "Vanuatu", synonyms: ["vanuatu"], flag: "🇻🇺", capital: "Port Vila", difficulty: "expert" },
+            { id: "882", name: "Samoa", synonyms: ["samoa"], flag: "🇼🇸", capital: "Apia", difficulty: "expert" },
+            { id: "776", name: "Tonga", synonyms: ["tonga"], flag: "🇹🇴", capital: "Nuku'alofa", difficulty: "expert" },
+            { id: "585", name: "Palau", synonyms: ["palau"], flag: "🇵🇼", capital: "Ngerulmud", difficulty: "expert" },
+            { id: "798", name: "Tuvalu", synonyms: ["tuvalu"], flag: "🇹🇻", capital: "Funafuti", difficulty: "expert" },
+            { id: "520", name: "Nauru", synonyms: ["nauru"], flag: "🇳🇷", capital: "Yaren", difficulty: "expert" },
+            { id: "296", name: "Kiribati", synonyms: ["kiribati"], flag: "🇰🇮", capital: "Tarawa", difficulty: "expert" },
+            { id: "584", name: "Marshalløyene", synonyms: ["marshalløyene", "marshall islands"], flag: "🇲🇭", capital: "Majuro", difficulty: "expert" },
+            { id: "583", name: "Mikronesiaføderasjonen", synonyms: ["mikronesiaføderasjonen", "mikronesia", "micronesia"], flag: "🇫🇲", capital: "Palikir", difficulty: "expert" }
+        ];
+
+        async function buildMapGeometry(mapType) {
+            if (activeMapType === mapType) { 
+                resetMapStyles(); 
+                resetMapZoom(); 
+                return; 
+            }
+            activeMapType = mapType;
+            const width = 800, height = 480;
+            
+            if (!svg) {
+                svg = d3.select("#d3-world-map").attr("viewBox", `0 0 ${width} ${height}`).attr("width", "100%").attr("height", "100%");
+                g = svg.append("g");
+                zoomBehavior = d3.zoom().scaleExtent([1, 40]).on("zoom", (event) => g.attr("transform", event.transform));
+                svg.call(zoomBehavior);
+            } else { 
+                g.selectAll("*").remove(); 
+            }
+
+            if (mapType === 'germany') {
+                projection = d3.geoMercator();
+                if (!germanyData) { 
+                    try {
+                        const res = await fetch("https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json"); 
+                        const geoData = await res.json();
+                        germanyData = geoData.features || geoData;
+                    } catch(e) {
+                        try {
+                            const res2 = await fetch("https://cdn.jsdelivr.net/gh/isellsoap/deutschlandGeoJSON@main/2_bundeslaender/4_niedrig.geo.json");
+                            const geoData2 = await res2.json();
+                            germanyData = geoData2.features || geoData2;
+                        } catch(err) {
+                            console.error("Kunne ikke laste Tyskland-kart", err);
+                        }
+                    }
+                }
+
+                if (germanyData) {
+                    const featureColl = { type: "FeatureCollection", features: germanyData };
+                    projection.fitExtent([[20, 20], [width - 20, height - 20]], featureColl);
+                    path = d3.geoPath().projection(projection);
+
+                    g.selectAll(".country-boundary")
+                        .data(germanyData)
+                        .enter().append("path")
+                        .attr("class", "country-boundary")
+                        .attr("d", path)
+                        .attr("id", d => {
+                            const matchedId = getGermanStateId(d.properties);
+                            d.stateId = matchedId;
+                            return `country-${matchedId}`;
+                        })
+                        .on("click", function(event, d) {
+                            if (currentMode === 'de_click') handleGermanClick(d.stateId, this);
+                        });
+                }
+            } else if (mapType === 'usa') {
+                projection = d3.geoIdentity();
+                if (!usData) { 
+                    const res = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json"); 
+                    const topo = await res.json(); 
+                    usData = topojson.feature(topo, topo.objects.states).features; 
+                }
+                projection.fitSize([width, height], { type: "FeatureCollection", features: usData });
+                path = d3.geoPath().projection(projection);
+
+                g.selectAll(".country-boundary")
+                    .data(usData)
+                    .enter().append("path")
+                    .attr("class", "country-boundary")
+                    .attr("d", path)
+                    .attr("id", d => `country-${d.id}`)
+                    .on("click", function(event, d) {
+                        if (currentMode === 'us_click') handleStateClick(d.id, this);
+                    });
+            } else if (mapType === 'norway') {
+                projection = d3.geoIdentity().reflectY(true);
+                if (!norwayData) { 
+                    const res = await fetch("https://raw.githubusercontent.com/robhop/fylker-og-kommuner/main/Fylker-S.topojson"); 
+                    const topo = await res.json(); 
+                    norwayData = topojson.feature(topo, topo.objects.Fylker).features.filter(d => [3, 11, 15, 18, 31, 32, 33, 34, 39, 40, 42, 46, 50, 55, 56].includes(Number(d.properties.fylkesnummer || d.properties.id))); 
+                }
+                projection.fitExtent([[20, 20], [width - 20, height - 20]], { type: "FeatureCollection", features: norwayData });
+                path = d3.geoPath().projection(projection);
+
+                g.selectAll(".country-boundary")
+                    .data(norwayData)
+                    .enter().append("path")
+                    .attr("class", "country-boundary")
+                    .attr("d", path)
+                    .attr("id", d => `country-${d.properties.fylkesnummer || d.properties.id}`)
+                    .on("click", function(event, d) {
+                        if (currentMode === 'no_click') handleCountyClick(d.properties.fylkesnummer || d.properties.id, this);
+                    });
+            } else {
+                projection = d3.geoEqualEarth();
+                if (!worldData) { 
+                    const res = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"); 
+                    const topo = await res.json(); 
+                    worldData = topojson.feature(topo, topo.objects.countries).features; 
+                }
+                projection.scale(width / 5.4).translate([width / 2, height / 2.1]);
+                path = d3.geoPath().projection(projection);
+
+                g.selectAll(".country-boundary")
+                    .data(worldData)
+                    .enter().append("path")
+                    .attr("class", "country-boundary")
+                    .attr("d", path)
+                    .attr("id", d => `country-${d.id}`);
+            }
+
+            resetMapZoom();
+            resetMapStyles();
+        }
+
+        async function startQuiz() {
+            score = 0; currentQuestionIndex = 0; correctAnswersCount = 0; guessedCountries = []; gameActive = true; attemptsForCurrentQuestion = 0;
+            document.getElementById('missing-countries-container').classList.add('hidden');
+            
+            const badge = document.getElementById('difficulty-badge');
+            
+            if (currentMode === 'de_click') {
+                timeRemaining = 120;
+                badge.innerText = "Tyskland 🇩🇪";
+                currentQuestions = shuffleArray([...ALL_GERMAN_STATES]);
+            } else if (currentMode === 'de_maraton') {
+                timeRemaining = 180;
+                badge.innerText = "Tyskland Marathon 🇩🇪";
+                currentQuestions = ALL_GERMAN_STATES;
+            } else if (currentMode === 'de_state_capitals') {
+                timeRemaining = 120;
+                badge.innerText = "Tyske Hovedsteder 🇩🇪";
+                currentQuestions = shuffleArray(ALL_GERMAN_STATES.map(s => ({ 
+                    id: s.id, 
+                    name: s.name, 
+                    question: `Hva er hovedstaden i ${s.name}?`, 
+                    correct: s.capital, 
+                    options: getRandomOptions(s.capital, 'capital', ALL_GERMAN_STATES) 
+                })));
+            } else if (currentMode === 'us_click') {
+                timeRemaining = 300;
+                badge.innerText = "USA Stat-Klikk 🇺🇸";
+                currentQuestions = shuffleArray([...ALL_US_STATES]);
+            } else if (currentMode === 'us_maraton') {
+                timeRemaining = 300;
+                badge.innerText = "USA Maraton 🇺🇸";
+                currentQuestions = ALL_US_STATES;
+            } else if (currentMode === 'us_state_capitals') {
+                timeRemaining = 300;
+                badge.innerText = "USA Hovedsteder 🇺🇸";
+                currentQuestions = shuffleArray(ALL_US_STATES.map(s => ({ 
+                    id: s.id, 
+                    name: s.name, 
+                    question: `Hva er hovedstaden i ${s.name}?`, 
+                    correct: s.capital, 
+                    options: getRandomOptions(s.capital, 'capital', ALL_US_STATES) 
+                })));
+            } else if (currentMode === 'no_click') {
+                timeRemaining = 120;
+                badge.innerText = "Norge Klikk 🇳🇴";
+                currentQuestions = shuffleArray([...ALL_NORWAY_COUNTIES]);
+            } else if (currentMode === 'no_maraton') {
+                timeRemaining = 120;
+                badge.innerText = "Norge Maraton 🇳🇴";
+                currentQuestions = ALL_NORWAY_COUNTIES;
+            } else if (currentMode === 'capitals') {
+                timeRemaining = 180;
+                badge.innerText = "Hovedsteder 🏛️";
+                let pool = ALL_COUNTRIES;
+                if (currentDifficulty === 'normal') pool = ALL_COUNTRIES.filter(c => c.difficulty === 'normal');
+                currentQuestions = shuffleArray(pool.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    question: `Hva er hovedstaden i ${c.name}?`,
+                    correct: c.capital,
+                    options: getRandomOptions(c.capital, 'capital', ALL_COUNTRIES)
+                })));
+            } else if (currentMode === 'map') {
+                timeRemaining = 300;
+                badge.innerText = "Kart-utfordring 🗺️";
+                let pool = ALL_COUNTRIES;
+                if (currentDifficulty === 'normal') pool = ALL_COUNTRIES.filter(c => c.difficulty === 'normal');
+                currentQuestions = shuffleArray([...pool]);
+            } else if (currentMode === 'all_countries') {
+                timeRemaining = 600;
+                badge.innerText = "Alle Landene 🏆";
+                let pool = ALL_COUNTRIES;
+                if (currentDifficulty === 'normal') pool = ALL_COUNTRIES.filter(c => c.difficulty === 'normal');
+                currentQuestions = pool;
+            } else if (currentMode === 'letter_maraton') {
+                timeRemaining = 180;
+                badge.innerText = `Bokstav ${selectedLetter} 🔠`;
+                currentQuestions = ALL_COUNTRIES.filter(c => c.name.toUpperCase().startsWith(selectedLetter));
+            } else if (currentMode === 'flags') {
+                timeRemaining = 180;
+                badge.innerText = "Flagg-Quiz 🇳🇴";
+                let pool = ALL_COUNTRIES;
+                if (currentDifficulty === 'normal') pool = ALL_COUNTRIES.filter(c => c.difficulty === 'normal');
+                currentQuestions = shuffleArray(pool.map(c => ({
+                    ...c,
+                    correct: c.name,
+                    options: getRandomOptions(c.name, 'name', ALL_COUNTRIES)
+                })));
+            } else if (currentMode === 'open_countries_maraton') {
+                timeRemaining = 180;
+                badge.innerText = "Uten lukkede bokstaver 🧩";
+                currentQuestions = ALL_COUNTRIES.filter(c => !/[abdegopq]/i.test(c.name));
+            } else if (currentMode === 'open_capitals_maraton') {
+                timeRemaining = 180;
+                badge.innerText = "Hovedsteder u. lukkede b. 🏛️";
+                currentQuestions = ALL_COUNTRIES.filter(c => !/[abdegopq]/i.test(c.capital)).map(c => ({
+                    id: c.id,
+                    name: c.capital,
+                    synonyms: [c.capital.toLowerCase()]
+                }));
+            } else {
+                timeRemaining = 60;
+                badge.innerText = "Normal 🟢";
+                currentQuestions = shuffleArray([...ALL_COUNTRIES]);
+            }
+
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            let mapType = "world";
+            if (currentMode.includes('us_')) mapType = "usa";
+            else if (currentMode.includes('no_')) mapType = "norway";
+            else if (currentMode.includes('de_')) mapType = "germany";
+            
+            await buildMapGeometry(mapType);
+            startTimer();
+            showNextQuestion();
+        }
+
+        function showNextQuestion() {
+            if (currentQuestionIndex >= currentQuestions.length) { endGame(); return; }
+            attemptsForCurrentQuestion = 0;
+            const q = currentQuestions[currentQuestionIndex];
+            const textInput = document.getElementById('text-input-container');
+            const choiceInput = document.getElementById('multiple-choice-container');
+            const mapContainer = document.getElementById('map-container');
+            const mediaContainer = document.getElementById('media-container');
+
+            // Nullstill uthevet land/område fra forrige runde
+            d3.selectAll('.country-boundary').classed('active-target', false);
+
+            if (currentMode === 'map') {
+                document.getElementById('game-question').innerText = `Hvilket land er markert? (${currentQuestionIndex + 1} / ${currentQuestions.length})`;
+                mapContainer.classList.remove('hidden'); 
+                textInput.classList.remove('hidden'); 
+                choiceInput.classList.add('hidden');
+                mediaContainer.classList.add('hidden');
+                
+                const targetEl = d3.select(`#country-${q.id}`);
+                if (targetEl && targetEl.node()) {
+                    targetEl.classed('active-target', true);
+                }
+                document.getElementById('answer-input').value = "";
+                document.getElementById('answer-input').focus();
+            } else if (currentMode === 'flags') {
+                mediaContainer.classList.remove('hidden');
+                mapContainer.classList.add('hidden');
+                document.getElementById('flag-display').innerText = q.flag || "🏳️";
+                document.getElementById('game-question').innerText = `Hvilket land tilhører dette flagget? (${currentQuestionIndex + 1} / ${currentQuestions.length})`;
+                if (flagInputType === 'choice') {
+                    textInput.classList.add('hidden');
+                    choiceInput.classList.remove('hidden');
+                    generateMultipleChoice(q.options, q.correct, q);
+                } else {
+                    choiceInput.classList.add('hidden');
+                    textInput.classList.remove('hidden');
+                    document.getElementById('answer-input').value = "";
+                    document.getElementById('answer-input').focus();
+                }
+            } else if (currentMode === 'de_click' || currentMode === 'us_click' || currentMode === 'no_click') {
+                document.getElementById('game-question').innerText = `Finn og klikk på: ${q.name}`;
+                mapContainer.classList.remove('hidden'); 
+                textInput.classList.add('hidden'); 
+                choiceInput.classList.add('hidden');
+                mediaContainer.classList.add('hidden');
+            } else if (currentMode.endsWith('_maraton') || currentMode === 'all_countries') {
+                let total = currentQuestions.length;
+                document.getElementById('game-question').innerText = `Skriv steder! Funnet: ${guessedCountries.length} / ${total}`;
+                mapContainer.classList.remove('hidden'); 
+                textInput.classList.remove('hidden'); 
+                choiceInput.classList.add('hidden');
+                mediaContainer.classList.add('hidden');
+                document.getElementById('answer-input').focus();
+            } else if (currentMode.includes('_capitals') || currentMode === 'capitals') {
+                document.getElementById('game-question').innerText = q.question;
+                generateMultipleChoice(q.options, q.correct, q);
+                mapContainer.classList.add('hidden'); 
+                textInput.classList.add('hidden'); 
+                mediaContainer.classList.add('hidden');
+                choiceInput.classList.remove('hidden');
+            } else {
+                document.getElementById('game-question').innerText = q.name || q.question;
+            }
+        }
+
+        function checkMapInputInline() {
+            if (!gameActive) return;
+            const typedVal = document.getElementById('answer-input').value.trim().toLowerCase();
+            if (!typedVal) return;
+
+            if (currentMode === 'map') {
+                const q = currentQuestions[currentQuestionIndex];
+                const isMatch = (q.synonyms && q.synonyms.some(s => s.toLowerCase() === typedVal)) || (q.name && q.name.toLowerCase() === typedVal);
+                if (isMatch) {
+                    playSound('correct');
+                    score += 10;
+                    correctAnswersCount++;
+                    guessedCountries.push(q.id);
+                    const el = d3.select(`#country-${q.id}`);
+                    if (el && el.node()) el.attr("class", "country-boundary correct-answer");
+                    document.getElementById('answer-input').value = "";
+                    updateScoreUI();
+                    currentQuestionIndex++;
+                    showNextQuestion();
+                }
+                return;
+            }
+
+            if (currentMode === 'flags' && flagInputType === 'write') {
+                const q = currentQuestions[currentQuestionIndex];
+                const isMatch = (q.synonyms && q.synonyms.some(s => s.toLowerCase() === typedVal)) || (q.name && q.name.toLowerCase() === typedVal);
+                if (isMatch) {
+                    playSound('correct');
+                    score += 10;
+                    correctAnswersCount++;
+                    guessedCountries.push(q.id || q.name);
+                    document.getElementById('answer-input').value = "";
+                    updateScoreUI();
+                    currentQuestionIndex++;
+                    showNextQuestion();
+                }
+                return;
+            }
+
+            let dataset = currentQuestions;
+            if (currentMode === 'de_maraton') dataset = ALL_GERMAN_STATES;
+            else if (currentMode === 'us_maraton') dataset = ALL_US_STATES;
+            else if (currentMode === 'no_maraton') dataset = ALL_NORWAY_COUNTIES;
+
+            const matched = dataset.find(s => {
+                const key = s.id || s.name;
+                if (guessedCountries.includes(key)) return false;
+                if (s.synonyms && s.synonyms.some(syn => syn.toLowerCase() === typedVal)) return true;
+                if (s.name && s.name.toLowerCase() === typedVal) return true;
+                return false;
+            });
+
+            if (matched) {
+                playSound('correct'); 
+                score += 10; 
+                correctAnswersCount++;
+                const itemKey = matched.id || matched.name;
+                guessedCountries.push(itemKey);
+                
+                if (matched.id) {
+                    const el = d3.select(`#country-${matched.id}`);
+                    if (el && el.node()) el.attr("class", "country-boundary correct-answer");
+                }
+                
+                document.getElementById('answer-input').value = "";
+                updateScoreUI();
+                
+                if (guessedCountries.length === dataset.length) endGame();
+                else showNextQuestion();
+            }
+        }
+
+        function getRandomOptions(correctVal, prop, dataset) {
+            const allOthers = dataset.map(d => d[prop]).filter(v => v !== correctVal);
+            const shuffled = shuffleArray(allOthers).slice(0, 3);
+            shuffled.push(correctVal);
+            return shuffleArray(shuffled);
+        }
+
+        function generateMultipleChoice(opts, corr, questionObj) {
+            const container = document.getElementById('multiple-choice-container');
+            container.innerHTML = "";
+            opts.forEach(o => {
+                const b = document.createElement('button');
+                b.className = "bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition shadow-sm text-left flex justify-between items-center";
+                b.innerText = o;
+                b.onclick = () => {
+                    if (clickTransitionActive) return;
+                    clickTransitionActive = true;
+
+                    if (o === corr) { 
+                        playSound('correct'); 
+                        score += 10; 
+                        correctAnswersCount++; 
+                        if (questionObj && (questionObj.id || questionObj.name)) {
+                            guessedCountries.push(questionObj.id || questionObj.name);
+                        }
+                        b.classList.add('!bg-emerald-500', '!text-white', '!border-emerald-600'); 
+                    } else { 
+                        playSound('wrong'); 
+                        b.classList.add('!bg-red-500', '!text-white', '!border-red-600'); 
+                        Array.from(container.children).forEach(child => {
+                            if (child.innerText.trim() === corr) {
+                                child.classList.add('!bg-emerald-500', '!text-white', '!border-emerald-600');
+                            }
+                        });
+                    }
+                    setTimeout(() => { 
+                        clickTransitionActive = false;
+                        currentQuestionIndex++; 
+                        showNextQuestion(); 
+                    }, 1200);
+                    updateScoreUI();
+                };
+                container.appendChild(b);
+            });
+        }
+
+        function resetMapStyles() { 
+            d3.selectAll('.country-boundary').each(function() {
+                const idVal = this.getAttribute('id')?.replace('country-', '');
+                if (guessedCountries.includes(idVal)) {
+                    this.setAttribute('class', 'country-boundary correct-answer');
+                } else {
+                    this.setAttribute('class', 'country-boundary');
+                }
+            });
+        }
+
+        function resetMapZoom() { if (svg && zoomBehavior) svg.transition().call(zoomBehavior.transform, d3.zoomIdentity); }
+        function zoomIn() { if (svg && zoomBehavior) svg.transition().call(zoomBehavior.scaleBy, 1.5); }
+        function zoomOut() { if (svg && zoomBehavior) svg.transition().call(zoomBehavior.scaleBy, 0.7); }
+
+        function updateScoreUI() { document.getElementById('score-text').innerText = score; document.getElementById('header-score-val').innerText = score; }
+        function toggleTheme() { document.documentElement.classList.toggle('dark'); }
+        function goHome() { location.reload(); }
+        
+        function skipQuestion() {
+            if (!gameActive) return;
+            currentQuestionIndex++;
+            showNextQuestion();
+        }
+
+        function startTimer() { timer = setInterval(() => { timeRemaining--; document.getElementById('timer-text').innerText = formatTime(timeRemaining); if (timeRemaining <= 0) endGame(); }, 1000); }
+        function formatTime(s) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
+        function shuffleArray(a) { return a.sort(() => Math.random() - 0.5); }
+
+        function triggerExitConfirm() { document.getElementById('confirm-modal').classList.remove('hidden'); if(timer) clearInterval(timer); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); startTimer(); }
+        function confirmExit() { goHome(); }
+        function startQuizWithDirectMode(m) { currentMode = m; startQuiz(); }
+        
+        function selectDifficulty(m) { currentMode = m; document.getElementById('difficulty-modal').classList.remove('hidden'); }
+        function closeDifficultyModal() { document.getElementById('difficulty-modal').classList.add('hidden'); }
+        function confirmStartWithDifficulty(diff) { currentDifficulty = diff; closeDifficultyModal(); startQuiz(); }
+
+        function openLetterModal() {
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+            const container = document.getElementById('letter-buttons-container');
+            container.innerHTML = "";
+            letters.forEach(l => {
+                const btn = document.createElement('button');
+                btn.className = "bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white p-3 rounded-xl font-bold text-lg border dark:border-slate-700 transition";
+                btn.innerText = l;
+                btn.onclick = () => { selectedLetter = l; closeLetterModal(); startQuizWithDirectMode('letter_maraton'); };
+                container.appendChild(btn);
+            });
+            document.getElementById('letter-modal').classList.remove('hidden');
+        }
+        function closeLetterModal() { document.getElementById('letter-modal').classList.add('hidden'); }
+
+        function openFlagSettings(m) { currentMode = m; document.getElementById('flag-settings-modal').classList.remove('hidden'); }
+        function setFlagInputType(t) { flagInputType = t; }
+        function confirmStartFlagQuiz() { closeFlagSettingsModal(); startQuiz(); }
+        function closeFlagSettingsModal() { document.getElementById('flag-settings-modal').classList.add('hidden'); }
+
+        function endGame() {
+            gameActive = false; 
+            if(timer) clearInterval(timer);
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-correct').innerText = `${correctAnswersCount} / ${currentQuestions.length}`;
+
+            // Viser manglende steder dersom du ikke fikk alle
+            const missingContainer = document.getElementById('missing-countries-container');
+            const missingList = document.getElementById('missing-countries-list');
+            if (correctAnswersCount < currentQuestions.length) {
+                const missing = currentQuestions
+                    .filter(q => !guessedCountries.includes(q.id || q.name))
+                    .map(q => {
+                        if (q.name && q.correct) {
+                            return `${q.name} (${q.correct})`;
+                        }
+                        return q.name || q.correct || q.id;
+                    });
+                if (missing.length > 0) {
+                    missingList.innerText = missing.join(", ");
+                    missingContainer.classList.remove('hidden');
+                } else {
+                    missingContainer.classList.add('hidden');
+                }
+            } else {
+                missingContainer.classList.add('hidden');
+            }
+        }
+        
+        function restartQuiz() {
+            document.getElementById('result-screen').classList.add('hidden');
+            startQuiz();
+        }
+    </script>
+</body>
+</html>
