@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tysk Wort-Meister</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+    <!-- Firebase services -->
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Sikker initialisering for Google Sites
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tysk-wort-meister';
+
+        // 1. Hent lokale rekorder umiddelbart (dette fungerer alltid)
+        const getLocalScores = () => {
+            try {
+                const stored = localStorage.getItem(`scores_${appId}`);
+                return stored ? JSON.parse(stored) : { easy: 0, medium: 0, hard: 0 };
+            } catch(e) {
+                return { easy: 0, medium: 0, hard: 0 };
+            }
+        };
+
+        window.highscores = getLocalScores();
+        window.user = null;
+
+        // 2. Funksjon for å tegne opp rekordene i grensesnittet
+        window.updateHighscoreUI = () => {
+            const list = document.getElementById('highscore-display');
+            if (!list) return;
+
+            list.innerHTML = `
+                <div class="mt-6 pt-6 border-t border-gray-100">
+                    <p class="text-[10px] text-gray-400 font-black uppercase mb-3 text-center">Dine Rekorder</p>
+                    <div class="flex justify-center gap-4">
+                        <div class="text-center bg-green-50 px-3 py-2 rounded-xl min-w-[70px] border border-green-100">
+                            <p class="text-[9px] text-green-600 font-bold uppercase">Enkel</p>
+                            <p class="text-lg font-black text-green-700">${window.highscores.easy || 0}</p>
+                        </div>
+                        <div class="text-center bg-yellow-50 px-3 py-2 rounded-xl min-w-[70px] border border-yellow-100">
+                            <p class="text-[9px] text-yellow-600 font-bold uppercase">Middels</p>
+                            <p class="text-lg font-black text-yellow-700">${window.highscores.medium || 0}</p>
+                        </div>
+                        <div class="text-center bg-red-50 px-3 py-2 rounded-xl min-w-[70px] border border-red-100">
+                            <p class="text-[9px] text-red-600 font-bold uppercase">Vanskelig</p>
+                            <p class="text-lg font-black text-red-700">${window.highscores.hard || 0}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // 3. Prøv å koble til Firebase (vil feile stille hvis vi er i Google Sites uten variabler)
+        let db = null;
+        let auth = null;
+
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await auth.signInWithCustomToken(__initial_auth_token);
+                        } else {
+                            await auth.signInAnonymously();
+                        }
+                    } catch (error) {
+                        console.warn("Auth error:", error);
+                    }
+                };
+
+                auth.onAuthStateChanged((user) => {
+                    window.user = user;
+                    if (user && db) {
+                        const scoreDocRef = db.doc(`artifacts/${appId}/users/${user.uid}/settings/scores`);
+                        scoreDocRef.onSnapshot((docSnap) => {
+                            if (docSnap.exists) {
+                                const cloudScores = docSnap.data();
+                                // Kombiner sky og lokale data
+                                window.highscores = {
+                                    easy: Math.max(window.highscores.easy, cloudScores.easy || 0),
+                                    medium: Math.max(window.highscores.medium, cloudScores.medium || 0),
+                                    hard: Math.max(window.highscores.hard, cloudScores.hard || 0)
+                                };
+                                localStorage.setItem(`scores_${appId}`, JSON.stringify(window.highscores));
+                            }
+                            window.updateHighscoreUI();
+                        }, (error) => {
+                            console.warn("Firestore listener error:", error);
+                            window.updateHighscoreUI();
+                        });
+                    }
+                });
+
+                initAuth();
+            }
+        } catch (e) {
+            console.warn("Kjører i lokal modus. Firebase er deaktivert.");
+        }
+
+        // 4. Sikker lagrefunksjon
+        window.saveHighScore = async (difficulty, score) => {
+            if (score > (window.highscores[difficulty] || 0)) {
+                window.highscores[difficulty] = score;
+                
+                // Lagre lokalt (fungerer alltid)
+                try {
+                    localStorage.setItem(`scores_${appId}`, JSON.stringify(window.highscores));
+                } catch(e) {}
+                
+                window.updateHighscoreUI();
+                
+                // Prøv å lagre til skyen hvis tilgjengelig
+                if (window.user && db) {
+                    const scoreDocRef = db.doc(`artifacts/${appId}/users/${window.user.uid}/settings/scores`);
+                    try {
+                        await scoreDocRef.set(window.highscores, { merge: true });
+                    } catch (error) {
+                        console.warn("Cloud save failed:", error);
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            position: relative;
+        }
+
+        .word-letter {
+            border-bottom: 3px solid #3b82f6;
+            min-width: 32px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0 4px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .letter-revealed { color: #10b981; border-bottom-color: #10b981; transform: scale(1.1); }
+        .shake { animation: shake 0.4s both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .streak-badge {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .time-bonus {
+            position: absolute;
+            color: #10b981;
+            font-weight: 900;
+            animation: floatUp 1s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Startskjerm -->
+        <div id="start-screen" class="flex flex-col items-center text-center">
+            <div class="mb-6 bg-blue-600 text-white p-4 rounded-3xl shadow-xl rotate-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-1.9M3 21v-4.1m0 4.1h4.1M19 3l-1.9 1.9M19 3v4.1m0-4.1h-4.1M3 3l1.9 1.9M3 3v4.1m0-4.1h4.1M19 21l-1.9-1.9M19 21v-4.1m0 4.1h-4.1M12 8l-4 4 4 4 4-4-4-4Z"/></svg>
+            </div>
+            <h1 class="text-4xl font-[900] text-gray-800 mb-2 tracking-tighter italic uppercase">Wort-Meister</h1>
+            <p class="text-gray-500 text-sm mb-10 font-semibold tracking-wide uppercase">Tysk ord-utfordring</p>
+            
+            <div class="space-y-3 w-full max-w-[280px]">
+                <button onclick="startGame('easy')" class="w-full bg-white border-2 border-green-500 text-green-700 font-black py-4 rounded-2xl shadow-sm hover:bg-green-50 active:scale-95 transition-all text-lg uppercase">Enkel</button>
+                <button onclick="startGame('medium')" class="w-full bg-white border-2 border-yellow-500 text-yellow-700 font-black py-4 rounded-2xl shadow-sm hover:bg-yellow-50 active:scale-95 transition-all text-lg uppercase">Middels</button>
+                <button onclick="startGame('hard')" class="w-full bg-white border-2 border-red-500 text-red-700 font-black py-4 rounded-2xl shadow-sm hover:bg-red-50 active:scale-95 transition-all text-lg uppercase">Vanskelig</button>
+            </div>
+
+            <div id="highscore-display" class="w-full"></div>
+        </div>
+
+        <!-- Spillskjerm -->
+        <div id="play-screen" class="hidden flex flex-col">
+            <div class="flex justify-between items-center mb-8 relative">
+                <div>
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Poeng</p>
+                    <p id="score" class="text-4xl font-black text-blue-600">0</p>
+                </div>
+                <div class="flex flex-col items-center relative">
+                    <div id="streak-container" class="h-8 mb-1 flex items-center justify-center"></div>
+                    <div id="timer" class="text-2xl font-black text-gray-700 bg-gray-100 px-6 py-1 rounded-full min-w-[80px] text-center">60</div>
+                    <div id="bonus-anchor" class="absolute top-10 w-full flex justify-center"></div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Skips</p>
+                    <div id="skips-display" class="flex justify-end gap-1.5 mt-1"></div>
+                </div>
+            </div>
+
+            <div class="relative bg-blue-600 text-white rounded-[2rem] p-8 mb-10 text-center shadow-xl min-h-[160px] flex flex-col justify-center">
+                <p id="german-definition" class="text-2xl font-black leading-tight mb-4"></p>
+                <div class="mx-auto w-12 h-1 bg-white/20 rounded-full mb-4"></div>
+                <p id="norwegian-definition" class="text-sm font-semibold opacity-80 italic"></p>
+            </div>
+
+            <div id="word-display" class="flex justify-center flex-wrap gap-y-4 mb-12 min-h-[50px]"></div>
+
+            <input type="text" id="word-input" autocomplete="off" class="absolute opacity-0 pointer-events-none" inputmode="text">
+            
+            <button id="skip-btn" onclick="skipWord()" class="w-full bg-gray-100 py-5 rounded-2xl font-black text-gray-600 hover:bg-gray-200 active:scale-95 transition-all uppercase tracking-widest">Hopp over (Esc)</button>
+        </div>
+
+        <!-- Sluttskjerm -->
+        <div id="end-screen" class="hidden flex flex-col items-center text-center">
+            <h2 class="text-2xl font-black text-gray-800 mb-1 uppercase tracking-tight">Runden er over!</h2>
+            <p class="text-gray-400 text-sm mb-6 font-bold uppercase tracking-widest" id="end-difficulty-text"></p>
+            <div class="text-8xl font-[950] text-blue-600 mb-10 tracking-tighter" id="final-score">0</div>
+            <div class="space-y-3 w-full max-w-[280px]">
+                <button id="replay-btn" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all text-xl uppercase tracking-wide">Spill igjen</button>
+                <button onclick="resetGame()" class="w-full bg-gray-50 text-gray-500 font-black py-4 rounded-2xl hover:bg-gray-100 active:scale-95 transition-all uppercase">Hjem</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const words = {
+            easy: [
+                { word: "APFEL", de: "Eine Frucht, die rot oder grün ist.", no: "En frukt som er rød eller grønn." },
+                { word: "HUND", de: "Das Tier ist der beste Freund des Menschen.", no: "Dette dyret er menneskets beste venn." },
+                { word: "BUCH", de: "Man liest es, um eine Geschichte zu erfahren.", no: "Man leser det for å lære en historie." },
+                { word: "SCHULE", de: "Der Ort, wo Kinder jeden Tag lernen.", no: "Stedet der barn lærer hver dag." },
+                { word: "WASSER", de: "Wir trinken das, wenn wir Durst haben.", no: "Dette drikker vi når vi er tørste." },
+                { word: "BROT", de: "Man isst es oft zum Frühstück mit Käse.", no: "Man spiser det ofte til frokost med ost." },
+                { word: "MUTTER", de: "Die Frau, die dich geboren hat.", no: "Kvinnen som fødte deg." },
+                { word: "HAUS", de: "Ein Gebäude, in dem eine Familie wohnt.", no: "En bygning der en familie bor." },
+                { word: "TISCH", de: "Ein Möbelstück, an dem man isst.", no: "Et møbel man sitter ved og spiser." },
+                { word: "STUHL", de: "Man sitzt darauf am Tisch.", no: "Man sitter på denne ved bordet." },
+                { word: "MILCH", de: "Ein weißes Getränk von der Kuh.", no: "En hvit drikk fra kua." },
+                { word: "KATZE", de: "Ein Haustier, das 'Miau' macht.", no: "Et husdyr som sier 'miau'." },
+                { word: "SONNE", de: "Sie scheint am Himmel und ist sehr heiß.", no: "Den skinner på himmelen og er veldig varm." },
+                { word: "GELD", de: "Man braucht es, um Dinge zu kaufen.", no: "Man trenger dette for å kjøpe ting." },
+                { word: "VATER", de: "Der Mann, der dein Elternteil ist.", no: "Mannen som er forelderen din." },
+                { word: "AUTO", de: "Ein Fahrzeug mit vier Rädern.", no: "Et kjøretøy med fire hjul." },
+                { word: "BALL", de: "Man spielt damit Fußball oder Tennis.", no: "Man spiller fotball eller tennis med denne." },
+                { word: "FISCH", de: "Dieses Tier lebt und schwimmt im Wasser.", no: "Dette dyret lever og svømmer i vannet." },
+                { word: "KIND", de: "Eine kleine Person, kein Erwachsener.", no: "En liten person, ikke en voksen." },
+                { word: "TASCHE", de: "Hier trägt man seine Schulsachen.", no: "Her bærer man skolesakene sine." },
+                { word: "KOPF", de: "Der oberste Teil des Körpers.", no: "Den øverste delen av kroppen." },
+                { word: "HAND", de: "Man benutzt sie zum Greifen und Schreiben.", no: "Man bruker den til å gripe og skrive." },
+                { word: "FUẞ", de: "Teil des Beins, auf dem man steht.", no: "Delen av beinet man står på." },
+                { word: "LAMPE", de: "Sie macht Licht im Zimmer.", no: "Den lager lys i rommet." },
+                { word: "UHR", de: "Sie zeigt uns die Zeit.", no: "Den viser oss tiden." },
+                { word: "BETT", de: "Hier schläft man in der Nacht.", no: "Her sover man om natten." },
+                { word: "TÜR", de: "Man öffnet sie, um in einen Raum zu gehen.", no: "Man åpner den for å gå inn i et rom." },
+                { word: "BAUM", de: "Eine große Pflanze im Wald mit Blättern.", no: "En stor plante i skogen med blader." },
+                { word: "BLUME", de: "Eine schöne Pflanze, oft bunt.", no: "En vakker plante, ofte fargerik." },
+                { word: "VOGEL", de: "Dieses Tier kann fliegen und singt.", no: "Dette dyret kan fly og synger." },
+                { word: "KÄSE", de: "Ein gelbes Lebensmittel aus Milch.", no: "En gul matvare laget av melk." },
+                { word: "EI", de: "Ein Huhn legt das jeden Tag.", no: "En høne legger dette hver dag." },
+                { word: "SAFT", de: "Ein Getränk aus Früchten.", no: "En drikk laget av frukt." },
+                { word: "TEE", de: "Ein heißes Getränk aus Blättern.", no: "En varm drikk laget av blader." },
+                { word: "SALZ", de: "Man gibt es ins Wasser beim Kochen.", no: "Man har det i vannet når man koker mat." },
+                { word: "REIS", de: "Kleine weiße Körner, die man isst.", no: "Små hvite korn man spiser." },
+                { word: "BANANE", de: "Eine lange, gelbe Frucht.", no: "En lang, gul frukt." },
+                { word: "WURST", de: "Ein Fleischprodukt, oft auf Brot.", no: "Et kjøttprodukt, ofte på brød." },
+                { word: "SUPPE", de: "Ein flüssiges Essen, das warm ist.", no: "Flytende mat som er varm." },
+                { word: "KUCHEN", de: "Ein süßes Gebäck zum Geburtstag.", no: "Bakverk som er søtt, ofte til bursdag." },
+                { word: "KEKS", de: "Ein kleines, hartes Gebäck.", no: "Et lite, hardt bakverk." },
+                { word: "ZUCKER", de: "Es macht Tee oder Kaffee süß.", no: "Det gjør te eller kaffe søt." },
+                { word: "REGEN", de: "Wasser, das aus den Wolken fällt.", no: "Vann som faller fra skyene." },
+                { word: "SCHNEE", de: "Weißes, kaltes Wasser im Winter.", no: "Hvitt, kaldt vann om vinteren." },
+                { word: "WIND", de: "Bewegte Luft draußen.", no: "Luft som beveger seg utendørs." },
+                { word: "MOND", de: "Er leuchtet nachts am Himmel.", no: "Den lyser om natten på himmelen." },
+                { word: "STERN", de: "Ein kleiner Lichtpunkt in der Nacht.", no: "Et lite lyspunkt om natten." },
+                { word: "BERG", de: "Ein sehr hoher Teil der Erde.", no: "En veldig høy del av jorda." },
+                { word: "SEE", de: "Ein großes Gewässer mit Süßwasser.", no: "En stor ansamling med ferskvann." },
+                { word: "MEER", de: "Viel Salzwasser zwischen Kontinenten.", no: "Mye saltvann mellom kontinenter." },
+                { word: "FLUSS", de: "Wasser, das durch das Land fließt.", no: "Vann som renner gjennom landet." },
+                { word: "WALD", de: "Viele Bäume an einem Ort.", no: "Mange trær på ett sted." },
+                { word: "WEG", de: "Hier kann man gehen oder fahren.", no: "Her kan man gå eller kjøre." },
+                { word: "STADT", de: "Ein Ort mit vielen Häusern und Läden.", no: "Et sted med mange hus og butikker." },
+                { word: "DORF", de: "Ein kleiner Ort mit wenigen Häusern.", no: "Et lite sted med få hus." },
+                { word: "STRASSE", de: "Hier fahren die Autos in der Stadt.", no: "Her kjører bilene i byen." },
+                { word: "NAME", de: "So nennt man eine Person.", no: "Dette kaller man en person." },
+                { word: "FREUND", de: "Eine Person, die man sehr mag.", no: "En person man liker veldig godt." },
+                { word: "SPIEL", de: "Etwas, das man zum Spaß macht.", no: "Noe man gjør for moro skyld." },
+                { word: "LIED", de: "Musik mit Text zum Mitsingen.", no: "Musikk med tekst man kan synge med på." },
+                { word: "BILD", de: "Man sieht es an der Wand oder im Buch.", no: "Man ser det på veggen eller i en bok." },
+                { word: "FARBE", de: "Blau, Rot und Gelb sind Beispiele.", no: "Blå, rød og gul er eksempler." },
+                { word: "NR.", de: "1, 2, 3 sind Zeichen dafür.", no: "1, 2, 3 er tegn for dette." },
+                { word: "TAG", de: "Die Zeit zwischen Morgen und Abend.", no: "Tiden mellom morgen og kveld." },
+                { word: "NACHT", no: "Wenn es dunkel ist und wir schlafen.", no: "Når det er mørkt og vi sover." },
+                { word: "JAHR", de: "Es hat 365 Tage oder 12 Monate.", no: "Det har 365 dager eller 12 måneder." },
+                { word: "WOCHE", de: "Sie besteht aus sieben Tagen.", no: "Den består av syv dager." },
+                { word: "MUND", de: "Teil des Gesichts zum Essen und Sprechen.", no: "Del av ansiktet til å spise og snakke med." },
+                { word: "NASE", de: "Man benutzt sie zum Riechen.", no: "Man bruker den til å lukte." },
+                { word: "AUGE", de: "Damit können wir alles sehen.", no: "Med disse kan vi se alt." },
+                { word: "OHR", de: "Man braucht es zum Hören.", no: "Man trenger det for å høre." },
+                { word: "HAAR", de: "Es wächst auf dem Kopf.", no: "Det vokser på hodet." },
+                { word: "BEIN", de: "Man benutzt es zum Laufen.", no: "Man bruker det til å gå." },
+                { word: "ARM", de: "Körperteil zwischen Hand und Schulter.", no: "Kroppsdel mellom hånd og skulder." },
+                { word: "HERZ", de: "Es pumpt Blut durch den Körper.", no: "Det pumper blod gjennom kroppen." },
+                { word: "KLEID", de: "Ein Kleidungsstück für Frauen.", no: "Et klesplagg for kvinner." },
+                { word: "HOSE", de: "Man trägt sie an den Beinen.", no: "Man har den på beina." },
+                { word: "HEMD", de: "Kleidung für den Oberkörper mit Knöpfen.", no: "Klær for overkroppen med knapper." },
+                { word: "JACKE", de: "Man zieht sie an, wenn es kalt ist.", no: "Man tar den på når det er kaldt." },
+                { word: "SCHUH", de: "Man trägt ihn an den Füßen draußen.", no: "Man har den på føttene utendørs." },
+                { word: "HUT", de: "Man trägt ihn auf dem Kopf.", no: "Man har den på hodet." },
+                { word: "BRIEF", de: "Eine Nachricht auf Papier in einem Umschlag.", no: "En melding på papir i en konvolutt." },
+                { word: "STIFT", de: "Man benutzt ihn zum Schreiben.", no: "Man bruker den til å skrive." },
+                { word: "BLATT", de: "Ein Teil vom Baum oder Papier.", no: "En del av et tre eller papir." },
+                { word: "FENSTER", de: "Teil der Wand aus Glas.", no: "Del av veggen laget av glass." },
+                { word: "KÜCHE", de: "Hier kocht man das Essen.", no: "Her lager man maten." },
+                { word: "BAD", de: "Hier wäscht man sich.", no: "Her vasker man seg." },
+                { word: "MAUS", de: "Ein kleines Tier oder Computerzubehör.", no: "Et lite dyr eller datatilbehør." },
+                { word: "PFERD", de: "Ein großes Tier, auf dem man reiten kann.", no: "Et stort dyr man kan ri på." },
+                { word: "KUH", de: "Ein Tier auf dem Bauernhof für Milch.", no: "Et dyr på gården som gir melk." },
+                { word: "SCHWEIN", de: "Ein rosa Tier auf dem Bauernhof.", no: "Et rosa dyr på gården." },
+                { word: "BUS", de: "Ein großes Auto für viele Personen.", no: "En stor bil for mange personer." },
+                { word: "ZUG", de: "Er fährt auf Schienen.", no: "Den kjører på skinner." },
+                { word: "BOOT", de: "Ein kleines Fahrzeug auf dem Wasser.", no: "Et lite kjøretøy på vannet." },
+                { word: "BROT", de: "Grundnahrungsmittel beim Bäcker.", no: "Basismatvare hos bakeren." },
+                { word: "WURST", de: "Belag für das Pausenbrot.", no: "Pålegg til matpakken." },
+                { word: "OBST", de: "Sammelname für Äpfel, Birnen usw.", no: "Samlenavn for epler, pærer osv." },
+                { word: "GEMÜSE", de: "Tomaten und Gurken sind Beispiele dafür.", no: "Tomater og agurker er eksempler på dette." },
+                { word: "GLAS", de: "Daraus trinkt man Wasser.", no: "Man drikker vann av dette." },
+                { word: "TELLER", de: "Darauf liegt das Essen beim Essen.", no: "Maten ligger på denne når man spiser." }
+            ],
+            medium: [
+                { word: "FAHRRAD", de: "Ein Fahrzeug mit zwei Rädern ohne motor.", no: "Et kjøretøy med to hjul uten motor." },
+                { word: "FRÜHSTÜCK", de: "Die erste Mahlzeit des Tages am Morgen.", no: "Dagens første måltid om morgenen." },
+                { word: "WETTER", de: "Es kann sonnig, regnerisch oder windig sein.", no: "Det kan være sol, regn eller vind." },
+                { word: "REISE", de: "Wenn man wegfährt, um Urlaub zu machen.", no: "Når man reiser bort for å ha ferie." },
+                { word: "KÜCHE", de: "Der Raum, in dem man das Essen kocht.", no: "Rommet der man lager mat." },
+                { word: "FENSTER", de: "Ein Teil der Wand, durch den man sieht.", no: "En del av veggen som man kan se gjennom." },
+                { word: "HERBST", de: "Die Jahreszeit, wenn die Blätter bunt werden.", no: "Årstiden når bladene blir fargerike." },
+                { word: "ZEITUNG", de: "Ein gedrucktes Medium mit Nachrichten.", no: "Et trykt medium med nyheter." },
+                { word: "BAHNHOF", de: "Der Ort, wo man in den Zug einsteigt.", no: "Stedet der man går på toget." },
+                { word: "FLUGZEUG", de: "Ein transportmittel in der Luft.", no: "Et transportmiddel i lufta." },
+                { word: "GARTEN", de: "Ein Platz draußen beim Haus mit Blumen.", no: "En plass ute ved huset med blomster." },
+                { word: "KÜHLSCHRANK", de: "Hier hält man Essen und Getränke kalt.", no: "Her holder man mat og drikke kaldt." },
+                { word: "SPIELPLATZ", de: "Ein Ort draußen, wo Kinder spielen.", no: "Et sted utendørs der barn leker." },
+                { word: "WOCHENENDE", de: "Samstag und Sonntag zusammen.", no: "Lørdag og søndag til sammen." },
+                { word: "BLEISTIFT", de: "Etwas, womit man auf Papier schreibt.", no: "Noe man skriver med på papir." },
+                { word: "WÖRTERBUCH", de: "Ein Buch, in dem man Vokabeln findet.", no: "En bok der man finner gloser." },
+                { word: "EINKAUFEN", de: "Dinge im Supermarkt gegen Geld holen.", no: "Hente ting i supermarkedet mot penger." },
+                { word: "GESCHENK", de: "Etwas, das man zum Geburtstag bekommt.", no: "Noe man får til fødselsdagen sin." },
+                { word: "NACHBAR", de: "Die person, die nebenan wohnt.", no: "Personen som bor i nabohuset." },
+                { word: "REGENSCHIRM", de: "Schützt uns vor dem Wasser von oben.", no: "Beskytter oss mot vann fra oven." },
+                { word: "FERNSEHER", de: "Ein Gerät, auf dem man Filme schaut.", no: "Et apparat man ser filmer på." },
+                { word: "FLUGHAFEN", de: "Hier starten und landen Flugzeuge.", no: "Her starter og lander fly." },
+                { word: "ABENDESSEN", de: "Die Mahlzeit am Ende des Tages.", no: "Måltidet på slutten av dagen." },
+                { word: "HAUSAUFGABE", de: "Arbeit für die Schule, die man zu Hause macht.", no: "Arbeid for skolen som man gjør hjemme." }
+            ],
+            hard: [
+                { word: "UMWELTSCHUTZ", de: "Aktionen, um die Natur sauber zu halten." },
+                { word: "ERFAHRUNG", de: "Wissen, das man durch das Leben bekommt." },
+                { word: "VORAUSSETZUNG", de: "Eine Bedingung, die zuerst erfüllt sein muss." },
+                { word: "UNTERSCHIED", de: "Das Merkmal, das zwei Dinge ungleich macht." },
+                { word: "NACHHALTIGKEIT", de: "Ressourcen so nutzen, dass sie lange halten." },
+                { word: "ENTSCHEIDUNG", de: "Wenn man zwischen Optionen wählen muss." },
+                { word: "GESELLSCHAFT", de: "Alle Menschen, die zusammen in einem Land leben." },
+                { word: "GELEGENHEIT", de: "Eine gute Chance, obituary tun." },
+                { word: "VERSCHIEDEN", de: "Ein Adjektiv for Dinge, die nicht gleich sind." },
+                { word: "VERANTWORTUNG", de: "Wenn man for seine Taten einstehen muss." },
+                { word: "ERKLÄRUNG", de: "Worte, die helfen, etwas zu verstehen." },
+                { word: "ZUKUNFT", de: "Die Zeit, die erst noch kommen wird." },
+                { word: "VERGANGENHEIT", de: "Die Zeit, die schon vorbei ist." },
+                { word: "BEZIEHUNG", de: "Die Verbindung zwischen zwei Menschen." },
+                { word: "WISSENSCHAFT", de: "Systematisches Studium der Natur und Welt." },
+                { word: "UNTERSTÜTZUNG", de: "Hilfe, die man jemandem gibt." },
+                { word: "ENTWICKLUNG", de: "Ein Prozess der Veränderung und Verbesserung." },
+                { word: "GERECHTIGKEIT", de: "Wenn alles fair og riktig abläuft." },
+                { word: "ERFOLGREICH", de: "Wenn man seine Ziele erreicht hat." },
+                { word: "HINDERNIS", de: "Etwas, das im Weg steht." },
+                { word: "BEDEUTUNG", de: "Was ein Wort oder eine Sache aussagt." },
+                { word: "FREIHEIT", de: "Das Recht, zu tun, was man möchte." },
+                { word: "SICHERHEIT", de: "Der Zustand, in dem man geschützt ist." },
+                { word: "MÖGLICHKEIT", de: "Etwas, das passieren könnte." }
+            ]
+        };
+
+        let currentDifficulty = 'easy';
+        let currentWordIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let timeLeft = 60;
+        let skipsLeft = 3;
+        let timerInterval;
+        let currentGuess = "";
+        let gameWords = [];
+        let isRevealing = false;
+
+        const startScreen = document.getElementById('start-screen');
+        const playScreen = document.getElementById('play-screen');
+        const endScreen = document.getElementById('end-screen');
+        const wordInput = document.getElementById('word-input');
+
+        function startGame(difficulty) {
+            currentDifficulty = difficulty;
+            gameWords = [...words[difficulty]].sort(() => Math.random() - 0.5);
+            currentWordIndex = 0;
+            score = 0;
+            streak = 0;
+            timeLeft = 60;
+            skipsLeft = 3;
+            isRevealing = false;
+            
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            playScreen.classList.remove('hidden');
+            
+            updateSkipsUI();
+            updateScoreUI();
+            updateStreakUI();
+            nextWord();
+            startTimer();
+            setTimeout(() => wordInput.focus(), 300);
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (isRevealing) return;
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function showTimeBonus(seconds) {
+            const anchor = document.getElementById('bonus-anchor');
+            const bonus = document.createElement('div');
+            bonus.className = 'time-bonus';
+            bonus.innerText = `+${seconds}s`;
+            anchor.appendChild(bonus);
+            setTimeout(() => bonus.remove(), 1000);
+        }
+
+        function nextWord() {
+            if (currentWordIndex >= gameWords.length) {
+                gameWords = [...words[currentDifficulty]].sort(() => Math.random() - 0.5);
+                currentWordIndex = 0;
+            }
+            const wordData = gameWords[currentWordIndex];
+            document.getElementById('german-definition').innerText = wordData.de;
+            document.getElementById('norwegian-definition').innerText = wordData.no || "";
+            currentGuess = wordData.word[0];
+            wordInput.value = "";
+            isRevealing = false;
+            renderWord();
+        }
+
+        function renderWord(revealed = false) {
+            const targetWord = gameWords[currentWordIndex].word;
+            const display = document.getElementById('word-display');
+            display.innerHTML = "";
+            for (let i = 0; i < targetWord.length; i++) {
+                const span = document.createElement('span');
+                span.classList.add('word-letter');
+                if (revealed) {
+                    span.innerText = targetWord[i];
+                    span.classList.add('letter-revealed');
+                } else {
+                    span.innerText = i < currentGuess.length ? currentGuess[i] : "";
+                    if (i < currentGuess.length) span.classList.add('text-blue-500');
+                }
+                display.appendChild(span);
+            }
+        }
+
+        wordInput.addEventListener('input', (e) => {
+            if (isRevealing) return;
+            const targetWord = gameWords[currentWordIndex].word;
+            const rawVal = e.target.value.toUpperCase();
+            currentGuess = targetWord[0] + rawVal.substring(0, targetWord.length - 1);
+            renderWord();
+            
+            if (currentGuess === targetWord) {
+                isRevealing = true;
+                streak++;
+                score += (10 + Math.min(streak, 10));
+                
+                // Tidsbonus: +2 sekunder for riktig svar
+                timeLeft = Math.min(timeLeft + 2, 60);
+                document.getElementById('timer').innerText = timeLeft;
+                showTimeBonus(2);
+
+                updateScoreUI();
+                updateStreakUI();
+                setTimeout(() => {
+                    currentWordIndex++;
+                    nextWord();
+                }, 400);
+            } else if (currentGuess.length >= targetWord.length) {
+                document.getElementById('word-display').classList.add('shake');
+                streak = 0;
+                updateStreakUI();
+                setTimeout(() => {
+                    document.getElementById('word-display').classList.remove('shake');
+                    wordInput.value = "";
+                    currentGuess = targetWord[0];
+                    renderWord();
+                }, 400);
+            }
+        });
+
+        // Håndter tastatur-snarveier
+        window.addEventListener('keydown', (e) => {
+            if (playScreen.classList.contains('hidden')) return;
+            
+            // Bare Esc hopper over ord nå
+            if (e.key === "Escape") {
+                skipWord();
+            }
+        });
+
+        function skipWord() {
+            if (skipsLeft > 0 && !isRevealing) {
+                skipsLeft--;
+                streak = 0;
+                updateSkipsUI();
+                updateStreakUI();
+                renderWord(true);
+                isRevealing = true;
+                setTimeout(() => {
+                    currentWordIndex++;
+                    nextWord();
+                }, 800);
+            }
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score').innerText = score;
+        }
+        
+        function updateStreakUI() {
+            const container = document.getElementById('streak-container');
+            if (streak >= 2) {
+                container.innerHTML = `<span class="streak-badge bg-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-full italic uppercase shadow-lg shadow-orange-200 tracking-tighter">Combo x${streak}</span>`;
+            } else {
+                container.innerHTML = "";
+            }
+        }
+
+        function updateSkipsUI() {
+            const display = document.getElementById('skips-display');
+            display.innerHTML = "";
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.className = `h-3 w-3 rounded-full shadow-sm ${i < skipsLeft ? 'bg-yellow-400' : 'bg-gray-200'}`;
+                display.appendChild(dot);
+            }
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            playScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            const diffNames = { easy: "Enkel modus", medium: "Middels modus", hard: "Vanskelig modus" };
+            document.getElementById('end-difficulty-text').innerText = diffNames[currentDifficulty];
+            
+            window.saveHighScore(currentDifficulty, score);
+            
+            document.getElementById('replay-btn').onclick = () => startGame(currentDifficulty);
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            startScreen.classList.remove('hidden');
+            playScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            window.updateHighscoreUI();
+        }
+
+        document.body.addEventListener('click', () => {
+            if(!playScreen.classList.contains('hidden')) wordInput.focus();
+        });
+
+        // Forsikre oss om at UI oppdateres så fort siden er lastet
+        window.addEventListener('DOMContentLoaded', () => {
+            window.updateHighscoreUI();
+        });
+
+        window.onload = () => {
+            window.updateHighscoreUI();
+        };
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
