@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gruble - Kategorispill</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .letter-bubble {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-letter {
+            background-color: #3b82f6;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5);
+        }
+        .disabled-letter {
+            background-color: #e2e8f0;
+            color: #94a3b8;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-5xl font-extrabold text-slate-800 mb-2">GRUBLE</h1>
+            <p class="text-slate-500">Kategorispillet for venner og familie</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <!-- Venstre kolonne: Oppsett -->
+            <div class="md:col-span-1 space-y-6">
+                <!-- Kategorier -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-4 flex items-center">
+                        <span class="mr-2">📝</span> Kategorier
+                    </h2>
+                    <div id="category-list" class="space-y-2 mb-4">
+                        <!-- Kategorier legges her -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-category-input" placeholder="Ny kategori..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <button onclick="addCategory()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">+</button>
+                    </div>
+                </div>
+
+                <!-- Lag og Poeng -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-4 flex items-center">
+                        <span class="mr-2">🏆</span> Lag & Poeng
+                    </h2>
+                    <div id="teams-list" class="space-y-4 mb-4">
+                        <!-- Lag legges her -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-team-input" placeholder="Lagnavn..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <button onclick="addTeam()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Høyre kolonne: Spillfelt -->
+            <div class="md:col-span-2 space-y-6">
+                <!-- Bokstavtrekker -->
+                <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-200 text-center">
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-2">Dagens bokstav</h3>
+                        <div id="current-letter" class="text-9xl font-black text-blue-600 h-32 flex items-center justify-center">?</div>
+                    </div>
+                    
+                    <button onclick="drawLetter()" id="draw-btn" class="w-full py-4 bg-blue-600 text-white text-xl font-bold rounded-2xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 mb-4">
+                        TREKK BOKSTAV
+                    </button>
+
+                    <div class="flex flex-col items-center gap-4 text-slate-600">
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-2">
+                                <span>⏱️</span>
+                                <span id="timer-display" class="font-mono text-3xl font-bold">01:00</span>
+                            </div>
+                            <div class="flex flex-col items-start">
+                                <label class="text-xs font-bold text-slate-400">SETT TID (sekunder)</label>
+                                <input type="number" id="timer-setting" value="60" min="5" step="5" onchange="updateTimerSetting()" class="w-20 px-2 py-1 border rounded bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleTimer()" id="timer-btn" class="px-6 py-2 bg-slate-800 text-white font-bold rounded-full hover:bg-slate-700 transition">Start tid</button>
+                            <button onclick="resetTimer()" class="px-6 py-2 bg-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-300 transition">Nullstill</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bokstav-valg -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase mb-4 text-center">Aktive bokstaver (klikk for å fjerne)</h2>
+                    <div id="alphabet-grid" class="flex flex-wrap justify-center gap-2">
+                        <!-- Alfabetet genereres her -->
+                    </div>
+                </div>
+
+                <!-- Spilleregler Kort -->
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 text-sm">
+                    <p><strong>Poengregler:</strong><br>
+                    ✨ 2 poeng: Unikt riktig svar<br>
+                    ✅ 1 poeng: Riktig svar (flere har det samme)<br>
+                    ❌ 0 poeng: Feil eller tomt<br>
+                    ⚠️ -1 poeng: Juks eller dårlig oppførsel</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ".split("");
+        let disabledLetters = ["Q", "W", "X", "Z"];
+        let categories = ["Mat & Drikke", "Land", "Dyr", "Kjent person"];
+        let teams = [];
+        let timerInterval;
+        let defaultTime = 60;
+        let timeLeft = 60;
+        let isTimerRunning = false;
+
+        // Lydfunksjon (Web Audio API)
+        function playAlarmSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+                oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5); // Opp til A5
+                
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 1);
+            } catch (e) {
+                console.log("Audio API ikke støttet i denne nettleseren");
+            }
+        }
+
+        // Initialisering
+        window.onload = () => {
+            renderAlphabet();
+            renderCategories();
+            renderTeams();
+            renderTimer();
+        };
+
+        function renderAlphabet() {
+            const grid = document.getElementById('alphabet-grid');
+            grid.innerHTML = '';
+            alphabet.forEach(char => {
+                const btn = document.createElement('button');
+                btn.innerText = char;
+                btn.className = `w-10 h-10 rounded-lg font-bold letter-bubble border ${disabledLetters.includes(char) ? 'disabled-letter' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'}`;
+                btn.onclick = () => toggleLetter(char);
+                grid.appendChild(btn);
+            });
+        }
+
+        function toggleLetter(char) {
+            if (disabledLetters.includes(char)) {
+                disabledLetters = disabledLetters.filter(l => l !== char);
+            } else {
+                disabledLetters.push(char);
+            }
+            renderAlphabet();
+        }
+
+        function renderCategories() {
+            const list = document.getElementById('category-list');
+            list.innerHTML = '';
+            categories.forEach((cat, index) => {
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center bg-slate-50 p-2 rounded-lg group";
+                item.innerHTML = `
+                    <span class="font-medium text-sm">${cat}</span>
+                    <button onclick="removeCategory(${index})" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition">✕</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function addCategory() {
+            const input = document.getElementById('new-category-input');
+            if (input.value.trim()) {
+                categories.push(input.value.trim());
+                input.value = '';
+                renderCategories();
+            }
+        }
+
+        function removeCategory(index) {
+            categories.splice(index, 1);
+            renderCategories();
+        }
+
+        function renderTeams() {
+            const list = document.getElementById('teams-list');
+            list.innerHTML = '';
+            teams.forEach((team, index) => {
+                const item = document.createElement('div');
+                item.className = "p-3 bg-slate-50 rounded-xl border border-slate-100";
+                item.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-slate-700 truncate mr-2">${team.name}</span>
+                        <span class="text-2xl font-black text-blue-600">${team.score}</span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="updateScore(${index}, 1)" class="flex-1 py-1 bg-white border border-slate-200 rounded-md text-xs font-bold hover:bg-blue-50">+1</button>
+                        <button onclick="updateScore(${index}, 2)" class="flex-1 py-1 bg-white border border-slate-200 rounded-md text-xs font-bold hover:bg-blue-50">+2</button>
+                        <button onclick="updateScore(${index}, -1)" class="flex-1 py-1 bg-white border border-red-200 rounded-md text-xs font-bold text-red-500 hover:bg-red-50">-1</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function addTeam() {
+            const input = document.getElementById('new-team-input');
+            if (input.value.trim()) {
+                teams.push({ name: input.value.trim(), score: 0 });
+                input.value = '';
+                renderTeams();
+            }
+        }
+
+        function updateScore(teamIndex, points) {
+            teams[teamIndex].score += points;
+            renderTeams();
+        }
+
+        function drawLetter() {
+            const available = alphabet.filter(l => !disabledLetters.includes(l));
+            if (available.length === 0) {
+                alert("Ingen bokstaver tilgjengelig! Aktiver noen bokstaver nederst.");
+                return;
+            }
+
+            const display = document.getElementById('current-letter');
+            const btn = document.getElementById('draw-btn');
+            
+            btn.disabled = true;
+            let counter = 0;
+            const shuffle = setInterval(() => {
+                display.innerText = available[Math.floor(Math.random() * available.length)];
+                counter++;
+                if (counter > 15) {
+                    clearInterval(shuffle);
+                    const finalLetter = available[Math.floor(Math.random() * available.length)];
+                    display.innerText = finalLetter;
+                    btn.disabled = false;
+                    resetTimer();
+                }
+            }, 50);
+        }
+
+        // Tidtaker-logikk
+        function updateTimerSetting() {
+            const input = document.getElementById('timer-setting');
+            defaultTime = parseInt(input.value) || 60;
+            if (!isTimerRunning) {
+                timeLeft = defaultTime;
+                renderTimer();
+            }
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timer-btn');
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                btn.innerText = "Fortsett";
+            } else {
+                timerInterval = setInterval(updateTimer, 1000);
+                btn.innerText = "Pause";
+            }
+            isTimerRunning = !isTimerRunning;
+        }
+
+        function updateTimer() {
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                document.getElementById('timer-btn').innerText = "TID UTE!";
+                document.getElementById('timer-display').classList.add('text-red-600');
+                
+                // Lydeffekt og visuell feedback
+                playAlarmSound();
+                document.body.classList.add('bg-red-50');
+                setTimeout(() => document.body.classList.remove('bg-red-50'), 500);
+                return;
+            }
+            timeLeft--;
+            renderTimer();
+        }
+
+        function renderTimer() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            document.getElementById('timer-display').innerText = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timeLeft = defaultTime;
+            isTimerRunning = false;
+            document.getElementById('timer-display').classList.remove('text-red-600');
+            document.getElementById('timer-btn').innerText = "Start tid";
+            renderTimer();
+        }
+
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
