@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nynorsk-Duell</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #020617;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+            user-select: none;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+        }
+        .player-status {
+            position: absolute;
+            top: 15px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            min-width: 150px;
+            pointer-events: none;
+        }
+        #p1-ui { left: 20px; border-left: 4px solid #3b82f6; }
+        #p2-ui { right: 20px; border-right: 4px solid #ef4444; text-align: right; }
+        
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 24px;
+            border: 3px solid #3b82f6;
+            text-align: center;
+            z-index: 100;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 100px rgba(0,0,0,0.9);
+        }
+
+        .heart { color: #ef4444; font-size: 1.2rem; margin: 0 2px; }
+        .heart.lost { color: #334155; opacity: 0.3; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- UI -->
+    <div id="p1-ui" class="player-status">
+        <div class="flex justify-between items-center mb-1">
+            <span class="text-blue-400 font-bold">P1</span>
+            <span id="p1-score" class="font-mono text-xl">0</span>
+        </div>
+        <div id="p1-lives" class="mb-2"></div>
+        <div class="text-[10px] text-slate-400 uppercase">Mål:</div>
+        <div id="p1-target" class="text-lg font-black uppercase text-blue-100">-</div>
+    </div>
+
+    <div id="p2-ui" class="player-status">
+        <div class="flex justify-between items-center mb-1 flex-row-reverse">
+            <span class="text-red-400 font-bold">P2</span>
+            <span id="p2-score" class="font-mono text-xl">0</span>
+        </div>
+        <div id="p2-lives" class="mb-2"></div>
+        <div class="text-[10px] text-slate-400 uppercase">Mål:</div>
+        <div id="p2-target" class="text-lg font-black uppercase text-red-100">-</div>
+    </div>
+
+    <!-- Startskjerm -->
+    <div id="start-modal" class="modal">
+        <h1 class="text-4xl font-black mb-4 italic">NYNORSK <span class="text-blue-500">DUELL</span></h1>
+        <div class="text-left space-y-4 mb-6 text-slate-300 text-sm">
+            <div class="p-3 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                <strong class="text-blue-400">Spiller 1:</strong> Flytt med <span class="text-white">A / D</span>. Skyt med <span class="text-white">W</span>.
+            </div>
+            <div class="p-3 bg-red-900/20 rounded-lg border border-red-500/30">
+                <strong class="text-red-400">Spiller 2:</strong> Flytt med <span class="text-white">Piler</span>. Skyt med <span class="text-white">PIL OPP</span>.
+            </div>
+        </div>
+        <button id="start-btn" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold text-xl transition-transform active:scale-95">START SPILL</button>
+    </div>
+
+    <!-- Game Over -->
+    <div id="end-modal" class="modal hidden">
+        <h2 id="winner-text" class="text-3xl font-black mb-6 text-yellow-400">SPILL FERDIG</h2>
+        <button onclick="location.reload()" class="w-full bg-white text-black py-3 rounded-xl font-bold">SPILL IGJEN</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const wordPairs = [
+   { ny: "allereie", bm: "allerede" }, { ny: "annleis", bm: "annerledes" },
+   { ny: "berre", bm: "bare" }, { ny: "bilete", bm: "bilde" },
+   { ny: "born", bm: "barn" }, { ny: "byrje", bm: "begynne" },
+   { ny: "dei", bm: "de" }, { ny: "difor", bm: "derfor" },
+   { ny: "døme", bm: "eksempel" }, { ny: "eg", bm: "jeg" },
+   { ny: "fyrst", bm: "først" }, { ny: "gjere", bm: "gjøre" },
+   { ny: "ikkje", bm: "ikke" }, { ny: "korleis", bm: "hvordan" },
+   { ny: "kva", bm: "hva" }, { ny: "kvifor", bm: "hvorfor" },
+   { ny: "mykje", bm: "mye" }, { ny: "noko", bm: "noe" },
+   { ny: "òg", bm: "også" }, { ny: "sjå", bm: "se" },
+   { ny: "viss", bm: "hvis" }, { ny: "åleine", bm: "alene" }
+];
+
+let stars = [];
+let keys = {};
+let gameState = {
+    running: false,
+    p1: { x: 0, score: 0, lives: 5, target: {}, bullets: [], color: '#3b82f6', lastShot: 0 },
+    p2: { x: 0, score: 0, lives: 5, target: {}, bullets: [], color: '#ef4444', lastShot: 0 },
+    enemies: []
+};
+
+window.addEventListener('keydown', e => { 
+    keys[e.code] = true; 
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gameState.p1.x = canvas.width * 0.25;
+    gameState.p2.x = canvas.width * 0.75;
+    setTarget(gameState.p1, 'p1');
+    setTarget(gameState.p2, 'p2');
+    updateUI();
+    stars = [];
+    for(let i=0; i<100; i++) {
+        stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2});
+    }
+}
+
+function setTarget(player, id) {
+    player.target = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+    document.getElementById(`${id}-target`).innerText = player.target.bm;
+}
+
+function updateUI() {
+    document.getElementById('p1-score').innerText = gameState.p1.score;
+    document.getElementById('p2-score').innerText = gameState.p2.score;
+    ['p1', 'p2'].forEach(p => {
+        const div = document.getElementById(`${p}-lives`);
+        div.innerHTML = '';
+        for(let i=0; i<5; i++) {
+            const s = document.createElement('span');
+            s.className = `heart ${i >= gameState[p].lives ? 'lost' : ''}`;
+            s.innerHTML = '❤';
+            div.appendChild(s);
+        }
+    });
+}
+
+function spawn() {
+    if(!gameState.running) return;
+    let text = wordPairs[Math.floor(Math.random()*wordPairs.length)].ny;
+    if(Math.random() < 0.5) {
+        text = Math.random() > 0.5 ? gameState.p1.target.ny : gameState.p2.target.ny;
+    }
+    gameState.enemies.push({
+        x: Math.random() * (canvas.width - 100) + 50,
+        y: -50,
+        text: text,
+        speed: 1.8 + Math.random() * 1.2
+    });
+    setTimeout(spawn, 800 + Math.random() * 800);
+}
+
+function loop() {
+    if(!gameState.running) return;
+
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = 'white';
+    stars.forEach(s => {
+        s.y += 0.5;
+        if(s.y > canvas.height) s.y = 0;
+        ctx.fillRect(s.x, s.y, s.s, s.s);
+    });
+
+    // Kontroller
+    if(keys['KeyA'] && gameState.p1.x > 50) gameState.p1.x -= 8;
+    if(keys['KeyD'] && gameState.p1.x < canvas.width/2 - 50) gameState.p1.x += 8;
+    if((keys['KeyW'] || keys['Space']) && Date.now() - gameState.p1.lastShot > 350) {
+        gameState.p1.bullets.push({x: gameState.p1.x, y: canvas.height-80});
+        gameState.p1.lastShot = Date.now();
+    }
+
+    if(keys['ArrowLeft'] && gameState.p2.x > canvas.width/2 + 50) gameState.p2.x -= 8;
+    if(keys['ArrowRight'] && gameState.p2.x < canvas.width - 50) gameState.p2.x += 8;
+    if(keys['ArrowUp'] && Date.now() - gameState.p2.lastShot > 350) {
+        gameState.p2.bullets.push({x: gameState.p2.x, y: canvas.height-80});
+        gameState.p2.lastShot = Date.now();
+    }
+
+    // Spillere og kuler
+    [gameState.p1, gameState.p2].forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.moveTo(p.x, canvas.height-85);
+        ctx.lineTo(p.x-22, canvas.height-40);
+        ctx.lineTo(p.x+22, canvas.height-40);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#fbbf24';
+        for(let i=p.bullets.length-1; i>=0; i--) {
+            let b = p.bullets[i];
+            b.y -= 12;
+            ctx.fillRect(b.x-2, b.y, 4, 15);
+            if(b.y < 0) p.bullets.splice(i, 1);
+        }
+    });
+
+    // Fiender
+    for(let i=gameState.enemies.length-1; i>=0; i--) {
+        let e = gameState.enemies[i];
+        e.y += e.speed;
+        
+        ctx.fillStyle = 'rgba(30,41,59,0.9)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 2;
+        let tw = ctx.measureText(e.text.toUpperCase()).width + 24;
+        ctx.beginPath();
+        ctx.roundRect(e.x - tw/2, e.y - 15, tw, 32, 6);
+        ctx.fill(); ctx.stroke();
+        
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 16px system-ui';
+        ctx.fillText(e.text.toUpperCase(), e.x, e.y + 7);
+
+        [gameState.p1, gameState.p2].forEach(p => {
+            p.bullets.forEach((b, bi) => {
+                if(Math.abs(b.x - e.x) < tw/2 && Math.abs(b.y - e.y) < 20) {
+                    if(e.text === p.target.ny) {
+                        p.score += 10;
+                        setTarget(p, p === gameState.p1 ? 'p1' : 'p2');
+                    } else {
+                        p.lives--;
+                        p.score = Math.max(0, p.score - 5);
+                    }
+                    updateUI();
+                    gameState.enemies.splice(i, 1);
+                    p.bullets.splice(bi, 1);
+                    if(p.lives <= 0) {
+                        gameState.running = false;
+                        document.getElementById('end-modal').classList.remove('hidden');
+                        document.getElementById('winner-text').innerText = (p === gameState.p1 ? "SPILLER 2" : "SPILLER 1") + " VANT!";
+                    }
+                }
+            });
+        });
+        if(e.y > canvas.height) gameState.enemies.splice(i, 1);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+document.getElementById('start-btn').onclick = () => {
+    gameState.running = true;
+    document.getElementById('start-modal').classList.add('hidden');
+    init();
+    spawn();
+    loop();
+};
+
+init();
+</script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+
+</body>
+</html>
