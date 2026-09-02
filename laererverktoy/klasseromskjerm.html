@@ -1086,7 +1086,42 @@
             const url = document.getElementById('bg-url-input').value.trim();
             if (url) setBackground(url);
         }
+// Funksjon for å lagre posisjoner og tilstand
+function saveLayout() {
+    const widgets = document.querySelectorAll('.widget'); // Sjekk at verktøyene dine har klassen 'widget'
+    const layoutData = [];
 
+    widgets.forEach(w => {
+        layoutData.push({
+            id: w.id,
+            top: w.style.top,
+            left: w.style.left,
+            display: w.style.display
+        });
+    });
+
+    localStorage.setItem('classroomScreenLayout', JSON.stringify(layoutData));
+    alert('Skjermoppsettet er lagret!');
+}
+
+// Funksjon for å gjenopprette oppsettet når siden lastes
+function loadLayout() {
+    const savedLayout = localStorage.getItem('classroomScreenLayout');
+    if (!savedLayout) return;
+
+    const layoutData = JSON.parse(savedLayout);
+    layoutData.forEach(item => {
+        const el = document.getElementById(item.id);
+        if (el) {
+            el.style.top = item.top;
+            el.style.left = item.left;
+            el.style.display = item.display;
+        }
+    });
+}
+
+// Kjør gjenoppretting automatisk ved oppstart
+window.addEventListener('DOMContentLoaded', loadLayout);
         // OPPSTART: Gjenopprett lagret tilstand ved innlasting
         window.addEventListener('DOMContentLoaded', () => {
             restoreLayoutState();
@@ -1097,6 +1132,10 @@
     <i class="fa-solid fa-arrow-left"></i>
     <span>Tilbake til Lærerverktøy</span>
 </a>
+    <button onclick="saveLayout()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+    <i class="fa-solid fa-floppy-disk"></i>
+    <span>Lagre skjerm</span>
+</button>
 </body>
 </html>
 ```
