@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mine Reiser - Kart & Pin-register</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet CSS for interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Custom scrollbar for sidebar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Leaflet Popup Styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            padding: 4px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .leaflet-popup-content {
+            margin: 12px 14px;
+            line-height: 1.5;
+        }
+
+        /* Animated Pin marker effect */
+        .custom-pin-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        .custom-pin-icon:hover {
+            transform: scale(1.25);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar / Drawer -->
+    <aside id="sidebar" class="fixed md:relative z-20 w-full sm:w-96 h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col transition-transform duration-300 transform -translate-x-full md:translate-x-0 border-r border-slate-200 dark:border-slate-800">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-brand-500 text-white rounded-xl shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-map-location-dot text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900 dark:text-white leading-tight">Reisekartet mitt</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Europa, Nord-Afrika & Midtøsten</p>
+                </div>
+            </div>
+            <button id="closeSidebarBtn" class="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Search Bar section -->
+        <div class="p-4 border-b border-slate-200 dark:border-slate-800 relative bg-white dark:bg-slate-900">
+            <label for="searchInput" class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                <i class="fa-solid fa-magnifying-glass mr-1"></i> Søk & Plasser Pinne
+            </label>
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="F.eks. Regensburg, Nice, Madrid..." 
+                       class="w-full pl-9 pr-10 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white transition-all"
+                       autocomplete="off">
+                <i class="fa-solid fa-location-crosshairs absolute left-3 top-3 text-slate-400"></i>
+                <button id="searchBtn" class="absolute right-1.5 top-1.5 px-3 py-1 bg-brand-500 text-white rounded-lg text-xs font-medium hover:bg-brand-600 transition-all">
+                    Søk
+                </button>
+            </div>
+            
+            <!-- Auto-suggest drop down list -->
+            <ul id="searchResults" class="absolute left-4 right-4 top-20 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-56 overflow-y-auto hidden z-30 divide-y divide-slate-100 dark:divide-slate-700/50">
+            </ul>
+        </div>
+
+        <!-- Quick Stats Overview -->
+        <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
+            <div>
+                <span class="font-bold text-slate-900 dark:text-white text-base mr-1" id="totalPlacesCount">0</span> steder besøkt
+            </div>
+            <div>
+                <span class="font-bold text-slate-900 dark:text-white text-base mr-1" id="totalCountriesCount">0</span> land
+            </div>
+            <button id="statsBtn" class="text-brand-600 dark:text-brand-400 hover:underline font-medium flex items-center gap-1">
+                <i class="fa-solid fa-chart-pie"></i> Mer info
+            </button>
+        </div>
+
+        <!-- Filter & Search saved list -->
+        <div class="p-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex gap-2">
+            <input type="text" id="filterInput" placeholder="Filtrer dine steder..." 
+                   class="w-full px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+            
+            <select id="categoryFilter" class="px-2 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs dark:text-white focus:outline-none">
+                <option value="ALL">Alle typer</option>
+                <option value="Ferie">Ferie</option>
+                <option value="Storbytur">Storbytur</option>
+                <option value="Natur">Natur</option>
+                <option value="Mat & Drikke">Mat & Drikke</option>
+                <option value="Jobb">Jobb</option>
+            </select>
+        </div>
+
+        <!-- List of Pins -->
+        <div id="placesList" class="flex-1 overflow-y-auto p-3 space-y-2">
+            <!-- Dynamically populated -->
+        </div>
+
+        <!-- Footer Tools -->
+        <div class="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center text-xs">
+            <div class="flex space-x-2">
+                <button id="exportBtn" title="Eksporter data (JSON)" class="px-2.5 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 transition">
+                    <i class="fa-solid fa-download mr-1"></i> Eksport
+                </button>
+                <button id="importBtn" title="Importer data" class="px-2.5 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 transition">
+                    <i class="fa-solid fa-upload mr-1"></i> Import
+                </button>
+                <input type="file" id="importFileInput" accept=".json" class="hidden">
+            </div>
+            <button id="clearAllBtn" class="text-red-500 hover:text-red-700 transition font-medium">
+                Slett alt
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Map Container -->
+    <main class="flex-1 relative h-full">
+        
+        <!-- Toggle Sidebar Button (Mobile) -->
+        <button id="openSidebarBtn" class="md:hidden absolute top-4 left-4 z-10 p-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl shadow-lg hover:bg-slate-100 focus:outline-none">
+            <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+
+        <!-- Map Quick Reset View Button -->
+        <div class="absolute top-4 right-4 z-10 flex flex-col space-y-2">
+            <button id="resetViewBtn" title="Nullstill kartutsnitt" class="p-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition">
+                <i class="fa-solid fa-globe text-lg"></i>
+            </button>
+        </div>
+
+        <!-- The Leaflet Map element -->
+        <div id="map"></div>
+    </main>
+
+    <!-- Modal: Add / Edit Place -->
+    <div id="placeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <h3 id="modalTitle" class="font-bold text-slate-900 dark:text-white text-lg">Legg til nytt sted</h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="placeForm" class="p-6 space-y-4">
+                <input type="hidden" id="placeLat">
+                <input type="hidden" id="placeLng">
+                <input type="hidden" id="placeId">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Stedsnavn / By</label>
+                    <input type="text" id="placeName" required placeholder="F.eks. Regensburg" 
+                           class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Land</label>
+                        <input type="text" id="placeCountry" placeholder="F.eks. Tyskland" 
+                               class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Kategori</label>
+                        <select id="placeCategory" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="Ferie">🏖️ Ferie</option>
+                            <option value="Storbytur">🏙️ Storbytur</option>
+                            <option value="Natur">🏔️ Natur</option>
+                            <option value="Mat & Drikke">🍕 Mat & Drikke</option>
+                            <option value="Jobb">💼 Jobb</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Dato besøkt</label>
+                        <input type="date" id="placeDate" 
+                               class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Pin-farge</label>
+                        <div class="flex items-center space-x-2 pt-1">
+                            <input type="color" id="placeColor" value="#0284c7" class="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent">
+                            <span class="text-xs text-slate-500">Velg farge</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Vurdering</label>
+                    <div class="flex space-x-2 text-xl text-amber-400 cursor-pointer" id="ratingStars">
+                        <i class="fa-regular fa-star" data-rating="1"></i>
+                        <i class="fa-regular fa-star" data-rating="2"></i>
+                        <i class="fa-regular fa-star" data-rating="3"></i>
+                        <i class="fa-regular fa-star" data-rating="4"></i>
+                        <i class="fa-regular fa-star" data-rating="5"></i>
+                    </div>
+                    <input type="hidden" id="placeRating" value="0">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">Notater / Minner</label>
+                    <textarea id="placeNotes" rows="3" placeholder="F.eks. Flott gammel steinbro og koselige kafeer..." 
+                              class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"></textarea>
+                </div>
+
+                <div class="pt-3 flex space-x-3">
+                    <button type="button" id="cancelModalBtn" class="w-1/2 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                        Avbryt
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium shadow-md shadow-brand-500/20 transition">
+                        Lagre Pinne
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmation Dialog -->
+    <div id="confirmModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-5 text-center">
+            <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            </div>
+            <h3 id="confirmTitle" class="font-bold text-slate-900 dark:text-white text-base mb-1">Bekreft sletting</h3>
+            <p id="confirmMessage" class="text-xs text-slate-500 dark:text-slate-400 mb-5">Er du sikker på at du vil slette dette?</p>
+            <div class="flex gap-3">
+                <button id="cancelConfirmBtn" class="flex-1 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                    Avbryt
+                </button>
+                <button id="okConfirmBtn" class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold shadow-md transition">
+                    Slett
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Statistics -->
+    <div id="statsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-900 dark:text-white text-lg">
+                    <i class="fa-solid fa-chart-pie text-brand-500 mr-2"></i> Reisesammendrag
+                </h3>
+                <button id="closeStatsBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div id="statsContent" class="space-y-4">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 border border-slate-700">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toastMessage" class="text-sm font-medium">Melding</span>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Default Map bounds for Europe, North Africa, and West Asia
+        const DEFAULT_CENTER = [35.0, 18.0]; // Latitude, Longitude
+        const DEFAULT_ZOOM = 4;
+
+        // Bounding limits roughly covering Western/Eastern Europe, North Africa, and Middle East
+        const SOUTH_WEST = L.latLng(10.0, -25.0);
+        const NORTH_EAST = L.latLng(72.0, 65.0);
+        const REGIONAL_BOUNDS = L.latLngBounds(SOUTH_WEST, NORTH_EAST);
+
+        // App state
+        let places = [];
+        let map = null;
+        let markersGroup = null;
+        let currentRating = 0;
+        let searchTimeout = null;
+        let pendingConfirmAction = null;
+
+        // Initial default demo places (Nice and Regensburg)
+        const INITIAL_DEMO_PLACES = [
+            {
+                id: 'demo-1',
+                name: 'Regensburg',
+                country: 'Tyskland',
+                category: 'Storbytur',
+                date: '2023-06-15',
+                color: '#0284c7',
+                rating: 5,
+                notes: 'Fantastisk middelalderby med Den gamle steinbroen og koselige ølhager!',
+                lat: 49.0134,
+                lng: 12.1016
+            },
+            {
+                id: 'demo-3',
+                name: 'Nice',
+                country: 'Frankrike',
+                category: 'Ferie',
+                date: '2024-05-20',
+                color: '#ec4899',
+                rating: 4,
+                notes: 'Promenade des Anglais og nydelig sjømat.',
+                lat: 43.7102,
+                lng: 7.2620
+            }
+        ];
+
+        window.onload = function() {
+            initMap();
+            loadPlaces();
+            setupEventListeners();
+            renderPlacesList();
+            updateStats();
+        };
+
+        function initMap() {
+            // Initialize leaflet map
+            map = L.map('map', {
+                center: DEFAULT_CENTER,
+                zoom: DEFAULT_ZOOM,
+                minZoom: 3,
+                maxZoom: 18,
+                maxBounds: REGIONAL_BOUNDS,
+                maxBoundsViscosity: 0.8
+            });
+
+            // Clean open street map tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> bidragsytere'
+            }).addTo(map);
+
+            // Layer group for pin markers
+            markersGroup = L.layerGroup().addTo(map);
+
+            // Click event on map to drop pin
+            map.on('click', function(e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+                
+                // Reverse geocode to get city/country automatically
+                reverseGeocode(lat, lng);
+            });
+        }
+
+        // Geocode location search using Nominatim OpenStreetMap API
+        async function geocodeSearch(query) {
+            if (!query || query.trim().length < 2) return;
+
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '<li class="p-3 text-xs text-slate-500 flex items-center justify-center"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Søker etter sted...</li>';
+            resultsContainer.classList.remove('hidden');
+
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=no,en`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                resultsContainer.innerHTML = '';
+
+                if (data.length === 0) {
+                    resultsContainer.innerHTML = '<li class="p-3 text-xs text-slate-500">Ingen steder funnet. Prøv et annet søkeord.</li>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'p-3 hover:bg-slate-100 dark:hover:bg-slate-700/80 cursor-pointer text-xs flex flex-col gap-0.5 transition';
+                    
+                    const displayName = item.display_name;
+                    const parts = displayName.split(',');
+                    const title = parts[0];
+                    const subtitle = parts.slice(1).join(',').trim();
+
+                    li.innerHTML = `
+                        <div class="font-semibold text-slate-800 dark:text-white">${escapeHtml(title)}</div>
+                        <div class="text-slate-500 dark:text-slate-400 text-[11px] truncate">${escapeHtml(subtitle)}</div>
+                    `;
+
+                    li.addEventListener('click', () => {
+                        resultsContainer.classList.add('hidden');
+                        document.getElementById('searchInput').value = title;
+                        
+                        const lat = parseFloat(item.lat);
+                        const lng = parseFloat(item.lon);
+
+                        // Fly to location
+                        map.flyTo([lat, lng], 10, { duration: 1.5 });
+
+                        // Extract country if available
+                        let country = parts[parts.length - 1].trim();
+
+                        // Open modal pre-filled
+                        openPlaceModal({
+                            name: title,
+                            country: country,
+                            lat: lat,
+                            lng: lng
+                        });
+                    });
+
+                    resultsContainer.appendChild(li);
+                });
+            } catch (err) {
+                console.error("Geocoding error:", err);
+                resultsContainer.innerHTML = '<li class="p-3 text-xs text-red-500">Kunne ikke hente søkeresultater. Sjekk internettforbindelsen.</li>';
+            }
+        }
+
+        // Reverse geocoding when clicking on map
+        async function reverseGeocode(lat, lng) {
+            showToast('Henter stedsnavn...', 'info');
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=no,en`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                let name = 'Markert sted';
+                let country = '';
+
+                if (data && data.address) {
+                    name = data.address.city || data.address.town || data.address.village || data.address.suburb || data.address.county || 'Markert sted';
+                    country = data.address.country || '';
+                }
+
+                openPlaceModal({
+                    name: name,
+                    country: country,
+                    lat: lat,
+                    lng: lng
+                });
+            } catch (err) {
+                // Fallback if offline or API blocked
+                openPlaceModal({
+                    name: 'Nytt sted',
+                    country: '',
+                    lat: lat,
+                    lng: lng
+                });
+            }
+        }
+
+        function loadPlaces() {
+            const stored = localStorage.getItem('visited_places');
+            if (stored) {
+                try {
+                    places = JSON.parse(stored);
+                } catch(e) {
+                    places = INITIAL_DEMO_PLACES;
+                }
+            } else {
+                places = INITIAL_DEMO_PLACES;
+                savePlaces();
+            }
+            renderMarkers();
+        }
+
+        function savePlaces() {
+            localStorage.setItem('visited_places', JSON.stringify(places));
+            renderMarkers();
+            renderPlacesList();
+            updateStats();
+        }
+
+        function createCustomPinSVG(color = '#0284c7') {
+            return `
+                <svg width="32" height="42" viewBox="0 0 38 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 0C8.50659 0 0 8.50659 0 19C0 33.25 19 52 19 52C19 52 38 33.25 38 19C38 8.50659 29.4934 0 19 0Z" fill="${color}"/>
+                    <path d="M19 0C8.50659 0 0 8.50659 0 19C0 33.25 19 52 19 52C19 52 38 33.25 38 19C38 8.50659 29.4934 0 19 0Z" fill="black" fill-opacity="0.15"/>
+                    <circle cx="19" cy="19" r="8" fill="white"/>
+                </svg>
+            `;
+        }
+
+        function renderMarkers() {
+            markersGroup.clearLayers();
+
+            places.forEach(place => {
+                const svgString = createCustomPinSVG(place.color || '#0284c7');
+                const customIcon = L.divIcon({
+                    className: 'custom-pin-icon',
+                    html: svgString,
+                    iconSize: [32, 42],
+                    iconAnchor: [16, 42],
+                    popupAnchor: [0, -38]
+                });
+
+                const marker = L.marker([place.lat, place.lng], { icon: customIcon });
+
+                // Rating stars popup HTML
+                let starsHTML = '';
+                for (let i = 1; i <= 5; i++) {
+                    starsHTML += i <= (place.rating || 0) 
+                        ? '<i class="fa-solid fa-star text-amber-400"></i>' 
+                        : '<i class="fa-regular fa-star text-slate-300"></i>';
+                }
+
+                const popupContent = `
+                    <div class="min-w-[200px] text-slate-800">
+                        <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 mb-2">
+                            <span class="font-bold text-base text-slate-900">${escapeHtml(place.name)}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 font-medium text-slate-600">${escapeHtml(place.category || 'Ferie')}</span>
+                        </div>
+                        ${place.country ? `<p class="text-xs font-semibold text-slate-500 mb-1"><i class="fa-solid fa-earth-europe text-brand-500 mr-1"></i>${escapeHtml(place.country)}</p>` : ''}
+                        ${place.date ? `<p class="text-xs text-slate-500 mb-1"><i class="fa-regular fa-calendar mr-1"></i>Besøkt: ${place.date}</p>` : ''}
+                        
+                        <div class="flex items-center space-x-1 my-1 text-xs">
+                            ${starsHTML}
+                        </div>
+
+                        ${place.notes ? `<p class="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg italic my-2 border border-slate-100">"${escapeHtml(place.notes)}"</p>` : ''}
+
+                        <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-100">
+                            <button onclick="editPlace('${place.id}')" class="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition">
+                                <i class="fa-solid fa-pen mr-1"></i> Rediger
+                            </button>
+                            <button onclick="deletePlace('${place.id}')" class="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-md font-medium transition">
+                                <i class="fa-solid fa-trash mr-1"></i> Slett
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                markersGroup.addLayer(marker);
+            });
+        }
+
+        function renderPlacesList() {
+            const listContainer = document.getElementById('placesList');
+            const filterText = document.getElementById('filterInput').value.toLowerCase();
+            const selectedCategory = document.getElementById('categoryFilter').value;
+
+            listContainer.innerHTML = '';
+
+            const filtered = places.filter(place => {
+                const matchesText = place.name.toLowerCase().includes(filterText) || 
+                                    (place.country && place.country.toLowerCase().includes(filterText)) ||
+                                    (place.notes && place.notes.toLowerCase().includes(filterText));
+                const matchesCat = selectedCategory === 'ALL' || place.category === selectedCategory;
+                return matchesText && matchesCat;
+            });
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-location-dot text-3xl mb-2 opacity-50"></i>
+                        <p class="text-xs">Ingen steder funnet.</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Søk ovenfor eller klikk på kartet for å legge til!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(place => {
+                const card = document.createElement('div');
+                card.className = 'p-3 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 rounded-xl hover:shadow-md transition cursor-pointer group flex justify-between items-start';
+                
+                let starsHTML = '';
+                for (let i = 1; i <= 5; i++) {
+                    starsHTML += i <= (place.rating || 0) 
+                        ? '<i class="fa-solid fa-star text-amber-400 text-[10px]"></i>' 
+                        : '';
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-start space-x-3 flex-1 min-w-0" onclick="flyToPlace('${place.id}')">
+                        <div class="w-3.5 h-3.5 rounded-full mt-1 flex-shrink-0" style="background-color: ${place.color || '#0284c7'}"></div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="font-semibold text-sm text-slate-800 dark:text-white truncate group-hover:text-brand-500 transition">${escapeHtml(place.name)}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${escapeHtml(place.country || 'Ukjent land')}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">${escapeHtml(place.category || 'Ferie')}</span>
+                                <div class="flex space-x-0.5">${starsHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+                        <button onclick="editPlace('${place.id}')" title="Rediger" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deletePlace('${place.id}')" title="Slett" class="p-1.5 text-slate-400 hover:text-red-500 text-xs">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+
+                listContainer.appendChild(card);
+            });
+        }
+
+        function flyToPlace(id) {
+            const place = places.find(p => p.id === id);
+            if (place) {
+                map.flyTo([place.lat, place.lng], 11, { duration: 1.2 });
+                // Open popup if marker is clicked
+                markersGroup.eachLayer(layer => {
+                    if (layer.getLatLng().lat === place.lat && layer.getLatLng().lng === place.lng) {
+                        layer.openPopup();
+                    }
+                });
+                
+                // On mobile close sidebar to view map
+                if (window.innerWidth < 768) {
+                    document.getElementById('sidebar').classList.add('-translate-x-full');
+                }
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalPlacesCount').textContent = places.length;
+
+            const countries = new Set(places.map(p => p.country).filter(c => c && c.trim() !== ''));
+            document.getElementById('totalCountriesCount').textContent = countries.size;
+        }
+
+        function openPlaceModal(data = {}) {
+            document.getElementById('placeId').value = data.id || '';
+            document.getElementById('placeName').value = data.name || '';
+            document.getElementById('placeCountry').value = data.country || '';
+            document.getElementById('placeCategory').value = data.category || 'Ferie';
+            document.getElementById('placeDate').value = data.date || new Date().toISOString().split('T')[0];
+            document.getElementById('placeColor').value = data.color || '#0284c7';
+            document.getElementById('placeNotes').value = data.notes || '';
+            document.getElementById('placeLat').value = data.lat || '';
+            document.getElementById('placeLng').value = data.lng || '';
+
+            setRating(data.rating || 0);
+
+            document.getElementById('modalTitle').textContent = data.id ? 'Rediger sted' : 'Legg til nytt sted';
+            document.getElementById('placeModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('placeModal').classList.add('hidden');
+        }
+
+        function setRating(rating) {
+            currentRating = rating;
+            document.getElementById('placeRating').value = rating;
+            const stars = document.querySelectorAll('#ratingStars i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.className = 'fa-solid fa-star text-amber-400';
+                } else {
+                    star.className = 'fa-regular fa-star text-slate-300 dark:text-slate-600';
+                }
+            });
+        }
+
+        function askConfirmation(title, message, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            pendingConfirmAction = callback;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            pendingConfirmAction = null;
+        }
+
+        window.editPlace = function(id) {
+            const place = places.find(p => p.id === id);
+            if (place) {
+                openPlaceModal(place);
+            }
+        };
+
+        window.deletePlace = function(id) {
+            const place = places.find(p => p.id === id);
+            const nameStr = place ? place.name : 'denne pinnen';
+            askConfirmation(
+                'Slett pinne', 
+                `Er du sikker på at du vil slette "${nameStr}" fra kartet?`, 
+                () => {
+                    places = places.filter(p => p.id !== id);
+                    savePlaces();
+                    showToast('Stedet ble slettet', 'info');
+                }
+            );
+        };
+
+        function setupEventListeners() {
+            // Search input typing auto-suggest
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value;
+                if (query.trim().length >= 2) {
+                    searchTimeout = setTimeout(() => geocodeSearch(query), 400);
+                } else {
+                    document.getElementById('searchResults').classList.add('hidden');
+                }
+            });
+
+            document.getElementById('searchBtn').addEventListener('click', () => {
+                geocodeSearch(searchInput.value);
+            });
+
+            // Rating star interaction
+            document.querySelectorAll('#ratingStars i').forEach(star => {
+                star.addEventListener('click', (e) => {
+                    const rating = parseInt(e.target.getAttribute('data-rating'));
+                    setRating(rating);
+                });
+            });
+
+            // Confirm Modal Actions
+            document.getElementById('cancelConfirmBtn').addEventListener('click', closeConfirmModal);
+            document.getElementById('okConfirmBtn').addEventListener('click', () => {
+                if (typeof pendingConfirmAction === 'function') {
+                    pendingConfirmAction();
+                }
+                closeConfirmModal();
+            });
+
+            // Form Submit
+            document.getElementById('placeForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const id = document.getElementById('placeId').value || 'place-' + Date.now();
+                const name = document.getElementById('placeName').value.trim();
+                const country = document.getElementById('placeCountry').value.trim();
+                const category = document.getElementById('placeCategory').value;
+                const date = document.getElementById('placeDate').value;
+                const color = document.getElementById('placeColor').value;
+                const rating = parseInt(document.getElementById('placeRating').value) || 0;
+                const notes = document.getElementById('placeNotes').value.trim();
+                const lat = parseFloat(document.getElementById('placeLat').value);
+                const lng = parseFloat(document.getElementById('placeLng').value);
+
+                const existingIndex = places.findIndex(p => p.id === id);
+                const placeObj = { id, name, country, category, date, color, rating, notes, lat, lng };
+
+                if (existingIndex >= 0) {
+                    places[existingIndex] = placeObj;
+                    showToast('Stedet ble oppdatert!', 'success');
+                } else {
+                    places.push(placeObj);
+                    showToast('Ny pinne ble lagt til!', 'success');
+                }
+
+                savePlaces();
+                closeModal();
+            });
+
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+
+            // Filter inputs
+            document.getElementById('filterInput').addEventListener('input', renderPlacesList);
+            document.getElementById('categoryFilter').addEventListener('change', renderPlacesList);
+
+            // Reset Map View
+            document.getElementById('resetViewBtn').addEventListener('click', () => {
+                map.flyTo(DEFAULT_CENTER, DEFAULT_ZOOM, { duration: 1.2 });
+            });
+
+            // Mobile sidebar toggles
+            document.getElementById('openSidebarBtn').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('-translate-x-full');
+            });
+            document.getElementById('closeSidebarBtn').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            });
+
+            // Stats Modal
+            document.getElementById('statsBtn').addEventListener('click', showStatsModal);
+            document.getElementById('closeStatsBtn').addEventListener('click', () => {
+                document.getElementById('statsModal').classList.add('hidden');
+            });
+
+            // Export Data
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(places, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `mine_reiser_pins_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                showToast('Eksporterte data til JSON!', 'success');
+            });
+
+            // Import Data
+            const fileInput = document.getElementById('importFileInput');
+            document.getElementById('importBtn').addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const importedPlaces = JSON.parse(evt.target.result);
+                        if (Array.isArray(importedPlaces)) {
+                            places = importedPlaces;
+                            savePlaces();
+                            showToast('Importerte ' + places.length + ' steder!', 'success');
+                        } else {
+                            showToast('Ugyldig filformat', 'info');
+                        }
+                    } catch(err) {
+                        showToast('Feil ved lesing av fil', 'info');
+                    }
+                };
+                reader.readAsText(file);
+            });
+
+            // Clear All
+            document.getElementById('clearAllBtn').addEventListener('click', () => {
+                askConfirmation(
+                    'Slett alle pinner',
+                    'Vil du virkelig slette alle pinnene dine? Dette kan ikke angres.',
+                    () => {
+                        places = [];
+                        savePlaces();
+                        showToast('Alle pinner ble slettet', 'info');
+                    }
+                );
+            });
+        }
+
+        function showStatsModal() {
+            const statsContent = document.getElementById('statsContent');
+            const totalPlaces = places.length;
+            const countries = [...new Set(places.map(p => p.country).filter(Boolean))];
+            
+            // Category breakdown
+            const catCounts = {};
+            places.forEach(p => {
+                catCounts[p.category] = (catCounts[p.category] || 0) + 1;
+            });
+
+            let categoryBadges = Object.keys(catCounts).map(cat => `
+                <div class="bg-slate-100 dark:bg-slate-700/60 p-3 rounded-xl flex justify-between items-center text-xs">
+                    <span class="font-medium text-slate-700 dark:text-slate-300">${escapeHtml(cat)}</span>
+                    <span class="font-bold text-brand-600 dark:text-brand-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md shadow-sm">${catCounts[cat]}</span>
+                </div>
+            `).join('');
+
+            statsContent.innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-brand-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-brand-100 dark:border-slate-600 text-center">
+                        <span class="text-3xl font-extrabold text-brand-600 dark:text-brand-400 block">${totalPlaces}</span>
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Steder Besøkt</span>
+                    </div>
+                    <div class="bg-emerald-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-emerald-100 dark:border-slate-600 text-center">
+                        <span class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 block">${countries.length}</span>
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Land Besøkt</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Fordelt på kategorier</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        ${categoryBadges || '<p class="text-xs text-slate-400">Ingen kategorier ennå.</p>'}
+                    </div>
+                </div>
+
+                ${countries.length > 0 ? `
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Besøkte Land</h4>
+                    <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                        ${countries.map(c => `<span class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-lg text-slate-700 dark:text-slate-200">${escapeHtml(c)}</span>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('statsModal').classList.remove('hidden');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-brand-400 text-lg';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
