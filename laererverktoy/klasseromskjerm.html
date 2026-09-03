@@ -63,6 +63,49 @@
             <i class="fa-solid font-bold text-6xl mb-4 fa-chalkboard-user"></i>
             <h1 class="text-4xl font-bold mb-2">Velkommen til Klasseromskjerm</h1>
             <p class="text-xl max-w-md">Velg verktøy fra menyen nederst for å komme i gang!</p>
+            <!-- ================= DAGSPLAN WIDGET ================= -->
+<div id="widget-dagsplan" class="widget absolute top-20 left-20 w-80 bg-slate-800/90 text-white border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-md hidden z-20 overflow-hidden flex flex-col">
+    <!-- Header -->
+    <div class="drag-handle bg-slate-900/60 p-3 px-4 flex justify-between items-center cursor-move border-b border-slate-700/50">
+        <span class="font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-amber-400"></i> Dagsplan
+        </span>
+        <button onclick="toggleWidget('widget-dagsplan')" class="text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <!-- Innhold -->
+    <div class="p-4 space-y-3 flex-1 overflow-y-auto max-h-96">
+        <div id="dagsplan-list" class="space-y-2">
+            <!-- Punkter legges til her dynamisk -->
+        </div>
+        <!-- Input for nytt punkt -->
+        <div class="pt-2 border-t border-slate-700/60 flex gap-2">
+            <input type="text" id="dagsplan-tid" placeholder="08:30" class="w-16 bg-slate-900/80 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400">
+            <input type="text" id="dagsplan-tekst" placeholder="Norsk / Leseøkt" class="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400">
+            <button onclick="addDagsplanItem()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TEKSTBOKS WIDGET ================= -->
+<div id="widget-tekstboks" class="widget absolute top-20 left-96 w-96 bg-slate-800/90 text-white border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-md hidden z-20 overflow-hidden flex flex-col">
+    <!-- Header -->
+    <div class="drag-handle bg-slate-900/60 p-3 px-4 flex justify-between items-center cursor-move border-b border-slate-700/50">
+        <span class="font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-note-sticky text-sky-400"></i> Beskjed / Tekst
+        </span>
+        <button onclick="toggleWidget('widget-tekstboks')" class="text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <!-- Innhold -->
+    <div class="p-3">
+        <textarea id="tekstboks-input" oninput="saveTekstboksContent()" placeholder="Skriv beskjeder eller oppgaver til klassen her..." class="w-full h-48 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-400 resize-y font-sans"></textarea>
+    </div>
+</div>
         </div>
     </div>
 
@@ -117,6 +160,17 @@
             <i class="fa-solid fa-qrcode text-xl text-cyan-600 group-hover:scale-110 transition-transform"></i>
             <span class="text-[10px] font-medium mt-1">QR</span>
         </button>
+        <!-- Knapp for Dagsplan -->
+<button onclick="toggleWidget('widget-dagsplan')" class="px-3 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition backdrop-blur-md border border-slate-600/50">
+    <i class="fa-solid fa-list-check text-amber-400"></i>
+    <span>Dagsplan</span>
+</button>
+
+<!-- Knapp for Tekstboks -->
+<button onclick="toggleWidget('widget-tekstboks')" class="px-3 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition backdrop-blur-md border border-slate-600/50">
+    <i class="fa-solid fa-note-sticky text-sky-400"></i>
+    <span>Tekstboks</span>
+</button>
 
         <div class="h-8 w-[1px] bg-slate-300 mx-1"></div>
 
@@ -1131,6 +1185,89 @@ window.addEventListener('DOMContentLoaded', loadLayout);
         window.addEventListener('DOMContentLoaded', () => {
             restoreLayoutState();
         });
+        // Funksjon for å åpne og lukke widgets
+function toggleWidget(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.toggle('hidden');
+    }
+}
+
+// --- LOGIKK FOR DAGSPLAN ---
+let dagsplanItems = JSON.parse(localStorage.getItem('dagsplanData')) || [
+    { tid: '08:30', tekst: 'Morgensamling' },
+    { tid: '09:00', tekst: 'Norsk' }
+];
+
+function renderDagsplan() {
+    const listEl = document.getElementById('dagsplan-list');
+    if (!listEl) return;
+    
+    listEl.innerHTML = '';
+    
+    if (dagsplanItems.length === 0) {
+        listEl.innerHTML = '<p class="text-slate-500 text-xs italic text-center py-2">Ingen aktiviteter på planen.</p>';
+        return;
+    }
+
+    dagsplanItems.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between bg-slate-900/60 p-2 rounded-xl border border-slate-700/40 text-xs gap-2';
+        row.innerHTML = `
+            <div class="flex items-center gap-2 overflow-hidden">
+                <span class="bg-amber-500/20 text-amber-300 font-mono font-bold px-2 py-0.5 rounded-md flex-shrink-0">${item.tid}</span>
+                <span class="text-slate-200 truncate">${item.tekst}</span>
+            </div>
+            <button onclick="removeDagsplanItem(${index})" class="text-slate-500 hover:text-rose-400 p-1 transition flex-shrink-0">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        `;
+        listEl.appendChild(row);
+    });
+
+    localStorage.setItem('dagsplanData', JSON.stringify(dagsplanItems));
+}
+
+function addDagsplanItem() {
+    const tidInput = document.getElementById('dagsplan-tid');
+    const tekstInput = document.getElementById('dagsplan-tekst');
+
+    if (!tekstInput.value.trim()) return;
+
+    dagsplanItems.push({
+        tid: tidInput.value.trim() || '--:--',
+        tekst: tekstInput.value.trim()
+    });
+
+    tidInput.value = '';
+    tekstInput.value = '';
+    renderDagsplan();
+}
+
+function removeDagsplanItem(index) {
+    dagsplanItems.splice(index, 1);
+    renderDagsplan();
+}
+
+// --- LOGIKK FOR TEKSTBOKS ---
+function saveTekstboksContent() {
+    const content = document.getElementById('tekstboks-input').value;
+    localStorage.setItem('tekstboksContent', content);
+}
+
+function loadTekstboksContent() {
+    const saved = localStorage.getItem('tekstboksContent');
+    const input = document.getElementById('tekstboks-input');
+    if (saved && input) {
+        input.value = saved;
+    }
+}
+
+// Last inn lagrede data automatisk ved oppstart
+window.addEventListener('DOMContentLoaded', () => {
+    renderDagsplan();
+    loadTekstboksContent();
+});
     </script>
     <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
 <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
