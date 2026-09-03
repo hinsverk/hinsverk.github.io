@@ -1,1294 +1,1245 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klasseromskjerm</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        .widget {
-            position: absolute;
-            min-width: 220px;
-            min-height: 180px;
-            touch-action: none;
-            user-select: none;
-            transition: box-shadow 0.2s;
-            resize: both;
-            overflow: hidden;
-        }
-        .widget-header {
-            cursor: move;
-        }
-        .widget::-webkit-resizer {
-            background-color: rgba(99, 102, 241, 0.4);
-            border-top-left-radius: 4px;
-        }
-        .bg-custom-cover {
-            background-size: cover;
-            background-position: center;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(107, 114, 128, 0.8);
-        }
-        .draggable-student {
-            cursor: grab;
-        }
-        .draggable-student:active {
-            cursor: grabbing;
-        }
-        .group-drop-zone.drag-over {
-            border-color: #6366f1;
-            background-color: #eef2ff;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klasseromskjerm</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    .widget {
+      position: absolute;
+      min-width: 220px;
+      min-height: 180px;
+      touch-action: none;
+      user-select: none;
+      transition: box-shadow 0.2s;
+      resize: both;
+      overflow: hidden;
+    }
+    .widget-header {
+      cursor: move;
+    }
+    .widget::-webkit-resizer {
+      background-color: rgba(99, 102, 241, 0.4);
+      border-top-left-radius: 4px;
+    }
+    .bg-custom-cover {
+      background-size: cover;
+      background-position: center;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.5);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(107, 114, 128, 0.8);
+    }
+    .draggable-student {
+      cursor: grab;
+    }
+    .draggable-student:active {
+      cursor: grabbing;
+    }
+    .group-drop-zone.drag-over {
+      border-color: #6366f1;
+      background-color: #eef2ff;
+    }
+  </style>
 </head>
 <body id="main-body" class="h-screen w-screen overflow-hidden bg-slate-800 text-slate-800 relative bg-custom-cover" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop');">
 
-</div>
-    <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+  <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
 
-    <div id="workspace" class="w-full h-full relative overflow-hidden">
-        <div id="welcome-msg" class="absolute inset-0 flex flex-col items-center justify-center text-white text-center pointer-events-none p-4 drop-shadow-md transition-opacity duration-300">
-            <i class="fa-solid font-bold text-6xl mb-4 fa-chalkboard-user"></i>
-            <h1 class="text-4xl font-bold mb-2">Velkommen til Klasseromskjerm</h1>
-            <p class="text-xl max-w-md">Velg verktøy fra menyen nederst for å komme i gang!</p>
-            <!-- ================= DAGSPLAN WIDGET ================= -->
-<div id="widget-dagsplan" class="widget absolute top-20 left-20 w-80 bg-slate-800/90 text-white border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-md hidden z-20 overflow-hidden flex flex-col">
-    <!-- Header -->
-    <div class="drag-handle bg-slate-900/60 p-3 px-4 flex justify-between items-center cursor-move border-b border-slate-700/50">
-        <span class="font-bold text-sm flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-amber-400"></i> Dagsplan
-        </span>
-        <button onclick="toggleWidget('widget-dagsplan')" class="text-slate-400 hover:text-white transition">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+  <div id="workspace" class="w-full h-full relative overflow-hidden">
+    <div id="welcome-msg" class="absolute inset-0 flex flex-col items-center justify-center text-white text-center pointer-events-none p-4 drop-shadow-md transition-opacity duration-300">
+      <i class="fa-solid font-bold text-6xl mb-4 fa-chalkboard-user"></i>
+      <h1 class="text-4xl font-bold mb-2">Velkommen til Klasseromskjerm</h1>
+      <p class="text-xl max-w-md">Velg verktøy fra menyen nederst for å komme i gang!</p>
     </div>
-    <!-- Innhold -->
-    <div class="p-4 space-y-3 flex-1 overflow-y-auto max-h-96">
-        <div id="dagsplan-list" class="space-y-2">
-            <!-- Punkter legges til her dynamisk -->
+  </div>
+
+  <!-- VERKTØYMENY NEDERST -->
+  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md border border-white/40 shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-2 z-50 overflow-x-auto max-w-[95vw]">
+    <button onclick="createWidget('clock')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Klokke og Dato">
+      <i class="fa-regular fa-clock text-xl text-indigo-600 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Klokke</span>
+    </button>
+    <button onclick="createWidget('timer')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Nedtelling">
+      <i class="fa-solid fa-hourglass-half text-xl text-amber-600 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Timer</span>
+    </button>
+    <button onclick="createWidget('traffic')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Trafikklys">
+      <i class="fa-solid fa-traffic-light text-xl text-red-500 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Signal</span>
+    </button>
+    <button onclick="createWidget('work-symbols')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Arbeidssymboler">
+      <i class="fa-solid fa-users text-xl text-blue-600 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Modus</span>
+    </button>
+    <button onclick="createWidget('noise')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Støymåler">
+      <i class="fa-solid fa-microphone text-xl text-emerald-600 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Støy</span>
+    </button>
+    <button onclick="createWidget('randomizer')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Navnetrekker">
+      <i class="fa-solid fa-shuffle text-xl text-purple-600 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Trekk</span>
+    </button>
+    <button onclick="createWidget('group-maker')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Gruppevelger">
+      <i class="fa-solid fa-layer-group text-xl text-orange-500 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Grupper</span>
+    </button>
+    <button onclick="createWidget('dice')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Terning">
+      <i class="fa-solid fa-dice-five text-xl text-rose-500 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Terning</span>
+    </button>
+    <button onclick="createWidget('drawing')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Tegnebrett">
+      <i class="fa-solid fa-pen-ruler text-xl text-teal-600 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Tegn</span>
+    </button>
+    <button onclick="createWidget('qr')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="QR-kode generator">
+      <i class="fa-solid fa-qrcode text-xl text-cyan-600 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">QR</span>
+    </button>
+
+    <!-- Knapp for Dagsplan -->
+    <button onclick="createWidget('dagsplan')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Dagsplan">
+      <i class="fa-solid fa-list-check text-xl text-amber-500 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Dagsplan</span>
+    </button>
+
+    <!-- Knapp for Tekstboks -->
+    <button onclick="createWidget('tekstboks')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Tekstboks">
+      <i class="fa-solid fa-note-sticky text-xl text-sky-500 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Tekst</span>
+    </button>
+
+    <div class="h-8 w-[1px] bg-slate-300 mx-1"></div>
+
+    <button onclick="toggleBackgroundModal()" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Endre bakgrunn">
+      <i class="fa-solid fa-image text-xl text-slate-700 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Bakgrunn</span>
+    </button>
+    <button onclick="clearAllWidgets()" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-red-50 text-red-600 active:scale-95 transition group" title="Rydd skjermen">
+      <i class="fa-regular fa-trash-can text-xl group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Rydd</span>
+    </button>
+    <button onclick="saveLayoutState()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ml-1">
+      <i class="fa-solid fa-floppy-disk"></i>
+      <span>Lagre skjerm</span>
+    </button>
+  </div>
+
+  <!-- BAKGRUNNS-MODAL -->
+  <div id="bg-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Velg Bakgrunn</h2>
+        <button onclick="toggleBackgroundModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <button onclick="setBackground('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
+          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Strand">
+        </button>
+        <button onclick="setBackground('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
+          <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Natur">
+        </button>
+        <button onclick="setBackground('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
+          <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Fjell">
+        </button>
+        <button onclick="setBackground('https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
+          <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Rommet">
+        </button>
+        <button onclick="setBackground('color:#1e293b')" class="h-20 rounded-lg bg-slate-800 flex items-center justify-center text-white text-xs font-semibold hover:ring-2 hover:ring-indigo-500">Mørk Blå</button>
+        <button onclick="setBackground('color:#0f172a')" class="h-20 rounded-lg bg-slate-900 flex items-center justify-center text-white text-xs font-semibold hover:ring-2 hover:ring-indigo-500">Mørk</button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Egendefinert Bilde-URL</label>
+        <div class="flex gap-2">
+          <input type="text" id="bg-url-input" placeholder="https://example.com/bilde.jpg" class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <button onclick="setCustomBackground()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Bruk</button>
         </div>
-        <!-- Input for nytt punkt -->
-        <div class="pt-2 border-t border-slate-700/60 flex gap-2">
-            <input type="text" id="dagsplan-tid" placeholder="08:30" class="w-16 bg-slate-900/80 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400">
-            <input type="text" id="dagsplan-tekst" placeholder="Norsk / Leseøkt" class="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400">
-            <button onclick="addDagsplanItem()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold transition">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- ================= TEKSTBOKS WIDGET ================= -->
-<div id="widget-tekstboks" class="widget absolute top-20 left-96 w-96 bg-slate-800/90 text-white border border-slate-700/80 rounded-2xl shadow-2xl backdrop-blur-md hidden z-20 overflow-hidden flex flex-col">
-    <!-- Header -->
-    <div class="drag-handle bg-slate-900/60 p-3 px-4 flex justify-between items-center cursor-move border-b border-slate-700/50">
-        <span class="font-bold text-sm flex items-center gap-2">
-            <i class="fa-solid fa-note-sticky text-sky-400"></i> Beskjed / Tekst
-        </span>
-        <button onclick="toggleWidget('widget-tekstboks')" class="text-slate-400 hover:text-white transition">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-    <!-- Innhold -->
-    <div class="p-3">
-        <textarea id="tekstboks-input" oninput="saveTekstboksContent()" placeholder="Skriv beskjeder eller oppgaver til klassen her..." class="w-full h-48 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-400 resize-y font-sans"></textarea>
-    </div>
-</div>
-        </div>
-    </div>
+  <audio id="alarm-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
-    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md border border-white/40 shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-2 z-50 overflow-x-auto max-w-[95vw]">
-        
-        <button onclick="createWidget('clock')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Klokke og Dato">
-            <i class="fa-regular fa-clock text-xl text-indigo-600 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Klokke</span>
-        </button>
-
-        <button onclick="createWidget('timer')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Nedtelling">
-            <i class="fa-solid fa-hourglass-half text-xl text-amber-600 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Timer</span>
-        </button>
-
-        <button onclick="createWidget('traffic')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Trafikklys">
-            <i class="fa-solid fa-traffic-light text-xl text-red-500 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Signal</span>
-        </button>
-
-        <button onclick="createWidget('work-symbols')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Arbeidssymboler">
-            <i class="fa-solid fa-users text-xl text-blue-600 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Modus</span>
-        </button>
-
-        <button onclick="createWidget('noise')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Støymåler">
-            <i class="fa-solid fa-microphone text-xl text-emerald-600 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Støy</span>
-        </button>
-
-        <button onclick="createWidget('randomizer')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Navnetrekker">
-            <i class="fa-solid fa-shuffle text-xl text-purple-600 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Trekk</span>
-        </button>
-
-        <button onclick="createWidget('group-maker')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Gruppevelger">
-            <i class="fa-solid fa-layer-group text-xl text-orange-500 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Grupper</span>
-        </button>
-
-        <button onclick="createWidget('dice')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Terning">
-            <i class="fa-solid fa-dice-five text-xl text-rose-500 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Terning</span>
-        </button>
-
-        <button onclick="createWidget('drawing')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Tegnebrett">
-            <i class="fa-solid fa-pen-ruler text-xl text-teal-600 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Tegn</span>
-        </button>
-
-        <button onclick="createWidget('qr')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="QR-kode generator">
-            <i class="fa-solid fa-qrcode text-xl text-cyan-600 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">QR</span>
-        </button>
-        <!-- Knapp for Dagsplan -->
-<button onclick="toggleWidget('widget-dagsplan')" class="px-3 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition backdrop-blur-md border border-slate-600/50">
-    <i class="fa-solid fa-list-check text-amber-400"></i>
-    <span>Dagsplan</span>
-</button>
-
-<!-- Knapp for Tekstboks -->
-<button onclick="toggleWidget('widget-tekstboks')" class="px-3 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition backdrop-blur-md border border-slate-600/50">
-    <i class="fa-solid fa-note-sticky text-sky-400"></i>
-    <span>Tekstboks</span>
-</button>
-
-        <div class="h-8 w-[1px] bg-slate-300 mx-1"></div>
-
-        <button onclick="toggleBackgroundModal()" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Endre bakgrunn">
-            <i class="fa-solid fa-image text-xl text-slate-700 group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Bakgrunn</span>
-        </button>
-        
-        <button onclick="clearAllWidgets()" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-red-50 text-red-600 active:scale-95 transition group" title="Rydd skjermen">
-            <i class="fa-regular fa-trash-can text-xl group-hover:scale-110 transition-transform"></i>
-            <span class="text-[10px] font-medium mt-1">Rydd</span>
-        </button>
-         <button onclick="saveLayout()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
-    <i class="fa-solid fa-floppy-disk"></i>
-    <span>Lagre skjerm</span>
-</button>
-    </div>
-
-    <div id="bg-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Velg Bakgrunn</h2>
-                <button onclick="toggleBackgroundModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="grid grid-cols-3 gap-3 mb-4">
-                <button onclick="setBackground('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
-                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Strand">
-                </button>
-                <button onclick="setBackground('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
-                    <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Natur">
-                </button>
-                <button onclick="setBackground('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
-                    <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Fjell">
-                </button>
-                <button onclick="setBackground('https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1920&auto=format&fit=crop')" class="h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-500 transition">
-                    <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover" alt="Rommet">
-                </button>
-                <button onclick="setBackground('color:#1e293b')" class="h-20 rounded-lg bg-slate-800 flex items-center justify-center text-white text-xs font-semibold hover:ring-2 hover:ring-indigo-500">Mørk Blå</button>
-                <button onclick="setBackground('color:#0f172a')" class="h-20 rounded-lg bg-slate-900 flex items-center justify-center text-white text-xs font-semibold hover:ring-2 hover:ring-indigo-500">Mørk</button>
-               
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Egendefinert Bilde-URL</label>
-                <div class="flex gap-2">
-                    <input type="text" id="bg-url-input" placeholder="https://example.com/bilde.jpg" class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="setCustomBackground()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Bruk</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <audio id="alarm-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
-
-    <script>
-        let highestZIndex = 100;
-        const activeWidgets = new Map();
-
-        // --- DEFAULTE LISTER SOM PERMANENT ER LAGRET I KODEN ---
-        // Du kan redigere eller legge til nye lister direkte her i koden!
-        let globalSavedLists = {
-            "Eksempel 5A": "Kari, Ola, Per, Anne, Sofie, Lukas, Jonas, Nora, Henrik, Emil, Ida, Magnus"
-        };
-
-        function getSavedLists() {
-            try {
-                const local = JSON.parse(localStorage.getItem('klasserom_navnelister'));
-                if (local && Object.keys(local).length > 0) {
-                    return { ...globalSavedLists, ...local };
-                }
-            } catch (e) {}
-            return globalSavedLists;
-        }
-
-        function saveNamedList(name, content) {
-            if (!name) return;
-            globalSavedLists[name] = content;
-            try {
-                localStorage.setItem('klasserom_navnelister', JSON.stringify(globalSavedLists));
-            } catch (e) {}
-            updateAllListDropdowns();
-        }
-
-        function deleteNamedList(name) {
-            if (!name) return;
-            delete globalSavedLists[name];
-            try {
-                localStorage.setItem('klasserom_navnelister', JSON.stringify(globalSavedLists));
-            } catch (e) {}
-            updateAllListDropdowns();
-        }
-
-        function updateAllListDropdowns() {
-            const lists = getSavedLists();
-            const selects = document.querySelectorAll('.class-list-select');
-            selects.forEach(select => {
-                const currentVal = select.value;
-                select.innerHTML = '<option value="">-- Velg lagret liste --</option>';
-                Object.keys(lists).forEach(listName => {
-                    const opt = document.createElement('option');
-                    opt.value = listName;
-                    opt.innerText = listName;
-                    select.appendChild(opt);
-                });
-                select.value = currentVal;
-            });
-        }
-
-        function saveLayoutState() {
-            const layout = [];
-            activeWidgets.forEach((widget, id) => {
-                layout.push({
-                    id: id,
-                    type: widget.dataset.type,
-                    top: widget.style.top,
-                    left: widget.style.left,
-                    width: widget.style.width,
-                    height: widget.style.height,
-                    zIndex: widget.style.zIndex
-                });
-            });
-            try {
-                localStorage.setItem('klasserom_layout', JSON.stringify(layout));
-            } catch (e) {}
-        }
-
-        function restoreLayoutState() {
-            try {
-                const saved = localStorage.getItem('klasserom_layout');
-                if (saved) {
-                    const layout = JSON.parse(saved);
-                    layout.forEach(item => {
-                        createWidget(item.type, item);
-                    });
-                }
-                const savedBg = localStorage.getItem('klasserom_bg');
-                if (savedBg) {
-                    applyBackground(savedBg);
-                }
-            } catch (e) {}
-        }
-
-        function updateWelcomeMsg() {
-            const welcome = document.getElementById('welcome-msg');
-            if (activeWidgets.size > 0) {
-                welcome.classList.add('opacity-0');
-            } else {
-                welcome.classList.remove('opacity-0');
-            }
-        }
-
-        function createWidgetFrame(id, title, iconClass, type, savedConfig = null) {
-            const workspace = document.getElementById('workspace');
-            const widget = document.createElement('div');
-            widget.id = id;
-            widget.dataset.type = type;
-            widget.className = 'widget bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 flex flex-col overflow-hidden';
-            
-            if (savedConfig) {
-                widget.style.left = savedConfig.left;
-                widget.style.top = savedConfig.top;
-                widget.style.width = savedConfig.width;
-                widget.style.height = savedConfig.height;
-                widget.style.zIndex = savedConfig.zIndex || ++highestZIndex;
-                if (savedConfig.zIndex > highestZIndex) highestZIndex = parseInt(savedConfig.zIndex);
-            } else {
-                const randomX = Math.max(20, Math.floor(Math.random() * (window.innerWidth - 420)));
-                const randomY = Math.max(20, Math.floor(Math.random() * (window.innerHeight - 420)));
-                widget.style.left = `${randomX}px`;
-                widget.style.top = `${randomY}px`;
-                widget.style.width = '320px';
-                widget.style.height = 'auto';
-                widget.style.zIndex = ++highestZIndex;
-            }
-
-            const header = document.createElement('div');
-            header.className = 'widget-header px-4 py-3 bg-slate-100/80 border-b border-slate-200/60 flex items-center justify-between cursor-move select-none';
-            header.innerHTML = `
-                <div class="flex items-center gap-2 font-semibold text-slate-700 text-sm">
-                    <i class="${iconClass}"></i>
-                    <span>${title}</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <button onclick="closeWidget('${id}')" class="w-6 h-6 rounded-full hover:bg-red-100 text-slate-400 hover:text-red-600 flex items-center justify-center transition">
-                        <i class="fa-solid fa-xmark text-xs"></i>
-                    </button>
-                </div>
-            `;
-
-            const body = document.createElement('div');
-            body.className = 'widget-body p-4 flex-1 flex flex-col overflow-auto';
-
-            widget.appendChild(header);
-            widget.appendChild(body);
-            workspace.appendChild(widget);
-
-            makeDraggable(widget, header);
-
-            widget.addEventListener('mousedown', () => {
-                widget.style.zIndex = ++highestZIndex;
-                saveLayoutState();
-            });
-
-            const resizeObserver = new ResizeObserver(() => {
-                saveLayoutState();
-            });
-            resizeObserver.observe(widget);
-            widget._resizeObserver = resizeObserver;
-
-            activeWidgets.set(id, widget);
-            updateWelcomeMsg();
-            saveLayoutState();
-
-            return body;
-        }
-
-        function closeWidget(id) {
-            const widget = document.getElementById(id);
-            if (widget) {
-                if (widget._resizeObserver) widget._resizeObserver.disconnect();
-                if (typeof widget._cleanup === 'function') {
-                    try { widget._cleanup(); } catch (e) {}
-                }
-                widget.remove();
-                activeWidgets.delete(id);
-                updateWelcomeMsg();
-                saveLayoutState();
-            }
-        }
-
-        function clearAllWidgets() {
-            activeWidgets.forEach((_, id) => closeWidget(id));
-            localStorage.removeItem('klasserom_layout');
-        }
-
-        function makeDraggable(element, handle) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            handle.onmousedown = dragMouseDown;
-
-            function dragMouseDown(e) {
-                if (e.target.closest('.draggable-student') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
-
-                e = e || window.event;
-                e.preventDefault();
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-                element.style.zIndex = ++highestZIndex;
-            }
-
-            function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                element.style.top = (element.offsetTop - pos2) + "px";
-                element.style.left = (element.offsetLeft - pos1) + "px";
-            }
-
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-                saveLayoutState();
-            }
-        }
-
-        function createWidget(type, savedConfig = null) {
-            const id = savedConfig ? savedConfig.id : 'widget-' + Date.now();
-            if (activeWidgets.has(id)) return;
-
-            switch (type) {
-                case 'clock': initClockWidget(id, savedConfig); break;
-                case 'timer': initTimerWidget(id, savedConfig); break;
-                case 'traffic': initTrafficWidget(id, savedConfig); break;
-                case 'work-symbols': initWorkSymbolsWidget(id, savedConfig); break;
-                case 'noise': initNoiseWidget(id, savedConfig); break;
-                case 'randomizer': initRandomizerWidget(id, savedConfig); break;
-                case 'group-maker': initGroupMakerWidget(id, savedConfig); break;
-                case 'dice': initDiceWidget(id, savedConfig); break;
-                case 'drawing': initDrawingWidget(id, savedConfig); break;
-                case 'qr': initQRWidget(id, savedConfig); break;
-            }
-        }
-
-        // --- WIDGET IMPLEMENTASJONER ---
-
-        function initClockWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Klokke og Dato', 'fa-regular fa-clock', 'clock', savedConfig);
-            container.innerHTML = `
-                <div class="text-center py-2 my-auto">
-                    <div id="${id}-time" class="text-5xl font-extrabold text-slate-800 tracking-tight font-mono">00:00:00</div>
-                    <div id="${id}-date" class="text-sm font-semibold text-indigo-600 mt-2 uppercase tracking-wide">Laster...</div>
-                </div>
-            `;
-            function updateTime() {
-                const now = new Date();
-                const timeEl = document.getElementById(`${id}-time`);
-                const dateEl = document.getElementById(`${id}-date`);
-                if (!timeEl) return;
-                timeEl.innerText = now.toLocaleTimeString('no-NO');
-                dateEl.innerText = now.toLocaleDateString('no-NO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            }
-            updateTime();
-            const interval = setInterval(updateTime, 1000);
-            document.getElementById(id)._cleanup = () => clearInterval(interval);
-        }
-
-        function initTimerWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Timer', 'fa-solid fa-hourglass-half', 'timer', savedConfig);
-            container.innerHTML = `
-                <div class="flex flex-col items-center my-auto">
-                    <div id="${id}-display" class="text-5xl font-extrabold text-slate-800 my-2 font-mono">05:00</div>
-                    <div class="flex gap-2 my-2">
-                        <button onclick="addTimerSeconds('${id}', 60)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">+1 min</button>
-                        <button onclick="addTimerSeconds('${id}', 300)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">+5 min</button>
-                        <button onclick="addTimerSeconds('${id}', 600)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">+10 min</button>
-                    </div>
-                    <div class="flex gap-3 mt-3 w-full">
-                        <button id="${id}-start" onclick="toggleTimer('${id}')" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition">Start</button>
-                        <button onclick="resetTimer('${id}')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition">Nullstill</button>
-                    </div>
-                </div>
-            `;
-            const state = { timeLeft: 300, isRunning: false, interval: null };
-            window[`state_${id}`] = state;
-
-            window.updateTimerDisplay = (wId) => {
-                const s = window[`state_${wId}`];
-                if (!s) return;
-                const mins = Math.floor(s.timeLeft / 60).toString().padStart(2, '0');
-                const secs = (s.timeLeft % 60).toString().padStart(2, '0');
-                const display = document.getElementById(`${wId}-display`);
-                if (display) display.innerText = `${mins}:${secs}`;
-            };
-
-            window.toggleTimer = (wId) => {
-                const s = window[`state_${wId}`];
-                if (!s) return;
-                const btn = document.getElementById(`${wId}-start`);
-                if (s.isRunning) {
-                    clearInterval(s.interval);
-                    s.isRunning = false;
-                    if (btn) {
-                        btn.innerText = 'Start';
-                        btn.className = 'flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition';
-                    }
-                } else {
-                    if (s.timeLeft <= 0) return;
-                    s.isRunning = true;
-                    if (btn) {
-                        btn.innerText = 'Pause';
-                        btn.className = 'flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition';
-                    }
-                    s.interval = setInterval(() => {
-                        if (s.timeLeft > 0) {
-                            s.timeLeft--;
-                            window.updateTimerDisplay(wId);
-                        } else {
-                            clearInterval(s.interval);
-                            s.isRunning = false;
-                            if (btn) {
-                                btn.innerText = 'Start';
-                                btn.className = 'flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition';
-                            }
-                            document.getElementById('alarm-sound').play().catch(() => {});
-                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                        }
-                    }, 1000);
-                }
-            };
-
-            window.addTimerSeconds = (wId, secs) => {
-                const s = window[`state_${wId}`];
-                if (!s) return;
-                s.timeLeft += secs;
-                window.updateTimerDisplay(wId);
-            };
-
-            window.resetTimer = (wId) => {
-                const s = window[`state_${wId}`];
-                if (!s) return;
-                clearInterval(s.interval);
-                s.isRunning = false;
-                s.timeLeft = 300;
-                const btn = document.getElementById(`${wId}-start`);
-                if (btn) {
-                    btn.innerText = 'Start';
-                    btn.className = 'flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition';
-                }
-                window.updateTimerDisplay(wId);
-            };
-
-            document.getElementById(id)._cleanup = () => {
-                if (state.interval) clearInterval(state.interval);
-                delete window[`state_${id}`];
-            };
-        }
-
-        function initTrafficWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Trafikklys', 'fa-solid fa-traffic-light', 'traffic', savedConfig);
-            container.innerHTML = `
-                <div class="flex flex-col items-center gap-3 py-2 bg-slate-900 rounded-xl p-3 shadow-inner my-auto">
-                    <button onclick="setLight('${id}', 'red')" id="${id}-red" class="w-16 h-16 rounded-full bg-red-950 border-2 border-red-500/30 transition-all duration-300"></button>
-                    <button onclick="setLight('${id}', 'yellow')" id="${id}-yellow" class="w-16 h-16 rounded-full bg-amber-950 border-2 border-amber-500/30 transition-all duration-300"></button>
-                    <button onclick="setLight('${id}', 'green')" id="${id}-green" class="w-16 h-16 rounded-full bg-emerald-950 border-2 border-emerald-500/30 transition-all duration-300"></button>
-                </div>
-            `;
-            window.setLight = (wId, color) => {
-                const red = document.getElementById(`${wId}-red`);
-                const yellow = document.getElementById(`${wId}-yellow`);
-                const green = document.getElementById(`${wId}-green`);
-                red.className = "w-16 h-16 rounded-full bg-red-950 border-2 border-red-500/30 transition-all duration-300";
-                yellow.className = "w-16 h-16 rounded-full bg-amber-950 border-2 border-amber-500/30 transition-all duration-300";
-                green.className = "w-16 h-16 rounded-full bg-emerald-950 border-2 border-emerald-500/30 transition-all duration-300";
-
-                if (color === 'red') red.className = "w-16 h-16 rounded-full bg-red-500 border-2 border-white shadow-[0_0_25px_rgba(239,68,68,0.8)] scale-105 transition-all duration-300";
-                else if (color === 'yellow') yellow.className = "w-16 h-16 rounded-full bg-amber-400 border-2 border-white shadow-[0_0_25px_rgba(251,191,36,0.8)] scale-105 transition-all duration-300";
-                else if (color === 'green') green.className = "w-16 h-16 rounded-full bg-emerald-500 border-2 border-white shadow-[0_0_25px_rgba(16,185,129,0.8)] scale-105 transition-all duration-300";
-            };
-        }
-
-        function initWorkSymbolsWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Arbeidsmodus', 'fa-solid fa-users', 'work-symbols', savedConfig);
-            const symbols = [
-                { name: 'Stillearbeid', icon: 'fa-volume-xmark', color: 'text-red-500', desc: 'Helt stille i rommet' },
-                { name: 'Visking', icon: 'fa-comments', color: 'text-amber-500', desc: 'Lav stemme til sidemannen' },
-                { name: 'Spør en venn', icon: 'fa-user-group', color: 'text-blue-500', desc: 'Hjelp hverandre to og to' },
-                { name: 'Gruppearbeid', icon: 'fa-people-group', color: 'text-emerald-500', desc: 'Samarbeid i gruppen' }
-            ];
-            let html = `<div class="grid grid-cols-2 gap-2 my-auto">`;
-            symbols.forEach((s, idx) => {
-                html += `
-                    <button onclick="selectSymbol('${id}', ${idx})" id="${id}-sym-${idx}" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 flex flex-col items-center text-center transition">
-                        <i class="fa-solid ${s.icon} text-2xl ${s.color} mb-1"></i>
-                        <span class="text-xs font-bold text-slate-700">${s.name}</span>
-                    </button>
-                `;
-            });
-            html += `</div><div id="${id}-desc" class="mt-3 text-center text-xs font-medium text-slate-500 italic">Velg et arbeidssymbol</div>`;
-            container.innerHTML = html;
-
-            window.selectSymbol = (wId, index) => {
-                symbols.forEach((_, idx) => {
-                    const btn = document.getElementById(`${wId}-sym-${idx}`);
-                    if (btn) btn.className = "p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 flex flex-col items-center text-center transition";
-                });
-                const activeBtn = document.getElementById(`${wId}-sym-${index}`);
-                if (activeBtn) activeBtn.className = "p-3 bg-indigo-50 border-2 border-indigo-500 rounded-xl flex flex-col items-center text-center shadow-md transition scale-105";
-                const desc = document.getElementById(`${wId}-desc`);
-                if (desc) desc.innerText = symbols[index].desc;
-            };
-        }
-
-        function initNoiseWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Støymåler', 'fa-solid fa-microphone', 'noise', savedConfig);
-            container.innerHTML = `
-                <div class="flex flex-col items-center my-auto w-full">
-                    <div class="w-full h-6 bg-slate-200 rounded-full overflow-hidden p-1 border border-slate-300 mb-3">
-                        <div id="${id}-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-75 w-0"></div>
-                    </div>
-                    <div id="${id}-status" class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">Trykk på Start for å aktivere mikrofon</div>
-                    <div id="${id}-error" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mb-3 text-center w-full font-medium leading-relaxed"></div>
-                    <button id="${id}-btn" onclick="toggleMic('${id}')" class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition">Start Måling</button>
-                </div>
-            `;
-            let audioCtx, analyser, microphone, stream;
-            window.toggleMic = async (wId) => {
-                const btn = document.getElementById(`${wId}-btn`);
-                const status = document.getElementById(`${wId}-status`);
-                const bar = document.getElementById(`${wId}-bar`);
-                const errorBox = document.getElementById(`${wId}-error`);
-
-                if (errorBox) errorBox.classList.add('hidden');
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    if (audioCtx && audioCtx.state !== 'closed') audioCtx.close().catch(() => {});
-                    stream = null; audioCtx = null;
-                    btn.innerText = "Start Måling";
-                    btn.className = "px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition";
-                    status.innerText = "Måling stoppet";
-                    bar.style.width = "0%";
-                    return;
-                }
-                const getMedia = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
-                    ? (c) => navigator.mediaDevices.getUserMedia(c)
-                    : (c) => new Promise((res, rej) => {
-                        const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-                        if (!legacy) rej(new Error("NOT_SUPPORTED"));
-                        else legacy.call(navigator, c, res, rej);
-                    });
-
-                try {
-                    stream = await getMedia({ audio: true, video: false });
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    analyser = audioCtx.createAnalyser();
-                    microphone = audioCtx.createMediaStreamSource(stream);
-                    microphone.connect(analyser);
-                    analyser.fftSize = 256;
-
-                    btn.innerText = "Stopp Måling";
-                    btn.className = "px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition";
-                    status.innerText = "Måler støynivå...";
-                    status.className = "text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-center";
-                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-                    function checkVolume() {
-                        if (!stream) return;
-                        analyser.getByteFrequencyData(dataArray);
-                        let sum = 0;
-                        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-                        let avg = sum / dataArray.length;
-                        let vol = Math.min(100, Math.round((avg / 128) * 100));
-                        bar.style.width = vol + "%";
-
-                        if (vol > 70) {
-                            bar.className = "h-full bg-red-500 rounded-full transition-all duration-75";
-                            status.innerText = "For høyt støynivå!";
-                            status.className = "text-xs font-bold text-red-600 uppercase tracking-wider mb-2 text-center animate-pulse";
-                        } else if (vol > 40) {
-                            bar.className = "h-full bg-amber-400 rounded-full transition-all duration-75";
-                            status.innerText = "Moderat støynivå";
-                            status.className = "text-xs font-bold text-amber-600 uppercase tracking-wider mb-2 text-center";
-                        } else {
-                            bar.className = "h-full bg-emerald-500 rounded-full transition-all duration-75";
-                            status.innerText = "Fint støynivå";
-                            status.className = "text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2 text-center";
-                        }
-                        requestAnimationFrame(checkVolume);
-                    }
-                    checkVolume();
-                } catch (err) {
-                    let msg = "";
-                    if (err.message === "NOT_SUPPORTED" || (typeof window.isSecureContext !== 'undefined' && !window.isSecureContext)) {
-                        msg = "Mikrofontilgang krever HTTPS. Nettleseren sperrer mikrofonen over usikrede tilkoblinger.";
-                    } else if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError" || err.name === "SecurityError") {
-                        msg = "Google Sites blokkerer mikrofonen i innbygde elementer. For å bruke støymåleren bør siden åpnes direkte som en HTML-fil.";
-                    } else {
-                        msg = "Kunne ikke starte støymåleren: " + (err.message || err.name || "Ukjent feil");
-                    }
-                    if (errorBox) {
-                        errorBox.innerText = msg;
-                        errorBox.classList.remove('hidden');
-                    }
-                    status.innerText = "Måling mislyktes";
-                }
-            };
-
-            document.getElementById(id)._cleanup = () => {
-                if (stream) stream.getTracks().forEach(t => t.stop());
-                if (audioCtx && audioCtx.state !== 'closed') audioCtx.close().catch(() => {});
-            };
-        }
-
-        function initRandomizerWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Navnetrekker', 'fa-solid fa-shuffle', 'randomizer', savedConfig);
-            if (!savedConfig) {
-                document.getElementById(id).style.width = '340px';
-            }
-
-            container.innerHTML = `
-                <div class="flex flex-col gap-2 my-auto">
-                    <div class="flex gap-1 items-center">
-                        <select id="${id}-select" onchange="loadListToWidget('${id}')" class="class-list-select flex-1 text-xs p-1.5 border rounded-lg bg-slate-50 focus:outline-none">
-                            <option value="">-- Velg lagret liste --</option>
-                        </select>
-                        <button onclick="deleteSelectedList('${id}')" title="Slett valgt liste" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold border border-red-200 transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-
-                    <div id="${id}-result" class="h-16 bg-indigo-50 border-2 border-dashed border-indigo-300 rounded-xl flex items-center justify-center text-xl font-extrabold text-indigo-700 text-center px-2">
-                        Klar for trekning
-                    </div>
-
-                    <textarea id="${id}-list" rows="3" placeholder="Skriv inn navn her..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">Kari, Ola, Per, Anne, Sofie, Lukas, Jonas</textarea>
-
-                    <div class="flex gap-1 items-center bg-slate-100 p-1.5 rounded-lg border border-slate-200">
-                        <input type="text" id="${id}-name-input" placeholder="Navn på liste (f.eks. 6B)" class="flex-1 text-xs px-2 py-1 border rounded bg-white focus:outline-none">
-                        <button onclick="saveListFromWidget('${id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold shadow transition flex items-center gap-1">
-                            <i class="fa-solid fa-floppy-disk"></i> Lagre
-                        </button>
-                    </div>
-
-                    <button onclick="drawRandomName('${id}')" class="py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition mt-1">Trekk Navn!</button>
-                </div>
-            `;
-
-            updateAllListDropdowns();
-
-            window.drawRandomName = (wId) => {
-                const textarea = document.getElementById(`${wId}-list`);
-                const result = document.getElementById(`${wId}-result`);
-                const rawText = textarea.value.trim();
-                if (!rawText) { result.innerText = "Ingen navn lagt inn!"; return; }
-
-                const names = rawText.split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
-                if (names.length === 0) return;
-
-                let counter = 0;
-                const timer = setInterval(() => {
-                    result.innerText = names[Math.floor(Math.random() * names.length)];
-                    counter++;
-                    if (counter >= 20) {
-                        clearInterval(timer);
-                        result.innerText = names[Math.floor(Math.random() * names.length)];
-                        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-                    }
-                }, 50);
-            };
-        }
-
-        function initGroupMakerWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Gruppevelger', 'fa-solid fa-layer-group', 'group-maker', savedConfig);
-            if (!savedConfig) {
-                document.getElementById(id).style.width = '520px';
-                document.getElementById(id).style.height = '520px';
-            }
-
-            container.innerHTML = `
-                <div class="flex flex-col h-full gap-3">
-                    <div class="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <div class="flex gap-1 items-center">
-                            <select id="${id}-select" onchange="loadListToWidget('${id}')" class="class-list-select flex-1 text-xs p-1.5 border rounded-lg bg-white focus:outline-none">
-                                <option value="">-- Velg lagret liste --</option>
-                            </select>
-                            <button onclick="deleteSelectedList('${id}')" title="Slett liste" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold border border-red-200 transition">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-
-                        <textarea id="${id}-list" rows="2" placeholder="Skriv inn navn separert med komma..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">Kari, Ola, Per, Anne, Sofie, Lukas, Jonas, Nora, Henrik, Emil, Ida, Magnus</textarea>
-
-                        <div class="flex gap-1 items-center bg-white p-1 rounded-lg border border-slate-200">
-                            <input type="text" id="${id}-name-input" placeholder="Navn på liste (f.eks. 6B)" class="flex-1 text-xs px-2 py-1 border rounded focus:outline-none">
-                            <button onclick="saveListFromWidget('${id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold shadow transition flex items-center gap-1">
-                                <i class="fa-solid fa-floppy-disk"></i> Lagre liste
-                            </button>
-                        </div>
-
-                        <div class="flex gap-2 items-center mt-1">
-                            <div class="flex-1">
-                                <label class="text-[11px] font-semibold text-slate-500 block">Antall per gruppe</label>
-                                <input type="number" id="${id}-size" value="3" min="1" max="20" class="w-full text-xs p-1.5 border border-slate-300 rounded-lg text-center font-bold">
-                            </div>
-                            <div class="flex gap-1 mt-4">
-                                <button onclick="generateGroups('${id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow transition flex items-center gap-1">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Lag grupper
-                                </button>
-                                <button onclick="generateGroups('${id}')" title="Stokk om elever på nytt" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs shadow transition flex items-center gap-1">
-                                    <i class="fa-solid fa-shuffle"></i> Stokk om
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="${id}-groups-container" class="flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2 p-1">
-                        <div class="col-span-full text-center text-xs text-slate-400 italic my-auto">
-                            Trykk "Lag grupper" eller "Stokk om" for å fordele elevene. Du kan dra og slippe navn mellom gruppene etterpå.
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            updateAllListDropdowns();
-
-            window.generateGroups = (wId) => {
-                const textarea = document.getElementById(`${wId}-list`);
-                const groupSizeInput = document.getElementById(`${wId}-size`);
-                const groupsContainer = document.getElementById(`${wId}-groups-container`);
-
-                const rawText = textarea.value.trim();
-                if (!rawText) {
-                    groupsContainer.innerHTML = '<div class="col-span-full text-center text-xs text-red-500 my-auto">Vennligst legg til navn først!</div>';
-                    return;
-                }
-
-                let names = rawText.split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
-                if (names.length === 0) return;
-
-                for (let i = names.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [names[i], names[j]] = [names[j], names[i]];
-                }
-
-                const groupSize = parseInt(groupSizeInput.value) || 3;
-                const totalGroups = Math.ceil(names.length / groupSize);
-                groupsContainer.innerHTML = '';
-
-                const groupColors = [
-                    'border-indigo-300 bg-indigo-50/50 text-indigo-900',
-                    'border-emerald-300 bg-emerald-50/50 text-emerald-900',
-                    'border-amber-300 bg-amber-50/50 text-amber-900',
-                    'border-rose-300 bg-rose-50/50 text-rose-900',
-                    'border-purple-300 bg-purple-50/50 text-purple-900'
-                ];
-
-                for (let g = 0; g < totalGroups; g++) {
-                    const groupCard = document.createElement('div');
-                    groupCard.className = `group-drop-zone border-2 rounded-xl p-2.5 flex flex-col gap-1.5 transition ${groupColors[g % groupColors.length]}`;
-                    groupCard.innerHTML = `
-                        <div class="font-extrabold text-xs uppercase tracking-wide border-b border-black/10 pb-1 flex justify-between items-center">
-                            <span>Gruppe ${g + 1}</span>
-                            <span class="text-[10px] font-normal opacity-70 group-count">0</span>
-                        </div>
-                        <div class="students-list flex flex-col gap-1 min-h-[40px] flex-1"></div>
-                    `;
-
-                    groupCard.addEventListener('dragover', (e) => { e.preventDefault(); groupCard.classList.add('drag-over'); });
-                    groupCard.addEventListener('dragleave', () => groupCard.classList.remove('drag-over'));
-                    groupCard.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        groupCard.classList.remove('drag-over');
-                        const studentId = e.dataTransfer.getData('text/plain');
-                        const studentEl = document.getElementById(studentId);
-                        if (studentEl) {
-                            groupCard.querySelector('.students-list').appendChild(studentEl);
-                            updateGroupCounts(wId);
-                        }
-                    });
-                    groupsContainer.appendChild(groupCard);
-                }
-
-                names.forEach((name, idx) => {
-                    const targetGroupIndex = Math.floor(idx / groupSize);
-                    const groupCard = groupsContainer.children[targetGroupIndex];
-                    if (!groupCard) return;
-
-                    const studentTag = document.createElement('div');
-                    const studentId = `${wId}-student-${Date.now()}-${idx}`;
-                    studentTag.id = studentId;
-                    studentTag.draggable = true;
-                    studentTag.className = 'draggable-student bg-white px-2 py-1 rounded-lg text-xs font-bold shadow-sm border border-black/10 flex items-center justify-between hover:shadow transition';
-                    studentTag.innerHTML = `<span>${name}</span><i class="fa-solid fa-grip-lines text-[10px] text-slate-400"></i>`;
-
-                    studentTag.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.setData('text/plain', studentId);
-                        e.dataTransfer.effectAllowed = 'move';
-                    });
-                    groupCard.querySelector('.students-list').appendChild(studentTag);
-                });
-
-                updateGroupCounts(wId);
-            };
-
-            function updateGroupCounts(wId) {
-                const containerEl = document.getElementById(`${wId}-groups-container`);
-                if (!containerEl) return;
-                containerEl.querySelectorAll('.group-drop-zone').forEach(zone => {
-                    const count = zone.querySelectorAll('.draggable-student').length;
-                    const countEl = zone.querySelector('.group-count');
-                    if (countEl) countEl.innerText = `${count} elev${count !== 1 ? 'er' : ''}`;
-                });
-            }
-        }
-
-        // Hjelpefunksjoner for lagring og lasting av navnelister
-        window.loadListToWidget = (wId) => {
-            const select = document.getElementById(`${wId}-select`);
-            const textarea = document.getElementById(`${wId}-list`);
-            const nameInput = document.getElementById(`${wId}-name-input`);
-            if (!select || !textarea) return;
-            const lists = getSavedLists();
-            if (lists[select.value]) {
-                textarea.value = lists[select.value];
-                if (nameInput) nameInput.value = select.value;
-            }
-        };
-
-        window.saveListFromWidget = (wId) => {
-            const textarea = document.getElementById(`${wId}-list`);
-            const nameInput = document.getElementById(`${wId}-name-input`);
-            
-            if (!textarea || !textarea.value.trim()) {
-                alert("Vennligst skriv inn noen navn først!");
-                return;
-            }
-            if (!nameInput || !nameInput.value.trim()) {
-                alert("Vennligst skriv inn et navn på listen (f.eks. 6B)!");
-                return;
-            }
-
-            const name = nameInput.value.trim();
-            saveNamedList(name, textarea.value.trim());
-            const select = document.getElementById(`${wId}-select`);
-            if (select) select.value = name;
-        };
-
-        window.deleteSelectedList = (wId) => {
-            const select = document.getElementById(`${wId}-select`);
-            if (!select || !select.value) return;
-            
-            const name = select.value;
-            deleteNamedList(name);
-            const textarea = document.getElementById(`${wId}-list`);
-            const nameInput = document.getElementById(`${wId}-name-input`);
-            if (textarea) textarea.value = '';
-            if (nameInput) nameInput.value = '';
-        };
-
-        function initDiceWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Terning', 'fa-solid fa-dice-five', 'dice', savedConfig);
-            const state = { count: 1 };
-            window[`state_dice_${id}`] = state;
-            container.innerHTML = `
-                <div class="flex flex-col items-center gap-3 my-auto">
-                    <div class="flex gap-1 bg-slate-100 p-1 rounded-xl w-full justify-center">
-                        <button id="${id}-btn-1" onclick="setDiceCount('${id}', 1)" class="flex-1 py-1 rounded-lg text-xs font-bold bg-white text-indigo-600 shadow-sm transition">1 Terning</button>
-                        <button id="${id}-btn-2" onclick="setDiceCount('${id}', 2)" class="flex-1 py-1 rounded-lg text-xs font-bold text-slate-600 hover:bg-white/50 transition">2 Terninger</button>
-                        <button id="${id}-btn-3" onclick="setDiceCount('${id}', 3)" class="flex-1 py-1 rounded-lg text-xs font-bold text-slate-600 hover:bg-white/50 transition">3 Terninger</button>
-                    </div>
-                    <div id="${id}-dice-container" onclick="rerollDice('${id}')" class="flex gap-2 justify-center items-center my-1 cursor-pointer p-2 rounded-2xl hover:bg-slate-50 transition w-full min-h-[76px]">
-                        <div class="w-14 h-14 bg-indigo-50 border-2 border-indigo-400 rounded-2xl shadow-md flex items-center justify-center text-3xl font-extrabold text-indigo-700">1</div>
-                    </div>
-                    <button onclick="rerollDice('${id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
-                        <i class="fa-solid fa-rotate-right"></i><span>Kast på nytt</span>
-                    </button>
-                </div>
-            `;
-            window.setDiceCount = (wId, count) => {
-                const s = window[`state_dice_${wId}`];
-                if (!s) return;
-                s.count = count;
-                [1, 2, 3].forEach(c => {
-                    const btn = document.getElementById(`${wId}-btn-${c}`);
-                    if (btn) btn.className = (c === count) ? "flex-1 py-1 rounded-lg text-xs font-bold bg-white text-indigo-600 shadow-sm transition" : "flex-1 py-1 rounded-lg text-xs font-bold text-slate-600 hover:bg-white/50 transition";
-                });
-                window.rerollDice(wId);
-            };
-            window.rerollDice = (wId) => {
-                const s = window[`state_dice_${wId}`];
-                const count = s ? s.count : 1;
-                const containerEl = document.getElementById(`${wId}-dice-container`);
-                if (!containerEl) return;
-                containerEl.innerHTML = '';
-                for (let i = 0; i < count; i++) {
-                    const die = document.createElement('div');
-                    die.className = 'w-14 h-14 bg-white border-2 border-slate-300 rounded-2xl shadow-md flex items-center justify-center text-3xl font-extrabold text-slate-800 animate-bounce';
-                    die.innerText = '?';
-                    containerEl.appendChild(die);
-                    setTimeout(() => {
-                        die.innerText = Math.floor(Math.random() * 6) + 1;
-                        die.className = 'w-14 h-14 bg-indigo-50 border-2 border-indigo-400 rounded-2xl shadow-md flex items-center justify-center text-3xl font-extrabold text-indigo-700 transition-all';
-                    }, 250 + (i * 80));
-                }
-            };
-            document.getElementById(id)._cleanup = () => delete window[`state_dice_${id}`];
-        }
-
-        function initDrawingWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'Tegnebrett', 'fa-solid fa-pen-ruler', 'drawing', savedConfig);
-            if (!savedConfig) {
-                document.getElementById(id).style.width = '380px';
-                document.getElementById(id).style.height = '340px';
-            }
-            container.innerHTML = `
-                <div class="flex flex-col h-full gap-2">
-                    <div class="flex gap-2 items-center justify-between bg-slate-100 p-2 rounded-xl">
-                        <div class="flex gap-1">
-                            <button onclick="setPenColor('${id}', '#000000')" class="w-6 h-6 rounded-full bg-black border border-slate-300"></button>
-                            <button onclick="setPenColor('${id}', '#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border border-slate-300"></button>
-                            <button onclick="setPenColor('${id}', '#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border border-slate-300"></button>
-                            <button onclick="setPenColor('${id}', '#10b981')" class="w-6 h-6 rounded-full bg-emerald-500 border border-slate-300"></button>
-                        </div>
-                        <button onclick="clearCanvas('${id}')" class="text-xs text-red-600 font-bold hover:underline">Tøm brett</button>
-                    </div>
-                    <div class="flex-1 w-full h-full relative overflow-hidden rounded-xl border border-slate-200 bg-white">
-                        <canvas id="${id}-canvas" class="w-full h-full cursor-crosshair block"></canvas>
-                    </div>
-                </div>
-            `;
-            setTimeout(() => {
-                const canvas = document.getElementById(`${id}-canvas`);
-                if (!canvas) return;
-                function fitCanvasToParent() {
-                    const rect = canvas.parentElement.getBoundingClientRect();
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.drawImage(canvas, 0, 0);
-                    canvas.width = rect.width; canvas.height = rect.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(tempCanvas, 0, 0);
-                    ctx.lineWidth = 3; ctx.lineCap = 'round';
-                }
-                fitCanvasToParent();
-                const resizeObs = new ResizeObserver(() => fitCanvasToParent());
-                resizeObs.observe(canvas.parentElement);
-
-                const ctx = canvas.getContext('2d');
-                let isDrawing = false, currentColor = '#000000';
-                ctx.lineWidth = 3; ctx.lineCap = 'round';
-
-                window.setPenColor = (wId, color) => { currentColor = color; };
-                window.clearCanvas = (wId) => {
-                    const c = document.getElementById(`${wId}-canvas`);
-                    if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
-                };
-                function startDrawing(e) { isDrawing = true; draw(e); }
-                function stopDrawing() { isDrawing = false; ctx.beginPath(); }
-                function draw(e) {
-                    if (!isDrawing) return;
-                    const rect = canvas.getBoundingClientRect();
-                    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-                    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-                    ctx.strokeStyle = currentColor;
-                    ctx.lineTo(x, y); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(x, y);
-                }
-                canvas.addEventListener('mousedown', startDrawing);
-                canvas.addEventListener('mouseup', stopDrawing);
-                canvas.addEventListener('mousemove', draw);
-                canvas.addEventListener('touchstart', startDrawing);
-                canvas.addEventListener('touchend', stopDrawing);
-                canvas.addEventListener('touchmove', draw);
-
-                document.getElementById(id)._cleanup = () => resizeObs.disconnect();
-            }, 100);
-        }
-
-        function initQRWidget(id, savedConfig) {
-            const container = createWidgetFrame(id, 'QR-Kode Generator', 'fa-solid fa-qrcode', 'qr', savedConfig);
-            container.innerHTML = `
-                <div class="flex flex-col items-center gap-3 my-auto">
-                    <div id="${id}-qrcode" class="p-2 bg-white rounded-xl shadow border border-slate-200 flex items-center justify-center min-h-[140px]"></div>
-                    <input type="text" id="${id}-input" placeholder="Lim inn nettadresse her..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="generateQRCode('${id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition text-xs">Generer QR</button>
-                </div>
-            `;
-            window.generateQRCode = (wId) => {
-                const input = document.getElementById(`${wId}-input`);
-                const qrContainer = document.getElementById(`${wId}-qrcode`);
-                const url = input.value.trim();
-                if (!url) return;
-                qrContainer.innerHTML = '';
-                new QRCode(qrContainer, { text: url, width: 128, height: 128 });
-            };
-            setTimeout(() => {
-                const inp = document.getElementById(`${id}-input`);
-                if (inp) {
-                    inp.value = "https://www.utdanning.no";
-                    window.generateQRCode(id);
-                }
-            }, 100);
-        }
-
-        // --- BAKGRUNNSBEHANDLING ---
-        function toggleBackgroundModal() {
-            document.getElementById('bg-modal').classList.toggle('hidden');
-        }
-
-        function setBackground(val) {
-            applyBackground(val);
-            try {
-                localStorage.setItem('klasserom_bg', val);
-            } catch (e) {}
-            toggleBackgroundModal();
-        }
-
-        function applyBackground(val) {
-            const body = document.getElementById('main-body');
-            if (val.startsWith('color:')) {
-                body.style.backgroundImage = 'none';
-                body.style.backgroundColor = val.replace('color:', '');
-            } else {
-                body.style.backgroundImage = `url('${val}')`;
-            }
-        }
-
-        function setCustomBackground() {
-            const url = document.getElementById('bg-url-input').value.trim();
-            if (url) setBackground(url);
-        }
-// Funksjon for å lagre posisjoner og tilstand
-function saveLayout() {
-    const widgets = document.querySelectorAll('.widget'); // Sjekk at verktøyene dine har klassen 'widget'
-    const layoutData = [];
-
-    widgets.forEach(w => {
-        layoutData.push({
-            id: w.id,
-            top: w.style.top,
-            left: w.style.left,
-            display: w.style.display
-        });
-    });
-
-    localStorage.setItem('classroomScreenLayout', JSON.stringify(layoutData));
-    alert('Skjermoppsettet er lagret!');
-}
-
-// Funksjon for å gjenopprette oppsettet når siden lastes
-function loadLayout() {
-    const savedLayout = localStorage.getItem('classroomScreenLayout');
-    if (!savedLayout) return;
-
-    const layoutData = JSON.parse(savedLayout);
-    layoutData.forEach(item => {
-        const el = document.getElementById(item.id);
-        if (el) {
-            el.style.top = item.top;
-            el.style.left = item.left;
-            el.style.display = item.display;
-        }
-    });
-}
-
-// Kjør gjenoppretting automatisk ved oppstart
-window.addEventListener('DOMContentLoaded', loadLayout);
-        // OPPSTART: Gjenopprett lagret tilstand ved innlasting
-        window.addEventListener('DOMContentLoaded', () => {
-            restoreLayoutState();
-        });
-        // Funksjon for å åpne og lukke widgets
-function toggleWidget(id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.classList.toggle('hidden');
-    }
-}
-
-// --- LOGIKK FOR DAGSPLAN ---
-let dagsplanItems = JSON.parse(localStorage.getItem('dagsplanData')) || [
-    { tid: '08:30', tekst: 'Morgensamling' },
-    { tid: '09:00', tekst: 'Norsk' }
-];
-
-function renderDagsplan() {
-    const listEl = document.getElementById('dagsplan-list');
-    if (!listEl) return;
-    
-    listEl.innerHTML = '';
-    
-    if (dagsplanItems.length === 0) {
-        listEl.innerHTML = '<p class="text-slate-500 text-xs italic text-center py-2">Ingen aktiviteter på planen.</p>';
-        return;
-    }
-
-    dagsplanItems.forEach((item, index) => {
-        const row = document.createElement('div');
-        row.className = 'flex items-center justify-between bg-slate-900/60 p-2 rounded-xl border border-slate-700/40 text-xs gap-2';
-        row.innerHTML = `
-            <div class="flex items-center gap-2 overflow-hidden">
-                <span class="bg-amber-500/20 text-amber-300 font-mono font-bold px-2 py-0.5 rounded-md flex-shrink-0">${item.tid}</span>
-                <span class="text-slate-200 truncate">${item.tekst}</span>
-            </div>
-            <button onclick="removeDagsplanItem(${index})" class="text-slate-500 hover:text-rose-400 p-1 transition flex-shrink-0">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-        `;
-        listEl.appendChild(row);
-    });
-
-    localStorage.setItem('dagsplanData', JSON.stringify(dagsplanItems));
-}
-
-function addDagsplanItem() {
-    const tidInput = document.getElementById('dagsplan-tid');
-    const tekstInput = document.getElementById('dagsplan-tekst');
-
-    if (!tekstInput.value.trim()) return;
-
-    dagsplanItems.push({
-        tid: tidInput.value.trim() || '--:--',
-        tekst: tekstInput.value.trim()
-    });
-
-    tidInput.value = '';
-    tekstInput.value = '';
-    renderDagsplan();
-}
-
-function removeDagsplanItem(index) {
-    dagsplanItems.splice(index, 1);
-    renderDagsplan();
-}
-
-// --- LOGIKK FOR TEKSTBOKS ---
-function saveTekstboksContent() {
-    const content = document.getElementById('tekstboks-input').value;
-    localStorage.setItem('tekstboksContent', content);
-}
-
-function loadTekstboksContent() {
-    const saved = localStorage.getItem('tekstboksContent');
-    const input = document.getElementById('tekstboks-input');
-    if (saved && input) {
-        input.value = saved;
-    }
-}
-
-// Last inn lagrede data automatisk ved oppstart
-window.addEventListener('DOMContentLoaded', () => {
-    renderDagsplan();
-    loadTekstboksContent();
-});
-    </script>
-    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+  <!-- TILBAKE-KNAPP -->
+  <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
     <i class="fa-solid fa-arrow-left"></i>
     <span>Tilbake til Lærerverktøy</span>
-</a>
-    <button onclick="saveLayout()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
-    <i class="fa-solid fa-floppy-disk"></i>
-    <span>Lagre skjerm</span>
-</button>
+  </a>
+
+  <script>
+    let highestZIndex = 100;
+    const activeWidgets = new Map();
+
+    let globalSavedLists = {
+      "Eksempel 5A": "Kari, Ola, Per, Anne, Sofie, Lukas, Jonas, Nora, Henrik, Emil, Ida, Magnus"
+    };
+
+    function getSavedLists() {
+      try {
+        const local = JSON.parse(localStorage.getItem('klasserom_navnelister'));
+        if (local && Object.keys(local).length > 0) {
+          return {...globalSavedLists, ...local };
+        }
+      } catch (e) {}
+      return globalSavedLists;
+    }
+
+    function saveNamedList(name, content) {
+      if (!name) return;
+      globalSavedLists[name] = content;
+      try {
+        localStorage.setItem('klasserom_navnelister', JSON.stringify(globalSavedLists));
+      } catch (e) {}
+      updateAllListDropdowns();
+    }
+
+    function deleteNamedList(name) {
+      if (!name) return;
+      delete globalSavedLists[name];
+      try {
+        localStorage.setItem('klasserom_navnelister', JSON.stringify(globalSavedLists));
+      } catch (e) {}
+      updateAllListDropdowns();
+    }
+
+    function updateAllListDropdowns() {
+      const lists = getSavedLists();
+      const selects = document.querySelectorAll('.class-list-select');
+      selects.forEach(select => {
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- Velg lagret liste --</option>';
+        Object.keys(lists).forEach(listName => {
+          const opt = document.createElement('option');
+          opt.value = listName;
+          opt.innerText = listName;
+          select.appendChild(opt);
+        });
+        select.value = currentVal;
+      });
+    }
+
+    function saveLayoutState() {
+      const layout = [];
+      activeWidgets.forEach((widget, id) => {
+        layout.push({
+          id: id,
+          type: widget.dataset.type,
+          top: widget.style.top,
+          left: widget.style.left,
+          width: widget.style.width,
+          height: widget.style.height,
+          zIndex: widget.style.zIndex
+        });
+      });
+      try {
+        localStorage.setItem('klasserom_layout', JSON.stringify(layout));
+      } catch (e) {}
+    }
+
+    function restoreLayoutState() {
+      try {
+        const saved = localStorage.getItem('klasserom_layout');
+        if (saved) {
+          const layout = JSON.parse(saved);
+          layout.forEach(item => {
+            createWidget(item.type, item);
+          });
+        }
+        const savedBg = localStorage.getItem('klasserom_bg');
+        if (savedBg) {
+          applyBackground(savedBg);
+        }
+      } catch (e) {}
+    }
+
+    function updateWelcomeMsg() {
+      const welcome = document.getElementById('welcome-msg');
+      if (!welcome) return;
+      if (activeWidgets.size > 0) {
+        welcome.classList.add('opacity-0');
+      } else {
+        welcome.classList.remove('opacity-0');
+      }
+    }
+
+    function createWidgetFrame(id, title, iconClass, type, savedConfig = null) {
+      const workspace = document.getElementById('workspace');
+      const widget = document.createElement('div');
+      widget.id = id;
+      widget.dataset.type = type;
+      widget.className = 'widget bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 flex flex-col overflow-hidden';
+
+      if (savedConfig) {
+        widget.style.left = savedConfig.left;
+        widget.style.top = savedConfig.top;
+        widget.style.width = savedConfig.width;
+        widget.style.height = savedConfig.height;
+        widget.style.zIndex = savedConfig.zIndex || ++highestZIndex;
+        if (parseInt(savedConfig.zIndex) > highestZIndex) highestZIndex = parseInt(savedConfig.zIndex);
+      } else {
+        const randomX = Math.max(20, Math.floor(Math.random() * (window.innerWidth - 420)));
+        const randomY = Math.max(20, Math.floor(Math.random() * (window.innerHeight - 420)));
+        widget.style.left = `${randomX}px`;
+        widget.style.top = `${randomY}px`;
+        widget.style.width = '340px';
+        widget.style.height = 'auto';
+        widget.style.zIndex = ++highestZIndex;
+      }
+
+      const header = document.createElement('div');
+      header.className = 'widget-header px-4 py-3 bg-slate-100/80 border-b border-slate-200/60 flex items-center justify-between cursor-move select-none';
+      header.innerHTML = `
+        <div class="flex items-center gap-2 font-semibold text-slate-700 text-sm">
+          <i class="${iconClass}"></i>
+          <span>${title}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="closeWidget('${id}')" class="w-6 h-6 rounded-full hover:bg-red-100 text-slate-400 hover:text-red-600 flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+      `;
+
+      const body = document.createElement('div');
+      body.className = 'widget-body p-4 flex-1 flex flex-col overflow-auto';
+
+      widget.appendChild(header);
+      widget.appendChild(body);
+      workspace.appendChild(widget);
+
+      makeDraggable(widget, header);
+
+      widget.addEventListener('mousedown', () => {
+        widget.style.zIndex = ++highestZIndex;
+        saveLayoutState();
+      });
+
+      const resizeObserver = new ResizeObserver(() => {
+        saveLayoutState();
+      });
+      resizeObserver.observe(widget);
+      widget._resizeObserver = resizeObserver;
+
+      activeWidgets.set(id, widget);
+      updateWelcomeMsg();
+      saveLayoutState();
+
+      return body;
+    }
+
+    function closeWidget(id) {
+      const widget = document.getElementById(id);
+      if (widget) {
+        if (widget._resizeObserver) widget._resizeObserver.disconnect();
+        if (typeof widget._cleanup === 'function') {
+          try { widget._cleanup(); } catch (e) {}
+        }
+        widget.remove();
+        activeWidgets.delete(id);
+        updateWelcomeMsg();
+        saveLayoutState();
+      }
+    }
+
+    function clearAllWidgets() {
+      activeWidgets.forEach((_, id) => closeWidget(id));
+      localStorage.removeItem('klasserom_layout');
+    }
+
+    function toggleWidget(id) {
+      if (activeWidgets.has(id)) {
+        closeWidget(id);
+      } else {
+        if (id === 'widget-dagsplan' || id === 'dagsplan') createWidget('dagsplan');
+        else if (id === 'widget-tekstboks' || id === 'tekstboks') createWidget('tekstboks');
+        else {
+          const el = document.getElementById(id);
+          if (el) el.classList.toggle('hidden');
+        }
+      }
+    }
+
+    function makeDraggable(element, handle) {
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      handle.onmousedown = dragMouseDown;
+
+      function dragMouseDown(e) {
+        if (e.target.closest('.draggable-student') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
+        e = e || window.event;
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+        element.style.zIndex = ++highestZIndex;
+      }
+
+      function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        element.style.top = (element.offsetTop - pos2) + "px";
+        element.style.left = (element.offsetLeft - pos1) + "px";
+      }
+
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+        saveLayoutState();
+      }
+    }
+
+    function createWidget(type, savedConfig = null) {
+      const id = savedConfig ? savedConfig.id : (type === 'dagsplan' ? 'widget-dagsplan' : type === 'tekstboks' ? 'widget-tekstboks' : 'widget-' + Date.now());
+      if (activeWidgets.has(id)) {
+        const w = document.getElementById(id);
+        if (w) w.style.zIndex = ++highestZIndex;
+        return;
+      }
+
+      switch (type) {
+        case 'clock': initClockWidget(id, savedConfig); break;
+        case 'timer': initTimerWidget(id, savedConfig); break;
+        case 'traffic': initTrafficWidget(id, savedConfig); break;
+        case 'work-symbols': initWorkSymbolsWidget(id, savedConfig); break;
+        case 'noise': initNoiseWidget(id, savedConfig); break;
+        case 'randomizer': initRandomizerWidget(id, savedConfig); break;
+        case 'group-maker': initGroupMakerWidget(id, savedConfig); break;
+        case 'dice': initDiceWidget(id, savedConfig); break;
+        case 'drawing': initDrawingWidget(id, savedConfig); break;
+        case 'qr': initQRWidget(id, savedConfig); break;
+        case 'dagsplan': initDagsplanWidget(id, savedConfig); break;
+        case 'tekstboks': initTekstboksWidget(id, savedConfig); break;
+      }
+    }
+
+    // --- WIDGET IMPLEMENTASJONER ---
+
+    function initDagsplanWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Dagsplan', 'fa-solid fa-list-check text-amber-500', 'dagsplan', savedConfig);
+      if (!savedConfig) {
+        const el = document.getElementById(id);
+        if (el) el.style.width = '340px';
+      }
+      container.innerHTML = `
+        <div class="flex flex-col h-full gap-3">
+          <div id="${id}-list" class="space-y-2 flex-1 overflow-y-auto max-h-72"></div>
+          <div class="pt-2 border-t border-slate-200 flex gap-2">
+            <input type="text" id="dagsplan-tid" placeholder="08:30" class="w-16 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <input type="text" id="dagsplan-tekst" placeholder="Norsk / Leseøkt" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <button onclick="addDagsplanItem()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      renderDagsplan();
+    }
+
+    function initTekstboksWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Beskjed / Tekst', 'fa-solid fa-note-sticky text-sky-500', 'tekstboks', savedConfig);
+      if (!savedConfig) {
+        const el = document.getElementById(id);
+        if (el) el.style.width = '380px';
+      }
+      container.innerHTML = `
+        <div class="flex flex-col h-full">
+          <textarea id="tekstboks-input" oninput="saveTekstboksContent()" placeholder="Skriv beskjeder eller oppgaver til klassen her..." class="w-full h-48 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 resize-y font-sans shadow-inner flex-1"></textarea>
+        </div>
+      `;
+      loadTekstboksContent();
+    }
+
+    function initClockWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Klokke og Dato', 'fa-regular fa-clock text-indigo-600', 'clock', savedConfig);
+      container.innerHTML = `
+        <div class="text-center py-2 my-auto">
+          <div id="${id}-time" class="text-5xl font-extrabold text-slate-800 tracking-tight font-mono">00:00:00</div>
+          <div id="${id}-date" class="text-sm font-semibold text-indigo-600 mt-2 uppercase tracking-wide">Laster...</div>
+        </div>
+      `;
+      function updateTime() {
+        const now = new Date();
+        const timeEl = document.getElementById(`${id}-time`);
+        const dateEl = document.getElementById(`${id}-date`);
+        if (!timeEl) return;
+        timeEl.innerText = now.toLocaleTimeString('no-NO');
+        dateEl.innerText = now.toLocaleDateString('no-NO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      updateTime();
+      const interval = setInterval(updateTime, 1000);
+      document.getElementById(id)._cleanup = () => clearInterval(interval);
+    }
+
+    function initTimerWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Timer', 'fa-solid fa-hourglass-half text-amber-600', 'timer', savedConfig);
+      container.innerHTML = `
+        <div class="flex flex-col items-center my-auto">
+          <div id="${id}-display" class="text-5xl font-extrabold text-slate-800 my-2 font-mono">05:00</div>
+          <div class="flex gap-2 my-2">
+            <button onclick="addTimerSeconds('${id}', 60)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">+1 min</button>
+            <button onclick="addTimerSeconds('${id}', 300)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">+5 min</button>
+            <button onclick="addTimerSeconds('${id}', 600)" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded">+10 min</button>
+          </div>
+          <div class="flex gap-3 mt-3 w-full">
+            <button id="${id}-start" onclick="toggleTimer('${id}')" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition">Start</button>
+            <button onclick="resetTimer('${id}')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition">Nullstill</button>
+          </div>
+        </div>
+      `;
+      const state = { timeLeft: 300, isRunning: false, interval: null };
+      window[`state_${id}`] = state;
+
+      window.updateTimerDisplay = (wId) => {
+        const s = window[`state_${wId}`];
+        if (!s) return;
+        const mins = Math.floor(s.timeLeft / 60).toString().padStart(2, '0');
+        const secs = (s.timeLeft % 60).toString().padStart(2, '0');
+        const display = document.getElementById(`${wId}-display`);
+        if (display) display.innerText = `${mins}:${secs}`;
+      };
+
+      window.toggleTimer = (wId) => {
+        const s = window[`state_${wId}`];
+        if (!s) return;
+        const btn = document.getElementById(`${wId}-start`);
+        if (s.isRunning) {
+          clearInterval(s.interval);
+          s.isRunning = false;
+          if (btn) {
+            btn.innerText = 'Start';
+            btn.className = 'flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition';
+          }
+        } else {
+          if (s.timeLeft <= 0) return;
+          s.isRunning = true;
+          if (btn) {
+            btn.innerText = 'Pause';
+            btn.className = 'flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition';
+          }
+          s.interval = setInterval(() => {
+            if (s.timeLeft > 0) {
+              s.timeLeft--;
+              window.updateTimerDisplay(wId);
+            } else {
+              clearInterval(s.interval);
+              s.isRunning = false;
+              if (btn) {
+                btn.innerText = 'Start';
+                btn.className = 'flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition';
+              }
+              const alarm = document.getElementById('alarm-sound');
+              if (alarm) alarm.play().catch(() => {});
+              confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+          }, 1000);
+        }
+      };
+
+      window.addTimerSeconds = (wId, secs) => {
+        const s = window[`state_${wId}`];
+        if (!s) return;
+        s.timeLeft += secs;
+        window.updateTimerDisplay(wId);
+      };
+
+      window.resetTimer = (wId) => {
+        const s = window[`state_${wId}`];
+        if (!s) return;
+        clearInterval(s.interval);
+        s.isRunning = false;
+        s.timeLeft = 300;
+        const btn = document.getElementById(`${wId}-start`);
+        if (btn) {
+          btn.innerText = 'Start';
+          btn.className = 'flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition';
+        }
+        window.updateTimerDisplay(wId);
+      };
+
+      window.updateTimerDisplay(id);
+      document.getElementById(id)._cleanup = () => {
+        if (state.interval) clearInterval(state.interval);
+        delete window[`state_${id}`];
+      };
+    }
+
+    function initTrafficWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Trafikklys', 'fa-solid fa-traffic-light text-red-500', 'traffic', savedConfig);
+      container.innerHTML = `
+        <div class="flex flex-col items-center gap-3 py-2 bg-slate-900 rounded-xl p-3 shadow-inner my-auto">
+          <button onclick="setLight('${id}', 'red')" id="${id}-red" class="w-16 h-16 rounded-full bg-red-950 border-2 border-red-500/30 transition-all duration-300"></button>
+          <button onclick="setLight('${id}', 'yellow')" id="${id}-yellow" class="w-16 h-16 rounded-full bg-amber-950 border-2 border-amber-500/30 transition-all duration-300"></button>
+          <button onclick="setLight('${id}', 'green')" id="${id}-green" class="w-16 h-16 rounded-full bg-emerald-950 border-2 border-emerald-500/30 transition-all duration-300"></button>
+        </div>
+      `;
+      window.setLight = (wId, color) => {
+        const red = document.getElementById(`${wId}-red`);
+        const yellow = document.getElementById(`${wId}-yellow`);
+        const green = document.getElementById(`${wId}-green`);
+        if (!red || !yellow || !green) return;
+        red.className = "w-16 h-16 rounded-full bg-red-950 border-2 border-red-500/30 transition-all duration-300";
+        yellow.className = "w-16 h-16 rounded-full bg-amber-950 border-2 border-amber-500/30 transition-all duration-300";
+        green.className = "w-16 h-16 rounded-full bg-emerald-950 border-2 border-emerald-500/30 transition-all duration-300";
+        if (color === 'red') red.className = "w-16 h-16 rounded-full bg-red-500 border-2 border-white shadow-[0_0_25px_rgba(239,68,68,0.8)] scale-105 transition-all duration-300";
+        else if (color === 'yellow') yellow.className = "w-16 h-16 rounded-full bg-amber-400 border-2 border-white shadow-[0_0_25px_rgba(251,191,36,0.8)] scale-105 transition-all duration-300";
+        else if (color === 'green') green.className = "w-16 h-16 rounded-full bg-emerald-500 border-2 border-white shadow-[0_0_25px_rgba(16,185,129,0.8)] scale-105 transition-all duration-300";
+      };
+    }
+
+    function initWorkSymbolsWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Arbeidsmodus', 'fa-solid fa-users text-blue-600', 'work-symbols', savedConfig);
+      const symbols = [
+        { name: 'Stillearbeid', icon: 'fa-volume-xmark', color: 'text-red-500', desc: 'Helt stille i rommet' },
+        { name: 'Visking', icon: 'fa-comments', color: 'text-amber-500', desc: 'Lav stemme til sidemannen' },
+        { name: 'Spør en venn', icon: 'fa-user-group', color: 'text-blue-500', desc: 'Hjelp hverandre to og to' },
+        { name: 'Gruppearbeid', icon: 'fa-people-group', color: 'text-emerald-500', desc: 'Samarbeid i gruppen' }
+      ];
+      let html = '<div class="grid grid-cols-2 gap-2 my-auto">';
+      symbols.forEach((s, idx) => {
+        html += `
+          <button onclick="selectSymbol('${id}', ${idx})" id="${id}-sym-${idx}" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 flex flex-col items-center text-center transition">
+            <i class="fa-solid ${s.icon} text-2xl ${s.color} mb-1"></i>
+            <span class="text-xs font-bold text-slate-700">${s.name}</span>
+          </button>
+        `;
+      });
+      html += `</div><div id="${id}-desc" class="mt-3 text-center text-xs font-medium text-slate-500 italic">Velg et arbeidssymbol</div>`;
+      container.innerHTML = html;
+
+      window.selectSymbol = (wId, index) => {
+        symbols.forEach((_, idx) => {
+          const btn = document.getElementById(`${wId}-sym-${idx}`);
+          if (btn) btn.className = "p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 flex flex-col items-center text-center transition";
+        });
+        const activeBtn = document.getElementById(`${wId}-sym-${index}`);
+        if (activeBtn) activeBtn.className = "p-3 bg-indigo-50 border-2 border-indigo-500 rounded-xl flex flex-col items-center text-center shadow-md transition scale-105";
+        const desc = document.getElementById(`${wId}-desc`);
+        if (desc) desc.innerText = symbols[index].desc;
+      };
+    }
+
+    function initNoiseWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Støymåler', 'fa-solid fa-microphone text-emerald-600', 'noise', savedConfig);
+      container.innerHTML = `
+        <div class="flex flex-col items-center my-auto w-full">
+          <div class="w-full h-6 bg-slate-200 rounded-full overflow-hidden p-1 border border-slate-300 mb-3">
+            <div id="${id}-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-75 w-0"></div>
+          </div>
+          <div id="${id}-status" class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">Trykk på Start for å aktivere mikrofon</div>
+          <div id="${id}-error" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mb-3 text-center w-full font-medium leading-relaxed"></div>
+          <button id="${id}-btn" onclick="toggleMic('${id}')" class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition">Start Måling</button>
+        </div>
+      `;
+      let audioCtx, analyser, microphone, stream;
+
+      window.toggleMic = async (wId) => {
+        const btn = document.getElementById(`${wId}-btn`);
+        const status = document.getElementById(`${wId}-status`);
+        const bar = document.getElementById(`${wId}-bar`);
+        const errorBox = document.getElementById(`${wId}-error`);
+        if (errorBox) errorBox.classList.add('hidden');
+
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          if (audioCtx && audioCtx.state !== 'closed') audioCtx.close().catch(() => {});
+          stream = null; audioCtx = null;
+          if (btn) {
+            btn.innerText = "Start Måling";
+            btn.className = "px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition";
+          }
+          if (status) status.innerText = "Måling stoppet";
+          if (bar) bar.style.width = "0%";
+          return;
+        }
+
+        const getMedia = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+          ? (c) => navigator.mediaDevices.getUserMedia(c)
+          : (c) => new Promise((res, rej) => {
+              const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+              if (!legacy) rej(new Error("NOT_SUPPORTED"));
+              else legacy.call(navigator, c, res, rej);
+            });
+
+        try {
+          stream = await getMedia({ audio: true, video: false });
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          analyser = audioCtx.createAnalyser();
+          microphone = audioCtx.createMediaStreamSource(stream);
+          microphone.connect(analyser);
+          analyser.fftSize = 256;
+
+          if (btn) {
+            btn.innerText = "Stopp Måling";
+            btn.className = "px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition";
+          }
+          if (status) {
+            status.innerText = "Måler støynivå...";
+            status.className = "text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-center";
+          }
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          function checkVolume() {
+            if (!stream) return;
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+            let avg = sum / dataArray.length;
+            let vol = Math.min(100, Math.round((avg / 128) * 100));
+            if (bar) bar.style.width = vol + "%";
+
+            if (vol > 70) {
+              if (bar) bar.className = "h-full bg-red-500 rounded-full transition-all duration-75";
+              if (status) {
+                status.innerText = "For høyt støynivå!";
+                status.className = "text-xs font-bold text-red-600 uppercase tracking-wider mb-2 text-center animate-pulse";
+              }
+            } else if (vol > 40) {
+              if (bar) bar.className = "h-full bg-amber-400 rounded-full transition-all duration-75";
+              if (status) {
+                status.innerText = "Moderat støynivå";
+                status.className = "text-xs font-bold text-amber-600 uppercase tracking-wider mb-2 text-center";
+              }
+            } else {
+              if (bar) bar.className = "h-full bg-emerald-500 rounded-full transition-all duration-75";
+              if (status) {
+                status.innerText = "Fint støynivå";
+                status.className = "text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2 text-center";
+              }
+            }
+            requestAnimationFrame(checkVolume);
+          }
+          checkVolume();
+        } catch (err) {
+          let msg = "";
+          if (err.message === "NOT_SUPPORTED" || (typeof window.isSecureContext !== 'undefined' && !window.isSecureContext)) {
+            msg = "Mikrofontilgang krever HTTPS. Nettleseren sperrer mikrofonen over usikrede tilkoblinger.";
+          } else if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError" || err.name === "SecurityError") {
+            msg = "Blokkerer mikrofonen i innbygde elementer. Åpne siden direkte for å bruke støymåleren.";
+          } else {
+            msg = "Kunne ikke starte støymåleren: " + (err.message || err.name || "Ukjent feil");
+          }
+          if (errorBox) {
+            errorBox.innerText = msg;
+            errorBox.classList.remove('hidden');
+          }
+          if (status) status.innerText = "Måling mislyktes";
+        }
+      };
+
+      document.getElementById(id)._cleanup = () => {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        if (audioCtx && audioCtx.state !== 'closed') audioCtx.close().catch(() => {});
+      };
+    }
+
+    function initRandomizerWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Navnetrekker', 'fa-solid fa-shuffle text-purple-600', 'randomizer', savedConfig);
+      if (!savedConfig) {
+        const el = document.getElementById(id);
+        if (el) el.style.width = '340px';
+      }
+      container.innerHTML = `
+        <div class="flex flex-col gap-2 my-auto">
+          <div class="flex gap-1 items-center">
+            <select id="${id}-select" onchange="loadListToWidget('${id}')" class="class-list-select flex-1 text-xs p-1.5 border rounded-lg bg-slate-50 focus:outline-none">
+              <option value="">-- Velg lagret liste --</option>
+            </select>
+            <button onclick="deleteSelectedList('${id}')" title="Slett valgt liste" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold border border-red-200 transition">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+          <div id="${id}-result" class="h-16 bg-indigo-50 border-2 border-dashed border-indigo-300 rounded-xl flex items-center justify-center text-xl font-extrabold text-indigo-700 text-center px-2">
+            Klar for trekning
+          </div>
+          <textarea id="${id}-list" rows="3" placeholder="Skriv inn navn her..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">Kari, Ola, Per, Anne, Sofie, Lukas, Jonas</textarea>
+          <div class="flex gap-1 items-center bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+            <input type="text" id="${id}-name-input" placeholder="Navn på liste (f.eks. 6B)" class="flex-1 text-xs px-2 py-1 border rounded bg-white focus:outline-none">
+            <button onclick="saveListFromWidget('${id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold shadow transition flex items-center gap-1">
+              <i class="fa-solid fa-floppy-disk"></i> Lagre
+            </button>
+          </div>
+          <button onclick="drawRandomName('${id}')" class="py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition mt-1">Trekk Navn!</button>
+        </div>
+      `;
+      updateAllListDropdowns();
+
+      window.drawRandomName = (wId) => {
+        const textarea = document.getElementById(`${wId}-list`);
+        const result = document.getElementById(`${wId}-result`);
+        if (!textarea || !result) return;
+        const rawText = textarea.value.trim();
+        if (!rawText) { result.innerText = "Ingen navn lagt inn!"; return; }
+        const names = rawText.split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
+        if (names.length === 0) return;
+        let counter = 0;
+        const timer = setInterval(() => {
+          result.innerText = names[Math.floor(Math.random() * names.length)];
+          counter++;
+          if (counter >= 20) {
+            clearInterval(timer);
+            result.innerText = names[Math.floor(Math.random() * names.length)];
+            confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+          }
+        }, 50);
+      };
+    }
+
+    function initGroupMakerWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Gruppevelger', 'fa-solid fa-layer-group text-orange-500', 'group-maker', savedConfig);
+      if (!savedConfig) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.width = '520px';
+          el.style.height = '520px';
+        }
+      }
+      container.innerHTML = `
+        <div class="flex flex-col h-full gap-3">
+          <div class="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div class="flex gap-1 items-center">
+              <select id="${id}-select" onchange="loadListToWidget('${id}')" class="class-list-select flex-1 text-xs p-1.5 border rounded-lg bg-white focus:outline-none">
+                <option value="">-- Velg lagret liste --</option>
+              </select>
+              <button onclick="deleteSelectedList('${id}')" title="Slett liste" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold border border-red-200 transition">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+            <textarea id="${id}-list" rows="2" placeholder="Skriv inn navn separert med komma..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">Kari, Ola, Per, Anne, Sofie, Lukas, Jonas, Nora, Henrik, Emil, Ida, Magnus</textarea>
+            <div class="flex gap-1 items-center bg-white p-1 rounded-lg border border-slate-200">
+              <input type="text" id="${id}-name-input" placeholder="Navn på liste (f.eks. 6B)" class="flex-1 text-xs px-2 py-1 border rounded focus:outline-none">
+              <button onclick="saveListFromWidget('${id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-floppy-disk"></i> Lagre liste
+              </button>
+            </div>
+            <div class="flex gap-2 items-center mt-1">
+              <div class="flex-1">
+                <label class="text-[11px] font-semibold text-slate-500 block">Antall per gruppe</label>
+                <input type="number" id="${id}-size" value="3" min="1" max="20" class="w-full text-xs p-1.5 border border-slate-300 rounded-lg text-center font-bold">
+              </div>
+              <div class="flex gap-1 mt-4">
+                <button onclick="generateGroups('${id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow transition flex items-center gap-1">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Lag grupper
+                </button>
+                <button onclick="generateGroups('${id}')" title="Stokk om elever på nytt" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs shadow transition flex items-center gap-1">
+                  <i class="fa-solid fa-shuffle"></i> Stokk om
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="${id}-groups-container" class="flex-1 overflow-y-auto grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2 p-1">
+            <div class="col-span-full text-center text-xs text-slate-400 italic my-auto">
+              Trykk "Lag grupper" eller "Stokk om" for å fordele elevene. Du kan dra og slippe navn mellom gruppene etterpå.
+            </div>
+          </div>
+        </div>
+      `;
+      updateAllListDropdowns();
+
+      window.generateGroups = (wId) => {
+        const textarea = document.getElementById(`${wId}-list`);
+        const groupSizeInput = document.getElementById(`${wId}-size`);
+        const groupsContainer = document.getElementById(`${wId}-groups-container`);
+        if (!textarea || !groupsContainer) return;
+        const rawText = textarea.value.trim();
+        if (!rawText) {
+          groupsContainer.innerHTML = '<div class="col-span-full text-center text-xs text-red-500 my-auto">Vennligst legg til navn først!</div>';
+          return;
+        }
+        let names = rawText.split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
+        if (names.length === 0) return;
+
+        for (let i = names.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [names[i], names[j]] = [names[j], names[i]];
+        }
+
+        const groupSize = parseInt(groupSizeInput.value) || 3;
+        const totalGroups = Math.ceil(names.length / groupSize);
+        groupsContainer.innerHTML = '';
+
+        const groupColors = [
+          'border-indigo-300 bg-indigo-50/50 text-indigo-900',
+          'border-emerald-300 bg-emerald-50/50 text-emerald-900',
+          'border-amber-300 bg-amber-50/50 text-amber-900',
+          'border-rose-300 bg-rose-50/50 text-rose-900',
+          'border-purple-300 bg-purple-50/50 text-purple-900'
+        ];
+
+        for (let g = 0; g < totalGroups; g++) {
+          const groupCard = document.createElement('div');
+          groupCard.className = `group-drop-zone border-2 rounded-xl p-2.5 flex flex-col gap-1.5 transition ${groupColors[g % groupColors.length]}`;
+          groupCard.innerHTML = `
+            <div class="font-extrabold text-xs uppercase tracking-wide border-b border-black/10 pb-1 flex justify-between items-center">
+              <span>Gruppe ${g + 1}</span>
+              <span class="text-[10px] font-normal opacity-70 group-count">0</span>
+            </div>
+            <div class="students-list flex flex-col gap-1 min-h-[40px] flex-1"></div>
+          `;
+          groupCard.addEventListener('dragover', (e) => { e.preventDefault(); groupCard.classList.add('drag-over'); });
+          groupCard.addEventListener('dragleave', () => groupCard.classList.remove('drag-over'));
+          groupCard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            groupCard.classList.remove('drag-over');
+            const studentId = e.dataTransfer.getData('text/plain');
+            const studentEl = document.getElementById(studentId);
+            if (studentEl) {
+              groupCard.querySelector('.students-list').appendChild(studentEl);
+              updateGroupCounts(wId);
+            }
+          });
+          groupsContainer.appendChild(groupCard);
+        }
+
+        names.forEach((name, idx) => {
+          const targetGroupIndex = Math.floor(idx / groupSize);
+          const groupCard = groupsContainer.children[targetGroupIndex];
+          if (!groupCard) return;
+          const studentTag = document.createElement('div');
+          const studentId = `${wId}-student-${Date.now()}-${idx}`;
+          studentTag.id = studentId;
+          studentTag.draggable = true;
+          studentTag.className = 'draggable-student bg-white px-2 py-1 rounded-lg text-xs font-bold shadow-sm border border-black/10 flex items-center justify-between hover:shadow transition';
+          studentTag.innerHTML = `<span>${name}</span><i class="fa-solid fa-grip-lines text-[10px] text-slate-400"></i>`;
+          studentTag.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', studentId);
+            e.dataTransfer.effectAllowed = 'move';
+          });
+          groupCard.querySelector('.students-list').appendChild(studentTag);
+        });
+        updateGroupCounts(wId);
+      };
+
+      function updateGroupCounts(wId) {
+        const containerEl = document.getElementById(`${wId}-groups-container`);
+        if (!containerEl) return;
+        containerEl.querySelectorAll('.group-drop-zone').forEach(zone => {
+          const count = zone.querySelectorAll('.draggable-student').length;
+          const countEl = zone.querySelector('.group-count');
+          if (countEl) countEl.innerText = `${count} elev${count !== 1 ? 'er' : ''}`;
+        });
+      }
+    }
+
+    // Hjelpefunksjoner for lagring/lasting av navnelister
+    window.loadListToWidget = (wId) => {
+      const select = document.getElementById(`${wId}-select`);
+      const textarea = document.getElementById(`${wId}-list`);
+      const nameInput = document.getElementById(`${wId}-name-input`);
+      if (!select || !textarea) return;
+      const lists = getSavedLists();
+      if (lists[select.value]) {
+        textarea.value = lists[select.value];
+        if (nameInput) nameInput.value = select.value;
+      }
+    };
+
+    window.saveListFromWidget = (wId) => {
+      const textarea = document.getElementById(`${wId}-list`);
+      const nameInput = document.getElementById(`${wId}-name-input`);
+      if (!textarea || !textarea.value.trim()) {
+        alert("Vennligst skriv inn noen navn først!");
+        return;
+      }
+      if (!nameInput || !nameInput.value.trim()) {
+        alert("Vennligst skriv inn et navn på listen (f.eks. 6B)!");
+        return;
+      }
+      const name = nameInput.value.trim();
+      saveNamedList(name, textarea.value.trim());
+      const select = document.getElementById(`${wId}-select`);
+      if (select) select.value = name;
+    };
+
+    window.deleteSelectedList = (wId) => {
+      const select = document.getElementById(`${wId}-select`);
+      if (!select || !select.value) return;
+      const name = select.value;
+      deleteNamedList(name);
+      const textarea = document.getElementById(`${wId}-list`);
+      const nameInput = document.getElementById(`${wId}-name-input`);
+      if (textarea) textarea.value = "";
+      if (nameInput) nameInput.value = "";
+    };
+
+    function initDiceWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Terning', 'fa-solid fa-dice-five text-rose-500', 'dice', savedConfig);
+      const state = { count: 1 };
+      window[`state_dice_${id}`] = state;
+
+      container.innerHTML = `
+        <div class="flex flex-col items-center gap-3 my-auto">
+          <div class="flex gap-1 bg-slate-100 p-1 rounded-xl w-full justify-center">
+            <button id="${id}-btn-1" onclick="setDiceCount('${id}', 1)" class="flex-1 py-1 rounded-lg text-xs font-bold bg-white text-indigo-600 shadow-sm transition">1 Terning</button>
+            <button id="${id}-btn-2" onclick="setDiceCount('${id}', 2)" class="flex-1 py-1 rounded-lg text-xs font-bold text-slate-600 hover:bg-white/50 transition">2 Terninger</button>
+            <button id="${id}-btn-3" onclick="setDiceCount('${id}', 3)" class="flex-1 py-1 rounded-lg text-xs font-bold text-slate-600 hover:bg-white/50 transition">3 Terninger</button>
+          </div>
+          <div id="${id}-dice-container" onclick="rerollDice('${id}')" class="flex gap-2 justify-center items-center my-1 cursor-pointer p-2 rounded-2xl hover:bg-slate-50 transition w-full min-h-[76px]">
+            <div class="w-14 h-14 bg-indigo-50 border-2 border-indigo-400 rounded-2xl shadow-md flex items-center justify-center text-3xl font-extrabold text-indigo-700">1</div>
+          </div>
+          <button onclick="rerollDice('${id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow flex items-center justify-center gap-2 transition active:scale-95">
+            <i class="fa-solid fa-rotate-right"></i><span>Kast på nytt</span>
+          </button>
+        </div>
+      `;
+
+      window.setDiceCount = (wId, count) => {
+        const s = window[`state_dice_${wId}`];
+        if (!s) return;
+        s.count = count;
+        [1, 2, 3].forEach(c => {
+          const btn = document.getElementById(`${wId}-btn-${c}`);
+          if (btn) btn.className = (c === count) ? "flex-1 py-1 rounded-lg text-xs font-bold bg-white text-indigo-600 shadow-sm transition" : "flex-1 py-1 rounded-lg text-xs font-bold text-slate-600 hover:bg-white/50 transition";
+        });
+        window.rerollDice(wId);
+      };
+
+      window.rerollDice = (wId) => {
+        const s = window[`state_dice_${wId}`];
+        const count = s ? s.count : 1;
+        const containerEl = document.getElementById(`${wId}-dice-container`);
+        if (!containerEl) return;
+        containerEl.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+          const die = document.createElement('div');
+          die.className = 'w-14 h-14 bg-white border-2 border-slate-300 rounded-2xl shadow-md flex items-center justify-center text-3xl font-extrabold text-slate-800 animate-bounce';
+          die.innerText = '?';
+          containerEl.appendChild(die);
+          setTimeout(() => {
+            die.innerText = Math.floor(Math.random() * 6) + 1;
+            die.className = 'w-14 h-14 bg-indigo-50 border-2 border-indigo-400 rounded-2xl shadow-md flex items-center justify-center text-3xl font-extrabold text-indigo-700 transition-all';
+          }, 250 + (i * 80));
+        }
+      };
+
+      document.getElementById(id)._cleanup = () => delete window[`state_dice_${id}`];
+    }
+
+    function initDrawingWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'Tegnebrett', 'fa-solid fa-pen-ruler text-teal-600', 'drawing', savedConfig);
+      if (!savedConfig) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.width = '380px';
+          el.style.height = '340px';
+        }
+      }
+      container.innerHTML = `
+        <div class="flex flex-col h-full gap-2">
+          <div class="flex gap-2 items-center justify-between bg-slate-100 p-2 rounded-xl">
+            <div class="flex gap-1">
+              <button onclick="setPenColor('${id}', '#000000')" class="w-6 h-6 rounded-full bg-black border border-slate-300"></button>
+              <button onclick="setPenColor('${id}', '#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border border-slate-300"></button>
+              <button onclick="setPenColor('${id}', '#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border border-slate-300"></button>
+              <button onclick="setPenColor('${id}', '#10b981')" class="w-6 h-6 rounded-full bg-emerald-500 border border-slate-300"></button>
+            </div>
+            <button onclick="clearCanvas('${id}')" class="text-xs text-red-600 font-bold hover:underline">Tøm brett</button>
+          </div>
+          <div class="flex-1 w-full h-full relative overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <canvas id="${id}-canvas" class="w-full h-full cursor-crosshair block"></canvas>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        const canvas = document.getElementById(`${id}-canvas`);
+        if (!canvas) return;
+        let isDrawing = false, currentColor = '#000000';
+
+        function fitCanvasToParent() {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCtx.drawImage(canvas, 0, 0);
+          canvas.width = rect.width; canvas.height = rect.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(tempCanvas, 0, 0);
+          ctx.lineWidth = 3; ctx.lineCap = 'round';
+        }
+
+        fitCanvasToParent();
+        const resizeObs = new ResizeObserver(() => fitCanvasToParent());
+        resizeObs.observe(canvas.parentElement);
+
+        const ctx = canvas.getContext('2d');
+        ctx.lineWidth = 3; ctx.lineCap = 'round';
+
+        window.setPenColor = (wId, color) => { currentColor = color; };
+        window.clearCanvas = (wId) => {
+          const c = document.getElementById(`${wId}-canvas`);
+          if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
+        };
+
+        function startDrawing(e) { isDrawing = true; draw(e); }
+        function stopDrawing() { isDrawing = false; ctx.beginPath(); }
+        function draw(e) {
+          if (!isDrawing) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+          const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+          ctx.strokeStyle = currentColor;
+          ctx.lineTo(x, y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x, y);
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchmove', draw);
+
+        const el = document.getElementById(id);
+        if (el) el._cleanup = () => resizeObs.disconnect();
+      }, 100);
+    }
+
+    function initQRWidget(id, savedConfig) {
+      const container = createWidgetFrame(id, 'QR-Kode Generator', 'fa-solid fa-qrcode text-cyan-600', 'qr', savedConfig);
+      container.innerHTML = `
+        <div class="flex flex-col items-center gap-3 my-auto">
+          <div id="${id}-qrcode" class="p-2 bg-white rounded-xl shadow border border-slate-200 flex items-center justify-center min-h-[140px]"></div>
+          <input type="text" id="${id}-input" placeholder="Lim inn nettadresse her..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <button onclick="generateQRCode('${id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition text-xs">Generer QR</button>
+        </div>
+      `;
+
+      window.generateQRCode = (wId) => {
+        const input = document.getElementById(`${wId}-input`);
+        const qrContainer = document.getElementById(`${wId}-qrcode`);
+        if (!input || !qrContainer) return;
+        const url = input.value.trim();
+        if (!url) return;
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, { text: url, width: 128, height: 128 });
+      };
+
+      setTimeout(() => {
+        const inp = document.getElementById(`${id}-input`);
+        if (inp) {
+          inp.value = "https://www.utdanning.no";
+          window.generateQRCode(id);
+        }
+      }, 100);
+    }
+
+    // --- BAKGRUNNSBEHANDLING ---
+    function toggleBackgroundModal() {
+      const modal = document.getElementById('bg-modal');
+      if (modal) modal.classList.toggle('hidden');
+    }
+
+    function setBackground(val) {
+      applyBackground(val);
+      try {
+        localStorage.setItem('klasserom_bg', val);
+      } catch (e) {}
+      toggleBackgroundModal();
+    }
+
+    function applyBackground(val) {
+      const body = document.getElementById('main-body');
+      if (!body) return;
+      if (val.startsWith('color:')) {
+        body.style.backgroundImage = 'none';
+        body.style.backgroundColor = val.replace('color:', '');
+      } else {
+        body.style.backgroundImage = `url('${val}')`;
+      }
+    }
+
+    function setCustomBackground() {
+      const url = document.getElementById('bg-url-input').value.trim();
+      if (url) setBackground(url);
+    }
+
+    // --- LOGIKK FOR DAGSPLAN ---
+    let dagsplanItems = JSON.parse(localStorage.getItem('dagsplanData')) || [
+      { tid: '08:30', tekst: 'Morgensamling' },
+      { tid: '09:00', tekst: 'Norsk' }
+    ];
+
+    function renderDagsplan() {
+      const listEl = document.getElementById('widget-dagsplan-list') || document.querySelector('.widget[data-type="dagsplan"] [id$="-list"]');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      if (dagsplanItems.length === 0) {
+        listEl.innerHTML = '<p class="text-slate-400 text-xs italic text-center py-4">Ingen aktiviteter på planen.</p>';
+        return;
+      }
+      dagsplanItems.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs gap-2 shadow-sm';
+        row.innerHTML = `
+          <div class="flex items-center gap-2 overflow-hidden">
+            <span class="bg-amber-100 text-amber-800 font-mono font-bold px-2 py-0.5 rounded-md flex-shrink-0">${item.tid}</span>
+            <span class="text-slate-700 font-medium truncate">${item.tekst}</span>
+          </div>
+          <button onclick="removeDagsplanItem(${index})" class="text-slate-400 hover:text-rose-600 p-1 transition flex-shrink-0">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        `;
+        listEl.appendChild(row);
+      });
+      try {
+        localStorage.setItem('dagsplanData', JSON.stringify(dagsplanItems));
+      } catch (e) {}
+    }
+
+    function addDagsplanItem() {
+      const tidInput = document.getElementById('dagsplan-tid');
+      const tekstInput = document.getElementById('dagsplan-tekst');
+      if (!tekstInput || !tekstInput.value.trim()) return;
+      dagsplanItems.push({
+        tid: tidInput.value.trim() || '--:--',
+        tekst: tekstInput.value.trim()
+      });
+      tidInput.value = '';
+      tekstInput.value = '';
+      renderDagsplan();
+    }
+
+    function removeDagsplanItem(index) {
+      dagsplanItems.splice(index, 1);
+      renderDagsplan();
+    }
+
+    // --- LOGIKK FOR TEKSTBOKS ---
+    function saveTekstboksContent() {
+      const input = document.getElementById('tekstboks-input');
+      if (input) {
+        localStorage.setItem('tekstboksContent', input.value);
+      }
+    }
+
+    function loadTekstboksContent() {
+      const saved = localStorage.getItem('tekstboksContent');
+      const input = document.getElementById('tekstboks-input');
+      if (saved !== null && input) {
+        input.value = saved;
+      }
+    }
+
+    // --- OPPSTART ---
+    window.addEventListener('DOMContentLoaded', () => {
+      restoreLayoutState();
+      loadTekstboksContent();
+    });
+  </script>
 </body>
 </html>
-```
-
-### Slik legger du inn faste klasselister direkte i koden:
-Siden Google Sites tømmer midlertidig minne ved reload, kan du **bygge klassene dine permanent inn i koden**:
-1. Søk etter `let globalSavedLists =` i koden (rundt linje 142).
-2. Endre eller utvid listen slik:
-   ```javascript
-   let globalSavedLists = {
-       "Klasse 6A": "Kari, Ola, Per, Anne, Sofie, Lukas",
-       "Klasse 6B": "Jonas, Nora, Henrik, Emil, Ida, Magnus",
-       "Tysk 10. trinn": "Astrid, Tobias, Maja, William"
-   };
