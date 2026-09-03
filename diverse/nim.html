@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIM - Det klassiske strategispillet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #f0f9ff;
+        }
+
+        .matchstick {
+            width: 12px;
+            height: 100px;
+            background: linear-gradient(to bottom, #ff4d4d 0%, #ff4d4d 15%, #d9a05b 15%, #d9a05b 100%);
+            border-radius: 6px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .matchstick:hover {
+            transform: translateY(-10px);
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .matchstick.removed {
+            opacity: 0;
+            transform: translateY(-50px) scale(0);
+            margin: 0 -6px;
+            pointer-events: none;
+        }
+
+        .player-card {
+            transition: all 0.3s ease;
+        }
+
+        .active-player {
+            transform: scale(1.05);
+            border-color: #3b82f6;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-blue-100">
+        <h1 class="text-4xl font-bold text-center text-blue-600 mb-2">NIM</h1>
+        <p class="text-center text-gray-600 mb-8">Ta 1 til 4 fyrstikker. Den som tar den siste vinner!</p>
+
+        <!-- Spillerstatus -->
+        <div class="grid grid-cols-2 gap-4 mb-10">
+            <div id="player1-card" class="player-card p-4 rounded-2xl border-2 border-gray-100 text-center">
+                <div class="text-2xl mb-1">👤</div>
+                <div class="font-bold text-lg text-gray-800">Spiller 1</div>
+            </div>
+            <div id="player2-card" class="player-card p-4 rounded-2xl border-2 border-gray-100 text-center">
+                <div class="text-2xl mb-1">👤</div>
+                <div class="font-bold text-lg text-gray-800">Spiller 2</div>
+            </div>
+        </div>
+
+        <!-- Fyrstikkbeholder -->
+        <div id="match-container" class="flex flex-wrap justify-center gap-4 min-h-[140px] mb-10 bg-orange-50 p-6 rounded-2xl border-2 border-orange-100 shadow-inner">
+            <!-- Fyrstikker genereres her -->
+        </div>
+
+        <!-- Kontroller -->
+        <div class="flex flex-col items-center space-y-6">
+            <div id="controls" class="flex space-x-2">
+                <button onclick="takeMatches(1)" class="btn-action bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg active:transform active:scale-95 disabled:bg-gray-300">Ta 1</button>
+                <button onclick="takeMatches(2)" class="btn-action bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg active:transform active:scale-95 disabled:bg-gray-300">Ta 2</button>
+                <button onclick="takeMatches(3)" class="btn-action bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg active:transform active:scale-95 disabled:bg-gray-300">Ta 3</button>
+                <button onclick="takeMatches(4)" class="btn-action bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg active:transform active:scale-95 disabled:bg-gray-300">Ta 4</button>
+            </div>
+
+            <div id="game-message" class="text-xl font-semibold text-gray-700 h-8"></div>
+            
+            <button onclick="resetGame()" class="text-blue-500 hover:underline font-medium">Start på nytt / Nullstill</button>
+        </div>
+    </div>
+
+    <!-- Seiers-modal -->
+    <div id="winner-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl transform transition-all">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 id="winner-text" class="text-3xl font-bold text-gray-800 mb-6">Spiller 1 vant!</h2>
+            <button onclick="resetGame()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg transition transform hover:scale-105 active:scale-95">Spill igjen</button>
+        </div>
+    </div>
+
+    <script>
+        let matchesRemaining = 21;
+        let currentPlayer = 1;
+        let isGameOver = false;
+
+        function initGame() {
+            matchesRemaining = Math.floor(Math.random() * 11) + 15;
+            currentPlayer = 1;
+            isGameOver = false;
+            
+            const container = document.getElementById('match-container');
+            container.innerHTML = '';
+            for (let i = 0; i < matchesRemaining; i++) {
+                const match = document.createElement('div');
+                match.className = 'matchstick';
+                container.appendChild(match);
+            }
+            
+            updateUI();
+            document.getElementById('winner-modal').classList.add('hidden');
+            setMessage(`Spiller 1 starter!`);
+        }
+
+        function updateUI() {
+            // Oppdater aktive kort
+            document.getElementById('player1-card').classList.toggle('active-player', currentPlayer === 1);
+            document.getElementById('player1-card').classList.toggle('border-blue-500', currentPlayer === 1);
+            
+            document.getElementById('player2-card').classList.toggle('active-player', currentPlayer === 2);
+            document.getElementById('player2-card').classList.toggle('border-blue-500', currentPlayer === 2);
+            
+            // Oppdater knapper
+            const buttons = document.querySelectorAll('.btn-action');
+            buttons.forEach((btn, index) => {
+                const val = index + 1;
+                const canTake = val <= matchesRemaining && !isGameOver;
+                btn.disabled = !canTake;
+                btn.style.opacity = canTake ? "1" : "0.3";
+                btn.style.cursor = canTake ? "pointer" : "not-allowed";
+            });
+        }
+
+        function setMessage(msg) {
+            document.getElementById('game-message').innerText = msg;
+        }
+
+        function takeMatches(count) {
+            if (isGameOver || count > matchesRemaining) return;
+
+            // Finn fyrstikkene som skal fjernes før vi endrer matchesRemaining
+            const container = document.getElementById('match-container');
+            const sticks = container.querySelectorAll('.matchstick:not(.removed)');
+            
+            // Markerer de bakerste fyrstikkene som fjernet
+            for (let i = 0; i < count; i++) {
+                const stickToRemove = sticks[sticks.length - 1 - i];
+                if (stickToRemove) {
+                    stickToRemove.classList.add('removed');
+                }
+            }
+
+            matchesRemaining -= count;
+
+            if (matchesRemaining === 0) {
+                setTimeout(endGame, 400); // Vent på animasjonen
+            } else {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                updateUI();
+                setMessage(`Spiller ${currentPlayer} sin tur...`);
+            }
+        }
+
+        function endGame() {
+            isGameOver = true;
+            updateUI();
+            const modal = document.getElementById('winner-modal');
+            const winnerText = document.getElementById('winner-text');
+            winnerText.innerText = `Spiller ${currentPlayer} vant!`;
+            modal.classList.remove('hidden');
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        window.onload = initGame;
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
