@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="no" class="h-full bg-slate-900 text-slate-100 select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Klasserom Buzzer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Inter:wght@400;600;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation; /* Prevents double-tap zoom on mobile devices */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-display {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        /* 3D Button Styling */
+        .buzzer-button-wrapper {
+            perspective: 1000px;
+        }
+
+        .buzzer-button {
+            position: relative;
+            border-radius: 9999px;
+            transition: all 0.08s ease-out;
+            box-shadow: 
+                0 20px 0 #991b1b,
+                0 30px 40px rgba(0, 0, 0, 0.6),
+                inset 0 8px 12px rgba(255, 255, 255, 0.4),
+                inset 0 -12px 16px rgba(0, 0, 0, 0.4);
+            transform: translateY(-8px);
+            cursor: pointer;
+        }
+
+        .buzzer-button:active, .buzzer-button.active {
+            transform: translateY(12px);
+            box-shadow: 
+                0 0px 0 #991b1b,
+                0 10px 20px rgba(0, 0, 0, 0.4),
+                inset 0 4px 8px rgba(255, 255, 255, 0.3),
+                inset 0 -8px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Glowing ring animation on buzz */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.6);
+                opacity: 0;
+            }
+        }
+
+        .ring-effect {
+            position: absolute;
+            inset: -20px;
+            border-radius: 9999px;
+            border: 8px solid rgba(239, 68, 68, 0.8);
+            pointer-events: none;
+            animation: pulse-ring 0.6s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+        }
+
+        /* Shockwave flash background */
+        @keyframes flash-bg {
+            0% { background-color: rgba(220, 38, 38, 0.25); }
+            100% { background-color: transparent; }
+        }
+
+        .flash-active {
+            animation: flash-bg 0.4s ease-out forwards;
+        }
+
+        /* Particle effect container */
+        .particles-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .particle {
+            position: absolute;
+            background: #fef08a;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-particle 0.6s ease-out forwards;
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col items-center justify-between p-4 md:p-8 overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 transition-colors duration-200" id="main-body">
+
+    <!-- Top Bar / App Title -->
+    <header class="w-full max-w-lg flex items-center justify-between z-20 pt-2">
+        <div class="flex items-center gap-2 bg-slate-800/80 backdrop-blur border border-slate-700/60 rounded-full px-4 py-2 shadow-lg">
+            <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+            <span class="text-sm font-semibold tracking-wide text-slate-200 uppercase font-display">Svar-Buzzer</span>
+        </div>
+
+        <button id="mute-btn" class="bg-slate-800/80 hover:bg-slate-700 backdrop-blur border border-slate-700/60 p-2.5 rounded-full text-slate-300 hover:text-white transition shadow-lg active:scale-95 flex items-center gap-2 px-3.5" title="Slå av/på lyd">
+            <svg id="volume-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z" />
+            </svg>
+            <span id="mute-text" class="text-xs font-medium">Lyd På</span>
+        </button>
+    </header>
+
+    <!-- Main Interactive Area -->
+    <main class="flex-1 w-full flex flex-col items-center justify-center relative my-4">
+        
+        <!-- Background Glow -->
+        <div class="absolute w-72 h-72 md:w-96 md:h-96 rounded-full bg-red-600/20 blur-3xl -z-10 pointer-events-none"></div>
+
+        <!-- Button Container -->
+        <div class="buzzer-button-wrapper relative flex items-center justify-center">
+            
+            <!-- Dynamic Ring Elements Inserted Here Via JS -->
+            <div id="ring-container" class="absolute inset-0 pointer-events-none"></div>
+
+            <!-- The Big Quiz Button -->
+            <button id="buzzer-btn" class="buzzer-button w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 bg-gradient-to-b from-red-500 via-red-600 to-red-700 flex flex-col items-center justify-center text-white select-none outline-none group border-4 border-red-400/40">
+                
+                <!-- Inner Highlight Shine -->
+                <div class="absolute top-4 w-3/4 h-1/3 rounded-full bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
+
+                <!-- Center Icon & Label -->
+                <div class="flex flex-col items-center justify-center transform group-active:scale-95 transition-transform duration-75">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 sm:w-28 sm:h-28 text-white drop-shadow-md mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span class="text-2xl sm:text-4xl font-extrabold font-display tracking-wider uppercase drop-shadow-lg text-red-50">
+                        TRYKK HER!
+                    </span>
+                </div>
+            </button>
+        </div>
+
+        <!-- Tap Prompt & Shortcut Hint -->
+        <div class="mt-8 text-center text-slate-400">
+            <p class="text-sm font-medium sm:text-base">
+                Trykk på knappen eller bruk <kbd class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-md text-xs font-mono text-slate-200 shadow">Mellomrom</kbd> / <kbd class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-md text-xs font-mono text-slate-200 shadow">Enter</kbd>
+            </p>
+        </div>
+    </main>
+
+    <!-- Footer / Usage Counter -->
+    <footer class="w-full max-w-lg flex flex-col items-center justify-center gap-1 z-20 pb-2">
+        <div class="text-xs text-slate-500 font-medium flex items-center gap-3">
+            <span>Antall trykk: <strong id="press-count" class="text-slate-300 font-bold">0</strong></span>
+            <span>•</span>
+            <button id="reset-count-btn" class="text-slate-500 hover:text-slate-400 underline text-xs">
+                Nullstill
+            </button>
+        </div>
+    </footer>
+
+    <!-- Particle Container -->
+    <div id="particles" class="particles-container"></div>
+
+    <script>
+        
+        // State variables
+        let count = 0;
+        let isMuted = false;
+        let audioCtx = null;
+
+        // DOM Elements
+        const buzzerBtn = document.getElementById('buzzer-btn');
+        const ringContainer = document.getElementById('ring-container');
+        const mainBody = document.getElementById('main-body');
+        const pressCountEl = document.getElementById('press-count');
+        const resetCountBtn = document.getElementById('reset-count-btn');
+        const muteBtn = document.getElementById('mute-btn');
+        const volumeIcon = document.getElementById('volume-icon');
+        const muteText = document.getElementById('mute-text');
+        const particlesContainer = document.getElementById('particles');
+
+        /**
+         * Initialize or unlock AudioContext on user interaction
+         * Required for browser audio autoplay policies (especially iOS Safari / Mobile Chrome)
+         */
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        /**
+         * Synthesizes the authentic TV Quiz Show Buzzer Sound
+         * Sound design: Deeper, warmer dual-oscillator synth buzzer
+         * with lower base frequencies and lower filter cutoff.
+         */
+        function playQuizBuzzerSound() {
+            if (isMuted) return;
+
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            // Master Gain for volume
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.85, now);
+            masterGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+            masterGain.connect(audioCtx.destination);
+
+            // Lowpass Filter tuned for a warmer, darker buzzer tone
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1800, now);
+            filter.frequency.exponentialRampToValueAtTime(450, now + 0.6);
+            filter.connect(masterGain);
+
+            // Primary Oscillator (Main pitch note - Low E4 - 329.63 Hz)
+            const osc1 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(329.63, now);
+            osc1.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+
+            // Secondary Oscillator (Fifth harmony interval - B4 - 493.88 Hz)
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(493.88, now);
+
+            // Sub/Body Oscillator (Deep bass punch - E3 - 164.81 Hz)
+            const osc3 = audioCtx.createOscillator();
+            osc3.type = 'sawtooth';
+            osc3.frequency.setValueAtTime(164.81, now);
+
+            // Lowered octave accent for body without harsh high treble (E5 - 659.25 Hz)
+            const oscAccent = audioCtx.createOscillator();
+            oscAccent.type = 'sine';
+            oscAccent.frequency.setValueAtTime(659.25, now);
+
+            // Oscillator gains
+            const gain1 = audioCtx.createGain();
+            const gain2 = audioCtx.createGain();
+            const gain3 = audioCtx.createGain();
+            const gainAccent = audioCtx.createGain();
+
+            gain1.gain.setValueAtTime(0.45, now);
+            gain2.gain.setValueAtTime(0.35, now);
+            gain3.gain.setValueAtTime(0.5, now);
+            
+            // Accent pops fast and decays quickly
+            gainAccent.gain.setValueAtTime(0.2, now);
+            gainAccent.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+            // Connect oscillators to filter
+            osc1.connect(gain1);
+            osc2.connect(gain2);
+            osc3.connect(gain3);
+            oscAccent.connect(gainAccent);
+
+            gain1.connect(filter);
+            gain2.connect(filter);
+            gain3.connect(filter);
+            gainAccent.connect(filter);
+
+            // Start & Stop Oscillators
+            osc1.start(now);
+            osc2.start(now);
+            osc3.start(now);
+            oscAccent.start(now);
+
+            osc1.stop(now + 0.65);
+            osc2.stop(now + 0.65);
+            osc3.stop(now + 0.65);
+            oscAccent.stop(now + 0.65);
+        }
+
+        /**
+         * Trigger visual press effects (Ring pulse, background flash, particles)
+         */
+        function triggerVisualEffects(event) {
+            // Flash background
+            mainBody.classList.remove('flash-active');
+            void mainBody.offsetWidth; // Trigger reflow
+            mainBody.classList.add('flash-active');
+
+            // Ring Effect
+            const ring = document.createElement('div');
+            ring.className = 'ring-effect';
+            ringContainer.appendChild(ring);
+
+            setTimeout(() => {
+                ring.remove();
+            }, 600);
+
+            // Spawn Particles
+            spawnParticles();
+
+            // Haptic Feedback if supported on mobile
+            if ('vibrate' in navigator) {
+                try {
+                    navigator.vibrate(60);
+                } catch (e) {
+                    // Ignore haptic errors if not permitted
+                }
+            }
+        }
+
+        /**
+         * Spawn energetic visual particles around button
+         */
+        function spawnParticles() {
+            const particleCount = 12;
+            const rect = buzzerBtn.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+
+                const size = Math.random() * 8 + 6;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                particle.style.left = `${centerX}px`;
+                particle.style.top = `${centerY}px`;
+
+                // Calculate random trajectory angle and distance
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 120 + 80;
+                const dx = Math.cos(angle) * distance;
+                const dy = Math.sin(angle) * distance;
+
+                particle.style.setProperty('--dx', `${dx}px`);
+                particle.style.setProperty('--dy', `${dy}px`);
+
+                particlesContainer.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, 600);
+            }
+        }
+
+        /**
+         * Main action triggered when buzzer is pressed
+         */
+        function handleBuzzerPress(e) {
+            if (e) {
+                e.preventDefault();
+            }
+
+            // Increment count
+            count++;
+            pressCountEl.textContent = count;
+
+            // Play sound
+            playQuizBuzzerSound();
+
+            // Visual feedback
+            triggerVisualEffects(e);
+        }
+
+
+        // Button click / touch listeners
+        buzzerBtn.addEventListener('pointerdown', (e) => {
+            handleBuzzerPress(e);
+        });
+
+        // Keyboard support (Space and Enter keys)
+        window.addEventListener('keydown', (e) => {
+            if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat) {
+                // Prevent scrolling on spacebar
+                e.preventDefault();
+                buzzerBtn.classList.add('active');
+                handleBuzzerPress();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                buzzerBtn.classList.remove('active');
+            }
+        });
+
+        // Reset Counter
+        resetCountBtn.addEventListener('click', () => {
+            count = 0;
+            pressCountEl.textContent = '0';
+        });
+
+        // Toggle Mute
+        muteBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            if (isMuted) {
+                muteText.textContent = 'Lyd Av';
+                muteBtn.classList.add('opacity-60');
+                volumeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
+            } else {
+                muteText.textContent = 'Lyd På';
+                muteBtn.classList.remove('opacity-60');
+                volumeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z" />`;
+                // Play test sound when unmuting
+                playQuizBuzzerSound();
+            }
+        });
+
+        // Pre-initialize audio context on first screen touch/click
+        window.addEventListener('click', initAudioContext, { once: true });
+        window.addEventListener('touchstart', initAudioContext, { once: true });
+
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
