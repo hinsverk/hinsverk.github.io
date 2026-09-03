@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktivt Tankekart</title>
+    <!-- Tailwind CSS for moderne design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for ikoner -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- html2canvas for bildeeksport -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Bakgrunnsmønster for lerretet */
+        .canvas-bg {
+            background-color: #f8fafc;
+            background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+        }
+        
+        /* Forhindre tekstmarkering under dragging */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Drag-and-drop overlay stil */
+        #drop-overlay.active {
+            display: flex;
+        }
+
+        /* Node former */
+        .shape-rounded {
+            border-radius: 0.75rem;
+        }
+        .shape-square {
+            border-radius: 0.25rem;
+        }
+        .shape-ellipse {
+            border-radius: 9999px;
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+        }
+        .shape-diamond {
+            border-radius: 0.25rem;
+            transform: rotate(45deg);
+        }
+        .shape-diamond-content {
+            transform: rotate(-45deg);
+        }
+
+        /* Interaktivitet og lagstyring for koblingslinjer */
+        #svg-connections {
+            pointer-events: none;
+        }
+        .line-path {
+            cursor: pointer;
+            pointer-events: stroke;
+            transition: stroke-width 0.15s, stroke 0.15s;
+        }
+        .line-hitbox {
+            cursor: pointer;
+            pointer-events: stroke;
+        }
+        .line-arrow {
+            cursor: pointer;
+            pointer-events: all;
+        }
+        .line-hitbox:hover + .line-path,
+        .line-path:hover,
+        .line-arrow:hover {
+            stroke-width: 6px !important;
+            opacity: 1 !important;
+        }
+        #nodes-container {
+            pointer-events: none;
+        }
+        .node-el {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col font-sans bg-slate-100 text-slate-800">
+
+    <!-- Toppmeny / Verktøylinje -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap justify-between items-center z-30 shadow-sm relative gap-2">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-blue-600 text-white rounded-lg shadow-md">
+                <i data-lucide="network" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight text-slate-800">Tankekartlager</h1>
+                <p class="text-xs text-slate-500" id="status-subtitle">Velg et element eller rediger globalt</p>
+            </div>
+        </div>
+
+        <!-- Handlingsknapper for Noder -->
+        <div class="flex items-center space-x-2">
+            <button id="add-child-btn" onclick="addChildNode()" class="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition border border-blue-200 shadow-sm">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Legg til undernode</span>
+            </button>
+            <button id="delete-btn" onclick="deleteSelected()" class="flex items-center space-x-1 bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg text-sm font-medium transition border border-red-200 shadow-sm">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span id="delete-btn-text">Slett</span>
+            </button>
+            <div class="h-6 w-px bg-slate-200 mx-1"></div>
+            <button onclick="resetCanvas()" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition" title="Nullstill">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Redigeringsmodus (Veksle mellom Node og Linje-redigering) -->
+        <div class="flex items-center space-x-2 border-l border-r border-slate-200 px-3 my-1 sm:my-0">
+            <!-- Veksle-bryter for Redigeringsfokus -->
+            <div class="bg-slate-100 p-1 rounded-xl flex items-center space-x-1 border border-slate-200">
+                <button id="mode-node-btn" onclick="setEditMode('node')" class="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm">
+                    <i data-lucide="square" class="w-3.5 h-3.5"></i>
+                    <span>Noder</span>
+                </button>
+                <button id="mode-line-btn" onclick="setEditMode('line')" class="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900">
+                    <i data-lucide="spline" class="w-3.5 h-3.5"></i>
+                    <span>Linjer</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamiske verktøy basert på valgt modus -->
+        <div class="flex items-center space-x-2 flex-wrap">
+            
+            <!-- LINJEVERKTØY (Synlig i linjemodus) -->
+            <div id="line-tools" class="hidden flex items-center space-x-2">
+                <!-- Kombinert Linjestil og Pil Dropdown -->
+                <div class="relative inline-block text-left group">
+                    <button class="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-200 shadow-sm">
+                        <i data-lucide="minus" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-medium text-slate-500">Linjestil & Pil</span>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                    </button>
+                    <div class="hidden group-hover:block absolute right-0 w-52 bg-white rounded-xl shadow-xl border border-slate-100 p-1.5 z-50">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase px-2 py-1">Uten pil</p>
+                        <button onclick="setLineStyle('solid', false)" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 rounded-lg flex items-center justify-between">
+                            <span>Hel linje</span>
+                            <span class="w-8 h-0.5 bg-slate-600"></span>
+                        </button>
+                        <button onclick="setLineStyle('dashed', false)" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 rounded-lg flex items-center justify-between">
+                            <span>Stiplet</span>
+                            <span class="w-8 h-0 border-b-2 border-dashed border-slate-600"></span>
+                        </button>
+                        <button onclick="setLineStyle('dotted', false)" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 rounded-lg flex items-center justify-between">
+                            <span>Prikket</span>
+                            <span class="w-8 h-0 border-b-2 border-dotted border-slate-600"></span>
+                        </button>
+
+                        <div class="my-1 border-t border-slate-100"></div>
+                        <p class="text-[10px] font-bold text-blue-600 uppercase px-2 py-1">Med pil (➔)</p>
+
+                        <button onclick="setLineStyle('solid', true)" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-blue-50 rounded-lg flex items-center justify-between font-medium">
+                            <span>Hel linje m/pil</span>
+                            <div class="flex items-center">
+                                <span class="w-6 h-0.5 bg-blue-600"></span>
+                                <span class="text-blue-600 font-bold text-xs ml-0.5">➔</span>
+                            </div>
+                        </button>
+                        <button onclick="setLineStyle('dashed', true)" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-blue-50 rounded-lg flex items-center justify-between font-medium">
+                            <span>Stiplet m/pil</span>
+                            <div class="flex items-center">
+                                <span class="w-6 h-0 border-b-2 border-dashed border-blue-600"></span>
+                                <span class="text-blue-600 font-bold text-xs ml-0.5">➔</span>
+                            </div>
+                        </button>
+                        <button onclick="setLineStyle('dotted', true)" class="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-blue-50 rounded-lg flex items-center justify-between font-medium">
+                            <span>Prikket m/pil</span>
+                            <div class="flex items-center">
+                                <span class="w-6 h-0 border-b-2 border-dotted border-blue-600"></span>
+                                <span class="text-blue-600 font-bold text-xs ml-0.5">➔</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Linjetykkelse Dropdown -->
+                <div class="relative inline-block text-left group">
+                    <button class="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-200 shadow-sm">
+                        <i data-lucide="align-justify" class="w-4 h-4 text-slate-600"></i>
+                        <span class="text-xs font-medium text-slate-500">Tykkelse</span>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                    </button>
+                    <div class="hidden group-hover:block absolute right-0 w-36 bg-white rounded-xl shadow-xl border border-slate-100 p-1.5 z-50">
+                        <button onclick="changeLineWidth(2)" class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Tynn (2px)</button>
+                        <button onclick="changeLineWidth(4)" class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Medium (4px)</button>
+                        <button onclick="changeLineWidth(6)" class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg">Tykk (6px)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NODEVERKTØY (Formvelger - Synlig i nodemodus) -->
+            <div id="node-tools" class="relative inline-block text-left group">
+                <button class="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-200 shadow-sm">
+                    <i data-lucide="shapes" class="w-4 h-4 text-slate-600"></i>
+                    <span class="text-xs font-medium text-slate-500">Form</span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+                <div class="hidden group-hover:block absolute right-0 w-44 bg-white rounded-xl shadow-xl border border-slate-100 p-1.5 z-50">
+                    <button onclick="changeShape('rounded')" class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg flex items-center space-x-2">
+                        <div class="w-4 h-3 bg-slate-400 rounded-sm"></div>
+                        <span>Avrundet</span>
+                    </button>
+                    <button onclick="changeShape('square')" class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg flex items-center space-x-2">
+                        <div class="w-4 h-3 bg-slate-400 rounded-none"></div>
+                        <span>Firkant</span>
+                    </button>
+                    <button onclick="changeShape('ellipse')" class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg flex items-center space-x-2">
+                        <div class="w-4 h-3 bg-slate-400 rounded-full"></div>
+                        <span>Oval / Sirkel</span>
+                    </button>
+                    <button onclick="changeShape('diamond')" class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-slate-400 rotate-45 mx-0.5"></div>
+                        <span>Diamant</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fargevelger Dropdown -->
+            <div class="relative inline-block text-left group">
+                <button class="flex items-center space-x-2 bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition border border-slate-200 shadow-sm">
+                    <span id="current-color-indicator" class="w-4 h-4 rounded-full bg-blue-500 border border-white shadow-sm inline-block"></span>
+                    <i data-lucide="palette" class="w-4 h-4 text-slate-600"></i>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+                <div class="hidden group-hover:block absolute right-0 w-56 bg-white rounded-xl shadow-xl border border-slate-100 p-3 z-50">
+                    <p class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider" id="color-picker-title">Velg farge</p>
+                    <div class="grid grid-cols-4 gap-2 mb-3">
+                        <button onclick="changeColor('#3b82f6')" title="Blå" class="w-8 h-8 rounded-lg bg-blue-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#10b981')" title="Grønn" class="w-8 h-8 rounded-lg bg-emerald-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#f59e0b')" title="Ravgul" class="w-8 h-8 rounded-lg bg-amber-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#ec4899')" title="Rosa" class="w-8 h-8 rounded-lg bg-pink-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#8b5cf6')" title="Lilla" class="w-8 h-8 rounded-lg bg-purple-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#ef4444')" title="Rød" class="w-8 h-8 rounded-lg bg-red-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#06b6d4')" title="Syan" class="w-8 h-8 rounded-lg bg-cyan-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#84cc16')" title="Lime" class="w-8 h-8 rounded-lg bg-lime-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#f97316')" title="Oransje" class="w-8 h-8 rounded-lg bg-orange-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#6366f1')" title="Indigo" class="w-8 h-8 rounded-lg bg-indigo-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#14b8a6')" title="Teal" class="w-8 h-8 rounded-lg bg-teal-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                        <button onclick="changeColor('#64748b')" title="Grå" class="w-8 h-8 rounded-lg bg-slate-500 hover:scale-110 transition shadow-sm border border-black/5"></button>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <label for="custom-color-picker" class="text-xs text-slate-600 font-medium cursor-pointer flex items-center space-x-2">
+                            <span>Egen farge:</span>
+                        </label>
+                        <input type="color" id="custom-color-picker" onchange="changeColor(this.value)" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import knapp (JSON) -->
+            <label class="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer shadow-sm">
+                <i data-lucide="folder-open" class="w-4 h-4"></i>
+                <span>Åpne JSON</span>
+                <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" class="hidden">
+            </label>
+
+            <!-- Eksport Meny -->
+            <div class="relative inline-block text-left group">
+                <button class="flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Eksporter</span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1"></i>
+                </button>
+                <div class="hidden group-hover:block absolute right-0 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
+                    <button onclick="exportPNG()" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2">
+                        <i data-lucide="image" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Som Bilde (PNG)</span>
+                    </button>
+                    <button onclick="exportJSON()" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2">
+                        <i data-lucide="file-json" class="w-4 h-4 text-blue-600"></i>
+                        <span>Som Redigerbar (JSON)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hovedområde (Arbeidsflate) -->
+    <div id="mindmap-container" class="relative flex-1 canvas-bg overflow-hidden cursor-grab active:cursor-grabbing no-select">
+        <!-- SVG for forbindelseslinjer og piler -->
+        <svg id="svg-connections" class="absolute inset-0 w-full h-full z-10 overflow-visible">
+            <g id="svg-group"></g>
+        </svg>
+
+        <!-- Container for Noder -->
+        <div id="nodes-container" class="absolute inset-0 z-20"></div>
+
+        <!-- Drag and Drop Overlay -->
+        <div id="drop-overlay" class="hidden absolute inset-0 bg-blue-500/10 border-4 border-dashed border-blue-500 z-40 items-center justify-center backdrop-blur-sm pointer-events-none">
+            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center space-y-2">
+                <i data-lucide="file-up" class="w-12 h-12 text-blue-600 animate-bounce"></i>
+                <p class="font-bold text-slate-800 text-lg">Slipp JSON-filen her</p>
+                <p class="text-xs text-slate-500">Importerer og åpner tankekartet ditt for redigering</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instruksjoner i bunnen -->
+    <footer class="bg-white border-t border-slate-200 py-2 px-6 text-xs text-slate-500 flex justify-between items-center z-10">
+        <div>
+            💡 <b>Tips:</b> Klikk direkte på en linje for å velge den, eller bruk <b>Linjer</b>-bryteren for å endre alle linjene!
+        </div>
+        <div>
+            Format: <span class="font-semibold text-slate-700">JSON</span> (Redigerbar) | <span class="font-semibold text-slate-700">PNG</span> (Bilde)
+        </div>
+    </footer>
+
+    <!-- JavaScript Logikk -->
+    <script>
+        const startX = Math.max(100, window.innerWidth / 2 - 80);
+        const startY = Math.max(150, window.innerHeight / 2 - 50);
+
+        let currentEditMode = 'node';
+
+        let mindmapData = {
+            id: 'root',
+            text: 'Hovedemne',
+            color: '#3b82f6',
+            shape: 'rounded',
+            x: startX,
+            y: startY,
+            children: [
+                {
+                    id: 'node-1',
+                    text: 'Undertema 1',
+                    color: '#10b981',
+                    shape: 'rounded',
+                    lineColor: '#10b981',
+                    lineArrow: true,
+                    lineDash: 'solid',
+                    lineWidth: 3,
+                    x: startX - 220,
+                    y: startY + 120,
+                    children: []
+                },
+                {
+                    id: 'node-2',
+                    text: 'Undertema 2',
+                    color: '#f59e0b',
+                    shape: 'rounded',
+                    lineColor: '#f59e0b',
+                    lineArrow: true,
+                    lineDash: 'solid',
+                    lineWidth: 3,
+                    x: startX + 220,
+                    y: startY + 120,
+                    children: []
+                }
+            ]
+        };
+
+        let selectedNodeId = 'root';
+        let selectedLineChildId = null;
+
+        let draggedNode = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        window.onload = () => {
+            lucide.createIcons();
+            renderMindMap();
+            window.addEventListener('resize', renderConnections);
+            setupDragAndDrop();
+        };
+
+        function setEditMode(mode) {
+            currentEditMode = mode;
+            const nodeBtn = document.getElementById('mode-node-btn');
+            const lineBtn = document.getElementById('mode-line-btn');
+            const nodeTools = document.getElementById('node-tools');
+            const lineTools = document.getElementById('line-tools');
+
+            if (mode === 'node') {
+                nodeBtn.className = 'flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm';
+                lineBtn.className = 'flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
+                nodeTools.classList.remove('hidden');
+                lineTools.classList.add('hidden');
+            } else {
+                lineBtn.className = 'flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-blue-600 shadow-sm';
+                nodeBtn.className = 'flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900';
+                lineTools.classList.remove('hidden');
+                nodeTools.classList.add('hidden');
+            }
+            updateUIState();
+        }
+
+        function findNode(id, node = mindmapData) {
+            if (node.id === id) return node;
+            for (let child of node.children) {
+                let found = findNode(id, child);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function findParentNode(childId, node = mindmapData) {
+            for (let child of node.children) {
+                if (child.id === childId) return node;
+                let found = findParentNode(childId, child);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function renderMindMap() {
+            const container = document.getElementById('nodes-container');
+            container.innerHTML = '';
+            
+            renderNodeRecursive(mindmapData, container);
+            renderConnections();
+            updateUIState();
+        }
+
+        function updateUIState() {
+            const deleteBtnText = document.getElementById('delete-btn-text');
+            const statusSubtitle = document.getElementById('status-subtitle');
+            const colorIndicator = document.getElementById('current-color-indicator');
+            const colorPicker = document.getElementById('custom-color-picker');
+
+            if (selectedLineChildId) {
+                const childNode = findNode(selectedLineChildId);
+                deleteBtnText.innerText = 'Slett linje';
+                statusSubtitle.innerText = 'Redigerer valgt enkel linje';
+                
+                if (childNode) {
+                    const currentColor = childNode.lineColor || childNode.color || '#3b82f6';
+                    colorIndicator.style.backgroundColor = currentColor;
+                    colorPicker.value = currentColor;
+                }
+            } else if (selectedNodeId) {
+                deleteBtnText.innerText = 'Slett node';
+                const node = findNode(selectedNodeId);
+                if (node) {
+                    statusSubtitle.innerText = `Valgt node: "${node.text}"`;
+                    colorIndicator.style.backgroundColor = node.color || '#3b82f6';
+                    colorPicker.value = node.color || '#3b82f6';
+                }
+            } else {
+                deleteBtnText.innerText = 'Slett';
+                statusSubtitle.innerText = currentEditMode === 'line' ? 'Endrer alle linjer i tankekartet' : 'Klikk for å velge et element';
+            }
+        }
+
+        function renderNodeRecursive(node, container) {
+            const nodeEl = document.createElement('div');
+            nodeEl.id = `node-el-${node.id}`;
+
+            const shapeClass = getShapeClass(node.shape || 'rounded');
+            const isSelected = selectedNodeId === node.id && !selectedLineChildId;
+            
+            nodeEl.className = `node-el absolute px-4 py-2.5 shadow-md cursor-pointer transition-shadow flex items-center justify-center font-medium text-white border-2 border-white/20 select-none ${shapeClass} ${
+                isSelected ? 'ring-4 ring-blue-400 ring-offset-2 z-20 shadow-lg' : 'z-10 hover:shadow-lg'
+            }`;
+            nodeEl.style.backgroundColor = node.color || '#3b82f6';
+            nodeEl.style.left = `${node.x}px`;
+            nodeEl.style.top = `${node.y}px`;
+            nodeEl.style.minWidth = '120px';
+
+            const textSpan = document.createElement('span');
+            textSpan.className = `text-center break-words max-w-[200px] pointer-events-none ${node.shape === 'diamond' ? 'shape-diamond-content' : ''}`;
+            textSpan.innerText = node.text;
+            nodeEl.appendChild(textSpan);
+
+            nodeEl.addEventListener('mousedown', (e) => startDrag(e, node));
+            nodeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectNode(node.id);
+            });
+            nodeEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                enableEditing(nodeEl, node, textSpan);
+            });
+
+            container.appendChild(nodeEl);
+            node.children.forEach(child => renderNodeRecursive(child, container));
+        }
+
+        function getShapeClass(shape) {
+            switch(shape) {
+                case 'square': return 'shape-square';
+                case 'ellipse': return 'shape-ellipse';
+                case 'diamond': return 'shape-diamond';
+                case 'rounded':
+                default: return 'shape-rounded';
+            }
+        }
+
+        // Tegn linjer og piler med presis geometri
+        function renderConnections() {
+            const svgGroup = document.getElementById('svg-group');
+            svgGroup.innerHTML = '';
+
+            function drawLines(node) {
+                const parentEl = document.getElementById(`node-el-${node.id}`);
+                if (!parentEl) return;
+
+                const parentRect = parentEl.getBoundingClientRect();
+                const containerRect = document.getElementById('mindmap-container').getBoundingClientRect();
+
+                const parentX = parentRect.left - containerRect.left + parentRect.width / 2;
+                const parentY = parentRect.top - containerRect.top + parentRect.height / 2;
+
+                node.children.forEach(child => {
+                    const childEl = document.getElementById(`node-el-${child.id}`);
+                    if (childEl) {
+                        const childRect = childEl.getBoundingClientRect();
+                        const childX = childRect.left - containerRect.left + childRect.width / 2;
+                        const childY = childRect.top - containerRect.top + childRect.height / 2;
+
+                        const isLineSelected = selectedLineChildId === child.id;
+                        const strokeColor = child.lineColor || child.color || '#3b82f6';
+                        const lineWidth = child.lineWidth || 3;
+                        const hasArrow = child.lineArrow !== false;
+
+                        // Beregn vinkel og skjæringspunkter
+                        const dx = childX - parentX;
+                        const dy = childY - parentY;
+                        
+                        const absDx = Math.abs(dx) || 0.0001;
+                        const absDy = Math.abs(dy) || 0.0001;
+
+                        // Parent boundary intersection
+                        const pw = parentRect.width / 2;
+                        const ph = parentRect.height / 2;
+                        const scaleP = Math.min(pw / absDx, ph / absDy);
+                        const startX = parentX + dx * scaleP;
+                        const startY = parentY + dy * scaleP;
+
+                        // Child boundary intersection
+                        const cw = childRect.width / 2;
+                        const ch = childRect.height / 2;
+                        const scaleC = Math.min(cw / absDx, ch / absDy);
+                        const endX = childX - dx * scaleC;
+                        const endY = childY - dy * scaleC;
+
+                        const lineDx = endX - startX;
+                        const lineDy = endY - startY;
+                        const lineAngle = Math.atan2(lineDy, lineDx);
+
+                        const controlDist = Math.hypot(lineDx, lineDy) * 0.35;
+                        const controlX1 = startX + Math.cos(lineAngle) * controlDist;
+                        const controlY1 = startY + Math.sin(lineAngle) * controlDist;
+                        const controlX2 = endX - Math.cos(lineAngle) * controlDist;
+                        const controlY2 = endY - Math.sin(lineAngle) * controlDist;
+
+                        const pathData = `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`;
+
+                        const drawColor = isLineSelected ? '#ef4444' : strokeColor;
+
+                        // 1. Usynlig bred klikksoneline (hitbox)
+                        const hitbox = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        hitbox.setAttribute('d', pathData);
+                        hitbox.setAttribute('stroke', 'transparent');
+                        hitbox.setAttribute('stroke-width', '28');
+                        hitbox.setAttribute('fill', 'none');
+                        hitbox.setAttribute('class', 'line-hitbox');
+                        hitbox.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectLine(child.id);
+                        });
+                        svgGroup.appendChild(hitbox);
+
+                        // 2. Synlig Linje
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', pathData);
+                        path.setAttribute('stroke', drawColor);
+                        path.setAttribute('stroke-width', isLineSelected ? (lineWidth + 3) : lineWidth);
+                        path.setAttribute('fill', 'none');
+                        path.setAttribute('class', 'line-path');
+
+                        if (child.lineDash === 'dashed') {
+                            path.setAttribute('stroke-dasharray', '8,6');
+                        } else if (child.lineDash === 'dotted') {
+                            path.setAttribute('stroke-dasharray', '3,3');
+                        }
+
+                        if (isLineSelected) {
+                            path.setAttribute('opacity', '1');
+                            path.setAttribute('filter', 'drop-shadow(0 0 6px rgba(239,68,68,0.9))');
+                        } else {
+                            path.setAttribute('opacity', '0.85');
+                        }
+
+                        path.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectLine(child.id);
+                        });
+
+                        svgGroup.appendChild(path);
+
+                        // 3. Pilspiss som tegnes presist ved undernodens kant
+                        if (hasArrow) {
+                            const arrowLen = 14;
+                            const p1X = endX - arrowLen * Math.cos(lineAngle - Math.PI / 6);
+                            const p1Y = endY - arrowLen * Math.sin(lineAngle - Math.PI / 6);
+                            const p2X = endX - arrowLen * Math.cos(lineAngle + Math.PI / 6);
+                            const p2Y = endY - arrowLen * Math.sin(lineAngle + Math.PI / 6);
+
+                            const arrowHead = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                            arrowHead.setAttribute('points', `${endX},${endY} ${p1X},${p1Y} ${p2X},${p2Y}`);
+                            arrowHead.setAttribute('fill', drawColor);
+                            arrowHead.setAttribute('class', 'line-arrow');
+                            arrowHead.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                selectLine(child.id);
+                            });
+
+                            svgGroup.appendChild(arrowHead);
+                        }
+                    }
+                    drawLines(child);
+                });
+            }
+
+            drawLines(mindmapData);
+        }
+
+        function selectNode(id) {
+            selectedNodeId = id;
+            selectedLineChildId = null;
+            if (currentEditMode === 'line') {
+                setEditMode('node');
+            } else {
+                renderMindMap();
+            }
+        }
+
+        function selectLine(childId) {
+            selectedLineChildId = childId;
+            selectedNodeId = null;
+            setEditMode('line');
+            renderMindMap();
+        }
+
+        function enableEditing(nodeEl, node, textSpan) {
+            textSpan.classList.add('hidden');
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = node.text;
+            input.className = `bg-transparent text-white text-center font-medium outline-none border-b border-white/50 w-full px-1 ${node.shape === 'diamond' ? 'shape-diamond-content' : ''}`;
+            
+            nodeEl.appendChild(input);
+            input.focus();
+            input.select();
+
+            function save() {
+                if (input.value.trim() !== '') {
+                    node.text = input.value.trim();
+                }
+                renderMindMap();
+            }
+
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') save();
+            });
+        }
+
+        function startDrag(e, node) {
+            draggedNode = node;
+            const nodeEl = document.getElementById(`node-el-${node.id}`);
+            const rect = nodeEl.getBoundingClientRect();
+            
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!draggedNode) return;
+
+            const containerRect = document.getElementById('mindmap-container').getBoundingClientRect();
+            draggedNode.x = e.clientX - containerRect.left - dragOffsetX;
+            draggedNode.y = e.clientY - containerRect.top - dragOffsetY;
+
+            const nodeEl = document.getElementById(`node-el-${draggedNode.id}`);
+            if (nodeEl) {
+                nodeEl.style.left = `${draggedNode.x}px`;
+                nodeEl.style.top = `${draggedNode.y}px`;
+            }
+
+            renderConnections();
+        }
+
+        function stopDrag() {
+            draggedNode = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        function addChildNode() {
+            if (!selectedNodeId) selectedNodeId = 'root';
+            const parent = findNode(selectedNodeId);
+            if (!parent) return;
+
+            const newId = `node-${Date.now()}`;
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444', '#06b6d4'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+            const newNode = {
+                id: newId,
+                text: 'Ny node',
+                color: parent.color || randomColor,
+                shape: parent.shape || 'rounded',
+                lineColor: parent.color || randomColor,
+                lineArrow: true,
+                lineDash: 'solid',
+                lineWidth: 3,
+                x: parent.x + 180,
+                y: parent.y + (parent.children.length * 60) - 30,
+                children: []
+            };
+
+            parent.children.push(newNode);
+            selectedNodeId = newId;
+            selectedLineChildId = null;
+            renderMindMap();
+        }
+
+        function deleteSelected() {
+            if (selectedLineChildId) {
+                const parent = findParentNode(selectedLineChildId);
+                if (parent) {
+                    parent.children = parent.children.filter(child => child.id !== selectedLineChildId);
+                    selectedLineChildId = null;
+                    selectedNodeId = parent.id;
+                    renderMindMap();
+                    showToast('Linje og undernode ble fjernet.');
+                }
+            } else if (selectedNodeId) {
+                if (selectedNodeId === 'root') {
+                    showToast('Hovednoden kan ikke slettes.');
+                    return;
+                }
+
+                const parent = findParentNode(selectedNodeId);
+                if (parent) {
+                    parent.children = parent.children.filter(child => child.id !== selectedNodeId);
+                    selectedNodeId = 'root';
+                    renderMindMap();
+                }
+            }
+        }
+
+        function changeColor(color) {
+            if (currentEditMode === 'line') {
+                if (selectedLineChildId) {
+                    const childNode = findNode(selectedLineChildId);
+                    if (childNode) childNode.lineColor = color;
+                } else {
+                    forEachNode(mindmapData, (n) => { n.lineColor = color; });
+                }
+            } else {
+                if (selectedNodeId) {
+                    const node = findNode(selectedNodeId);
+                    if (node) node.color = color;
+                }
+            }
+            renderMindMap();
+        }
+
+        function changeShape(shape) {
+            if (selectedNodeId) {
+                const node = findNode(selectedNodeId);
+                if (node) {
+                    node.shape = shape;
+                    renderMindMap();
+                }
+            } else {
+                showToast('Velg en node først for å endre form.');
+            }
+        }
+
+        function forEachNode(node, callback) {
+            node.children.forEach(child => {
+                callback(child);
+                forEachNode(child, callback);
+            });
+        }
+
+        function setLineStyle(dashStyle, hasArrow) {
+            if (selectedLineChildId) {
+                const childNode = findNode(selectedLineChildId);
+                if (childNode) {
+                    childNode.lineDash = dashStyle;
+                    childNode.lineArrow = hasArrow;
+                }
+            } else {
+                forEachNode(mindmapData, (n) => {
+                    n.lineDash = dashStyle;
+                    n.lineArrow = hasArrow;
+                });
+            }
+            renderMindMap();
+        }
+
+        function changeLineWidth(width) {
+            if (selectedLineChildId) {
+                const childNode = findNode(selectedLineChildId);
+                if (childNode) childNode.lineWidth = width;
+            } else {
+                forEachNode(mindmapData, (n) => { n.lineWidth = width; });
+            }
+            renderMindMap();
+        }
+
+        function resetCanvas() {
+            if (confirm('Er du sikker på at du vil tilbakestille tankekartet?')) {
+                const resetX = Math.max(100, window.innerWidth / 2 - 80);
+                const resetY = Math.max(150, window.innerHeight / 2 - 50);
+
+                mindmapData = {
+                    id: 'root',
+                    text: 'Hovedemne',
+                    color: '#3b82f6',
+                    shape: 'rounded',
+                    x: resetX,
+                    y: resetY,
+                    children: []
+                };
+                selectedNodeId = 'root';
+                selectedLineChildId = null;
+                renderMindMap();
+            }
+        }
+
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mindmapData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `tankekart-${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function loadMindmapFromJSONText(jsonText) {
+            try {
+                const imported = JSON.parse(jsonText);
+                let importedData = imported;
+                
+                if (imported && imported.data) {
+                    importedData = imported.data;
+                }
+
+                if (importedData && importedData.id && importedData.text && Array.isArray(importedData.children)) {
+                    mindmapData = importedData;
+                    selectedNodeId = mindmapData.id;
+                    selectedLineChildId = null;
+                    renderMindMap();
+                    showToast('Tankekart ble lastet inn!');
+                } else {
+                    showToast('Ugyldig tankekart-fil.');
+                }
+            } catch (err) {
+                showToast('Feil ved lesing av JSON-fil.');
+            }
+        }
+
+        function importJSON(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                loadMindmapFromJSONText(e.target.result);
+                event.target.value = '';
+            };
+            if (event.target.files && event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0]);
+            }
+        }
+
+        function setupDragAndDrop() {
+            const container = document.body;
+            const overlay = document.getElementById('drop-overlay');
+
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                overlay.classList.add('active');
+            });
+
+            container.addEventListener('dragleave', (e) => {
+                if (e.relatedTarget === null || e.relatedTarget.nodeName === 'HTML') {
+                    overlay.classList.remove('active');
+                }
+            });
+
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                overlay.classList.remove('active');
+
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.name.endsWith('.json')) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => loadMindmapFromJSONText(event.target.result);
+                        reader.readAsText(file);
+                    } else {
+                        showToast('Vennligst slipp en gyldig .json-fil.');
+                    }
+                }
+            });
+        }
+
+        function exportPNG() {
+            const container = document.getElementById('mindmap-container');
+            
+            const currentSelectedNode = selectedNodeId;
+            const currentSelectedLine = selectedLineChildId;
+            selectedNodeId = null;
+            selectedLineChildId = null;
+            renderMindMap();
+
+            html2canvas(container, {
+                backgroundColor: '#f8fafc',
+                scale: 2
+            }).then(canvas => {
+                const image = canvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.download = `tankekart-${new Date().toISOString().slice(0, 10)}.png`;
+                link.href = image;
+                link.click();
+
+                selectedNodeId = currentSelectedNode;
+                selectedLineChildId = currentSelectedLine;
+                renderMindMap();
+            }).catch(err => {
+                console.error(err);
+                showToast('Klarte ikke å generere bilde.');
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 text-sm font-medium border border-slate-700';
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        document.getElementById('mindmap-container').addEventListener('click', (e) => {
+            if (e.target.id === 'mindmap-container' || e.target.id === 'svg-connections') {
+                selectedNodeId = null;
+                selectedLineChildId = null;
+                renderMindMap();
+            }
+        });
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
