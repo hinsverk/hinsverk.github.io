@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistikk-Lab i Matematikk</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for visual icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        .tab-btn.active {
+            border-bottom: 3px solid #2563eb;
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+        /* Clean, non-animated badges for raw data with drag indication */
+        .data-badge {
+            user-select: none;
+            transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        
+        .data-badge:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .data-badge.dragging {
+            opacity: 0.4;
+            border-style: dashed;
+            border-color: #2563eb;
+        }
+
+        /* Backdrop Blur for Modal / Board View */
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md py-6 px-4 md:px-8 mb-8 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid font-bold fa-chart-column text-3xl text-blue-400"></i>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Statistikk-Lab</h1>
+                </div>
+                <p class="text-slate-300 text-sm md:text-base mt-1">Interaktivt verktøy for undervisning i data, sentralmål, spredningsmål og diagrammer</p>
+            </div>
+            <!-- Quick preset buttons -->
+            <div class="flex flex-wrap gap-2 text-xs md:text-sm">
+                <span class="text-slate-400 self-center font-medium mr-1"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Eksempler:</span>
+                <button onclick="loadPreset('dice')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">🎲 Terningkast</button>
+                <button onclick="loadPreset('grades')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">📝 Karakterer</button>
+                <button onclick="loadPreset('shoes')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">👟 Skostørrelser</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+
+        <!-- SECTION 1: DATA INPUT -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-4 mb-6 gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-blue-600"></i> 1. Inntasting av data
+                    </h2>
+                    <p class="text-sm text-slate-500">Velg om du vil legge inn som uordnet rådata eller direkte i en frekvenstabell</p>
+                </div>
+                
+                <!-- Input Mode Switcher -->
+                <div class="inline-flex p-1 bg-slate-100 rounded-xl self-start md:self-auto border border-slate-200">
+                    <button id="mode-raw-btn" onclick="switchInputMode('raw')" class="px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm bg-white text-blue-700 font-semibold">
+                        <i class="fa-solid fa-list-ol mr-1.5"></i> Rådata
+                    </button>
+                    <button id="mode-freq-btn" onclick="switchInputMode('freq')" class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-900">
+                        <i class="fa-solid fa-table-cells mr-1.5"></i> Frekvenstabell
+                    </button>
+                </div>
+            </div>
+
+            <!-- RAW DATA INPUT FORM -->
+            <div id="raw-input-container" class="space-y-4">
+                <label for="raw-data-input" class="block text-sm font-medium text-slate-700">
+                    Skriv inn dine data (skill tall eller ord med komma, mellomrom eller linjeskift):
+                </label>
+                <textarea id="raw-data-input" rows="3" class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-slate-800" placeholder="Eks: 4, 5, 2, 4, 6, 3, 4, 5, 1, 4, 3"></textarea>
+                <div class="flex flex-wrap justify-between items-center gap-3">
+                    <span class="text-xs text-slate-400">Tips: Skriv inn tall for å få fulle beregninger for sentralmål og spredningsmål.</span>
+                    <button onclick="processRawData()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-rotate mr-1"></i> Oppdater beregninger
+                    </button>
+                </div>
+            </div>
+
+            <!-- FREQUENCY TABLE INPUT FORM -->
+            <div id="freq-input-container" class="hidden space-y-4">
+                <p class="text-sm text-slate-600">Fyll inn observasjonsverdi <i>x</i> og tilhørende frekvens <i>f</i>:</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full max-w-xl text-sm text-left border border-slate-200 rounded-lg overflow-hidden">
+                        <thead class="bg-slate-100 text-slate-700 font-semibold">
+                            <tr>
+                                <th class="p-3 border-b">Verdi / Observasjon (<i>x</i>)</th>
+                                <th class="p-3 border-b">Frekvens (<i>f</i>)</th>
+                                <th class="p-3 border-b text-center w-16">Slett</th>
+                            </tr>
+                        </thead>
+                        <tbody id="freq-table-body">
+                            <!-- Rows added dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="addFreqRow()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm transition border border-slate-300">
+                        <i class="fa-solid fa-plus mr-1"></i> Legg til rad
+                    </button>
+                    <button onclick="processFreqData()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition shadow-sm">
+                        <i class="fa-solid fa-calculator mr-1"></i> Beregn fra tabell
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: VISUAL REPRESENTATIONS (TABLE & RAW VIEW) -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Raw Data Unsorted vs Sorted View with Drag-Drop Reordering -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 lg:col-span-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-eye text-slate-700"></i> Visning av Rådata
+                        </h3>
+                        <button onclick="openRawFullscreen()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border border-slate-300">
+                            <i class="fa-solid fa-expand"></i> Tavlevisning
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-4">Totalt antall observasjoner (<i>N</i>): <span id="stat-n-count" class="font-bold text-slate-800">0</span></p>
+
+                    <div class="space-y-4">
+                        <!-- Interactive Unsorted Raw Data with Drag and Drop -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Arbeidsområde (Dra for å endre rekkefølge):</span>
+                                <button onclick="resetRawOrder()" class="text-xs text-blue-600 hover:underline"><i class="fa-solid fa-arrows-rotate mr-1"></i>Nullstill</button>
+                            </div>
+                            <div id="display-raw-interactive" class="p-3 bg-slate-50 rounded-xl border border-slate-200 font-mono text-sm min-h-[4rem] max-h-48 overflow-y-auto flex flex-wrap gap-2 items-center">
+                                <!-- Reorderable badges rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- System Sorted Raw Data -->
+                        <div>
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Systemets sorterte rekkefølge:</span>
+                            <div id="display-raw-sorted" class="p-3 bg-slate-100 rounded-xl border border-slate-200 font-mono text-sm max-h-36 overflow-y-auto break-words text-slate-800 font-medium flex flex-wrap gap-1.5">
+                                Ingen data
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Frequency Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 lg:col-span-2">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-table text-indigo-600"></i> Komplett Frekvenstabell
+                    </h3>
+                    <button onclick="openFreqFullscreen()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-semibold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border border-indigo-200">
+                        <i class="fa-solid fa-expand"></i> Tavlevisning
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Inkluderer frekvens, relativ frekvens, prosent og kumulativ frekvens.</p>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="p-3 rounded-tl-lg">Observasjon (<i>x</i>)</th>
+                                <th class="p-3">Frekvens (<i>f</i>)</th>
+                                <th class="p-3">Relativ frekvens</th>
+                                <th class="p-3">Prosent (%)</th>
+                                <th class="p-3 rounded-tr-lg">Kumulativ frekvens (<i>N</i>)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-freq-tbody" class="divide-y divide-slate-100 font-mono">
+                            <!-- Generated dynamically -->
+                        </tbody>
+                        <tfoot id="full-freq-tfoot" class="bg-slate-50 font-bold text-slate-800 border-t-2 border-slate-200">
+                            <!-- Totals generated dynamically -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: SENTRAL- OG SPREDNINGSMÅL -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="border-b border-slate-100 pb-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-blue-600"></i> 2. Sentral- og spredningsmål
+                    </h2>
+                    <p class="text-sm text-slate-500">Klikk på et mål for detaljert forklaring og utregning.</p>
+                </div>
+                <button onclick="openMeasureFullscreen(activeMeasure)" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-300 self-start md:self-auto cursor-pointer">
+                    <i class="fa-solid fa-expand"></i> Vis aktivt mål på tavle
+                </button>
+            </div>
+
+            <!-- Interactive Buttons -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <button onclick="showMeasureDetail('mean')" id="btn-measure-mean" class="measure-btn p-4 rounded-xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 text-left transition group cursor-pointer">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-blue-600 uppercase">Sentralmål</span>
+                        <i class="fa-solid fa-calculator text-slate-400 group-hover:text-blue-500"></i>
+                    </div>
+                    <div class="font-bold text-slate-800 text-base">Gjennomsnitt</div>
+                    <div id="quick-val-mean" class="text-lg font-extrabold text-blue-600 mt-1 font-mono">-</div>
+                </button>
+
+                <button onclick="showMeasureDetail('median')" id="btn-measure-median" class="measure-btn p-4 rounded-xl border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-left transition group cursor-pointer">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-indigo-600 uppercase">Sentralmål</span>
+                        <i class="fa-solid fa-align-center text-slate-400 group-hover:text-indigo-500"></i>
+                    </div>
+                    <div class="font-bold text-slate-800 text-base">Median</div>
+                    <div id="quick-val-median" class="text-lg font-extrabold text-indigo-600 mt-1 font-mono">-</div>
+                </button>
+
+                <button onclick="showMeasureDetail('range')" id="btn-measure-range" class="measure-btn p-4 rounded-xl border-2 border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 text-left transition group cursor-pointer">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-amber-600 uppercase">Spredningsmål</span>
+                        <i class="fa-solid fa-arrows-left-right text-slate-400 group-hover:text-amber-500"></i>
+                    </div>
+                    <div class="font-bold text-slate-800 text-base">Variasjonsbredde</div>
+                    <div id="quick-val-range" class="text-lg font-extrabold text-amber-600 mt-1 font-mono">-</div>
+                </button>
+
+                <button onclick="showMeasureDetail('iqr')" id="btn-measure-iqr" class="measure-btn p-4 rounded-xl border-2 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition group cursor-pointer">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-emerald-600 uppercase">Spredningsmål</span>
+                        <i class="fa-solid fa-box-archive text-slate-400 group-hover:text-emerald-500"></i>
+                    </div>
+                    <div class="font-bold text-slate-800 text-base">Kvartilbredde (IQR)</div>
+                    <div id="quick-val-iqr" class="text-lg font-extrabold text-emerald-600 mt-1 font-mono">-</div>
+                </button>
+            </div>
+
+            <!-- Detailed Explanation Card Display Area -->
+            <div id="measure-detail-box" class="bg-slate-50 border border-slate-200 rounded-xl p-5 relative">
+                <!-- Content inserted via JS -->
+            </div>
+        </section>
+
+        <!-- SECTION 4: DIAGRAMMER / VISUALISERING -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="border-b border-slate-100 pb-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-blue-600"></i> 3. Diagrammer og Visualisering
+                    </h2>
+                    <p class="text-sm text-slate-500">Velg diagramtype for å fremstille datasettet grafisk.</p>
+                </div>
+                <button onclick="openChartFullscreen()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-300 self-start md:self-auto">
+                    <i class="fa-solid fa-expand"></i> Diagram i fullskjerm
+                </button>
+            </div>
+
+            <!-- Chart Type Tabs -->
+            <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-6">
+                <button data-chart-type="bar" onclick="renderChart('bar')" class="tab-btn active px-4 py-2 rounded-t-lg text-sm font-medium hover:text-blue-600 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-simple"></i> Søyle / Stolpe
+                </button>
+                <button data-chart-type="line" onclick="renderChart('line')" class="tab-btn px-4 py-2 rounded-t-lg text-sm font-medium hover:text-blue-600 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> Linje
+                </button>
+                <button data-chart-type="pie" onclick="renderChart('pie')" class="tab-btn px-4 py-2 rounded-t-lg text-sm font-medium hover:text-blue-600 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> Sektor (Sirkel)
+                </button>
+                <button data-chart-type="histogram" onclick="renderChart('histogram')" class="tab-btn px-4 py-2 rounded-t-lg text-sm font-medium hover:text-blue-600 flex items-center gap-2">
+                    <i class="fa-solid fa-square-poll-vertical"></i> Histogram
+                </button>
+                <button data-chart-type="boxplot" onclick="renderChart('boxplot')" class="tab-btn px-4 py-2 rounded-t-lg text-sm font-medium text-slate-800 hover:text-blue-600 flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-packing text-blue-600"></i> Boksplott (Boksdiagram)
+                </button>
+            </div>
+
+            <!-- Chart Info Box -->
+            <div id="chart-description-banner" class="mb-4 text-xs md:text-sm bg-slate-100 text-slate-700 p-3 rounded-lg border border-slate-200">
+                <!-- Explanatory note for active chart -->
+            </div>
+
+            <!-- Chart View Canvas Container -->
+            <div class="relative w-full h-80 md:h-96 flex items-center justify-center bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <canvas id="chart-canvas" class="max-w-full max-h-full"></canvas>
+                <canvas id="boxplot-canvas" class="max-w-full max-h-full hidden"></canvas>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- UNIVERSAL FULLSCREEN / TAVLEVISNING MODAL -->
+    <div id="fullscreen-modal" class="fixed inset-0 z-50 hidden modal-backdrop flex flex-col p-4 md:p-8 text-white overflow-hidden">
+        <!-- Top bar with title and close button -->
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800 shrink-0">
+            <div class="flex items-center gap-3">
+                <span class="bg-blue-600 text-white font-black px-3 py-1 rounded-lg text-xs tracking-wider uppercase">Tavlevisning</span>
+                <h3 id="modal-title" class="text-xl md:text-3xl font-extrabold tracking-tight">Tittel</h3>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="closeFullscreenModal()" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white px-4 py-2 rounded-xl transition font-bold flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i> Lukk (ESC)
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Content Container -->
+        <div id="modal-body" class="flex-1 overflow-auto flex items-center justify-center relative p-2">
+            <!-- Dynamic board content rendered here -->
+        </div>
+    </div>
+
+    <!-- INTERACTIVE IQR STEP-BY-STEP EXPLANATION MODAL -->
+    <div id="iqr-modal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-4">
+        <div class="bg-white text-slate-800 rounded-2xl max-w-3xl w-full p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl">
+                        <i class="fa-solid fa-box-archive text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">Hvordan finne Kvartilbredde?</h3>
+                        <p class="text-xs text-slate-500">Steg-for-steg forklaring tilpasset ditt datasett</p>
+                    </div>
+                </div>
+                <button onclick="closeIqrModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-2">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Dynamic step-by-step content -->
+            <div id="iqr-step-content" class="space-y-6 text-sm">
+                <!-- Injected via JavaScript -->
+            </div>
+
+            <div class="pt-4 border-t border-slate-200 flex justify-end">
+                <button onclick="closeIqrModal()" class="bg-slate-900 text-white font-medium px-6 py-2.5 rounded-xl hover:bg-slate-800 transition">
+                    Forstått!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        let currentDataset = []; 
+        let rawInteractiveDataset = []; // Editable/reorderable list
+        let isNumericDataset = true;
+        let frequencyMap = {};  
+        let currentChart = null;
+        let activeChartType = 'bar';
+        let currentInputMode = 'raw'; 
+        let activeMeasure = 'mean';
+
+        // Presets data
+        const presets = {
+            dice: [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 1, 2, 3, 4, 5, 6],
+            grades: [1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 6],
+            shoes: [36, 37, 37, 38, 38, 38, 39, 39, 39, 39, 40, 40, 41, 41, 42, 43]
+        };
+
+        // Initialize on load
+        window.onload = function() {
+            loadPreset('dice');
+
+            // Keyboard shortcut ESC to close modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeFullscreenModal();
+                    closeIqrModal();
+                }
+            });
+        };
+
+        function switchInputMode(mode) {
+            currentInputMode = mode;
+            const rawBtn = document.getElementById('mode-raw-btn');
+            const freqBtn = document.getElementById('mode-freq-btn');
+            const rawCont = document.getElementById('raw-input-container');
+            const freqCont = document.getElementById('freq-input-container');
+
+            if (mode === 'raw') {
+                rawBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm bg-white text-blue-700 font-semibold";
+                freqBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-900";
+                rawCont.classList.remove('hidden');
+                freqCont.classList.add('hidden');
+            } else {
+                freqBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm bg-white text-blue-700 font-semibold";
+                rawBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-900";
+                freqCont.classList.remove('hidden');
+                rawCont.classList.add('hidden');
+                populateFreqInputTable();
+            }
+        }
+
+        function loadPreset(key) {
+            if (presets[key]) {
+                document.getElementById('raw-data-input').value = presets[key].join(', ');
+                if (currentInputMode === 'freq') {
+                    switchInputMode('raw');
+                }
+                processRawData();
+            }
+        }
+
+        function processRawData() {
+            const text = document.getElementById('raw-data-input').value.trim();
+            if (!text) {
+                currentDataset = [];
+                rawInteractiveDataset = [];
+                updateApp();
+                return;
+            }
+
+            const rawTokens = text.split(/[\s,;\n]+/).filter(val => val !== '');
+            const numericParsed = rawTokens.map(val => parseFloat(val.replace(',', '.')));
+            const allNumeric = numericParsed.every(val => !isNaN(val));
+
+            if (allNumeric) {
+                currentDataset = numericParsed;
+                isNumericDataset = true;
+            } else {
+                currentDataset = rawTokens;
+                isNumericDataset = false;
+            }
+
+            rawInteractiveDataset = [...currentDataset];
+            updateApp();
+        }
+
+        function updateApp() {
+            calculateFrequencies();
+            renderRawDataViews();
+            renderFullFrequencyTable();
+            calculateMeasures();
+            showMeasureDetail(activeMeasure);
+            renderChart(activeChartType);
+        }
+
+        function calculateFrequencies() {
+            frequencyMap = {};
+            currentDataset.forEach(val => {
+                frequencyMap[val] = (frequencyMap[val] || 0) + 1;
+            });
+        }
+
+        let draggedIndex = null;
+
+        function renderRawDataViews() {
+            document.getElementById('stat-n-count').textContent = currentDataset.length;
+
+            // Interactive Raw Area
+            const interactiveContainer = document.getElementById('display-raw-interactive');
+            interactiveContainer.innerHTML = '';
+
+            if (rawInteractiveDataset.length === 0) {
+                interactiveContainer.innerHTML = '<span class="text-slate-400 font-sans text-xs">Ingen data</span>';
+            } else {
+                rawInteractiveDataset.forEach((item, index) => {
+                    const badge = document.createElement('div');
+                    badge.className = "data-badge px-3 py-1.5 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-800 font-bold text-xs cursor-grab flex items-center gap-1.5 active:cursor-grabbing";
+                    badge.draggable = true;
+                    badge.innerHTML = `<span>${item}</span>`;
+                    
+                    badge.addEventListener('dragstart', (e) => {
+                        draggedIndex = index;
+                        badge.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+
+                    badge.addEventListener('dragend', () => {
+                        badge.classList.remove('dragging');
+                        draggedIndex = null;
+                    });
+
+                    badge.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                    });
+
+                    badge.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        if (draggedIndex !== null && draggedIndex !== index) {
+                            const movedItem = rawInteractiveDataset.splice(draggedIndex, 1)[0];
+                            rawInteractiveDataset.splice(index, 0, movedItem);
+                            renderRawDataViews();
+                        }
+                    });
+
+                    interactiveContainer.appendChild(badge);
+                });
+            }
+
+            // Sorted View
+            const sortedContainer = document.getElementById('display-raw-sorted');
+            if (currentDataset.length === 0) {
+                sortedContainer.innerHTML = 'Ingen data';
+            } else {
+                let sortedArr = [...currentDataset];
+                if (isNumericDataset) {
+                    sortedArr.sort((a, b) => a - b);
+                } else {
+                    sortedArr.sort();
+                }
+                sortedContainer.innerHTML = sortedArr.map(v => `<span class="px-2 py-0.5 bg-white border border-slate-200 rounded text-slate-700">${v}</span>`).join(' ');
+            }
+        }
+
+        function resetRawOrder() {
+            rawInteractiveDataset = [...currentDataset];
+            renderRawDataViews();
+        }
+
+        function addFreqRow(val = '', freq = '') {
+            const tbody = document.getElementById('freq-table-body');
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-100 hover:bg-slate-50";
+            tr.innerHTML = `
+                <td class="p-2"><input type="text" value="${val}" class="freq-x-input w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Eks. 4"></td>
+                <td class="p-2"><input type="number" min="1" value="${freq}" class="freq-f-input w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Eks. 3"></td>
+                <td class="p-2 text-center"><button onclick="this.closest('tr').remove()" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function populateFreqInputTable() {
+            const tbody = document.getElementById('freq-table-body');
+            tbody.innerHTML = '';
+            
+            let sortedKeys = Object.keys(frequencyMap);
+            if (isNumericDataset) {
+                sortedKeys.sort((a, b) => parseFloat(a) - parseFloat(b));
+            } else {
+                sortedKeys.sort();
+            }
+
+            if (sortedKeys.length === 0) {
+                addFreqRow('', '');
+                addFreqRow('', '');
+            } else {
+                sortedKeys.forEach(key => {
+                    addFreqRow(key, frequencyMap[key]);
+                });
+            }
+        }
+
+        function processFreqData() {
+            const xInputs = document.querySelectorAll('.freq-x-input');
+            const fInputs = document.querySelectorAll('.freq-f-input');
+
+            let newDataset = [];
+            let allNum = true;
+
+            for (let i = 0; i < xInputs.length; i++) {
+                let xVal = xInputs[i].value.trim();
+                let fVal = parseInt(fInputs[i].value.trim(), 10);
+
+                if (xVal !== '' && !isNaN(fVal) && fVal > 0) {
+                    let parsedNum = parseFloat(xVal.replace(',', '.'));
+                    if (isNaN(parsedNum)) {
+                        allNum = false;
+                    }
+                    for (let j = 0; j < fVal; j++) {
+                        newDataset.push(isNaN(parsedNum) ? xVal : parsedNum);
+                    }
+                }
+            }
+
+            if (newDataset.length === 0) {
+                return;
+            }
+
+            currentDataset = newDataset;
+            isNumericDataset = allNum;
+            rawInteractiveDataset = [...currentDataset];
+            document.getElementById('raw-data-input').value = currentDataset.join(', ');
+            updateApp();
+        }
+
+        function renderFullFrequencyTable() {
+            const tbody = document.getElementById('full-freq-tbody');
+            const tfoot = document.getElementById('full-freq-tfoot');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            let keys = Object.keys(frequencyMap);
+            if (keys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400 font-sans">Ingen data registrert</td></tr>';
+                return;
+            }
+
+            if (isNumericDataset) {
+                keys.sort((a, b) => parseFloat(a) - parseFloat(b));
+            } else {
+                keys.sort();
+            }
+
+            const totalN = currentDataset.length;
+            let cumFreq = 0;
+
+            keys.forEach(key => {
+                const f = frequencyMap[key];
+                const relFreq = (f / totalN).toFixed(3);
+                const percent = ((f / totalN) * 100).toFixed(1) + '%';
+                cumFreq += f;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-900">${key}</td>
+                    <td class="p-3">${f}</td>
+                    <td class="p-3">${relFreq}</td>
+                    <td class="p-3">${percent}</td>
+                    <td class="p-3 text-slate-600">${cumFreq}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td class="p-3 text-slate-900">Sum / Totalt:</td>
+                    <td class="p-3">${totalN}</td>
+                    <td class="p-3">1.000</td>
+                    <td class="p-3">100%</td>
+                    <td class="p-3">-</td>
+                </tr>
+            `;
+        }
+
+        function getSortedNumericData() {
+            if (!isNumericDataset || currentDataset.length === 0) return [];
+            return [...currentDataset].sort((a, b) => a - b);
+        }
+
+        function getMean() {
+            const data = getSortedNumericData();
+            if (data.length === 0) return null;
+            const sum = data.reduce((a, b) => a + b, 0);
+            return sum / data.length;
+        }
+
+        function getMedian(arr = null) {
+            const data = arr || getSortedNumericData();
+            if (data.length === 0) return null;
+            const mid = Math.floor(data.length / 2);
+            if (data.length % 2 !== 0) {
+                return data[mid];
+            } else {
+                return (data[mid - 1] + data[mid]) / 2;
+            }
+        }
+
+        function getQuartiles() {
+            const data = getSortedNumericData();
+            if (data.length === 0) return null;
+
+            const q2 = getMedian(data);
+            const mid = Math.floor(data.length / 2);
+
+            let lowerHalf = [];
+            let upperHalf = [];
+
+            if (data.length % 2 === 0) {
+                lowerHalf = data.slice(0, mid);
+                upperHalf = data.slice(mid);
+            } else {
+                lowerHalf = data.slice(0, mid);
+                upperHalf = data.slice(mid + 1);
+            }
+
+            const q1 = getMedian(lowerHalf);
+            const q3 = getMedian(upperHalf);
+
+            return { q1, q2, q3, lowerHalf, upperHalf };
+        }
+
+        function calculateMeasures() {
+            const meanVal = getMean();
+            const medianVal = getMedian();
+            const sorted = getSortedNumericData();
+            const quartiles = getQuartiles();
+
+            document.getElementById('quick-val-mean').textContent = meanVal !== null ? meanVal.toFixed(2) : '-';
+            document.getElementById('quick-val-median').textContent = medianVal !== null ? medianVal : '-';
+            
+            if (sorted.length > 0) {
+                const rangeVal = sorted[sorted.length - 1] - sorted[0];
+                document.getElementById('quick-val-range').textContent = rangeVal;
+            } else {
+                document.getElementById('quick-val-range').textContent = '-';
+            }
+
+            if (quartiles && quartiles.q1 !== null && quartiles.q3 !== null) {
+                const iqrVal = quartiles.q3 - quartiles.q1;
+                document.getElementById('quick-val-iqr').textContent = iqrVal;
+            } else {
+                document.getElementById('quick-val-iqr').textContent = '-';
+            }
+        }
+
+        function showMeasureDetail(type) {
+            activeMeasure = type;
+            window.activeMeasure = type;
+            const container = document.getElementById('measure-detail-box');
+            
+            // Highlight active button visually with border and ring
+            document.querySelectorAll('.measure-btn').forEach(btn => {
+                btn.classList.remove(
+                    'border-blue-600', 'bg-blue-50', 'ring-2', 'ring-blue-400',
+                    'border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-400',
+                    'border-amber-600', 'bg-amber-50', 'ring-2', 'ring-amber-400',
+                    'border-emerald-600', 'bg-emerald-50', 'ring-2', 'ring-emerald-400'
+                );
+                btn.classList.add('border-slate-200');
+            });
+
+            const activeBtn = document.getElementById('btn-measure-' + type);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-slate-200');
+                if (type === 'mean') activeBtn.classList.add('border-blue-600', 'bg-blue-50', 'ring-2', 'ring-blue-400/50');
+                if (type === 'median') activeBtn.classList.add('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-400/50');
+                if (type === 'range') activeBtn.classList.add('border-amber-600', 'bg-amber-50', 'ring-2', 'ring-amber-400/50');
+                if (type === 'iqr') activeBtn.classList.add('border-emerald-600', 'bg-emerald-50', 'ring-2', 'ring-emerald-400/50');
+            }
+
+            if (!isNumericDataset || currentDataset.length === 0) {
+                container.innerHTML = `<div class="text-slate-500 text-sm">Vennligst legg inn numeriske data (tall) for å se beregningen av ${type}.</div>`;
+                return;
+            }
+
+            const data = getSortedNumericData();
+            const mean = getMean();
+            const median = getMedian();
+            const q = getQuartiles();
+
+            if (type === 'mean') {
+                const sum = data.reduce((a,b)=>a+b, 0);
+                container.innerHTML = `
+                    <h4 class="font-bold text-slate-900 text-base mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-blue-600"></i> Gjennomsnitt (Middelverdi)
+                    </h4>
+                    <p class="text-sm text-slate-600 mb-3">Summen av alle observasjonene delt på totalt antall observasjoner (N).</p>
+                    <div class="p-3 bg-white border border-slate-200 rounded-lg font-mono text-sm space-y-1">
+                        <div>Sum = ${data.join(' + ')} = <strong>${sum}</strong></div>
+                        <div>Antall (N) = <strong>${data.length}</strong></div>
+                        <div class="text-blue-700 font-bold pt-1 border-t border-slate-100">Gjennomsnitt = ${sum} / ${data.length} = ${mean.toFixed(2)}</div>
+                    </div>
+                `;
+            } else if (type === 'median') {
+                const isEven = data.length % 2 === 0;
+                const mid = Math.floor(data.length / 2);
+                container.innerHTML = `
+                    <h4 class="font-bold text-slate-900 text-base mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-align-center text-indigo-600"></i> Median (Midterste tall)
+                    </h4>
+                    <p class="text-sm text-slate-600 mb-3">Tallet som står helt i midten når datasettet er sortert i stigende rekkefølge.</p>
+                    <div class="p-3 bg-white border border-slate-200 rounded-lg font-mono text-sm space-y-2">
+                        <div>Sortert data: [ ${data.join(', ')} ]</div>
+                        <div>${isEven ? `Likt antall tall (N = ${data.length}). Medianen er gjennomsnittet av de to midterste tallene (${data[mid-1]} og ${data[mid]}):` : `Oddetall antall tall (N = ${data.length}). Medianen er det midterste tallet:`}</div>
+                        <div class="text-indigo-700 font-bold pt-1 border-t border-slate-100">Median = ${median}</div>
+                    </div>
+                `;
+            } else if (type === 'range') {
+                const min = data[0];
+                const max = data[data.length - 1];
+                container.innerHTML = `
+                    <h4 class="font-bold text-slate-900 text-base mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-left-right text-amber-600"></i> Variasjonsbredde
+                    </h4>
+                    <p class="text-sm text-slate-600 mb-3">Forskjellen (differansen) mellom den største og den minste observasjonsverdien.</p>
+                    <div class="p-3 bg-white border border-slate-200 rounded-lg font-mono text-sm space-y-1">
+                        <div>Største verdi (Max) = <strong>${max}</strong></div>
+                        <div>Minste verdi (Min) = <strong>${min}</strong></div>
+                        <div class="text-amber-700 font-bold pt-1 border-t border-slate-100">Variasjonsbredde = ${max} - ${min} = ${max - min}</div>
+                    </div>
+                `;
+            } else if (type === 'iqr') {
+                const iqr = q.q3 - q.q1;
+                container.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
+                        <h4 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-box-archive text-emerald-600"></i> Kvartilbredde (Interquartile Range - IQR)
+                        </h4>
+                        <button onclick="openIqrModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-circle-info"></i> Steg-for-steg forklaring
+                        </button>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-3">Bredden på de midterste 50% av dataene. Regnes ut ved å ta Øvre kvartil (Q3) minus Nedre kvartil (Q1).</p>
+                    <div class="p-3 bg-white border border-slate-200 rounded-lg font-mono text-sm space-y-1">
+                        <div>Øvre kvartil (Q3) = <strong>${q.q3}</strong></div>
+                        <div>Nedre kvartil (Q1) = <strong>${q.q1}</strong></div>
+                        <div class="text-emerald-700 font-bold pt-1 border-t border-slate-100">Kvartilbredde = Q3 - Q1 = ${q.q3} - ${q.q1} = ${iqr}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function openIqrModal() {
+            const modal = document.getElementById('iqr-modal');
+            const stepContent = document.getElementById('iqr-step-content');
+            
+            if (!isNumericDataset || currentDataset.length === 0) {
+                stepContent.innerHTML = "<p>Vennligst legg inn tall først.</p>";
+            } else {
+                const data = getSortedNumericData();
+                const q = getQuartiles();
+                const iqr = q.q3 - q.q1;
+
+                stepContent.innerHTML = `
+                    <!-- Steg 1 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <div class="font-bold text-slate-900 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">1</span>
+                            Sorter datasettet fra minst til størst
+                        </div>
+                        <p class="text-slate-600 text-xs">For å finne kvartilene må tallene stå i rekkefølge:</p>
+                        <div class="font-mono text-xs p-2 bg-white rounded border border-slate-200 flex flex-wrap gap-1">
+                            ${data.map(n => `<span class="px-2 py-0.5 bg-slate-100 rounded">${n}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Steg 2 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <div class="font-bold text-slate-900 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs">2</span>
+                            Finn Medianen (Q₂) og del datasettet i to
+                        </div>
+                        <p class="text-slate-600 text-xs">Medianen deler datasettet i en nedre halvdel (første 50%) og en øvre halvdel (siste 50%):</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+                            <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                                <span class="font-bold text-blue-800 block mb-1">Nedre halvdel (${q.lowerHalf.length} tall):</span>
+                                [ ${q.lowerHalf.join(', ')} ]
+                            </div>
+                            <div class="p-2.5 bg-purple-50 border border-purple-200 rounded-lg">
+                                <span class="font-bold text-purple-800 block mb-1">Øvre halvdel (${q.upperHalf.length} tall):</span>
+                                [ ${q.upperHalf.join(', ')} ]
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Steg 3 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <div class="font-bold text-slate-900 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs">3</span>
+                            Finn nedre kvartil (Q₁) og øvre kvartil (Q₃)
+                        </div>
+                        <p class="text-slate-600 text-xs">Q₁ er medianen i den nedre halvdelen. Q₃ er medianen i den øvre halvdelen.</p>
+                        <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+                            <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                <div class="text-slate-500">Nedre kvartil (Q₁):</div>
+                                <div class="text-lg font-bold text-emerald-700">${q.q1}</div>
+                            </div>
+                            <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                <div class="text-slate-500">Øvre kvartil (Q₃):</div>
+                                <div class="text-lg font-bold text-emerald-700">${q.q3}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Steg 4 -->
+                    <div class="p-4 bg-emerald-50 border border-emerald-300 rounded-xl space-y-2">
+                        <div class="font-bold text-emerald-900 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs">4</span>
+                            Regn ut kvartilbredden: Q₃ - Q₁
+                        </div>
+                        <div class="font-mono text-sm font-bold text-emerald-900">
+                            Kvartilbredde = ${q.q3} - ${q.q1} = ${iqr}
+                        </div>
+                        <p class="text-xs text-emerald-800">Dette tallet forteller oss hvor stor spredning det er i den midterste halvdelen av elevgruppas/datasettets observasjoner.</p>
+                    </div>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeIqrModal() {
+            document.getElementById('iqr-modal').classList.add('hidden');
+        }
+
+        function renderChart(type) {
+            activeChartType = type;
+            
+            // Tab button styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.getAttribute('data-chart-type') === type) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const canvas = document.getElementById('chart-canvas');
+            const boxCanvas = document.getElementById('boxplot-canvas');
+            const banner = document.getElementById('chart-description-banner');
+
+            if (type === 'boxplot') {
+                canvas.classList.add('hidden');
+                boxCanvas.classList.remove('hidden');
+                banner.innerHTML = "<strong>Boksplott:</strong> Viser femtallssammendraget (Minimum, Q1, Median, Q3, Maksimum). Boksen dekker de midterste 50% av dataene.";
+                renderBoxPlotCanvas();
+                return;
+            }
+
+            boxCanvas.classList.add('hidden');
+            canvas.classList.remove('hidden');
+
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            let sortedKeys = Object.keys(frequencyMap);
+            if (isNumericDataset) {
+                sortedKeys.sort((a, b) => parseFloat(a) - parseFloat(b));
+            } else {
+                sortedKeys.sort();
+            }
+
+            const labels = sortedKeys;
+            const values = sortedKeys.map(k => frequencyMap[k]);
+
+            let chartConfig = {
+                type: type === 'histogram' ? 'bar' : type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frekvens',
+                        data: values,
+                        backgroundColor: type === 'pie' ? [
+                            '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#10b981', '#f59e0b'
+                        ] : '#3b82f6',
+                        borderColor: type === 'line' ? '#1d4ed8' : '#2563eb',
+                        borderWidth: 1.5,
+                        barPercentage: type === 'histogram' ? 1.0 : 0.8,
+                        categoryPercentage: type === 'histogram' ? 1.0 : 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: type === 'pie' }
+                    },
+                    scales: type === 'pie' ? {} : {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            };
+
+            if (type === 'bar') banner.innerHTML = "<strong>Søylediagram:</strong> Velegnet for å sammenligne frekvensen til ulike kategorier eller observasjoner.";
+            if (type === 'line') banner.innerHTML = "<strong>Linjediagram:</strong> Viser utvikling og frekvensendringer på en kontinuerlig linje.";
+            if (type === 'pie') banner.innerHTML = "<strong>Sirkeldiagram:</strong> Viser hver observasjons andel av helheten (100%).";
+            if (type === 'histogram') banner.innerHTML = "<strong>Histogram:</strong> Søyler uten mellomrom, ofte brukt når dataene er gruppert eller kontinuerlige.";
+
+            const ctx = canvas.getContext('2d');
+            currentChart = new Chart(ctx, chartConfig);
+        }
+
+        function renderBoxPlotCanvas() {
+            const canvas = document.getElementById('boxplot-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Responsive sizing
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!isNumericDataset || currentDataset.length === 0) {
+                ctx.fillStyle = '#64748b';
+                ctx.font = '14px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('Boksplott krever et numerisk datasett (tall).', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            const data = getSortedNumericData();
+            const min = data[0];
+            const max = data[data.length - 1];
+            const q = getQuartiles();
+
+            const padding = 60;
+            const plotWidth = canvas.width - (padding * 2);
+            const centerY = canvas.height / 2;
+
+            const scale = (val) => {
+                if (max === min) return canvas.width / 2;
+                return padding + ((val - min) / (max - min)) * plotWidth;
+            };
+
+            const minX = scale(min);
+            const maxX = scale(max);
+            const q1X = scale(q.q1);
+            const q2X = scale(q.q2);
+            const q3X = scale(q.q3);
+
+            // Draw center whisker line
+            ctx.beginPath();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.moveTo(minX, centerY);
+            ctx.lineTo(maxX, centerY);
+            ctx.stroke();
+
+            // Draw Min and Max Whiskers
+            ctx.beginPath();
+            ctx.moveTo(minX, centerY - 20);
+            ctx.lineTo(minX, centerY + 20);
+            ctx.moveTo(maxX, centerY - 20);
+            ctx.lineTo(maxX, centerY + 20);
+            ctx.stroke();
+
+            // Draw Box (Q1 to Q3)
+            ctx.fillStyle = '#eff6ff';
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2;
+            ctx.fillRect(q1X, centerY - 35, q3X - q1X, 70);
+            ctx.strokeRect(q1X, centerY - 35, q3X - q1X, 70);
+
+            // Draw Median Line (Q2)
+            ctx.beginPath();
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 3;
+            ctx.moveTo(q2X, centerY - 35);
+            ctx.lineTo(q2X, centerY + 35);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 12px Inter';
+            ctx.textAlign = 'center';
+
+            ctx.fillText(`Min: ${min}`, minX, centerY + 45);
+            ctx.fillText(`Q₁: ${q.q1}`, q1X, centerY - 45);
+            ctx.fillText(`Median (Q₂): ${q.q2}`, q2X, centerY + 55);
+            ctx.fillText(`Q₃: ${q.q3}`, q3X, centerY - 45);
+            ctx.fillText(`Maks: ${max}`, maxX, centerY + 45);
+        }
+
+        function openRawFullscreen() {
+            const modal = document.getElementById('fullscreen-modal');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            title.textContent = 'Rådata i Tavlevisning (Sortering)';
+            
+            renderRawFullscreenContent();
+            modal.classList.remove('hidden');
+        }
+
+        function renderRawFullscreenContent() {
+            const body = document.getElementById('modal-body');
+            const N = rawInteractiveDataset.length;
+
+            let fontSizeClass = "text-2xl md:text-3xl px-5 py-3";
+            if (N > 50) fontSizeClass = "text-base md:text-lg px-3 py-1.5";
+            else if (N > 25) fontSizeClass = "text-xl md:text-2xl px-4 py-2";
+
+            const cardsHtml = rawInteractiveDataset.map((item, idx) => `
+                <div draggable="true" 
+                     data-index="${idx}"
+                     ondragstart="handleBoardDragStart(event, ${idx})"
+                     ondragover="handleBoardDragOver(event)"
+                     ondrop="handleBoardDrop(event, ${idx})"
+                     class="board-card cursor-grab active:cursor-grabbing bg-slate-800 border-2 border-blue-500 hover:border-blue-300 hover:bg-slate-700 rounded-2xl font-mono ${fontSizeClass} text-white font-bold shadow-lg transition-transform transform active:scale-95 select-none flex items-center gap-2">
+                    <span class="text-blue-400 text-xs font-normal">#${idx + 1}</span>
+                    <span>${item}</span>
+                </div>
+            `).join('');
+
+            body.innerHTML = `
+                <div class="w-full max-w-6xl flex flex-col items-center gap-6 p-4">
+                    <!-- Helper actions toolbar inside Board view -->
+                    <div class="flex flex-wrap items-center justify-center gap-3 bg-slate-900/80 p-3 rounded-2xl border border-slate-700">
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider mr-2">
+                            <i class="fa-solid fa-hand-pointer mr-1"></i> Dra og slipp brikkene for å sortere:
+                        </span>
+                        <button onclick="sortBoardDataset()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-down-1-9"></i> Sorter automatisk
+                        </button>
+                        <button onclick="shuffleBoardDataset()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-shuffle"></i> Stokk om (Bland)
+                        </button>
+                        <button onclick="resetBoardDataset()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate-left"></i> Nullstill
+                        </button>
+                    </div>
+
+                    <!-- Interactive Drag & Drop Area -->
+                    <div class="w-full max-h-[65vh] overflow-y-auto p-4 flex flex-wrap gap-3 items-center justify-center bg-slate-900/50 rounded-2xl border border-slate-800">
+                        ${cardsHtml || '<span class="text-slate-400">Ingen data registrert</span>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        let boardDraggedIndex = null;
+
+        function handleBoardDragStart(e, idx) {
+            boardDraggedIndex = idx;
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleBoardDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleBoardDrop(e, targetIdx) {
+            e.preventDefault();
+            if (boardDraggedIndex !== null && boardDraggedIndex !== targetIdx) {
+                const movedItem = rawInteractiveDataset.splice(boardDraggedIndex, 1)[0];
+                rawInteractiveDataset.splice(targetIdx, 0, movedItem);
+                boardDraggedIndex = null;
+                renderRawFullscreenContent();
+                renderRawDataViews(); // Keep main window in sync
+            }
+        }
+
+        function sortBoardDataset() {
+            if (isNumericDataset) {
+                rawInteractiveDataset.sort((a, b) => a - b);
+            } else {
+                rawInteractiveDataset.sort();
+            }
+            renderRawFullscreenContent();
+            renderRawDataViews();
+        }
+
+        function shuffleBoardDataset() {
+            for (let i = rawInteractiveDataset.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [rawInteractiveDataset[i], rawInteractiveDataset[j]] = [rawInteractiveDataset[j], rawInteractiveDataset[i]];
+            }
+            renderRawFullscreenContent();
+            renderRawDataViews();
+        }
+
+        function resetBoardDataset() {
+            resetRawOrder();
+            renderRawFullscreenContent();
+        }
+
+        function openFreqFullscreen() {
+            const modal = document.getElementById('fullscreen-modal');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            title.textContent = 'Frekvenstabell i Tavlevisning';
+
+            let keys = Object.keys(frequencyMap);
+            if (isNumericDataset) {
+                keys.sort((a, b) => parseFloat(a) - parseFloat(b));
+            } else {
+                keys.sort();
+            }
+
+            const totalN = currentDataset.length;
+            let cumFreq = 0;
+
+            let rows = keys.map(key => {
+                const f = frequencyMap[key];
+                const relFreq = (f / totalN).toFixed(3);
+                const percent = ((f / totalN) * 100).toFixed(1) + '%';
+                cumFreq += f;
+                return `
+                    <tr class="border-b border-slate-800">
+                        <td class="p-3 font-bold text-blue-400">${key}</td>
+                        <td class="p-3">${f}</td>
+                        <td class="p-3">${relFreq}</td>
+                        <td class="p-3">${percent}</td>
+                        <td class="p-3 text-slate-400">${cumFreq}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            body.innerHTML = `
+                <div class="w-full max-w-4xl max-h-[80vh] overflow-y-auto p-2">
+                    <table class="w-full text-left font-mono text-base md:text-xl">
+                        <thead class="bg-slate-800 text-slate-200 border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Observasjon (x)</th>
+                                <th class="p-3">Frekvens (f)</th>
+                                <th class="p-3">Relativ</th>
+                                <th class="p-3">Prosent</th>
+                                <th class="p-3">Kumulativ</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function openMeasureFullscreen(type) {
+            type = type || activeMeasure || 'mean';
+            activeMeasure = type;
+            window.activeMeasure = type;
+            showMeasureDetail(type); // Keeps main UI in sync
+
+            const modal = document.getElementById('fullscreen-modal');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            if (!isNumericDataset || currentDataset.length === 0) {
+                title.textContent = 'Beregning i Tavlevisning';
+                body.innerHTML = `<div class="text-slate-300 text-xl font-bold p-8">Vennligst legg inn tall først for å se utregninger i tavlevisning.</div>`;
+                modal.classList.remove('hidden');
+                return;
+            }
+
+            const data = getSortedNumericData();
+            const meanVal = getMean();
+            const medianVal = getMedian();
+            const q = getQuartiles();
+            const min = data[0];
+            const max = data[data.length - 1];
+
+            let measureTitle = '';
+            let mainResult = '';
+            let calcExplanation = '';
+            let resultColorClass = 'text-blue-400';
+
+            if (type === 'mean') {
+                measureTitle = 'Gjennomsnitt';
+                mainResult = meanVal !== null ? meanVal.toFixed(2) : '-';
+                resultColorClass = 'text-blue-400';
+                const sum = data.reduce((a, b) => a + b, 0);
+                calcExplanation = `
+                    <div class="space-y-3 font-mono text-sm md:text-base text-slate-300">
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 text-xs font-sans uppercase font-bold block mb-1">1. Summen av alle tallene:</span>
+                            <div class="break-words text-slate-200">${data.join(' + ')} = <strong class="text-white font-bold">${sum}</strong></div>
+                        </div>
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 text-xs font-sans uppercase font-bold block mb-1">2. Totalt antall observasjoner (N):</span>
+                            <div class="text-white font-bold">${data.length}</div>
+                        </div>
+                        <div class="p-4 bg-blue-950/60 rounded-xl border border-blue-800/60">
+                            <span class="text-blue-300 text-xs font-sans uppercase font-bold block mb-1">3. Formel og utregning:</span>
+                            <div class="text-blue-200">Sum / N = ${sum} / ${data.length} = <strong class="text-blue-400 font-bold">${meanVal.toFixed(2)}</strong></div>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'median') {
+                measureTitle = 'Median';
+                mainResult = medianVal !== null ? medianVal : '-';
+                resultColorClass = 'text-indigo-400';
+                const isEven = data.length % 2 === 0;
+                const mid = Math.floor(data.length / 2);
+                calcExplanation = `
+                    <div class="space-y-3 font-mono text-sm md:text-base text-slate-300">
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 text-xs font-sans uppercase font-bold block mb-1">1. Sortert datasett (N = ${data.length}):</span>
+                            <div class="break-words text-slate-200">[ ${data.join(', ')} ]</div>
+                        </div>
+                        <div class="p-4 bg-indigo-950/60 rounded-xl border border-indigo-800/60">
+                            <span class="text-indigo-300 text-xs font-sans uppercase font-bold block mb-1">2. Utregning:</span>
+                            <div class="text-indigo-200">
+                                ${isEven ? `Likt antall observasjoner. Medianen er gjennomsnittet av de to midterste tallene (${data[mid-1]} og ${data[mid]}): (${data[mid-1]} + ${data[mid]}) / 2 = <strong class="text-indigo-400">${medianVal}</strong>` : `Oddetall antall observasjoner. Det midterste tallet i den sorterte rekken er <strong class="text-indigo-400">${medianVal}</strong>.`}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'range') {
+                measureTitle = 'Variasjonsbredde';
+                const rangeVal = max - min;
+                mainResult = rangeVal;
+                resultColorClass = 'text-amber-400';
+                calcExplanation = `
+                    <div class="space-y-3 font-mono text-sm md:text-base text-slate-300">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <span class="text-slate-400 text-xs font-sans uppercase font-bold block mb-1">Største verdi (Max):</span>
+                                <div class="text-white font-bold text-lg">${max}</div>
+                            </div>
+                            <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <span class="text-slate-400 text-xs font-sans uppercase font-bold block mb-1">Minste verdi (Min):</span>
+                                <div class="text-white font-bold text-lg">${min}</div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-amber-950/60 rounded-xl border border-amber-800/60">
+                            <span class="text-amber-300 text-xs font-sans uppercase font-bold block mb-1">Formel: Største - Minste:</span>
+                            <div class="text-amber-200">${max} - ${min} = <strong class="text-amber-400">${rangeVal}</strong></div>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'iqr') {
+                measureTitle = 'Kvartilbredde (IQR)';
+                const iqrVal = q.q3 - q.q1;
+                mainResult = iqrVal;
+                resultColorClass = 'text-emerald-400';
+                calcExplanation = `
+                    <div class="space-y-3 font-mono text-sm md:text-base text-slate-300">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <span class="text-slate-400 text-xs font-sans uppercase font-bold block mb-1">Øvre kvartil (Q3):</span>
+                                <div class="text-white font-bold text-lg">${q.q3}</div>
+                            </div>
+                            <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <span class="text-slate-400 text-xs font-sans uppercase font-bold block mb-1">Nedre kvartil (Q1):</span>
+                                <div class="text-white font-bold text-lg">${q.q1}</div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-emerald-950/60 rounded-xl border border-emerald-800/60">
+                            <span class="text-emerald-300 text-xs font-sans uppercase font-bold block mb-1">Formel: Q3 - Q1:</span>
+                            <div class="text-emerald-200">${q.q3} - ${q.q1} = <strong class="text-emerald-400">${iqrVal}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            title.textContent = measureTitle + ' i Tavlevisning';
+
+            const navTabsHtml = `
+                <div class="flex flex-wrap justify-center gap-2 mb-6">
+                    <button onclick="openMeasureFullscreen('mean')" class="px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer ${type === 'mean' ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+                        <i class="fa-solid fa-calculator"></i> Gjennomsnitt
+                    </button>
+                    <button onclick="openMeasureFullscreen('median')" class="px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer ${type === 'median' ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+                        <i class="fa-solid fa-align-center"></i> Median
+                    </button>
+                    <button onclick="openMeasureFullscreen('range')" class="px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer ${type === 'range' ? 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+                        <i class="fa-solid fa-arrows-left-right"></i> Variasjonsbredde
+                    </button>
+                    <button onclick="openMeasureFullscreen('iqr')" class="px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer ${type === 'iqr' ? 'bg-emerald-600 text-white shadow-lg ring-2 ring-emerald-400' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">
+                        <i class="fa-solid fa-box-archive"></i> Kvartilbredde (IQR)
+                    </button>
+                </div>
+            `;
+
+            body.innerHTML = `
+                <div class="w-full max-w-4xl bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-10 text-white space-y-6 shadow-2xl">
+                    ${navTabsHtml}
+                    <!-- Prominent Answer Box for Smartboards -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 p-6 md:p-8 rounded-2xl border border-slate-700 gap-6">
+                        <div class="text-center sm:text-left">
+                            <span class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-400 block mb-1">Sentral / Spredningsmål</span>
+                            <h2 class="text-2xl md:text-4xl font-extrabold text-white">${measureTitle}</h2>
+                        </div>
+                        <div class="bg-slate-950 px-8 py-5 rounded-2xl border border-slate-700 text-center shadow-inner shrink-0 min-w-[180px]">
+                            <span class="text-xs uppercase tracking-widest text-slate-400 font-bold block mb-1">SVAR / RESULTAT</span>
+                            <span class="text-5xl md:text-7xl font-black ${resultColorClass} font-mono tracking-tight">${mainResult}</span>
+                        </div>
+                    </div>
+
+                    <!-- Step-by-step Calculation (compact text size) -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-calculator text-blue-400"></i> Utregning og forklaring:
+                        </h4>
+                        ${calcExplanation}
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        function openChartFullscreen() {
+            const modal = document.getElementById('fullscreen-modal');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+
+            title.textContent = 'Diagram i Tavlevisning';
+
+            body.innerHTML = `
+                <div class="w-full h-[75vh] flex items-center justify-center p-4">
+                    <canvas id="fullscreen-chart-canvas" class="max-w-full max-h-full"></canvas>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+
+            setTimeout(() => {
+                const fsCanvas = document.getElementById('fullscreen-chart-canvas');
+                const ctx = fsCanvas.getContext('2d');
+                
+                let sortedKeys = Object.keys(frequencyMap);
+                if (isNumericDataset) {
+                    sortedKeys.sort((a, b) => parseFloat(a) - parseFloat(b));
+                } else {
+                    sortedKeys.sort();
+                }
+
+                new Chart(ctx, {
+                    type: activeChartType === 'histogram' ? 'bar' : (activeChartType === 'boxplot' ? 'bar' : activeChartType),
+                    data: {
+                        labels: sortedKeys,
+                        datasets: [{
+                            label: 'Frekvens',
+                            data: sortedKeys.map(k => frequencyMap[k]),
+                            backgroundColor: '#3b82f6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }, 100);
+        }
+
+        function closeFullscreenModal() {
+            document.getElementById('fullscreen-modal').classList.add('hidden');
+        }
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
