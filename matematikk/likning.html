@@ -134,12 +134,12 @@
         </div>
 
         <!-- Balanse-vekten (Spillområdet) -->
-        <div class="w-full flex-1 flex flex-col justify-center items-center my-2 relative min-h-[260px]">
+        <div class="w-full flex-1 flex flex-col justify-center items-center mt-6 mb-2 relative min-h-[260px]">
 
             <div class="relative w-full max-w-3xl flex flex-col items-center">
                 
                 <!-- Bjelken -->
-                <div id="scale-beam" class="balance-beam w-full bg-slate-700 h-4 rounded-full border border-slate-600 flex justify-between items-center relative px-2 sm:px-6 shadow-2xl">
+                <div id="scale-beam" class="balance-beam w-full bg-slate-700 h-4 rounded-full border border-slate-600 flex justify-between items-start relative px-2 sm:px-6 shadow-2xl">
                     
                     <!-- Likhetstegn i midten -->
                     <div class="absolute left-1/2 -top-6 -translate-x-1/2 w-12 h-12 bg-purple-600 rounded-full border-4 border-slate-900 flex items-center justify-center font-game text-2xl text-white shadow-xl z-20">
@@ -636,12 +636,12 @@
             checkWinCondition();
         }
 
+        // Terskel: over dette antallet vises brikkene samlet i én merket brikke i stedet for én per enhet
+        const GROUP_THRESHOLD = 6;
+
         function renderSideItems(sideState, container) {
             // Render X^2 brikker
-            for (let i = 0; i < (sideState.x2 || 0); i++) {
-                const el = createCard('X²', 'card-x2', 'fa-cubes-stacked');
-                container.appendChild(el);
-            }
+            renderCountedCards(container, sideState.x2 || 0, 'X²', 'card-x2', 'fa-cubes-stacked');
 
             // Render sammensatte brøkbrikker (f.eks. (x+2)/(x-1))
             if (sideState.complex_frac) {
@@ -653,29 +653,46 @@
             }
 
             // Render X brikker
-            for (let i = 0; i < sideState.x; i++) {
-                const label = sideState.x_denom > 1 ? `X/${sideState.x_denom}` : 'X';
-                const el = createCard(label, 'card-x', 'fa-box-open');
-                container.appendChild(el);
-            }
+            const xLabel = sideState.x_denom > 1 ? `X/${sideState.x_denom}` : 'X';
+            renderCountedCards(container, sideState.x, xLabel, 'card-x', 'fa-box-open');
+
             // Render +1 brikker
-            for (let i = 0; i < sideState.pos; i++) {
-                const el = createCard('+1', 'card-pos', 'fa-plus');
-                container.appendChild(el);
-            }
+            renderCountedCards(container, sideState.pos, '+1', 'card-pos', 'fa-plus');
+
             // Render -1 brikker
-            for (let i = 0; i < sideState.neg; i++) {
-                const el = createCard('-1', 'card-neg', 'fa-minus');
-                container.appendChild(el);
+            renderCountedCards(container, sideState.neg, '-1', 'card-neg', 'fa-minus');
+        }
+
+        // Tegner enten N enkeltbrikker (lavt antall) eller én samlet brikke merket "×N" (høyt antall),
+        // slik at store tall ikke fyller skålen med et hav av små bokser.
+        function renderCountedCards(container, count, unitLabel, bgClass, iconClass) {
+            if (!count || count <= 0) return;
+            if (count <= GROUP_THRESHOLD) {
+                for (let i = 0; i < count; i++) {
+                    container.appendChild(createCard(unitLabel, bgClass, iconClass));
+                }
+            } else {
+                container.appendChild(createStackedCard(count, unitLabel, bgClass, iconClass));
             }
         }
 
         function createCard(label, bgClass, iconClass) {
             const card = document.createElement('div');
-            card.className = `${bgClass} animate-pop w-14 h-18 sm:w-16 sm:h-20 rounded-2xl flex flex-col items-center justify-center text-white font-game text-base sm:text-xl transition transform hover:scale-105 shadow-md`;
+            card.className = `${bgClass} animate-pop w-12 h-16 sm:w-14 sm:h-18 rounded-2xl flex flex-col items-center justify-center text-white font-game text-sm sm:text-lg transition transform hover:scale-105 shadow-md`;
             card.innerHTML = `
                 <i class="fa-solid ${iconClass} text-xs opacity-75 mb-1"></i>
                 <span>${label}</span>
+            `;
+            return card;
+        }
+
+        function createStackedCard(count, unitLabel, bgClass, iconClass) {
+            const card = document.createElement('div');
+            card.className = `${bgClass} animate-pop w-16 h-18 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center text-white font-game text-base sm:text-xl transition transform hover:scale-105 shadow-md relative`;
+            card.innerHTML = `
+                <i class="fa-solid ${iconClass} text-xs opacity-75 mb-1"></i>
+                <span>${unitLabel}</span>
+                <span class="absolute -top-2 -right-2 bg-slate-900 border-2 border-white/70 text-white text-[11px] font-bold rounded-full min-w-[1.5rem] h-6 px-1 flex items-center justify-center">×${count}</span>
             `;
             return card;
         }
@@ -973,6 +990,7 @@
             loadLevelsFromSheet();
         };
     </script>
+
   <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
 <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
     <i class="fa-solid fa-arrow-left"></i>
