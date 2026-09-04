@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LikningsJakten - DragonBox Inspirert med Brøkstøtte</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome ikon-bibliotek -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .font-game {
+            font-family: 'Fredoka One', cursive;
+        }
+        
+        .card-x {
+            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+            box-shadow: 0 6px 0 #581c87, 0 10px 15px rgba(0,0,0,0.3);
+        }
+        .card-x:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card-pos {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            box-shadow: 0 6px 0 #064e3b, 0 10px 15px rgba(0,0,0,0.3);
+        }
+        
+        .card-neg {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            box-shadow: 0 6px 0 #7f1d1d, 0 10px 15px rgba(0,0,0,0.3);
+        }
+
+        .card-x2 {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 6px 0 #b45309, 0 10px 15px rgba(0,0,0,0.3);
+            border: 2px solid #fbbf24;
+        }
+
+        .card-frac {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 6px 0 #1e40af, 0 10px 15px rgba(0,0,0,0.3);
+            border: 1px solid #60a5fa;
+        }
+
+        .balance-beam {
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .animate-pop {
+            animation: popIn 0.25s forwards;
+        }
+
+        @keyframes vanish {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3) rotate(15deg); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .animate-vanish {
+            animation: vanish 0.3s forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <header class="p-4 bg-slate-800/80 backdrop-blur border-b border-slate-700 flex flex-wrap justify-between items-center gap-3 z-10 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center font-game text-2xl shadow-lg">
+                X
+            </div>
+            <div>
+                <h1 class="font-game text-xl tracking-wide text-purple-300">LIKNINGSJAKTEN</h1>
+                <p class="text-xs text-slate-400">Ungdomstrinn • Algebra & Brøklikninger</p>
+            </div>
+        </div>
+
+        <div class="flex items-center flex-wrap gap-2 sm:gap-4">
+            <!-- Indikator for oppgavekilde -->
+            <div id="source-badge" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                <i class="fa-solid fa-database text-xs"></i>
+                <span id="source-text">Laster oppgaver...</span>
+            </div>
+
+            <!-- Nivå-visning -->
+            <div class="bg-slate-900/80 px-4 py-1.5 rounded-2xl border border-slate-700 flex items-center gap-2">
+                <i class="fa-solid font-game text-amber-400 text-xs">NIVÅ</i>
+                <span id="level-num" class="font-game text-lg text-amber-300">1</span>
+                <span id="total-levels" class="text-slate-500 text-sm">/ 10</span>
+            </div>
+
+            <!-- Lærermodus / Sheets knapp -->
+            <button onclick="openSettingsModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+                <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                <span>Lærermodus / Sheets</span>
+            </button>
+
+            <!-- Modus-veksler -->
+            <button id="toggle-notation-btn" onclick="toggleNotation()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+                <i class="fa-solid fa-eye text-purple-400"></i>
+                <span id="notation-text">Skjul Formell Matematikk</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-start p-4 max-w-5xl mx-auto w-full relative">
+
+        <!-- Kategori / Tema for oppgaven -->
+        <div id="category-banner" class="text-xs font-bold uppercase tracking-widest text-purple-400 mb-2">
+            Nivå 1: Enkel balanse
+        </div>
+
+        <!-- Matematisk visning øverst med god avstand til skålen -->
+        <div id="math-banner" class="w-full bg-slate-800/90 rounded-2xl p-4 mb-4 border border-purple-500/30 text-center shadow-xl transition-all duration-300 shrink-0">
+            <span class="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-1">Likningen akkurat nå:</span>
+            <div id="math-equation-display" class="font-game text-2xl sm:text-3xl text-yellow-300 tracking-wider flex items-center justify-center gap-2">
+                x + 3 = 7
+            </div>
+            <div id="level-hint" class="text-xs text-slate-400 mt-1 italic">
+                Trekk fra 3 på begge sider for å isolere x.
+            </div>
+        </div>
+
+        <!-- Balanse-vekten (Spillområdet) -->
+        <div class="w-full flex-1 flex flex-col justify-center items-center my-2 relative min-h-[260px]">
+
+            <div class="relative w-full max-w-3xl flex flex-col items-center">
+                
+                <!-- Bjelken -->
+                <div id="scale-beam" class="balance-beam w-full bg-slate-700 h-4 rounded-full border border-slate-600 flex justify-between items-center relative px-2 sm:px-6 shadow-2xl">
+                    
+                    <!-- Likhetstegn i midten -->
+                    <div class="absolute left-1/2 -top-6 -translate-x-1/2 w-12 h-12 bg-purple-600 rounded-full border-4 border-slate-900 flex items-center justify-center font-game text-2xl text-white shadow-xl z-20">
+                        =
+                    </div>
+
+                    <!-- VENSTRE SKÅL -->
+                    <div id="left-pan" class="w-1/2 mr-2 sm:mr-4 flex flex-wrap gap-2 sm:gap-3 justify-center items-center min-h-[170px] p-4 rounded-2xl bg-slate-800/50 border-2 border-dashed border-purple-500/30 transition">
+                        <!-- Elementer genereres dynamisk -->
+                    </div>
+
+                    <!-- HØYRE SKÅL -->
+                    <div id="right-pan" class="w-1/2 ml-2 sm:ml-4 flex flex-wrap gap-2 sm:gap-3 justify-center items-center min-h-[170px] p-4 rounded-2xl bg-slate-800/50 border-2 border-dashed border-purple-500/30 transition">
+                        <!-- Elementer genereres dynamisk -->
+                    </div>
+                </div>
+
+                <!-- Sokkel under vekten -->
+                <div class="w-0 h-0 border-l-[30px] border-l-transparent border-r-[30px] border-r-transparent border-b-[50px] border-b-slate-700 mt-[-2px]"></div>
+                <div class="w-32 h-3 bg-slate-800 rounded-full border border-slate-700"></div>
+            </div>
+
+            <!-- Målinstruksjon -->
+            <div class="mt-4 bg-slate-800/60 backdrop-blur px-6 py-2 rounded-full border border-slate-700 text-xs sm:text-sm text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-bullseye text-amber-400"></i>
+                <span>Mål: Isoler boksen <strong class="text-purple-300">(X)</strong> alene på én side!</span>
+            </div>
+        </div>
+
+        <div class="w-full max-w-3xl bg-slate-800/80 border border-slate-700 p-4 rounded-3xl shadow-2xl backdrop-blur mt-3 shrink-0">
+            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 text-center mb-3">
+                Utfør operasjon på BEGGE sider (Balanseprinsippet):
+            </h3>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-2.5">
+                <!-- Lineære operasjoner -->
+                <button onclick="applyOperation('add_1')" class="bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/50 hover:border-emerald-400 text-emerald-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">+1</span>
+                    <span class="text-[9px] font-normal">Legg til 1</span>
+                </button>
+
+                <button onclick="applyOperation('sub_1')" class="bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/50 hover:border-rose-400 text-rose-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">-1</span>
+                    <span class="text-[9px] font-normal">Trekk fra 1</span>
+                </button>
+
+                <button onclick="applyOperation('sub_x')" class="bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/50 hover:border-purple-400 text-purple-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">-X</span>
+                    <span class="text-[9px] font-normal">Fjern én X</span>
+                </button>
+
+                <button onclick="applyOperation('sub_x2')" class="bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/50 hover:border-amber-400 text-amber-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">-X²</span>
+                    <span class="text-[9px] font-normal">Fjern X²</span>
+                </button>
+
+                <button onclick="applyOperation('sqrt')" class="bg-yellow-600/30 hover:bg-yellow-600/50 border border-yellow-500/50 hover:border-yellow-400 text-yellow-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">√</span>
+                    <span class="text-[9px] font-normal">Kvadratrot</span>
+                </button>
+
+                <button onclick="applyOperation('div_2')" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 hover:border-indigo-400 text-indigo-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">÷2</span>
+                    <span class="text-[9px] font-normal">Del på 2</span>
+                </button>
+
+                <button onclick="applyOperation('div_3')" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 hover:border-indigo-400 text-indigo-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">÷3</span>
+                    <span class="text-[9px] font-normal">Del på 3</span>
+                </button>
+
+                <button onclick="applyOperation('mul_2')" class="bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/50 hover:border-cyan-400 text-cyan-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">• 2</span>
+                    <span class="text-[9px] font-normal">Gange med 2</span>
+                </button>
+
+                <button onclick="applyOperation('mul_3')" class="bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/50 hover:border-cyan-400 text-cyan-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">• 3</span>
+                    <span class="text-[9px] font-normal">Gange med 3</span>
+                </button>
+            </div>
+
+            <!-- Egendefinert tall: dekker oppgaver som trenger andre tall enn knappene over -->
+            <div class="border-t border-slate-700 mt-3 pt-3">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 text-center mb-3">
+                    Egendefinert tall (for andre oppgaver):
+                </h3>
+                <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+                    <input type="number" id="custom-num-input" value="4" min="1" step="1"
+                        class="w-20 bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-center font-game text-lg text-white focus:outline-none focus:border-purple-500">
+
+                    <button onclick="applyOperation('div_custom')" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 hover:border-indigo-400 text-indigo-200 px-3 py-2.5 rounded-xl font-game text-sm transition active:scale-95">
+                        ÷ Del
+                    </button>
+                    <button onclick="applyOperation('mul_custom')" class="bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/50 hover:border-cyan-400 text-cyan-200 px-3 py-2.5 rounded-xl font-game text-sm transition active:scale-95">
+                        × Gang
+                    </button>
+                    <button onclick="applyOperation('mul_binom_plus')" class="bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/50 hover:border-blue-400 text-blue-200 px-3 py-2.5 rounded-xl font-game text-sm transition active:scale-95">
+                        • (x + tallet)
+                    </button>
+                    <button onclick="applyOperation('mul_binom_minus')" class="bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/50 hover:border-blue-400 text-blue-200 px-3 py-2.5 rounded-xl font-game text-sm transition active:scale-95">
+                        • (x − tallet)
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-500 text-center mt-2">Skriv inn et tall og velg operasjon — dekker oppgaver med tall som ikke passer de faste knappene over.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast for tilbakemelding ved ugyldige operasjoner -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 border border-rose-500/60 text-rose-200 px-4 py-2 rounded-xl text-sm font-semibold shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+    </div>
+
+    <div id="settings-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-slate-800 border-2 border-slate-700 p-6 rounded-3xl max-w-lg w-full text-left shadow-2xl animate-pop relative">
+            <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-file-csv text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="font-game text-xl text-white">Google Sheets Integrasjon</h2>
+                    <p class="text-xs text-slate-400">Last inn egne oppgaver inkludert 2.-grad og avansert brøk</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-sm text-slate-300 mb-6">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                        Google Sheets / CSV URL:
+                    </label>
+                    <input type="url" id="sheet-url-input" placeholder="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500">
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3 text-xs">
+                    <span class="font-bold text-amber-300 block mb-1">Kolonner for Sheets (inkl. X² & Avansert Brøk):</span>
+                    <code class="text-purple-300 block overflow-x-auto whitespace-nowrap p-1 bg-slate-950 rounded">
+                        id, kategori, tittel, left_x, left_pos, left_neg, left_x_denom, left_x2, left_num_x, left_num_c, left_den_x, left_den_c, right_x, right_pos, right_neg, right_x_denom, right_x2, right_num_x, right_num_c, right_den_x, right_den_c, solution, forklaring
+                    </code>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="saveAndFetchSheet()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-game py-3 rounded-xl shadow-lg transition text-center">
+                    Test & Last Inn
+                </button>
+                <button onclick="useFallbackLevels()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-4 py-3 rounded-xl transition text-xs">
+                    Bruk Innebygde
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="victory-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-slate-800 border-2 border-purple-500 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl animate-pop">
+            <div class="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-400/40">
+                <i class="fa-solid fa-trophy text-4xl text-amber-400"></i>
+            </div>
+            <h2 class="font-game text-3xl text-white mb-2">GRATULERER!</h2>
+            <p id="victory-desc" class="text-slate-300 mb-6">Du har isolert X og løst likningen perfekt!</p>
+            
+            <div class="bg-slate-900 p-4 rounded-2xl mb-6 border border-slate-700">
+                <span class="text-xs text-slate-400 uppercase tracking-widest block mb-1">Resultat:</span>
+                <span id="final-solution" class="font-game text-2xl text-emerald-400">x = 4</span>
+            </div>
+
+            <button onclick="nextLevel()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-game text-xl py-4 rounded-2xl shadow-lg transition transform active:scale-95">
+                Neste Nivå <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // STANDARD GOOGLE SHEETS-LENKE
+        // Lim inn lenken til ditt offentlige Google Sheet mellom anførselstegnene
+        // nedenfor. Den vanlige "del"-lenken fungerer fint (f.eks.
+        // https://docs.google.com/spreadsheets/d/DIN_ID_HER/edit?usp=sharing) -
+        // koden gjør den automatisk om til en CSV-eksport-URL.
+        // La den stå tom ("") for å bruke de innebygde oppgavene som standard.
+        // =====================================================================
+        const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1IOk8ovu7tCh8cMgpnnKdtv_uN5SUJtcbqflInuAArMA/edit?usp=sharing";
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } else if (type === 'cancel') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'win') {
+                const now = audioCtx.currentTime;
+                [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    noteOsc.type = 'sine';
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    noteGain.gain.setValueAtTime(0.2, now + idx * 0.1);
+                    noteGain.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+                    noteOsc.start(now + idx * 0.1);
+                    noteOsc.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        const fallbackLevels = [
+            {
+                id: 101,
+                kategori: "Nivå 1: Enkel balanse",
+                tittel: "Oppgave 1",
+                left: { x2: 0, x: 1, x_denom: 1, pos: 3, neg: 0 },
+                right: { x2: 0, x: 0, x_denom: 1, pos: 7, neg: 0 },
+                solution: 4,
+                forklaring: "Trekk fra 3 på begge sider for å isolere x."
+            },
+            {
+                id: 201,
+                kategori: "Nivå 2: Koeffisienter",
+                tittel: "Oppgave 2",
+                left: { x2: 0, x: 2, x_denom: 1, pos: 2, neg: 0 },
+                right: { x2: 0, x: 0, x_denom: 1, pos: 8, neg: 0 },
+                solution: 3,
+                forklaring: "Trekk fra 2 på begge sider, del deretter på 2."
+            },
+            {
+                id: 301,
+                kategori: "Nivå 3: X på begge sider",
+                tittel: "Oppgave 3",
+                left: { x2: 0, x: 2, x_denom: 1, pos: 1, neg: 0 },
+                right: { x2: 0, x: 1, x_denom: 1, pos: 5, neg: 0 },
+                solution: 4,
+                forklaring: "Trekk fra 1X på begge sider, deretter trekk fra 1."
+            },
+            {
+                id: 401,
+                kategori: "Nivå 4: Negativer & Minus",
+                tittel: "Oppgave 4",
+                left: { x2: 0, x: 1, x_denom: 1, pos: 5, neg: 0 },
+                right: { x2: 0, x: 0, x_denom: 1, pos: 2, neg: 0 },
+                solution: -3,
+                forklaring: "Trekk fra 5 på begge sider for å finne at x = -3."
+            },
+            {
+                id: 501,
+                kategori: "Nivå 5: Sammensatt balanse",
+                tittel: "Oppgave 5",
+                left: { x2: 0, x: 3, x_denom: 1, pos: 0, neg: 2 },
+                right: { x2: 0, x: 1, x_denom: 1, pos: 6, neg: 0 },
+                solution: 4,
+                forklaring: "Legg til 2 på begge sider, fjerne 1X, del deretter på 2."
+            },
+            {
+                id: 601,
+                kategori: "Nivå 6: Brøklikninger",
+                tittel: "Oppgave 6",
+                left: { x2: 0, x: 1, x_denom: 3, pos: 2, neg: 0 },
+                right: { x2: 0, x: 0, x_denom: 1, pos: 5, neg: 0 },
+                solution: 9,
+                forklaring: "Trekk fra 2 på begge sider, gange deretter begge sider med 3!"
+            },
+            {
+                id: 701,
+                kategori: "Nivå 7: Andregradslikninger",
+                tittel: "Oppgave 7",
+                left: { x2: 1, x: 0, x_denom: 1, pos: 2, neg: 0 },
+                right: { x2: 0, x: 0, x_denom: 1, pos: 11, neg: 0 },
+                solution: 3,
+                forklaring: "Trekk fra 2 på begge sider for å få X² = 9, ta deretter kvadratrot (√)!"
+            },
+            {
+                id: 801,
+                kategori: "Nivå 8: X² på begge sider",
+                tittel: "Oppgave 8",
+                left: { x2: 1, x: 3, x_denom: 1, pos: 0, neg: 0 },
+                right: { x2: 1, x: 0, x_denom: 1, pos: 12, neg: 0 },
+                solution: 4,
+                forklaring: "Fjern X² fra begge sider ved å trekke fra -X², del deretter på 3!"
+            },
+            {
+                id: 901,
+                kategori: "Nivå 9: Avansert brøk (Nevner i x)",
+                tittel: "Oppgave 9",
+                left: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0, complex_frac: { num_x: 1, num_c: 2, den_x: 1, den_c: -1 } },
+                right: { x2: 0, x: 0, x_denom: 1, pos: 2, neg: 0 },
+                solution: 4,
+                forklaring: "Gang begge sider med nevneren (x - 1) for å oppheve brøken! Da får du x + 2 = 2x - 2."
+            },
+            {
+                id: 1001,
+                kategori: "Nivå 10: Superavansert brøk",
+                tittel: "Oppgave 10",
+                left: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0, complex_frac: { num_x: 2, num_c: 4, den_x: 1, den_c: 1 } },
+                right: { x2: 0, x: 0, x_denom: 1, pos: 3, neg: 0 },
+                solution: 1,
+                forklaring: "Gang begge sider med nevneren (x + 1) for å løse opp brøken!"
+            }
+        ];
+
+        let activeLevels = [...fallbackLevels];
+        let currentLevelIdx = 0;
+        let gameState = { left: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0 }, right: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0 } };
+        let showFormalNotation = true;
+        let googleSheetUrl = DEFAULT_SHEET_URL;
+
+        async function loadLevelsFromSheet() {
+            updateSourceBadge('loading', 'Sjekker Google Sheets...');
+
+            if (!googleSheetUrl) {
+                useFallbackLevels();
+                return;
+            }
+
+            try {
+                let fetchUrl = googleSheetUrl.trim();
+                if (fetchUrl.includes('docs.google.com/spreadsheets')) {
+                    const match = fetchUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                    const gidMatch = fetchUrl.match(/[?&#]gid=([0-9]+)/);
+                    if (match && match[1]) {
+                        const sheetId = match[1];
+                        const gid = gidMatch ? gidMatch[1] : null;
+                        fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+                        if (gid) fetchUrl += `&gid=${gid}`;
+                    }
+                }
+
+                const response = await fetch(fetchUrl);
+                if (!response.ok) throw new Error("Status " + response.status);
+
+                const csvText = await response.text();
+                const parsedLevels = parseCSVToLevels(csvText);
+
+                if (parsedLevels.length > 0) {
+                    activeLevels = parsedLevels;
+                    updateSourceBadge('sheets', `Google Sheets (${activeLevels.length} oppgaver)`);
+                    loadLevel(0);
+                } else {
+                    throw new Error("Ingen gyldige rader.");
+                }
+            } catch (err) {
+                updateSourceBadge('fallback', `Innebygd (Feil ved innlasting)`);
+                activeLevels = [...fallbackLevels];
+                loadLevel(0);
+            }
+        }
+
+        function parseCSVToLevels(csvText) {
+            const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+            if (lines.length < 2) return [];
+
+            const headerLine = lines[0];
+            const commaCount = (headerLine.match(/,/g) || []).length;
+            const semiCount = (headerLine.match(/;/g) || []).length;
+            const delimiter = semiCount > commaCount ? ';' : ',';
+
+            const headers = headerLine.split(delimiter).map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ''));
+            const levels = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(delimiter);
+                if (!cols || cols.length < 2) continue;
+
+                const cleanCols = cols.map(c => c.trim().replace(/^["']|["']$/g, ''));
+                const getCol = (name) => {
+                    const idx = headers.indexOf(name);
+                    return idx !== -1 && cleanCols[idx] !== undefined ? cleanCols[idx] : null;
+                };
+
+                const leftX2 = parseInt(getCol('left_x2') || 0, 10);
+                const leftX = parseInt(getCol('left_x') || 0, 10);
+                const leftXDenom = parseInt(getCol('left_x_denom') || 1, 10);
+                const leftPos = parseInt(getCol('left_pos') || 0, 10);
+                const leftNeg = parseInt(getCol('left_neg') || 0, 10);
+
+                const rightX2 = parseInt(getCol('right_x2') || 0, 10);
+                const rightX = parseInt(getCol('right_x') || 0, 10);
+                const rightXDenom = parseInt(getCol('right_x_denom') || 1, 10);
+                const rightPos = parseInt(getCol('right_pos') || 0, 10);
+                const rightNeg = parseInt(getCol('right_neg') || 0, 10);
+
+                // Sjekk om venstre eller høyre side har en sammensatt brøk (variabel i nevner)
+                const hasValue = (v) => v !== null && v.trim() !== '';
+
+                const leftNumX = getCol('left_num_x');
+                const leftNumC = getCol('left_num_c');
+                const leftDenX = getCol('left_den_x');
+                const leftDenC = getCol('left_den_c');
+
+                let leftComplexFrac = null;
+                if (hasValue(leftNumX) || hasValue(leftNumC)) {
+                    leftComplexFrac = {
+                        num_x: parseInt(leftNumX || 0, 10),
+                        num_c: parseInt(leftNumC || 0, 10),
+                        den_x: parseInt(leftDenX || 1, 10),
+                        den_c: parseInt(leftDenC || 0, 10)
+                    };
+                }
+
+                const rightNumX = getCol('right_num_x');
+                const rightNumC = getCol('right_num_c');
+                const rightDenX = getCol('right_den_x');
+                const rightDenC = getCol('right_den_c');
+
+                let rightComplexFrac = null;
+                if (hasValue(rightNumX) || hasValue(rightNumC)) {
+                    rightComplexFrac = {
+                        num_x: parseInt(rightNumX || 0, 10),
+                        num_c: parseInt(rightNumC || 0, 10),
+                        den_x: parseInt(rightDenX || 1, 10),
+                        den_c: parseInt(rightDenC || 0, 10)
+                    };
+                }
+
+                levels.push({
+                    id: parseInt(getCol('id') || (100 + i), 10),
+                    kategori: getCol('kategori') || `Nivå ${i}`,
+                    tittel: getCol('tittel') || `Oppgave ${i}`,
+                    left: { x2: leftX2, x: leftX, x_denom: leftXDenom || 1, pos: leftPos, neg: leftNeg, complex_frac: leftComplexFrac },
+                    right: { x2: rightX2, x: rightX, x_denom: rightXDenom || 1, pos: rightPos, neg: rightNeg, complex_frac: rightComplexFrac },
+                    solution: parseInt(getCol('solution') || 0, 10),
+                    forklaring: getCol('forklaring') || ''
+                });
+            }
+            return levels;
+        }
+
+        function useFallbackLevels() {
+            activeLevels = [...fallbackLevels];
+            updateSourceBadge('local', `Innebygde (${activeLevels.length} oppgaver)`);
+            loadLevel(0);
+        }
+
+        function updateSourceBadge(status, text) {
+            const badge = document.getElementById('source-badge');
+            document.getElementById('source-text').innerText = text;
+            if (status === 'sheets') {
+                badge.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5";
+            } else {
+                badge.className = "bg-purple-500/20 text-purple-300 border border-purple-500/40 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5";
+            }
+        }
+
+        function loadLevel(idx) {
+            if (!activeLevels || activeLevels.length === 0) return;
+            currentLevelIdx = idx % activeLevels.length;
+            
+            const level = activeLevels[currentLevelIdx];
+            document.getElementById('level-num').innerText = currentLevelIdx + 1;
+            document.getElementById('total-levels').innerText = `/ ${activeLevels.length}`;
+            document.getElementById('category-banner').innerText = level.kategori || `Nivå ${currentLevelIdx + 1}`;
+            document.getElementById('level-hint').innerText = level.forklaring || '';
+
+            gameState = JSON.parse(JSON.stringify(level));
+            cleanOpposites('left');
+            cleanOpposites('right');
+            render();
+        }
+
+        function render() {
+            const leftPan = document.getElementById('left-pan');
+            const rightPan = document.getElementById('right-pan');
+            leftPan.innerHTML = '';
+            rightPan.innerHTML = '';
+
+            renderSideItems(gameState.left, leftPan);
+            renderSideItems(gameState.right, rightPan);
+
+            updateEquationDisplay();
+            checkWinCondition();
+        }
+
+        function renderSideItems(sideState, container) {
+            // Render X^2 brikker
+            for (let i = 0; i < (sideState.x2 || 0); i++) {
+                const el = createCard('X²', 'card-x2', 'fa-cubes-stacked');
+                container.appendChild(el);
+            }
+
+            // Render sammensatte brøkbrikker (f.eks. (x+2)/(x-1))
+            if (sideState.complex_frac) {
+                const cf = sideState.complex_frac;
+                const numStr = formatBinomial(cf.num_x, cf.num_c);
+                const denStr = formatBinomial(cf.den_x, cf.den_c);
+                const el = createComplexFracCard(numStr, denStr);
+                container.appendChild(el);
+            }
+
+            // Render X brikker
+            for (let i = 0; i < sideState.x; i++) {
+                const label = sideState.x_denom > 1 ? `X/${sideState.x_denom}` : 'X';
+                const el = createCard(label, 'card-x', 'fa-box-open');
+                container.appendChild(el);
+            }
+            // Render +1 brikker
+            for (let i = 0; i < sideState.pos; i++) {
+                const el = createCard('+1', 'card-pos', 'fa-plus');
+                container.appendChild(el);
+            }
+            // Render -1 brikker
+            for (let i = 0; i < sideState.neg; i++) {
+                const el = createCard('-1', 'card-neg', 'fa-minus');
+                container.appendChild(el);
+            }
+        }
+
+        function createCard(label, bgClass, iconClass) {
+            const card = document.createElement('div');
+            card.className = `${bgClass} animate-pop w-14 h-18 sm:w-16 sm:h-20 rounded-2xl flex flex-col items-center justify-center text-white font-game text-base sm:text-xl transition transform hover:scale-105 shadow-md`;
+            card.innerHTML = `
+                <i class="fa-solid ${iconClass} text-xs opacity-75 mb-1"></i>
+                <span>${label}</span>
+            `;
+            return card;
+        }
+
+        function createComplexFracCard(numStr, denStr) {
+            const card = document.createElement('div');
+            card.className = `card-frac animate-pop p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center text-white font-game text-xs sm:text-sm transition transform hover:scale-105 shadow-md min-w-[70px]`;
+            card.innerHTML = `
+                <div class="border-b-2 border-white/80 pb-0.5 mb-0.5 text-center font-bold px-1">${numStr}</div>
+                <div class="text-center font-bold px-1 text-blue-200">${denStr}</div>
+            `;
+            return card;
+        }
+
+        function cleanOpposites(side) {
+            const s = gameState[side];
+            if (s.pos > 0 && s.neg > 0) {
+                const cancelCount = Math.min(s.pos, s.neg);
+                s.pos -= cancelCount;
+                s.neg -= cancelCount;
+                playSound('cancel');
+            }
+        }
+
+        function applyOperation(op) {
+            if (op === 'div_2') {
+                divideBothSides(2);
+            } else if (op === 'div_3') {
+                divideBothSides(3);
+            } else if (op === 'mul_2') {
+                multiplyBothSides(2);
+            } else if (op === 'mul_3') {
+                multiplyBothSides(3);
+            } else if (op === 'div_custom') {
+                divideBothSides(readCustomNumber());
+            } else if (op === 'mul_custom') {
+                multiplyBothSides(readCustomNumber());
+            } else if (op === 'mul_binom_plus') {
+                const n = readCustomNumber();
+                if (n !== null) multiplyBothSidesByBinomial(n);
+            } else if (op === 'mul_binom_minus') {
+                const n = readCustomNumber();
+                if (n !== null) multiplyBothSidesByBinomial(-n);
+            } else {
+                playSound('pop');
+
+                if (op === 'add_1') {
+                    gameState.left.pos += 1;
+                    gameState.right.pos += 1;
+                } else if (op === 'sub_1') {
+                    gameState.left.neg += 1;
+                    gameState.right.neg += 1;
+                } else if (op === 'sub_x') {
+                    if (gameState.left.x > 0 && gameState.right.x > 0 && gameState.left.x_denom === gameState.right.x_denom) {
+                        gameState.left.x -= 1;
+                        gameState.right.x -= 1;
+                    }
+                } else if (op === 'sub_x2') {
+                    if ((gameState.left.x2 || 0) > 0 && (gameState.right.x2 || 0) > 0) {
+                        gameState.left.x2 -= 1;
+                        gameState.right.x2 -= 1;
+                    }
+                } else if (op === 'sqrt') {
+                    // Kvadratrot operasjon for x^2 = k
+                    if (gameState.left.x2 === 1 && gameState.left.pos === 0 && gameState.left.neg === 0 && gameState.left.x === 0 &&
+                        gameState.right.x2 === 0 && gameState.right.x === 0 && (gameState.right.pos - gameState.right.neg) > 0) {
+                        const val = gameState.right.pos - gameState.right.neg;
+                        const sqrtVal = Math.sqrt(val);
+                        if (Number.isInteger(sqrtVal)) {
+                            gameState.left.x2 = 0;
+                            gameState.left.x = 1;
+                            gameState.right.pos = sqrtVal;
+                            gameState.right.neg = 0;
+                        } else {
+                            showToast('Tallet er ikke et perfekt kvadrat.');
+                        }
+                    }
+                }
+            }
+
+            cleanOpposites('left');
+            cleanOpposites('right');
+            render();
+        }
+
+        // Leser og validerer tallet fra det egendefinerte input-feltet
+        function readCustomNumber() {
+            const raw = document.getElementById('custom-num-input').value;
+            const n = parseInt(raw, 10);
+            if (!Number.isInteger(n) || n < 1) {
+                showToast('Skriv inn et helt tall (1 eller høyere) i feltet.');
+                return null;
+            }
+            return n;
+        }
+
+        function divideBothSides(n) {
+            if (n === null) return;
+            if (canDivideByN(gameState.left, n) && canDivideByN(gameState.right, n)) {
+                playSound('pop');
+                divideSideByN(gameState.left, n);
+                divideSideByN(gameState.right, n);
+            } else {
+                showToast(`Alle ledd på begge sider må kunne deles likt på ${n}.`);
+            }
+        }
+
+        function multiplyBothSides(n) {
+            if (n === null) return;
+            playSound('pop');
+            multiplySide(gameState.left, n);
+            multiplySide(gameState.right, n);
+        }
+
+        function multiplyBothSidesByBinomial(c) {
+            playSound('pop');
+            multiplySideByBinomial(gameState.left, 1, c);
+            multiplySideByBinomial(gameState.right, 1, c);
+        }
+
+        function multiplySideByBinomial(side, bX, bC) {
+            // Hvis siden har en sammensatt brøk hvis nevner matcher (bX*x + bC), oppheves nevneren!
+            if (side.complex_frac && side.complex_frac.den_x === bX && side.complex_frac.den_c === bC) {
+                const cf = side.complex_frac;
+                side.x += cf.num_x;
+                if (cf.num_c >= 0) {
+                    side.pos += cf.num_c;
+                } else {
+                    side.neg += Math.abs(cf.num_c);
+                }
+                side.complex_frac = null; // Brøken er opphevet!
+            } else {
+                // Multipliser henholdsvis verdiene på siden med (x + bC)
+                const currentPos = side.pos - side.neg;
+                if (currentPos !== 0) {
+                    side.x += currentPos * bX;
+                    const newConst = currentPos * bC;
+                    if (newConst > 0) side.pos += newConst;
+                    if (newConst < 0) side.neg += Math.abs(newConst);
+                    side.pos -= Math.max(0, currentPos);
+                }
+            }
+        }
+
+        function multiplySide(side, factor) {
+            if (side.x2) side.x2 *= factor;
+            side.pos *= factor;
+            side.neg *= factor;
+
+            if (side.x > 0) {
+                if (side.x_denom % factor === 0) {
+                    side.x_denom /= factor;
+                } else {
+                    side.x *= factor;
+                }
+            }
+        }
+
+        // Generalisert versjon av "del på N" - fungerer for et hvilket som helst positivt heltall
+        function canDivideByN(side, n) {
+            const x2Ok = !side.x2 || side.x2 % n === 0;
+            return x2Ok && side.x % n === 0 && side.pos % n === 0 && side.neg % n === 0;
+        }
+
+        function divideSideByN(side, n) {
+            if (side.x2) side.x2 /= n;
+            side.x /= n;
+            side.pos /= n;
+            side.neg /= n;
+        }
+
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 1800);
+        }
+
+        function updateEquationDisplay() {
+            const leftStr = formatSideMath(gameState.left);
+            const rightStr = formatSideMath(gameState.right);
+            document.getElementById('math-equation-display').innerHTML = `<span>${leftStr}</span> <span class="text-purple-400 font-bold mx-2">=</span> <span>${rightStr}</span>`;
+        }
+
+        function formatSideMath(side) {
+            let parts = [];
+
+            if (side.complex_frac) {
+                const cf = side.complex_frac;
+                const numStr = formatBinomial(cf.num_x, cf.num_c);
+                const denStr = formatBinomial(cf.den_x, cf.den_c);
+                parts.push(`<span class="inline-flex flex-col items-center align-middle mx-1 text-yellow-300"><span class="border-b border-yellow-300/60 px-1 leading-tight">${numStr}</span><span class="text-xs font-normal leading-tight">${denStr}</span></span>`);
+            }
+            
+            if ((side.x2 || 0) > 0) {
+                parts.push(side.x2 === 1 ? 'x²' : `${side.x2}x²`);
+            }
+
+            if (side.x > 0) {
+                if (side.x_denom > 1) {
+                    const xTerm = side.x === 1 ? 'x' : `${side.x}x`;
+                    parts.push(`<span class="inline-flex flex-col items-center align-middle mx-1 text-yellow-300"><span class="border-b border-yellow-300/60 px-1 leading-tight">${xTerm}</span><span class="text-xs font-normal leading-tight">${side.x_denom}</span></span>`);
+                } else {
+                    parts.push(side.x === 1 ? 'x' : `${side.x}x`);
+                }
+            }
+            
+            const netVal = side.pos - side.neg;
+            if (netVal > 0) {
+                parts.push(parts.length === 0 ? `${netVal}` : `+ ${netVal}`);
+            } else if (netVal < 0) {
+                parts.push(`- ${Math.abs(netVal)}`);
+            }
+
+            if (parts.length === 0) return '0';
+            return parts.join(' ');
+        }
+
+        function formatBinomial(xCoef, constVal) {
+            let p = [];
+            if (xCoef > 0) p.push(xCoef === 1 ? 'x' : `${xCoef}x`);
+            if (constVal > 0) p.push(`+ ${constVal}`);
+            if (constVal < 0) p.push(`- ${Math.abs(constVal)}`);
+            return p.length > 0 ? p.join(' ') : '0';
+        }
+
+        function checkWinCondition() {
+            const left = gameState.left;
+            const right = gameState.right;
+
+            const leftIsolated = ((left.x2 || 0) === 0 && left.x === 1 && left.x_denom === 1 && left.pos === 0 && left.neg === 0 && !left.complex_frac);
+            const rightOnlyValue = ((right.x2 || 0) === 0 && right.x === 0 && !right.complex_frac);
+
+            const rightIsolated = ((right.x2 || 0) === 0 && right.x === 1 && right.x_denom === 1 && right.pos === 0 && right.neg === 0 && !right.complex_frac);
+            const leftOnlyValue = ((left.x2 || 0) === 0 && left.x === 0 && !left.complex_frac);
+
+            if ((leftIsolated && rightOnlyValue) || (rightIsolated && leftOnlyValue)) {
+                const sol = leftIsolated ? (right.pos - right.neg) : (left.pos - left.neg);
+                setTimeout(() => {
+                    showVictoryModal(sol);
+                }, 400);
+            }
+        }
+
+        function showVictoryModal(solution) {
+            playSound('win');
+            document.getElementById('final-solution').innerText = `x = ${solution}`;
+            document.getElementById('victory-modal').classList.remove('hidden');
+        }
+
+        function nextLevel() {
+            document.getElementById('victory-modal').classList.add('hidden');
+            if (currentLevelIdx < activeLevels.length - 1) {
+                loadLevel(currentLevelIdx + 1);
+            } else {
+                loadLevel(0);
+            }
+        }
+
+        function toggleNotation() {
+            showFormalNotation = !showFormalNotation;
+            const banner = document.getElementById('math-banner');
+            const text = document.getElementById('notation-text');
+            if (showFormalNotation) {
+                banner.classList.remove('hidden');
+                text.innerText = 'Skjul Formell Matematikk';
+            } else {
+                banner.classList.add('hidden');
+                text.innerText = 'Vis Formell Matematikk';
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('sheet-url-input').value = googleSheetUrl;
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveAndFetchSheet() {
+            googleSheetUrl = document.getElementById('sheet-url-input').value.trim();
+            closeSettingsModal();
+            loadLevelsFromSheet();
+        }
+
+        window.onload = function() {
+            loadLevelsFromSheet();
+        };
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
