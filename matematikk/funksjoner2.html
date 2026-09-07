@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funksjons-Fekteren: Den Store Prøven</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Byttet ut Almendra med Inter for bedre lesbarhet -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #111827; /* Mørkeblå bakgrunn istedenfor sort */
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .pixel-font {
+            font-family: 'Press+Start+2P', cursive;
+            font-size: 0.65rem;
+        }
+        .game-container {
+            max-width: 650px;
+            margin: 20px auto;
+            background: #1f2937; /* Litt lysere boks for bedre kontrast */
+            border: 4px solid #374151;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .monster-area {
+            height: 220px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1e1b4b 0%, #0f172a 70%);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 2px solid #312e81;
+            position: relative;
+            overflow: hidden;
+        }
+        .monster-svg {
+            width: 140px;
+            height: 140px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.4));
+        }
+        .attack-anim {
+            animation: attack 0.4s ease-in-out;
+        }
+        @keyframes attack {
+            0% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.4) translateY(20px); filter: drop-shadow(0 0 25px #ef4444); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0% { transform: translate(2px, 2px); }
+            20% { transform: translate(-2px, -4px); }
+            40% { transform: translate(-6px, 0px); }
+            60% { transform: translate(6px, 4px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0, 0); }
+        }
+        .health-heart {
+            color: #ef4444;
+            display: inline-block;
+            margin: 0 4px;
+            font-size: 1.75rem;
+            filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
+        }
+        .btn-choice {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            margin: 12px 0;
+            background: #374151;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            color: #f9fafb;
+        }
+        .btn-choice:hover {
+            background: #4b5563;
+            border-color: #6366f1;
+            transform: translateX(8px);
+        }
+        .input-area {
+            background: #374151;
+            border: 2px solid #4b5563;
+            padding: 24px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            background: #111827;
+            border: 2px solid #6366f1;
+            color: #fff;
+            padding: 12px;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-top: 10px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4338ca, #6366f1);
+            box-shadow: 0 0 10px #6366f1;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.4s ease-out;
+        }
+        .feedback-message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="flex justify-between items-center mb-6">
+        <div id="hearts-container"></div>
+        <div class="pixel-font text-indigo-400">POENG: <span id="score">0</span></div>
+    </div>
+
+    <div class="h-3 bg-gray-900 rounded-full mb-6 border border-gray-700">
+        <div id="progress-fill" class="progress-fill"></div>
+    </div>
+
+    <div class="monster-area" id="monster-area">
+        <div id="feedback" class="feedback-message opacity-0 text-center"></div>
+        <div id="monster-container"></div>
+    </div>
+
+    <div id="game-screen">
+        <div id="category-badge" class="pixel-font text-[0.6rem] mb-2 text-indigo-300 uppercase tracking-widest">Kategori</div>
+        <h2 id="question-text" class="text-2xl font-extrabold mb-8 text-white leading-snug"></h2>
+        <div id="choices-container"></div>
+        <div id="text-input-container" class="hidden input-area">
+            <div class="flex flex-col items-center">
+                <span class="font-bold text-lg mb-2">Skriv uttrykket:</span>
+                <div class="flex items-center w-full space-x-3">
+                    <span class="font-black text-2xl text-indigo-400">f(x) =</span>
+                    <input type="text" id="user-answer" placeholder="..." autocomplete="off">
+                </div>
+            </div>
+            <button onclick="checkTextInput()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 py-4 rounded-lg font-bold transition text-lg shadow-lg">SEND SVAR</button>
+        </div>
+    </div>
+
+    <div id="end-screen" class="hidden text-center py-10">
+        <h2 id="end-title" class="text-4xl font-black mb-4">OPPDRAG UTFØRT</h2>
+        <p id="end-status" class="mb-8 text-xl text-gray-300"></p>
+        <button onclick="restartGame()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-xl font-bold transition text-lg shadow-xl">SPILL IGJEN</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        // --- VERDITABELL (5 stk) ---
+        { cat: "Verditabell", q: "y = 2x + 3. Hva er y når x = 2?", options: ["y = 5", "y = 7", "y = 10", "y = 4"], correct: 1 },
+        { cat: "Verditabell", q: "y = -x + 10. Hva er y når x = 5?", options: ["y = 5", "y = -5", "y = 15", "y = 0"], correct: 0 },
+        { cat: "Verditabell", q: "y = 3x - 2. Hva er y når x = 0?", options: ["y = 1", "y = 3", "y = -2", "y = 0"], correct: 2 },
+        { cat: "Verditabell", q: "y = 0,5x + 4. Hva er y når x = 4?", options: ["y = 4", "y = 6", "y = 8", "y = 2"], correct: 1 },
+        { cat: "Verditabell", q: "y = 10x + 100. Hva er y når x = -2?", options: ["y = 80", "y = 120", "y = 90", "y = -120"], correct: 0 },
+
+        // --- KONSTANTLEDD (5 stk) ---
+        { cat: "Konstantledd", q: "En graf skjærer y-aksen i punktet (0, -5). Hva er konstantleddet (b)?", options: ["5", "0", "-5", "Stigningstallet"], correct: 2 },
+        { cat: "Konstantledd", q: "Hva er konstantleddet i f(x) = 4x + 12?", options: ["4", "x", "12", "0"], correct: 2 },
+        { cat: "Konstantledd", q: "Hvis f(x) = 7x, hva er konstantleddet?", options: ["7", "0", "1", "x"], correct: 1 },
+        { cat: "Konstantledd", q: "Hvor skjærer grafen f(x) = -2x + 8 y-aksen?", options: ["(8, 0)", "(-2, 0)", "(0, 8)", "(0, -2)"], correct: 2 },
+        { cat: "Konstantledd", q: "Hvilken av disse grafene skjærer y-aksen i origo?", options: ["f(x) = x + 1", "f(x) = 5", "f(x) = 2x", "f(x) = x - 1"], correct: 2 },
+
+        // --- STIGNINGSTALL (5 stk) ---
+        { cat: "Stigningstall", q: "En graf går gjennom (0, 2) og (1, 4). Hva er stigningstallet (a)?", options: ["1", "2", "4", "0"], correct: 1 },
+        { cat: "Stigningstall", q: "Hva er stigningstallet i f(x) = -3x + 5?", options: ["5", "3", "-3", "x"], correct: 2 },
+        { cat: "Stigningstall", q: "Hvis grafen er helt vannrett, hva er stigningstallet?", options: ["1", "0", "Uendelig", "Finnes ikke"], correct: 1 },
+        { cat: "Stigningstall", q: "Du går 1 rute til høyre og 3 ruter NED for å finne neste punkt. Hva er stigningstallet?", options: ["3", "1/3", "-3", "0"], correct: 2 },
+        { cat: "Stigningstall", q: "Hvilken graf stiger brattest?", options: ["f(x) = 2x + 10", "f(x) = 5x - 2", "f(x) = 0,5x + 100", "f(x) = x + 1"], correct: 1 },
+
+        // --- TEKSTOPPGAVER VALG (2 stk) ---
+        { cat: "Tekstoppgave", q: "Taxi: 50 kr oppstart + 15 kr pr km. Finn uttrykket:", options: ["f(x) = 50x + 15", "f(x) = 15x + 50", "f(x) = 65x", "f(x) = 15 + 50"], correct: 1 },
+        { cat: "Tekstoppgave", q: "Lønnen din er 200 kr pr time. Ingen grunnlønn. Finn uttrykket:", options: ["f(x) = 200x", "f(x) = x + 200", "f(x) = 200", "f(x) = 200 + x"], correct: 0 },
+
+        // --- TEKSTOPPGAVER UTEN VALG (3 stk) ---
+        { cat: "Skriv selv", q: "Et mobilabonnement koster 100 kr fast i måneden og 2 kr per ringte minutt (x). Skriv uttrykket:", isText: true, answers: ["2x+100", "100+2x"] },
+        { cat: "Skriv selv", q: "En plante er 5 cm høy og vokser 3 cm hver uke (x). Skriv uttrykket:", isText: true, answers: ["3x+5", "5+3x"] },
+        { cat: "Skriv selv", q: "Du leier en sykkel. Det koster 40 kr i startavgift og 10 kr per time (x). Skriv uttrykket:", isText: true, answers: ["10x+40", "40+10x"] },
+
+        // --- EKSTRA/GEOGEBRA ---
+        { cat: "Koordinatsystem", q: "Hvor ligger punktet (3, -2) i koordinatsystemet?", options: ["3 høyre, 2 opp", "3 venstre, 2 ned", "3 høyre, 2 ned", "2 høyre, 3 ned"], correct: 2 },
+        { cat: "GeoGebra", q: "Verktøy i GeoGebra for å finne der grafer krysser?", options: ["Midtpunkt", "Skjæring mellom to objekter", "Linje", "Mål"], correct: 1 },
+        { cat: "GeoGebra", q: "Hva må du huske å vise på aksene i GeoGebra?", options: ["Farger", "Navn og verdi på akser", "Rutenett", "Skrifttype"], correct: 1 },
+        { cat: "GeoGebra", q: "Du trenger y-verdien når x=10. Hva skriver du i GeoGebra?", options: ["y = 10", "Punkt(10)", "x = 10", "f(10)"], correct: 2 },
+        { cat: "Koordinatsystem", q: "Hva kalles x i et punkt (x, y)?", options: ["Y-akse", "Stigning", "Førstekoordinat", "Løsning"], correct: 2 }
+    ];
+
+    const monsters = [
+        (color) => `<svg class="monster-svg" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5V11C4 16.5 7.5 20.2 12 22C16.5 20.2 20 16.5 20 11V5L12 2Z" fill="${color}"/><path d="M7 4L3 2M17 4L21 2" stroke="${color}" stroke-width="2"/><circle cx="8" cy="10" r="1.5" fill="red" class="eye"/><circle cx="16" cy="10" r="1.5" fill="red" class="eye"/><path d="M8 15L10 17L12 15L14 17L16 15" stroke="white" stroke-width="1"/></svg>`,
+        (color) => `<svg class="monster-svg" viewBox="0 0 24 24" fill="none"><path d="M12 2C8 2 5 5 5 9V22L8 19L12 22L16 19L19 22V9C19 5 16 2 12 2Z" fill="${color}"/><circle cx="9" cy="9" r="2" fill="black"/><circle cx="15" cy="9" r="2" fill="black"/><circle cx="9" cy="9" r="0.8" fill="red" class="eye"/><circle cx="15" cy="9" r="0.8" fill="red" class="eye"/></svg>`,
+        (color) => `<svg class="monster-svg" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" fill="${color}"/><circle cx="12" cy="10" r="4" fill="white"/><circle cx="12" cy="10" r="2" fill="red" class="eye"/><path d="M8 17H16" stroke="black" stroke-width="2"/></svg>`,
+        (color) => `<svg class="monster-svg" viewBox="0 0 24 24" fill="none"><path d="M4 11Q4 4 12 4T20 11V20H4V11Z" fill="${color}"/><path d="M6 4L4 1M18 4L20 1" stroke="gray" stroke-width="2"/><circle cx="8" cy="12" r="1.5" fill="yellow" class="eye"/><circle cx="16" cy="12" r="1.5" fill="yellow" class="eye"/><path d="M10 16L12 18L14 16" fill="white"/></svg>`
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let lives = 3;
+    let gameActive = true;
+
+    function initGame() {
+        renderHearts();
+        updateMonster();
+        showQuestion();
+    }
+
+    function renderHearts() {
+        const container = document.getElementById('hearts-container');
+        container.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+            const span = document.createElement('span');
+            span.className = 'health-heart';
+            span.innerHTML = i < lives ? '❤' : '💀';
+            container.appendChild(span);
+        }
+    }
+
+    function updateMonster() {
+        const container = document.getElementById('monster-container');
+        const colorIdx = currentQuestionIndex % 4;
+        const colors = ["#4338ca", "#3730a3", "#312e81", "#1e1b4b"];
+        container.innerHTML = monsters[colorIdx](colors[colorIdx]);
+    }
+
+    function showQuestion() {
+        if (!gameActive) return;
+
+        const q = questions[currentQuestionIndex];
+        document.getElementById('category-badge').innerText = q.cat;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const choicesContainer = document.getElementById('choices-container');
+        const inputContainer = document.getElementById('text-input-container');
+        const userInput = document.getElementById('user-answer');
+        
+        userInput.value = '';
+
+        if (q.isText) {
+            choicesContainer.classList.add('hidden');
+            inputContainer.classList.remove('hidden');
+            userInput.focus();
+        } else {
+            choicesContainer.classList.remove('hidden');
+            inputContainer.classList.add('hidden');
+            choicesContainer.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-choice';
+                btn.innerHTML = `<span class="pixel-font text-indigo-400 mr-3 text-[0.6rem] opacity-70">[${index+1}]</span> ${opt}`;
+                btn.onclick = () => checkAnswer(index);
+                choicesContainer.appendChild(btn);
+            });
+        }
+
+        const progress = (currentQuestionIndex / questions.length) * 100;
+        document.getElementById('progress-fill').style.width = `${progress}%`;
+        updateMonster();
+    }
+
+    function handleFeedback(isCorrect) {
+        const feedback = document.getElementById('feedback');
+        const monsterArea = document.getElementById('monster-area');
+        const monsterImg = document.querySelector('.monster-svg');
+
+        if (isCorrect) {
+            score += 10;
+            document.getElementById('score').innerText = score;
+            feedback.innerText = "RIKTIG!";
+            feedback.className = "feedback-message text-green-400 opacity-100";
+            monsterImg.style.transform = "scale(0.6) rotate(15deg)";
+            monsterImg.style.opacity = "0.5";
+            setTimeout(() => {
+                monsterImg.style.transform = "scale(1) rotate(0deg)";
+                monsterImg.style.opacity = "1";
+            }, 300);
+        } else {
+            lives--;
+            renderHearts();
+            feedback.innerText = "FEIL!";
+            feedback.className = "feedback-message text-red-500 opacity-100";
+            monsterImg.classList.add('attack-anim');
+            monsterArea.classList.add('shake');
+            const eyes = document.querySelectorAll('.eye');
+            eyes.forEach(e => e.setAttribute('fill', '#ff0000'));
+            setTimeout(() => {
+                monsterImg.classList.remove('attack-anim');
+                monsterArea.classList.remove('shake');
+            }, 500);
+            
+            if (lives <= 0) {
+                endGame(false);
+                return false;
+            }
+        }
+
+        setTimeout(() => { feedback.classList.add('opacity-0'); }, 800);
+        return true;
+    }
+
+    function checkAnswer(choiceIndex) {
+        if (!gameActive) return;
+        const q = questions[currentQuestionIndex];
+        const continues = handleFeedback(choiceIndex === q.correct);
+        
+        if (continues) {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.length) {
+                endGame(true);
+            } else {
+                setTimeout(showQuestion, 400);
+            }
+        }
+    }
+
+    function checkTextInput() {
+        if (!gameActive) return;
+        const q = questions[currentQuestionIndex];
+        const val = document.getElementById('user-answer').value.toLowerCase().replace(/\s/g, '');
+        
+        const isCorrect = q.answers.some(ans => ans.toLowerCase().replace(/\s/g, '') === val);
+        
+        const continues = handleFeedback(isCorrect);
+        
+        if (continues) {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.length) {
+                endGame(true);
+            } else {
+                setTimeout(showQuestion, 400);
+            }
+        }
+    }
+
+    document.getElementById('user-answer').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkTextInput();
+        }
+    });
+
+    function endGame(win) {
+        gameActive = false;
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+        const title = document.getElementById('end-title');
+        const status = document.getElementById('end-status');
+        
+        if (win) {
+            title.innerText = "GRATULERER!";
+            title.style.color = "#4ade80";
+            status.innerText = `Du fullførte alle oppgavene! Din poengsum: ${score}`;
+        } else {
+            title.innerText = "PRØV IGJEN";
+            title.style.color = "#f87171";
+            status.innerText = `Ikke gi opp! Du fikk ${score} poeng denne gangen.`;
+        }
+    }
+
+    function restartGame() {
+        currentQuestionIndex = 0;
+        score = 0;
+        lives = 3;
+        gameActive = true;
+        document.getElementById('score').innerText = "0";
+        document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('end-screen').classList.add('hidden');
+        initGame();
+    }
+
+    window.onload = initGame;
+</script>
+<!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
