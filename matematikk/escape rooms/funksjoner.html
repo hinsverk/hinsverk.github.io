@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room: Funksjons-labyrinten</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        .shake { animation: shake 0.2s ease-in-out 0s 2; }
+        
+        @keyframes flashRed {
+            0% { background-color: transparent; }
+            50% { background-color: rgba(220, 38, 38, 0.5); }
+            100% { background-color: transparent; }
+        }
+        .flash-red { animation: flashRed 0.4s ease-in-out; }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+
+        .grid-line { stroke: rgba(0,0,0,0.1); stroke-width: 1; }
+        .axis { stroke: #334155; stroke-width: 2; }
+        .tick-label { font-size: 10px; fill: #64748b; font-family: sans-serif; font-weight: bold; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div id="game-container" class="max-w-2xl w-full p-8 glass-panel shadow-2xl transition-all duration-300">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-sky-400 mb-1">ESCAPE ROOM</h1>
+            <p class="text-slate-400">Nivå <span id="level-display">1</span> av 15: <span id="level-title">Koden ved porten</span></p>
+            <div class="w-full bg-slate-700 h-2 mt-4 rounded-full overflow-hidden text-[0px]">
+                <div id="progress-bar" class="bg-sky-500 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Task area -->
+        <div id="task-content" class="space-y-6">
+            <div id="story-text" class="italic text-slate-300 text-center text-sm md:text-base border-l-4 border-sky-500 pl-4 py-2 bg-slate-800/50">
+                Laster oppgave...
+            </div>
+
+            <div id="hint-box" class="hidden bg-amber-900/20 border border-amber-500/30 p-3 rounded text-amber-200 text-xs italic">
+                <strong>Hint:</strong> <span id="hint-text"></span>
+            </div>
+
+            <!-- SVG Graph Container -->
+            <div class="bg-white rounded-xl p-2 md:p-6 flex justify-center items-center shadow-inner overflow-hidden">
+                <svg id="graph-svg" width="320" height="320" viewBox="0 0 320 320" class="bg-white rounded shadow-sm">
+                    <!-- Grid, Axes, and Numbers drawn by JS -->
+                </svg>
+            </div>
+
+            <!-- Input Area -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-800/80 p-4 rounded-lg border border-slate-700">
+                    <label class="block text-sky-400 text-sm font-bold mb-2">Stigningstall (a):</label>
+                    <input type="text" id="input-a" class="w-full p-3 bg-slate-900 border border-slate-600 rounded text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all" placeholder="f.eks. 0,5">
+                </div>
+                <div class="bg-slate-800/80 p-4 rounded-lg border border-slate-700">
+                    <label class="block text-sky-400 text-sm font-bold mb-2">Konstantledd (b):</label>
+                    <input type="text" id="input-b" class="w-full p-3 bg-slate-900 border border-slate-600 rounded text-white focus:ring-2 focus:ring-sky-500 outline-none transition-all" placeholder="f.eks. -1">
+                </div>
+            </div>
+
+            <button onclick="checkAnswer()" class="w-full py-4 bg-sky-600 hover:bg-sky-500 text-white font-black text-lg rounded-xl transition-all shadow-[0_4px_0_rgb(2,132,199)] active:shadow-none active:translate-y-1">
+                KONTROLLER KODEN 🔓
+            </button>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="success-screen" class="hidden text-center space-y-6 py-10">
+            <div class="text-7xl animate-bounce">🏆</div>
+            <h2 class="text-4xl font-bold text-green-400">FRIHET!</h2>
+            <p class="text-xl text-slate-300">Du har løst alle 15 oppgavene og er nå en sertifisert funksjons-ekspert. Velkommen ut i friheten!</p>
+            <button onclick="resetGame()" class="px-8 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-full transition-all">Spill igjen</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 0;
+        const levels = [
+            // Fase 1: Introduksjon med hint (Nivå 1-5)
+            { title: "Den blå porten", story: "Hvor krysser linjen y-aksen, og hvor bratt er den?", a: 1, b: 2, hint: "Finn b der linjen krysser y-aksen. Gå 1 til høyre og se hvor mange du går opp for å finne a." },
+            { title: "Kjellergangene", story: "Her starter linjen under null. Hva betyr det for konstantleddet?", a: 2, b: -3, hint: "Konstantleddet b er her et negativt tall." },
+            { title: "Den synkende broen", story: "Linjen stuper nedover. Husk fortegnet på stigningstallet!", a: -1, b: 4, hint: "Når grafen går nedover mot høyre, er stigningstallet negativt." },
+            { title: "Speilsalen", story: "Denne linjen går rett gjennom midten (origo).", a: -2, b: 0, hint: "Når grafen krysser midt i krysset (0,0), er b = 0." },
+            { title: "Den mørke trappen", story: "En slakk bakke. To skritt frem, ett opp.", a: 0.5, b: 1, hint: "Gå 2 ruter bort og 1 opp. a = 1 delt på 2 (0,5)." },
+            
+            // Fase 2: Mellomnivå uten hint (Nivå 6-10)
+            { title: "Uten kart", story: "Nå må du klare deg uten hint. Finn verdiene!", a: 3, b: -2 },
+            { title: "Ekkokammeret", story: "En bratt, negativ linje. Vær nøyaktig.", a: -3, b: 2 },
+            { title: "Den vannrette korridoren", story: "Noe er annerledes her. Går den oppover i det hele tatt?", a: 0, b: 3 },
+            { title: "Glemselens gang", story: "Husk å sjekke både krysningspunkt og stigning.", a: 1.5, b: -4 },
+            { title: "Vaktposten", story: "Siste dør før den vanskelige delen.", a: -0.5, b: -1 },
+
+            // Fase 3: Ekspert-nivå (Nivå 11-15)
+            { title: "To-punkts-prøven", story: "Her nytter det ikke å bare se på én rute. Se på to punkter langt fra hverandre.", a: 0.4, b: 1 }, // 2/5 = 0.4
+            { title: "Brøk-labyrinten", story: "Denne linjen stiger sakte. Finn to steder der den krysser rutenettet helt nøyaktig.", a: 0.75, b: -2 }, // 3/4 = 0.75
+            { title: "Den bratte stupet", story: "Ekstrem stigning. Tell nøye!", a: 4, b: -5 },
+            { title: "Tåkeheimen", story: "Negativ stigning over flere ruter. Bruk to-punkts-tenkemåten.", a: -0.2, b: 3 }, // -1/5 = -0.2
+            { title: "Mesterens dør", story: "Den aller siste koden. Finn a og b for å slippe ut!", a: 1.25, b: -3 } // 5/4 = 1.25
+        ];
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function initLevel() {
+            const level = levels[currentLevel];
+            document.getElementById('level-display').innerText = currentLevel + 1;
+            document.getElementById('level-title').innerText = level.title;
+            document.getElementById('story-text').innerText = `"${level.story}"`;
+            
+            // Progress bar
+            const prog = (currentLevel / levels.length) * 100;
+            document.getElementById('progress-bar').style.width = `${prog}%`;
+            
+            // Show/Hide hints
+            const hintBox = document.getElementById('hint-box');
+            if (level.hint) {
+                hintBox.classList.remove('hidden');
+                document.getElementById('hint-text').innerText = level.hint;
+            } else {
+                hintBox.classList.add('hidden');
+            }
+
+            drawGraph(level.a, level.b);
+            
+            document.getElementById('input-a').value = '';
+            document.getElementById('input-b').value = '';
+        }
+
+        function drawGraph(a, b) {
+            const svg = document.getElementById('graph-svg');
+            svg.innerHTML = ''; 
+
+            const size = 320;
+            const padding = 30;
+            const drawSize = size - (padding * 2);
+            const mid = size / 2;
+            const scale = drawSize / 10; 
+
+            for (let i = -5; i <= 5; i++) {
+                const pos = mid + (i * scale);
+                const vLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                vLine.setAttribute("x1", pos); vLine.setAttribute("y1", padding);
+                vLine.setAttribute("x2", pos); vLine.setAttribute("y2", size - padding);
+                vLine.setAttribute("class", "grid-line");
+                svg.appendChild(vLine);
+
+                const hLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                hLine.setAttribute("x1", padding); hLine.setAttribute("y1", pos);
+                hLine.setAttribute("x2", size - padding); hLine.setAttribute("y2", pos);
+                hLine.setAttribute("class", "grid-line");
+                svg.appendChild(hLine);
+
+                if (i !== 0) {
+                    const xText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    xText.setAttribute("x", pos); xText.setAttribute("y", mid + 15);
+                    xText.setAttribute("text-anchor", "middle"); xText.setAttribute("class", "tick-label");
+                    xText.textContent = i; svg.appendChild(xText);
+
+                    const yText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    yText.setAttribute("x", mid - 12); yText.setAttribute("y", pos + 4);
+                    yText.setAttribute("text-anchor", "end"); yText.setAttribute("class", "tick-label");
+                    yText.textContent = -i; svg.appendChild(yText);
+                }
+            }
+
+            const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            xAxis.setAttribute("x1", padding - 5); xAxis.setAttribute("y1", mid);
+            xAxis.setAttribute("x2", size - padding + 5); xAxis.setAttribute("y2", mid);
+            xAxis.setAttribute("class", "axis"); svg.appendChild(xAxis);
+
+            const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            yAxis.setAttribute("x1", mid); yAxis.setAttribute("y1", padding - 5);
+            yAxis.setAttribute("x2", mid); yAxis.setAttribute("y2", size - padding + 5);
+            yAxis.setAttribute("class", "axis"); svg.appendChild(yAxis);
+
+            const x1_math = -5;
+            const y1_math = a * x1_math + b;
+            const x2_math = 5;
+            const y2_math = a * x2_math + b;
+
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", Math.max(padding, Math.min(size-padding, mid + x1_math * scale)));
+            line.setAttribute("y1", mid - y1_math * scale);
+            line.setAttribute("x2", Math.max(padding, Math.min(size-padding, mid + x2_math * scale)));
+            line.setAttribute("y2", mid - y2_math * scale);
+            line.setAttribute("stroke", "#0284c7");
+            line.setAttribute("stroke-width", "4");
+            line.setAttribute("stroke-linecap", "round");
+            svg.appendChild(line);
+        }
+
+        function playErrorSound() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(110, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+        }
+
+        function checkAnswer() {
+            // Get raw values as strings
+            let rawA = document.getElementById('input-a').value;
+            let rawB = document.getElementById('input-b').value;
+
+            // Convert comma to dot and parse as float
+            const userA = parseFloat(rawA.toString().replace(',', '.'));
+            const userB = parseFloat(rawB.toString().replace(',', '.'));
+            
+            const level = levels[currentLevel];
+
+            // Validate that we actually got numbers
+            if (isNaN(userA) || isNaN(userB)) {
+                triggerFailureEffects();
+                return;
+            }
+
+            // Using a small epsilon for decimal comparison
+            if (Math.abs(userA - level.a) < 0.01 && Math.abs(userB - level.b) < 0.01) {
+                currentLevel++;
+                if (currentLevel >= levels.length) {
+                    showSuccess();
+                } else {
+                    flashGreen();
+                    initLevel();
+                }
+            } else {
+                triggerFailureEffects();
+            }
+        }
+
+        function triggerFailureEffects() {
+            const container = document.getElementById('game-container');
+            const body = document.body;
+            playErrorSound();
+            container.classList.add('shake');
+            body.classList.add('flash-red');
+            setTimeout(() => {
+                container.classList.remove('shake');
+                body.classList.remove('flash-red');
+            }, 500);
+        }
+
+        function flashGreen() {
+            const body = document.body;
+            const originalColor = body.style.backgroundColor;
+            body.style.backgroundColor = "#064e3b";
+            setTimeout(() => { body.style.backgroundColor = originalColor; }, 300);
+        }
+
+        function showSuccess() {
+            document.getElementById('task-content').classList.add('hidden');
+            document.getElementById('success-screen').classList.remove('hidden');
+            document.getElementById('progress-bar').style.width = '100%';
+        }
+
+        function resetGame() {
+            currentLevel = 0;
+            document.getElementById('task-content').classList.remove('hidden');
+            document.getElementById('success-screen').classList.add('hidden');
+            initLevel();
+        }
+
+        window.onload = initLevel;
+    </script>
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
