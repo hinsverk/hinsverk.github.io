@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="no" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dagens Ord - Ungdomsskolen</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        accent: {
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti library for rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 9999px;
+        }
+        .card-flip {
+            perspective: 1000px;
+        }
+        .card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            header, nav, #mobile-menu, .no-print {
+                display: none !important;
+            }
+            .tab-content {
+                display: none !important;
+            }
+            #print-area {
+                display: block !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white custom-scrollbar overflow-x-hidden">
+
+    <!-- App Header / Navigation -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700/60 sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dagens')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-500 flex items-center justify-center text-xl font-black text-white shadow-lg shadow-brand-500/20">
+                    📖
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+                        Dagens Ord
+                    </h1>
+                    <p class="text-xs text-brand-400 font-medium">For ungdomsskolen</p>
+                </div>
+            </div>
+
+            <!-- Main Navigation Links -->
+            <nav class="hidden lg:flex items-center space-x-1 bg-slate-900/60 p-1.5 rounded-xl border border-slate-700/50">
+                <button onclick="switchTab('dagens')" id="nav-dagens" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-brand-600 text-white shadow">
+                    🌟 Dagens Ord
+                </button>
+                <button onclick="switchTab('utforsk')" id="nav-utforsk" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800">
+                    📚 Ord-Bibliotek
+                </button>
+                <button onclick="switchTab('spill')" id="nav-spill" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800">
+                    🎮 Quiz & Trening
+                </button>
+                <button onclick="switchTab('oppgaver')" id="nav-oppgaver" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800">
+                    📄 Oppgaveark
+                </button>
+                <button onclick="switchTab('klasse')" id="nav-klasse" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800">
+                    🖥️ Skjermmodus
+                </button>
+                <button onclick="switchTab('ai')" id="nav-ai" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800">
+                    🤖 AI Ord-Hjelper
+                </button>
+                <button onclick="switchTab('admin')" id="nav-admin" class="nav-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-800">
+                    ⚙️ Admin
+                </button>
+            </nav>
+
+            <!-- Quick Action / Stats -->
+            <div class="flex items-center space-x-3">
+                <div id="streak-badge" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-amber-400 font-bold text-xs" title="Antall dager du har sjekket Dagens Ord!">
+                    <span>🔥</span>
+                    <span id="streak-count">1</span>
+                    <span class="text-[10px] font-normal text-slate-400">dager</span>
+                </div>
+                <!-- Mobile menu button -->
+                <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Nav Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden border-b border-slate-700 bg-slate-800 px-4 py-3 space-y-2">
+            <button onclick="switchTab('dagens'); toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-700">🌟 Dagens Ord</button>
+            <button onclick="switchTab('utforsk'); toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-700">📚 Ord-Bibliotek</button>
+            <button onclick="switchTab('spill'); toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-700">🎮 Quiz & Trening</button>
+            <button onclick="switchTab('oppgaver'); toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-700">📄 Oppgaveark Generator</button>
+            <button onclick="switchTab('klasse'); toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-700">🖥️ Skjermmodus</button>
+            <button onclick="switchTab('ai'); toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-700">🤖 AI Ord-Hjelper</button>
+            <button onclick="switchTab('admin'); toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-700">⚙️ Administrator</button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Notification Toast Container -->
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-sm pointer-events-none"></div>
+
+        <!-- TAB 1: DAGENS ORD VISNING -->
+        <section id="tab-dagens" class="tab-content space-y-8">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 border border-slate-700/70 p-6 md:p-10 shadow-2xl">
+                <div class="absolute -top-24 -right-24 w-72 h-72 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs font-bold uppercase tracking-wider">
+                                <span>✨ Dagens utvalgte ord</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
+                            </span>
+                            <button id="btn-toggle-fav" onclick="toggleFavorittDagens()" class="px-3 py-1 rounded-full bg-slate-700/80 hover:bg-slate-700 text-amber-400 text-xs font-semibold border border-slate-600 transition flex items-center space-x-1" title="Lagre i mine favoritter">
+                                <span id="fav-star-icon">☆</span>
+                                <span id="fav-star-text">Favoritt</span>
+                            </button>
+                        </div>
+                        <h2 id="dagens-ord-tittel" class="text-4xl md:text-6xl font-black text-white tracking-tight leading-none">
+                            ---
+                        </h2>
+                        <div class="flex flex-wrap items-center gap-3 mt-3 text-slate-400 font-medium text-sm">
+                            <span id="dagens-ordklasse" class="px-2.5 py-0.5 rounded-md bg-slate-700/80 text-accent-400 font-semibold border border-slate-600">
+                                ---
+                            </span>
+                            <span id="dagens-uttale" class="italic text-slate-300">/ --- /</span>
+                            <button onclick="speakWord()" class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition-colors" title="Hør uttale">
+                                🔊 Hør uttale
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Date picker / Selector -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-900/80 p-3 rounded-2xl border border-slate-700/60">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Velg dato:</label>
+                            <input type="date" id="dagens-dato-velger" onchange="onDateChanged(this.value)" class="bg-slate-800 text-slate-100 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+                        <button onclick="pickRandomDagensOrd()" class="self-end sm:self-center px-4 py-2 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-brand-600/20 flex items-center space-x-2">
+                            <span>🎲 Tilfeldig ord</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gjette-modus Banner -->
+            <div id="dagens-reveal-banner" class="bg-gradient-to-r from-amber-500/10 via-slate-800 to-brand-500/10 border border-amber-500/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+                <div class="flex items-center space-x-3 text-amber-300">
+                    <span class="text-3xl">🤔</span>
+                    <div>
+                        <h3 class="font-extrabold text-base text-white">Gjettemodus er aktiv!</h3>
+                        <p class="text-xs text-slate-300">Hva tror du eller klassen dette ordet betyr? Tenk før du avslører svaret.</p>
+                    </div>
+                </div>
+                <button onclick="toggleDagensReveal()" id="btn-reveal-dagens" class="w-full sm:w-auto px-6 py-3 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2 shrink-0">
+                    <span id="btn-reveal-dagens-icon">👁️</span>
+                    <span id="btn-reveal-dagens-text">Avslør forklaring & eksempler</span>
+                </button>
+            </div>
+
+            <!-- Detailed Cards Grid -->
+            <div id="dagens-detaljer-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-300 hidden">
+                <div class="md:col-span-2 bg-slate-800/90 rounded-2xl p-6 border border-slate-700/80 shadow-lg space-y-6 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center space-x-2">
+                            <span>💡 Definisjon & Betydning</span>
+                        </h3>
+                        <p id="dagens-forklaring" class="text-xl md:text-2xl font-medium text-slate-100 leading-relaxed">
+                            ---
+                        </p>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-700/60">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center space-x-2">
+                            <span>💬 Eksempel i setning</span>
+                        </h3>
+                        <blockquote class="bg-slate-900/60 rounded-xl p-4 border-l-4 border-brand-500 italic text-slate-300 text-base md:text-lg">
+                            "<span id="dagens-eksempel">---</span>"
+                        </blockquote>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Synonymer</span>
+                            <div id="dagens-synonymer" class="flex flex-wrap gap-1.5">
+                                ---
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Kategori</span>
+                            <span id="dagens-kategori" class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-accent-500/20 text-accent-400 border border-accent-500/30">
+                                ---
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-slate-800/90 rounded-2xl p-6 border border-slate-700/80 shadow-lg space-y-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center space-x-2">
+                            <span>🧠 Hvorfor bør du kunne dette?</span>
+                        </h3>
+                        <p id="dagens-hvorfor" class="text-sm text-slate-300 leading-relaxed">
+                            ---
+                        </p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-slate-700/80 shadow-lg space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-brand-400">
+                                ⚡ Rask miniquiz
+                            </h3>
+                            <span class="text-xs text-slate-400">Test deg selv</span>
+                        </div>
+                        <p id="mini-quiz-sporsmal" class="text-sm text-slate-200 font-semibold">
+                            Hvilken påstand om dette ordet er RIKTIG?
+                        </p>
+                        <div id="mini-quiz-alternativer" class="space-y-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <div id="mini-quiz-resultat" class="hidden p-3 rounded-lg text-xs font-semibold"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: UTFORSK & SØK I ORD-BIBLIOTEKET -->
+        <section id="tab-utforsk" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Ord-Bibliotek 📚</h2>
+                    <p class="text-sm text-slate-400">Søk og utforsk katalogen av nyttige begrep for ungdomstrinnet.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative">
+                        <input type="text" id="bibliotek-sok" oninput="renderBibliotek()" placeholder="Søk etter ord eller forklaring..." class="w-full sm:w-64 bg-slate-900 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <svg class="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <select id="bibliotek-kategori-filter" onchange="renderBibliotek()" class="bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="alle">Alle ord og kategorier</option>
+                        <option value="favoritter">⭐ Mine favoritter</option>
+                        <option value="Akademisk">Akademisk</option>
+                        <option value="Samfunn & Språk">Samfunn & Språk</option>
+                        <option value="Argumentasjon">Argumentasjon</option>
+                        <option value="Litteratur & Drama">Litteratur & Drama</option>
+                        <option value="Realfag & Metode">Realfag & Metode</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="bibliotek-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards injected dynamically -->
+            </div>
+        </section>
+
+        <!-- TAB 3: QUIZ & TRENING -->
+        <section id="tab-spill" class="tab-content hidden space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Ord-Treningssenter 🎮</h2>
+                    <p class="text-sm text-slate-400">Spill og test hvor mange ord du husker!</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="startQuizMode('valg')" id="btn-quiz-valg" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shadow">
+                        🎯 Flervalg
+                    </button>
+                    <button onclick="startQuizMode('flashcards')" id="btn-quiz-flash" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700 text-slate-300 hover:text-white">
+                        🎴 Flashcards
+                    </button>
+                </div>
+            </div>
+
+            <div id="quiz-container" class="max-w-2xl mx-auto">
+                <!-- Flervalg Box -->
+                <div id="mode-valg-box" class="bg-slate-800/90 rounded-3xl p-6 md:p-8 border border-slate-700 shadow-xl space-y-6 text-center">
+                    <div class="flex justify-between items-center text-xs font-semibold text-slate-400">
+                        <span>Spørsmål <span id="quiz-steg">1</span> av <span id="quiz-total">5</span></span>
+                        <span>Poengsum: <span id="quiz-poeng" class="text-brand-400 font-bold">0</span></span>
+                    </div>
+
+                    <div class="py-4">
+                        <span class="text-xs uppercase font-bold text-brand-400 tracking-wider">Hva betyr dette ordet?</span>
+                        <h3 id="quiz-ord-tittel" class="text-4xl font-extrabold text-white mt-2">---</h3>
+                    </div>
+
+                    <div id="quiz-valg-alternativer" class="grid grid-cols-1 gap-3 text-left">
+                        <!-- Choice buttons -->
+                    </div>
+
+                    <div class="pt-4 flex justify-between items-center">
+                        <p id="quiz-tilbakemelding" class="text-sm font-bold">&nbsp;</p>
+                        <button onclick="nesteQuizSporsmal()" id="btn-neste-quiz" class="hidden px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-sm transition">
+                            Neste spørsmål ➔
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Flashcards Box -->
+                <div id="mode-flashcards-box" class="hidden space-y-6">
+                    <div class="text-center text-slate-400 text-sm">
+                        Klikk på kortet for å snu det og se forklaringen.
+                    </div>
+
+                    <div class="card-flip w-full h-80 cursor-pointer" onclick="toggleFlashcard()">
+                        <div id="flashcard-inner" class="card-inner relative w-full h-full rounded-3xl shadow-2xl">
+                            <div class="card-front absolute inset-0 bg-slate-800 border-2 border-brand-500/40 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
+                                <span class="px-3 py-1 bg-slate-700 rounded-full text-xs font-bold text-slate-300 uppercase mb-4">Gjett forklaringen</span>
+                                <h3 id="flash-ord" class="text-4xl font-black text-white">---</h3>
+                                <p id="flash-ordklasse" class="text-slate-400 text-sm italic mt-2">---</p>
+                                <span class="mt-8 text-xs text-brand-400 font-semibold flex items-center space-x-1">
+                                    <span>🔄 Klikk for å snu</span>
+                                </span>
+                            </div>
+                            <div class="card-back absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-accent-500/40 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
+                                <span class="px-3 py-1 bg-accent-500/20 text-accent-300 rounded-full text-xs font-bold uppercase mb-4">Definisjon</span>
+                                <p id="flash-forklaring" class="text-lg md:text-xl font-medium text-slate-100">---</p>
+                                <p id="flash-eksempel" class="text-xs italic text-slate-400 mt-4 border-t border-slate-700/60 pt-3">"---"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center space-x-4">
+                        <button onclick="nesteFlashcard()" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition">
+                            Neste kort ➔
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: OPPGAVEARK GENERATOR -->
+        <section id="tab-oppgaver" class="tab-content hidden space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Oppgaveark Generator 📄</h2>
+                    <p class="text-sm text-slate-400">Lag og skriv ut ferdige oppgaveark til ukeplaner eller tentamen.</p>
+                </div>
+                <button onclick="window.print()" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-sm transition flex items-center space-x-2 shadow-lg shadow-brand-600/20">
+                    <span>🖨️ Skriv ut / Lagre som PDF</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Generator Controls -->
+                <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700 space-y-4 h-fit">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Innstillinger</h3>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Tittel på oppgaveark:</label>
+                        <input type="text" id="oppgave-tittel-input" value="Veukens Ord - Oppgaveark" oninput="genererOppgavearkPreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Antall ord å inkludere:</label>
+                        <select id="oppgave-antall-select" onchange="genererOppgavearkPreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="5">5 ord</option>
+                            <option value="8" selected>8 ord</option>
+                            <option value="12">12 ord</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Oppgavetype:</label>
+                        <select id="oppgave-type-select" onchange="genererOppgavearkPreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="kombinert">Blandet (Koble ord + Lag setninger)</option>
+                            <option value="kobling">Bare kobling (Ord ➔ Forklaring)</option>
+                            <option value="skriving">Setningsbygging (Skriv egne setninger)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-2 pt-2">
+                        <input type="checkbox" id="oppgave-fasit-check" onchange="genererOppgavearkPreview()" class="rounded bg-slate-900 border-slate-700 text-brand-500 focus:ring-brand-500 h-4 w-4">
+                        <label for="oppgave-fasit-check" class="text-xs font-semibold text-slate-300">Inkluder fasit på side 2</label>
+                    </div>
+                </div>
+
+                <!-- Dynamic Worksheet Live Preview Box -->
+                <div class="lg:col-span-3 bg-slate-950 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl overflow-y-auto max-h-[700px] text-slate-900 bg-white">
+                    <div id="oppgaveark-preview-content" class="space-y-6">
+                        <!-- Preview injected dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: SKJERMMODUS (SMARTBOARD / PROSJEKTOR) -->
+        <section id="tab-klasse" class="tab-content hidden space-y-6">
+            <div class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Skjermmodus for klasserom 🖥️</h2>
+                    <p class="text-sm text-slate-400">Stor tekst og trinnvis avsløring tilpasset prosjektor og SmartBoard.</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="nesteKlasseOrd(-1)" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-bold text-white">
+                        ⬅️ Forrige
+                    </button>
+                    <button onclick="nesteKlasseOrd(1)" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-bold text-white">
+                        Neste ➡️
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-brand-500/50 rounded-3xl p-8 md:p-14 shadow-2xl text-center space-y-8 min-h-[450px] flex flex-col justify-center items-center relative">
+                <span class="px-4 py-1.5 rounded-full bg-brand-500/20 text-brand-300 text-sm font-bold border border-brand-500/40">
+                    KLASSEROM VISNING
+                </span>
+
+                <h2 id="klasse-ord-tittel" class="text-6xl md:text-8xl font-black text-white tracking-tight">
+                    ---
+                </h2>
+
+                <p id="klasse-ordklasse" class="text-xl md:text-2xl text-accent-400 font-semibold italic">
+                    ---
+                </p>
+
+                <!-- Reveal step 1: Definition -->
+                <div id="klasse-step-forklaring" class="hidden max-w-3xl bg-slate-900/90 p-6 rounded-2xl border border-slate-700">
+                    <h4 class="text-xs uppercase font-bold text-slate-400 mb-2">Betydning:</h4>
+                    <p id="klasse-text-forklaring" class="text-2xl md:text-3xl font-medium text-amber-300">---</p>
+                </div>
+
+                <!-- Reveal step 2: Sentence -->
+                <div id="klasse-step-eksempel" class="hidden max-w-3xl bg-slate-900/90 p-6 rounded-2xl border border-slate-700">
+                    <h4 class="text-xs uppercase font-bold text-slate-400 mb-2">Eksempel i setning:</h4>
+                    <p id="klasse-text-eksempel" class="text-xl md:text-2xl italic text-slate-200">"---"</p>
+                </div>
+
+                <!-- Classroom discussion trigger -->
+                <div class="flex flex-wrap gap-4 pt-4">
+                    <button onclick="avslorKlasseTrinn(1)" class="px-5 py-3 bg-brand-600 hover:bg-brand-500 text-white font-extrabold rounded-2xl text-base transition shadow-lg">
+                        1. Avslør Forklaring
+                    </button>
+                    <button onclick="avslorKlasseTrinn(2)" class="px-5 py-3 bg-accent-600 hover:bg-accent-500 text-white font-extrabold rounded-2xl text-base transition shadow-lg">
+                        2. Avslør Eksempel
+                    </button>
+                    <button onclick="speakWord(getKlasseOrd().ord)" class="px-5 py-3 bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold rounded-2xl text-base transition">
+                        🔊 Spill uttale
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: GEMINI AI ORD-HJELPER -->
+        <section id="tab-ai" class="tab-content hidden space-y-6">
+            <div class="bg-gradient-to-r from-purple-900/60 via-slate-800 to-slate-800 p-6 rounded-2xl border border-purple-500/40 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl">🤖</span>
+                        <h2 class="text-2xl font-bold text-white">Gemini AI Ord-Hjelper</h2>
+                    </div>
+                    <p class="text-sm text-purple-200">Bruk kunstig intelligens til å utforske språk, generere nye ord og skape ungdomstilpassede eksempler.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- AI Tools Sidebar -->
+                <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700 space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-purple-400">Velg AI-Handling</h3>
+
+                    <button onclick="setAiMode('forklar')" id="btn-ai-mode-forklar" class="w-full text-left p-3.5 rounded-xl bg-purple-600/30 border border-purple-500/50 text-white font-semibold text-sm hover:bg-purple-600/40 transition">
+                        💬 Forklar ord for ungdom
+                    </button>
+                    <button onclick="setAiMode('generer')" id="btn-ai-mode-generer" class="w-full text-left p-3.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-semibold text-sm hover:bg-slate-700 transition">
+                        ✨ Generer nytt utfordrende ord
+                    </button>
+                    <button onclick="setAiMode('fortelling')" id="btn-ai-mode-fortelling" class="w-full text-left p-3.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-semibold text-sm hover:bg-slate-700 transition">
+                        📖 Skriv mikrofiksjon med valgte ord
+                    </button>
+                </div>
+
+                <!-- AI Interactive Workarea -->
+                <div class="md:col-span-2 bg-slate-800 rounded-2xl p-6 border border-slate-700 space-y-6 shadow-xl">
+                    <div id="ai-input-container" class="space-y-4">
+                        <h3 id="ai-prompt-title" class="text-lg font-bold text-white">Skriv inn et ord du vil ha forklart:</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="ai-user-input" placeholder="f.eks. Relativ, Insinuere, Polarisering..." class="flex-1 bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <button onclick="kjorAiHandling()" id="btn-send-ai" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-sm transition flex items-center space-x-2 shrink-0">
+                                <span>Send til AI</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Result Output Box -->
+                    <div class="border-t border-slate-700 pt-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">AI-Svar:</h4>
+                            <span id="ai-status-indicator" class="hidden text-xs text-purple-400 font-semibold animate-pulse">Genererer svar fra Gemini...</span>
+                        </div>
+                        <div id="ai-output-box" class="bg-slate-900/90 rounded-2xl p-5 border border-slate-700 min-h-[160px] text-slate-200 text-sm leading-relaxed whitespace-pre-line">
+                            Velg en handling og trykk på knappen for å samhandle med AI-hjelperen.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: ADMINISTRATOR / ORDBOK BEHANDLING -->
+        <section id="tab-admin" class="tab-content hidden space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Administrator & Ordbehandling ⚙️</h2>
+                    <p class="text-sm text-slate-400">Legg til egne ord, rediger databasen eller tilbakestill til standard.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="apneNyttOrdModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-sm transition">
+                        ➕ Legg til nytt ord
+                    </button>
+                    <button onclick="tilbakestillOrdbok()" class="px-4 py-2 bg-rose-700/80 hover:bg-rose-600 text-white font-bold rounded-xl text-sm transition">
+                        🔄 Tilbakestill alt
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table of words -->
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 text-xs uppercase border-b border-slate-700">
+                            <tr>
+                                <th class="px-4 py-3">Ord</th>
+                                <th class="px-4 py-3">Ordklasse</th>
+                                <th class="px-4 py-3">Kategori</th>
+                                <th class="px-4 py-3">Forklaring</th>
+                                <th class="px-4 py-3 text-right">Handlinger</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-ord-tabell" class="divide-y divide-slate-700/60">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PRINT ONLY AREA FOR WORKSHEETS -->
+    <div id="print-area" class="hidden">
+        <!-- Rendered purely for printing -->
+    </div>
+
+    <!-- MODAL FOR ADDING/EDITING WORDS -->
+    <div id="ord-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 id="modal-tittel" class="text-xl font-bold text-white">Legg til nytt ord</h3>
+                <button onclick="lukkOrdModal()" class="text-slate-400 hover:text-white text-xl">✕</button>
+            </div>
+
+            <form id="ord-form" onsubmit="lagreOrdForm(event)" class="space-y-3">
+                <input type="hidden" id="form-ord-id">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Ord *</label>
+                        <input type="text" id="form-ord" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Ordklasse *</label>
+                        <input type="text" id="form-ordklasse" placeholder="f.eks. Adjektiv, Substantiv" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Uttale (lydskrift)</label>
+                        <input type="text" id="form-uttale" placeholder="f.eks. /am-bi-va-LENT/" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Kategori *</label>
+                        <select id="form-kategori" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="Akademisk">Akademisk</option>
+                            <option value="Samfunn & Språk">Samfunn & Språk</option>
+                            <option value="Argumentasjon">Argumentasjon</option>
+                            <option value="Litteratur & Drama">Litteratur & Drama</option>
+                            <option value="Realfag & Metode">Realfag & Metode</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Forklaring / Definisjon *</label>
+                    <textarea id="form-forklaring" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Eksempel i setning *</label>
+                    <textarea id="form-eksempel" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Synonymer (kommaseparert)</label>
+                    <input type="text" id="form-synonymer" placeholder="f.eks. usikker, tvilende, kluven" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Hvorfor bør du kunne dette?</label>
+                    <textarea id="form-hvorfor" rows="2" placeholder="Gjør det enklere å skrive gode argumenterende tekster..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-3">
+                    <button type="button" onclick="lukkOrdModal()" class="px-4 py-2 bg-slate-700 text-slate-200 rounded-xl text-sm font-semibold hover:bg-slate-600">Avbryt</button>
+                    <button type="submit" class="px-6 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold hover:bg-brand-500 shadow">Lagre ord</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Default dictionary for Norwegian Youth School (Ungdomsskolen)
+        const DEFAULT_WORDS = [
+            {
+                id: 'ord-1',
+                ord: 'Ambivalent',
+                ordklasse: 'Adjektiv',
+                uttale: '/am-bi-va-LENT/',
+                kategori: 'Akademisk',
+                forklaring: 'Å ha motstridende følelser eller tanker om noe på samme tid; å være i tvil.',
+                eksempel: 'Nora var ambivalent til å bytte skole; hun gledet seg til en ny start, men var redd for å miste sine gamle venner.',
+                synonymer: ['Tvilsom', 'Kluven', 'Ubeslutsom', 'Motstridende'],
+                hvorfor: 'Brukes ofte i litteraturanalyse og samfunnsfag når du skal beskrive komplekse personligheter eller vanskelige valg.'
+            },
+            {
+                id: 'ord-2',
+                ord: 'Konstruktiv',
+                ordklasse: 'Adjektiv',
+                uttale: '/kon-struk-TIIV/',
+                kategori: 'Argumentasjon',
+                forklaring: 'Noe som bygger opp, hjelper eller fører til et nyttig resultat (motsatte av destruktiv).',
+                eksempel: 'Læreren ga konstruktiv tilbakemelding på stilen slik at eleven skjønte nøyaktig hvordan avsnittene kunne forbedres.',
+                synonymer: ['Oppbyggelig', 'Nyttig', 'Fruktbar', 'Gagnlig'],
+                hvorfor: 'Gjør det enklere å gi ris og ros på en god måte i gruppearbeid og diskusjoner.'
+            },
+            {
+                id: 'ord-3',
+                ord: 'Insinuere',
+                ordklasse: 'Verb',
+                uttale: '/in-si-nu-EE-re/',
+                kategori: 'Samfunn & Språk',
+                forklaring: 'Å antyde eller hinte om noe ubehagelig eller negativt uten å si det rett ut.',
+                eksempel: 'Han insinuerte at lagkameraten hadde jukset under testen, selv om han ikke sa det direkte.',
+                synonymer: ['Antyde', 'Hinte', 'Bebude'],
+                hvorfor: 'Viktig for å forstå undertekst i skjønnlitteratur, avisartikler og politiske debatter.'
+            },
+            {
+                id: 'ord-4',
+                ord: 'Kildekritikk',
+                ordklasse: 'Substantiv',
+                uttale: '/KIL-de-kri-tikk/',
+                kategori: 'Realfag & Metode',
+                forklaring: 'Vurdering av om informasjon fra bøker, nettsider eller sosiale medier er sann, pålitelig og nøytral.',
+                eksempel: 'God kildekritikk avslørte at den oppsiktsvekkende nyhetssaken var laget for å skape falske klikk.',
+                synonymer: ['Kildevurdering', 'Kritisk sans', 'Faktasjekk'],
+                hvorfor: 'Helt avgjørende ferdighet i dagens digitale samfunn og for å få god karakter i prosjektoppgaver.'
+            },
+            {
+                id: 'ord-5',
+                ord: 'Hypotese',
+                ordklasse: 'Substantiv',
+                uttale: '/hy-po-TEE-se/',
+                kategori: 'Realfag & Metode',
+                forklaring: 'En antakelse, teoretisk gjetning eller påstand som man forsøker å teste gjennom forsøk eller undersøkelser.',
+                eksempel: 'Naturfaggruppens hypotese var at koke-punktet ville synke dersom de tilsatte salt i vannet.',
+                synonymer: ['Antakelse', 'Teori', 'Gjetning', 'Formodning'],
+                hvorfor: 'Standard begrep i naturfag og rapportskriving på ungdomstrinnet.'
+            },
+            {
+                id: 'ord-6',
+                ord: 'Pragmatisk',
+                ordklasse: 'Adjektiv',
+                uttale: '/prag-MAA-tisk/',
+                kategori: 'Akademisk',
+                forklaring: 'Å være praktisk rettet, løsningsorientert og opptatt av hva som fungerer i virkeligheten fremfor teori.',
+                eksempel: 'Klassestyret tok en pragmatisk avgjørelse og valgte den rimeligste bussen slik at alle fikk råd til klasseturen.',
+                synonymer: ['Praktisk', 'Løsningsorientert', 'Realistisk'],
+                hvorfor: 'Flott ord å bruke i norsk skriftlig når du evaluerer løsninger på samfunnsproblemer.'
+            },
+            {
+                id: 'ord-7',
+                ord: 'Ironi',
+                ordklasse: 'Substantiv',
+                uttale: '/i-ro-NII/',
+                kategori: 'Litteratur & Drama',
+                forklaring: 'Å uttrykke det motsatte av hva man egentlig mener, ofte for å være morsom, spydig eller poengtert.',
+                eksempel: '"For et fantastisk sommervær," sa Jakob med ren ironi mens regnet plasket ned.',
+                synonymer: ['Sarkasme', 'Hån', 'Dobbeltbetydning'],
+                hvorfor: 'Hovedbegrep innenfor norskfaget og litteraturforståelse.'
+            },
+            {
+                id: 'ord-8',
+                ord: 'Nyansert',
+                ordklasse: 'Adjektiv',
+                uttale: '/ny-an-SEERT/',
+                kategori: 'Argumentasjon',
+                forklaring: 'Noe som viser flere sider av en sak, har fine detaljer og ikke er ensporet eller svart-hvitt.',
+                eksempel: 'Elevrådslederen ga et nyansert bilde av mobbesaken ved å trekke frem både miljøet i friminuttet og sosiale medier.',
+                synonymer: ['Mangesidig', 'Balansert', 'Detaljert'],
+                hvorfor: 'Lærere elsker når du skriver nyanserte resonnementer i drøftende artikler.'
+            }
+        ];
+
+        // Global State variables
+        let words = [];
+        let currentDagensIndex = 0;
+        let streak = 1;
+        let favorites = [];
+        let quizState = {
+            mode: 'valg',
+            index: 0,
+            score: 0,
+            total: 5,
+            questions: []
+        };
+        let klasseIndex = 0;
+        let aiMode = 'forklar';
+
+        // Initialize App on DOM Content Loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            setTodayDateInPicker();
+            updateStreak();
+            renderDagensOrd();
+            renderBibliotek();
+            renderAdminTabell();
+            genererOppgavearkPreview();
+        });
+
+        // Local Storage Sync
+        function loadState() {
+            const savedWords = localStorage.getItem('dagens_ord_db');
+            words = savedWords ? JSON.parse(savedWords) : DEFAULT_WORDS;
+
+            const savedFavs = localStorage.getItem('dagens_ord_favs');
+            favorites = savedFavs ? JSON.parse(savedFavs) : [];
+
+            const savedStreak = localStorage.getItem('dagens_ord_streak');
+            streak = savedStreak ? parseInt(savedStreak, 10) : 1;
+
+            document.getElementById('streak-count').innerText = streak;
+        }
+
+        function saveState() {
+            localStorage.setItem('dagens_ord_db', JSON.stringify(words));
+            localStorage.setItem('dagens_ord_favs', JSON.stringify(favorites));
+            localStorage.setItem('dagens_ord_streak', streak.toString());
+        }
+
+        function setTodayDateInPicker() {
+            const today = new Date().toISOString().split('T')[0];
+            const picker = document.getElementById('dagens-dato-velger');
+            if (picker) picker.value = today;
+        }
+
+        function updateStreak() {
+            const lastVisit = localStorage.getItem('dagens_ord_last_date');
+            const today = new Date().toDateString();
+
+            if (lastVisit !== today) {
+                if (lastVisit) {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    if (yesterday.toDateString() === lastVisit) {
+                        streak += 1;
+                    } else {
+                        streak = 1; // reset streak if missed a day
+                    }
+                }
+                localStorage.setItem('dagens_ord_last_date', today);
+                saveState();
+            }
+        }
+
+        // Navigation Switch Tab Logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white', 'shadow');
+                btn.classList.add('text-slate-300');
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow');
+                activeBtn.classList.remove('text-slate-300');
+            }
+
+            if (tabId === 'spill') startQuizMode(quizState.mode);
+            if (tabId === 'klasse') renderKlasseOrd();
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        // DAGENS ORD LOGIC
+        function getDagensOrd() {
+            if (words.length === 0) return null;
+            return words[currentDagensIndex % words.length];
+        }
+
+        function renderDagensOrd() {
+            const current = getDagensOrd();
+            if (!current) return;
+
+            document.getElementById('dagens-ord-tittel').innerText = current.ord;
+            document.getElementById('dagens-ordklasse').innerText = current.ordklasse;
+            document.getElementById('dagens-uttale').innerText = current.uttale || '';
+            document.getElementById('dagens-forklaring').innerText = current.forklaring;
+            document.getElementById('dagens-eksempel').innerText = current.eksempel;
+            document.getElementById('dagens-kategori').innerText = current.kategori;
+            document.getElementById('dagens-hvorfor').innerText = current.hvorfor || 'Nyttig akademisk ord.';
+
+            // Render Synonyms
+            const synContainer = document.getElementById('dagens-synonymer');
+            synContainer.innerHTML = '';
+            (current.synonymer || []).forEach(syn => {
+                const badge = document.createElement('span');
+                badge.className = 'px-2 py-0.5 rounded-md text-xs bg-slate-700 text-slate-200 border border-slate-600';
+                badge.innerText = syn;
+                synContainer.appendChild(badge);
+            });
+
+            // Favorite status
+            updateFavButtonUi(current.id);
+
+            // Hide details initially for "Gjettemodus"
+            const detailsGrid = document.getElementById('dagens-detaljer-grid');
+            detailsGrid.classList.add('hidden');
+            const revealBtn = document.getElementById('btn-reveal-dagens-text');
+            if (revealBtn) revealBtn.innerText = 'Avslør forklaring & eksempler';
+
+            // Mini quiz rendering
+            renderMiniQuiz(current);
+        }
+
+        function toggleDagensReveal() {
+            const detailsGrid = document.getElementById('dagens-detaljer-grid');
+            const isHidden = detailsGrid.classList.contains('hidden');
+            const textSpan = document.getElementById('btn-reveal-dagens-text');
+
+            if (isHidden) {
+                detailsGrid.classList.remove('hidden');
+                textSpan.innerText = 'Skjul forklaring (Gjettemodus)';
+            } else {
+                detailsGrid.classList.add('hidden');
+                textSpan.innerText = 'Avslør forklaring & eksempler';
+            }
+        }
+
+        function pickRandomDagensOrd() {
+            currentDagensIndex = Math.floor(Math.random() * words.length);
+            renderDagensOrd();
+            showToast('Nytilfeldig ord valgt! 🎲');
+        }
+
+        function onDateChanged(dateVal) {
+            // Convert date string to deterministic index
+            let sum = 0;
+            for (let i = 0; i < dateVal.length; i++) {
+                sum += dateVal.charCodeAt(i);
+            }
+            currentDagensIndex = sum % words.length;
+            renderDagensOrd();
+        }
+
+        function toggleFavorittDagens() {
+            const current = getDagensOrd();
+            if (!current) return;
+
+            const idx = favorites.indexOf(current.id);
+            if (idx >= 0) {
+                favorites.splice(idx, 1);
+                showToast(`Fjernet "${current.ord}" fra favoritter.`);
+            } else {
+                favorites.push(current.id);
+                showToast(`Lagret "${current.ord}" i favoritter! ⭐`);
+            }
+            saveState();
+            updateFavButtonUi(current.id);
+            renderBibliotek();
+        }
+
+        function updateFavButtonUi(wordId) {
+            const isFav = favorites.includes(wordId);
+            const icon = document.getElementById('fav-star-icon');
+            const text = document.getElementById('fav-star-text');
+            if (icon && text) {
+                icon.innerText = isFav ? '★' : '☆';
+                text.innerText = isFav ? 'Lagret' : 'Favoritt';
+            }
+        }
+
+        // Audio Speech Synthesis
+        function speakWord(customText) {
+            const wordObj = getDagensOrd();
+            const textToSpeak = customText || (wordObj ? wordObj.ord : '');
+            if (!textToSpeak) return;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // stop active audio
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = 'nb-NO';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+                showToast(`Spiller av lyd: "${textToSpeak}" 🔊`);
+            } else {
+                showToast('Nettleseren din støtter ikke lydavspilling.', 'error');
+            }
+        }
+
+        // Mini Quiz for current word
+        function renderMiniQuiz(wordObj) {
+            const container = document.getElementById('mini-quiz-alternativer');
+            const resBox = document.getElementById('mini-quiz-resultat');
+            resBox.classList.add('hidden');
+            container.innerHTML = '';
+
+            // Generate choices
+            const correctChoice = wordObj.forklaring;
+            let otherWords = words.filter(w => w.id !== wordObj.id);
+            otherWords.sort(() => 0.5 - Math.random());
+            const distractors = otherWords.slice(0, 2).map(w => w.forklaring);
+
+            const options = [correctChoice, ...distractors].sort(() => 0.5 - Math.random());
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-3 rounded-xl bg-slate-900/80 hover:bg-slate-700/80 border border-slate-700 text-xs text-slate-200 font-medium transition';
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    if (opt === correctChoice) {
+                        resBox.className = 'p-3 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                        resBox.innerText = '🎉 Helt riktig Svar!';
+                        confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } });
+                    } else {
+                        resBox.className = 'p-3 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30';
+                        resBox.innerText = '❌ Ikke helt. Prøv igjen!';
+                    }
+                    resBox.classList.remove('hidden');
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // LIBRARY LOGIC
+        function renderBibliotek() {
+            const grid = document.getElementById('bibliotek-grid');
+            if (!grid) return;
+
+            const searchQuery = (document.getElementById('bibliotek-sok')?.value || '').toLowerCase();
+            const catFilter = document.getElementById('bibliotek-kategori-filter')?.value || 'alle';
+
+            const filtered = words.filter(w => {
+                const matchesSearch = w.ord.toLowerCase().includes(searchQuery) ||
+                                      w.forklaring.toLowerCase().includes(searchQuery) ||
+                                      (w.synonymer && w.synonymer.some(s => s.toLowerCase().includes(searchQuery)));
+                if (catFilter === 'alle') return matchesSearch;
+                if (catFilter === 'favoritter') return matchesSearch && favorites.includes(w.id);
+                return matchesSearch && w.kategori === catFilter;
+            });
+
+            grid.innerHTML = '';
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-slate-400">
+                        <span class="text-4xl block mb-2">🔍</span>
+                        Ingen ord funnet. Prøv å endre på søket eller filteret.
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(w => {
+                const isFav = favorites.includes(w.id);
+                const card = document.createElement('div');
+                card.className = 'bg-slate-800 rounded-2xl p-5 border border-slate-700 flex flex-col justify-between hover:border-slate-500 transition shadow-lg';
+
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-xl font-bold text-white">${w.ord}</h3>
+                                <span class="text-xs text-accent-400 font-semibold italic">${w.ordklasse} ${w.uttale ? '• ' + w.uttale : ''}</span>
+                            </div>
+                            <button onclick="toggleFavFromLib('${w.id}')" class="text-lg text-amber-400 hover:scale-110 transition">
+                                ${isFav ? '★' : '☆'}
+                            </button>
+                        </div>
+                        <p class="text-sm text-slate-300 line-clamp-3">${w.forklaring}</p>
+                        <blockquote class="text-xs italic text-slate-400 border-l-2 border-brand-500 pl-2">"${w.eksempel}"</blockquote>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-slate-700/60 flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-900 text-slate-300 border border-slate-700">${w.kategori}</span>
+                        <button onclick="speakWord('${w.ord}')" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1">
+                            <span>🔊 Uttale</span>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleFavFromLib(wordId) {
+            const idx = favorites.indexOf(wordId);
+            if (idx >= 0) favorites.splice(idx, 1);
+            else favorites.push(wordId);
+            saveState();
+            renderBibliotek();
+            updateFavButtonUi(getDagensOrd()?.id);
+        }
+
+        // QUIZ LOGIC
+        function startQuizMode(mode) {
+            quizState.mode = mode;
+            quizState.index = 0;
+            quizState.score = 0;
+
+            document.getElementById('btn-quiz-valg').className = mode === 'valg' 
+                ? 'px-3.5 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shadow'
+                : 'px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700 text-slate-300 hover:text-white';
+            document.getElementById('btn-quiz-flash').className = mode === 'flashcards' 
+                ? 'px-3.5 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shadow'
+                : 'px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700 text-slate-300 hover:text-white';
+
+            const valgBox = document.getElementById('mode-valg-box');
+            const flashBox = document.getElementById('mode-flashcards-box');
+
+            if (mode === 'valg') {
+                valgBox.classList.remove('hidden');
+                flashBox.classList.add('hidden');
+                // Shuffle words for quiz
+                quizState.questions = [...words].sort(() => 0.5 - Math.random());
+                quizState.total = Math.min(5, quizState.questions.length);
+                renderValgSporsmal();
+            } else {
+                valgBox.classList.add('hidden');
+                flashBox.classList.remove('hidden');
+                quizState.questions = [...words].sort(() => 0.5 - Math.random());
+                renderFlashcard();
+            }
+        }
+
+        function renderValgSporsmal() {
+            if (quizState.index >= quizState.total) {
+                // Quiz finished
+                const container = document.getElementById('mode-valg-box');
+                container.innerHTML = `
+                    <div class="py-8 space-y-4">
+                        <span class="text-5xl">🏆</span>
+                        <h3 class="text-3xl font-black text-white">Quiz Fullført!</h3>
+                        <p class="text-slate-300 text-base">Du fikk <span class="text-brand-400 font-bold">${quizState.score}</span> av <span class="font-bold">${quizState.total}</span> riktige!</p>
+                        <button onclick="startQuizMode('valg')" class="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition shadow-lg">
+                            Prøv Igjen 🔄
+                        </button>
+                    </div>
+                `;
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                return;
+            }
+
+            document.getElementById('quiz-steg').innerText = quizState.index + 1;
+            document.getElementById('quiz-total').innerText = quizState.total;
+            document.getElementById('quiz-poeng').innerText = quizState.score;
+            document.getElementById('btn-neste-quiz').classList.add('hidden');
+            document.getElementById('quiz-tilbakemelding').innerText = '';
+
+            const current = quizState.questions[quizState.index];
+            document.getElementById('quiz-ord-tittel').innerText = current.ord;
+
+            // Alternatives
+            const correctChoice = current.forklaring;
+            let distractors = words.filter(w => w.id !== current.id).sort(() => 0.5 - Math.random()).slice(0, 3).map(w => w.forklaring);
+            const choices = [correctChoice, ...distractors].sort(() => 0.5 - Math.random());
+
+            const container = document.getElementById('quiz-valg-alternativer');
+            container.innerHTML = '';
+
+            choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-2xl bg-slate-900 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-sm font-medium transition flex items-center justify-between';
+                btn.innerText = c;
+                btn.onclick = () => {
+                    // Disable all choice buttons
+                    container.querySelectorAll('button').forEach(b => b.disabled = true);
+                    if (c === correctChoice) {
+                        btn.classList.add('bg-emerald-600/30', 'border-emerald-500', 'text-emerald-200');
+                        document.getElementById('quiz-tilbakemelding').className = 'text-sm font-bold text-emerald-400';
+                        document.getElementById('quiz-tilbakemelding').innerText = '✨ Riktig!';
+                        quizState.score += 1;
+                        document.getElementById('quiz-poeng').innerText = quizState.score;
+                    } else {
+                        btn.classList.add('bg-rose-600/30', 'border-rose-500', 'text-rose-200');
+                        document.getElementById('quiz-tilbakemelding').className = 'text-sm font-bold text-rose-400';
+                        document.getElementById('quiz-tilbakemelding').innerText = `❌ Feil. Riktig var: ${correctChoice}`;
+                    }
+                    document.getElementById('btn-neste-quiz').classList.remove('hidden');
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function nesteQuizSporsmal() {
+            quizState.index += 1;
+            renderValgSporsmal();
+        }
+
+        function renderFlashcard() {
+            const current = quizState.questions[quizState.index % quizState.questions.length];
+            if (!current) return;
+
+            document.getElementById('flash-ord').innerText = current.ord;
+            document.getElementById('flash-ordklasse').innerText = current.ordklasse;
+            document.getElementById('flash-forklaring').innerText = current.forklaring;
+            document.getElementById('flash-eksempel').innerText = `"${current.eksempel}"`;
+
+            // Reset flip state
+            const inner = document.getElementById('flashcard-inner');
+            if (inner) inner.classList.remove('flipped');
+        }
+
+        function toggleFlashcard() {
+            const inner = document.getElementById('flashcard-inner');
+            if (inner) inner.classList.toggle('flipped');
+        }
+
+        function nesteFlashcard() {
+            quizState.index += 1;
+            renderFlashcard();
+        }
+
+        // OPPGAVEARK GENERATOR LOGIC
+        function genererOppgavearkPreview() {
+            const tittel = document.getElementById('oppgave-tittel-input').value || 'Veukens Ord';
+            const antall = parseInt(document.getElementById('oppgave-antall-select').value, 10);
+            const typ = document.getElementById('oppgave-type-select').value;
+            const medFasit = document.getElementById('oppgave-fasit-check').checked;
+
+            const selectedWords = words.slice(0, antall);
+            const container = document.getElementById('oppgaveark-preview-content');
+            const printArea = document.getElementById('print-area');
+
+            let htmlContent = `
+                <div class="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-end">
+                    <div>
+                        <h1 class="text-3xl font-black text-slate-900">${tittel}</h1>
+                        <p class="text-xs text-slate-600">Navn: ___________________________ &nbsp;&nbsp;&nbsp;&nbsp; Klasse: ________ &nbsp;&nbsp;&nbsp;&nbsp; Dato: ________</p>
+                    </div>
+                    <span class="text-xs font-bold border border-slate-900 px-2 py-1 rounded">Ungdomstrinnet</span>
+                </div>
+            `;
+
+            if (typ === 'kombinert' || typ === 'kobling') {
+                htmlContent += `
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-sm text-slate-900 uppercase tracking-wider">Oppgave 1: Koble ord med riktig forklaring</h3>
+                        <p class="text-xs text-slate-600">Trekk en strek fra hvert ord på venstre side til riktig definisjon på høyre side.</p>
+                        
+                        <div class="grid grid-cols-2 gap-6 pt-2">
+                            <div class="space-y-3">
+                                <h4 class="font-bold text-xs text-slate-700 underline">ORD</h4>
+                                ${selectedWords.map((w, i) => `
+                                    <div class="p-2 border border-slate-300 rounded text-sm font-bold flex justify-between items-center">
+                                        <span>${i + 1}. ${w.ord}</span>
+                                        <span class="w-3 h-3 rounded-full border border-slate-900"></span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="space-y-3">
+                                <h4 class="font-bold text-xs text-slate-700 underline">FORKLARING</h4>
+                                ${[...selectedWords].sort(() => 0.5 - Math.random()).map((w, i) => `
+                                    <div class="p-2 border border-slate-300 rounded text-xs flex justify-between items-center">
+                                        <span class="w-3 h-3 rounded-full border border-slate-900 mr-2"></span>
+                                        <span class="flex-1">${w.forklaring}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (typ === 'kombinert' || typ === 'skriving') {
+                htmlContent += `
+                    <div class="space-y-4 pt-6">
+                        <h3 class="font-bold text-sm text-slate-900 uppercase tracking-wider">Oppgave 2: Lag egne setninger</h3>
+                        <p class="text-xs text-slate-600">Velg ${Math.min(4, selectedWords.length)} av ordene over og skriv en meningsfull setning til hvert ord som viser at du forstår hva ordet betyr.</p>
+                        
+                        <div class="space-y-4 pt-2">
+                            ${selectedWords.slice(0, 4).map((w, i) => `
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-slate-800">${i + 1}. Ord: ${w.ord} (${w.ordklasse})</span>
+                                    <div class="border-b border-slate-400 h-6"></div>
+                                    <div class="border-b border-slate-400 h-6"></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (medFasit) {
+                htmlContent += `
+                    <div class="page-break pt-12 mt-12 border-t-2 border-dashed border-slate-400">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">FASIT - ${tittel}</h2>
+                        <div class="space-y-2 text-xs">
+                            ${selectedWords.map(w => `
+                                <div class="p-2 border-b border-slate-200">
+                                    <strong class="text-slate-900">${w.ord}:</strong> ${w.forklaring}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = htmlContent;
+            printArea.innerHTML = htmlContent;
+        }
+
+        // SKJERMMODUS / SMARTBOARD LOGIC
+        function getKlasseOrd() {
+            if (words.length === 0) return { ord: 'Ingen ord', ordklasse: '', forklaring: '', eksempel: '' };
+            return words[klasseIndex % words.length];
+        }
+
+        function renderKlasseOrd() {
+            const w = getKlasseOrd();
+            document.getElementById('klasse-ord-tittel').innerText = w.ord;
+            document.getElementById('klasse-ordklasse').innerText = `${w.ordklasse} ${w.uttale ? '• ' + w.uttale : ''}`;
+            document.getElementById('klasse-text-forklaring').innerText = w.forklaring;
+            document.getElementById('klasse-text-eksempel').innerText = `"${w.eksempel}"`;
+
+            // Hide steps initially
+            document.getElementById('klasse-step-forklaring').classList.add('hidden');
+            document.getElementById('klasse-step-eksempel').classList.add('hidden');
+        }
+
+        function nesteKlasseOrd(delta) {
+            klasseIndex += delta;
+            if (klasseIndex < 0) klasseIndex = words.length - 1;
+            renderKlasseOrd();
+        }
+
+        function avslorKlasseTrinn(step) {
+            if (step === 1) document.getElementById('klasse-step-forklaring').classList.remove('hidden');
+            if (step === 2) document.getElementById('klasse-step-eksempel').classList.remove('hidden');
+        }
+
+        // AI TOOL INTEGRATION USING GEMINI API
+        function setAiMode(mode) {
+            aiMode = mode;
+            document.getElementById('btn-ai-mode-forklar').className = mode === 'forklar'
+                ? 'w-full text-left p-3.5 rounded-xl bg-purple-600/30 border border-purple-500/50 text-white font-semibold text-sm hover:bg-purple-600/40 transition'
+                : 'w-full text-left p-3.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-semibold text-sm hover:bg-slate-700 transition';
+            
+            document.getElementById('btn-ai-mode-generer').className = mode === 'generer'
+                ? 'w-full text-left p-3.5 rounded-xl bg-purple-600/30 border border-purple-500/50 text-white font-semibold text-sm hover:bg-purple-600/40 transition'
+                : 'w-full text-left p-3.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-semibold text-sm hover:bg-slate-700 transition';
+
+            document.getElementById('btn-ai-mode-fortelling').className = mode === 'fortelling'
+                ? 'w-full text-left p-3.5 rounded-xl bg-purple-600/30 border border-purple-500/50 text-white font-semibold text-sm hover:bg-purple-600/40 transition'
+                : 'w-full text-left p-3.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-semibold text-sm hover:bg-slate-700 transition';
+
+            const title = document.getElementById('ai-prompt-title');
+            const input = document.getElementById('ai-user-input');
+
+            if (mode === 'forklar') {
+                title.innerText = 'Skriv inn et ord du vil ha forklart for ungdomsskolen:';
+                input.placeholder = 'f.eks. Polarisering, Resonnement, Diskriminering...';
+                input.disabled = false;
+            } else if (mode === 'generer') {
+                title.innerText = 'Generer et nytt utfordrende ord til ordboken:';
+                input.placeholder = 'Trykk Send for å la AI velge et ord...';
+                input.disabled = false;
+            } else if (mode === 'fortelling') {
+                title.innerText = 'Skriv ord du vil flette inn i en fortelling:';
+                input.placeholder = 'f.eks. Ambivalent, Kildekritikk, Nyansert...';
+                input.disabled = false;
+            }
+        }
+
+        async function kjorAiHandling() {
+            const inputVal = document.getElementById('ai-user-input').value.trim();
+            const statusInd = document.getElementById('ai-status-indicator');
+            const outputBox = document.getElementById('ai-output-box');
+            const btn = document.getElementById('btn-send-ai');
+
+            statusInd.classList.remove('hidden');
+            btn.disabled = true;
+            outputBox.innerText = 'Henter svar fra Gemini AI... Vennligst vent.';
+
+            let systemPrompt = "Du er en pedagogisk norsk-lærer for ungdomsskolen (8.-10. klasse). Svar engasjerende, lettfattelig og med god og presis norsk.";
+            let userQuery = "";
+
+            if (aiMode === 'forklar') {
+                const searchWord = inputVal || getDagensOrd().ord;
+                userQuery = `Forklar ordet "${searchWord}" for en elev på 9. trinn. Gi en enkel definisjon, et ungdomsnært eksempel fra skolehverdagen eller sosiale medier, og 2 synonymer.`;
+            } else if (aiMode === 'generer') {
+                userQuery = `Generer et nytt spennende akademisk eller samfunnsfaglig ord som passer for ungdomsskolen.
+                Formatér svaret som ren JSON med feltene:
+                "ord": "ordet",
+                "ordklasse": "Adjektiv/Substantiv/Verb",
+                "uttale": "/lydskrift/",
+                "kategori": "Akademisk/Samfunn/Argumentasjon/Litteratur",
+                "forklaring": "kort forklaring",
+                "eksempel": "eksempelsetning",
+                "synonymer": ["synonym1", "synonym2"],
+                "hvorfor": "hvorfor det er nyttig"`;
+            } else if (aiMode === 'fortelling') {
+                const wordsToUse = inputVal || words.slice(0, 3).map(w => w.ord).join(', ');
+                userQuery = `Skriv en spennende mikrofiksjon (kortfortelling på ca. 100-150 ord) for ungdomsskolen der du bruker ordene: ${wordsToUse}. Uthev ordene med **fet skrift**.`;
+            }
+
+            const apiKey = ""; // Built-in runtime API key
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    outputBox.innerText = text;
+                    if (aiMode === 'generer') {
+                        // Attempt to parse generated word JSON and offer add button
+                        try {
+                            const cleaned = text.replace(/```json|```/g, '').trim();
+                            const jsonObj = JSON.parse(cleaned);
+                            jsonObj.id = 'ord-' + Date.now();
+                            words.push(jsonObj);
+                            saveState();
+                            renderBibliotek();
+                            renderAdminTabell();
+                            showToast(`AI-ordet "${jsonObj.ord}" ble lagt til i biblioteket! 🎉`);
+                        } catch (e) {
+                            // Non-json text received
+                        }
+                    }
+                } else {
+                    outputBox.innerText = 'Kunne ikke hente svar fra AI for øyeblikket. Prøv igjen.';
+                }
+            } catch (err) {
+                console.error(err);
+                outputBox.innerText = 'Det oppstod en feil under kommunikasjon med AI-tjenesten.';
+            } finally {
+                statusInd.classList.add('hidden');
+                btn.disabled = false;
+            }
+        }
+
+        // ADMIN TAB CRUD LOGIC
+        function renderAdminTabell() {
+            const tbody = document.getElementById('admin-ord-tabell');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+            words.forEach(w => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-700/40 transition';
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-bold text-white">${w.ord}</td>
+                    <td class="px-4 py-3 text-accent-400 italic text-xs">${w.ordklasse}</td>
+                    <td class="px-4 py-3 text-xs"><span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700">${w.kategori}</span></td>
+                    <td class="px-4 py-3 text-xs max-w-xs truncate">${w.forklaring}</td>
+                    <td class="px-4 py-3 text-right space-x-2">
+                        <button onclick="redigerOrd('${w.id}')" class="text-xs text-brand-400 hover:underline">Rediger</button>
+                        <button onclick="slettOrd('${w.id}')" class="text-xs text-rose-400 hover:underline">Slett</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function apneNyttOrdModal() {
+            document.getElementById('modal-tittel').innerText = 'Legg til nytt ord';
+            document.getElementById('ord-form').reset();
+            document.getElementById('form-ord-id').value = '';
+            document.getElementById('ord-modal').classList.remove('hidden');
+        }
+
+        function lukkOrdModal() {
+            document.getElementById('ord-modal').classList.add('hidden');
+        }
+
+        function redigerOrd(id) {
+            const w = words.find(item => item.id === id);
+            if (!w) return;
+
+            document.getElementById('modal-tittel').innerText = `Rediger "${w.ord}"`;
+            document.getElementById('form-ord-id').value = w.id;
+            document.getElementById('form-ord').value = w.ord;
+            document.getElementById('form-ordklasse').value = w.ordklasse;
+            document.getElementById('form-uttale').value = w.uttale || '';
+            document.getElementById('form-kategori').value = w.kategori;
+            document.getElementById('form-forklaring').value = w.forklaring;
+            document.getElementById('form-eksempel').value = w.eksempel;
+            document.getElementById('form-synonymer').value = (w.synonymer || []).join(', ');
+            document.getElementById('form-hvorfor').value = w.hvorfor || '';
+
+            document.getElementById('ord-modal').classList.remove('hidden');
+        }
+
+        function lagreOrdForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-ord-id').value;
+            const ordVal = document.getElementById('form-ord').value.trim();
+            const klasseVal = document.getElementById('form-ordklasse').value.trim();
+            const uttaleVal = document.getElementById('form-uttale').value.trim();
+            const katVal = document.getElementById('form-kategori').value;
+            const forkVal = document.getElementById('form-forklaring').value.trim();
+            const eksVal = document.getElementById('form-eksempel').value.trim();
+            const synVal = document.getElementById('form-synonymer').value.split(',').map(s => s.trim()).filter(Boolean);
+            const hvorforVal = document.getElementById('form-hvorfor').value.trim();
+
+            if (id) {
+                // Edit existing
+                const idx = words.findIndex(w => w.id === id);
+                if (idx >= 0) {
+                    words[idx] = { id, ord: ordVal, ordklasse: klasseVal, uttale: uttaleVal, kategori: katVal, forklaring: forkVal, eksempel: eksVal, synonymer: synVal, hvorfor: hvorforVal };
+                }
+            } else {
+                // New word
+                const newWord = {
+                    id: 'ord-' + Date.now(),
+                    ord: ordVal,
+                    ordklasse: klasseVal,
+                    uttale: uttaleVal,
+                    kategori: katVal,
+                    forklaring: forkVal,
+                    eksempel: eksVal,
+                    synonymer: synVal,
+                    hvorfor: hvorforVal
+                };
+                words.unshift(newWord);
+            }
+
+            saveState();
+            lukkOrdModal();
+            renderDagensOrd();
+            renderBibliotek();
+            renderAdminTabell();
+            genererOppgavearkPreview();
+            showToast(`Lagret ordet "${ordVal}"!`);
+        }
+
+        function slettOrd(id) {
+            words = words.filter(w => w.id !== id);
+            saveState();
+            renderDagensOrd();
+            renderBibliotek();
+            renderAdminTabell();
+            genererOppgavearkPreview();
+            showToast('Ordet ble slettet.');
+        }
+
+        function tilbakestillOrdbok() {
+            words = [...DEFAULT_WORDS];
+            favorites = [];
+            saveState();
+            renderDagensOrd();
+            renderBibliotek();
+            renderAdminTabell();
+            genererOppgavearkPreview();
+            showToast('Ordboken er tilbakestilt til standardsettet! 🔄');
+        }
+
+        // Custom Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-xl text-xs font-bold text-white shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-center space-x-2 ${
+                type === 'error' ? 'bg-rose-600 border border-rose-400' : 'bg-slate-800 border border-brand-500/50 text-brand-300'
+            }`;
+            toast.innerText = message;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
