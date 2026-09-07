@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Seat - Tysk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            touch-action: manipulation;
+        }
+
+        .word-card {
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        /* Animasjon for de siste 10 sekundene */
+        .timer-low {
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); color: #ef4444; }
+            50% { transform: scale(1.2); color: #b91c1c; }
+            100% { transform: scale(1); color: #ef4444; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 text-center border-4 border-yellow-400">
+        <h1 class="text-3xl font-black text-gray-800 mb-2 uppercase tracking-tighter italic">
+            🔥 Hot Seat: Tysk 🔥
+        </h1>
+        <p class="text-sm text-gray-500 mb-6 font-medium">Forklar ordet uten å si det!</p>
+
+        <!-- Statusfelt -->
+        <div class="flex justify-between items-center mb-8 px-4 bg-gray-50 rounded-xl py-3">
+            <div class="text-left">
+                <span class="block text-xs uppercase font-bold text-gray-400">Tid igjen</span>
+                <span id="timer" class="text-2xl font-black text-blue-600 inline-block transition-all">60s</span>
+            </div>
+            <div class="text-right">
+                <span class="block text-xs uppercase font-bold text-gray-400">Ord brukt</span>
+                <span id="counter" class="text-2xl font-black text-gray-700">0 / 0</span>
+            </div>
+        </div>
+
+        <!-- Ordfelt -->
+        <div id="display-area" class="word-card bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 mb-8">
+            <div id="start-screen">
+                <p class="text-xl text-gray-600 mb-4 px-4">Klar for en ny runde?</p>
+                <button onclick="nextWord()" class="bg-yellow-400 hover:bg-yellow-500 text-black font-black py-4 px-8 rounded-full text-xl shadow-lg transition-transform active:scale-95">
+                    START SPILLET
+                </button>
+            </div>
+
+            <div id="word-screen" class="hidden">
+                <h2 id="german-word" class="text-5xl md:text-7xl font-black text-red-600 mb-4 break-words px-2 uppercase">---</h2>
+                <p id="norwegian-hint" class="text-xl md:text-2xl text-gray-500 font-bold italic">(norsk betydning)</p>
+            </div>
+        </div>
+
+        <!-- Knapper -->
+        <div id="controls" class="hidden grid grid-cols-2 gap-4">
+            <button onclick="nextWord()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95">
+                NESTE ORD
+            </button>
+            <button onclick="resetTimer()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 rounded-2xl transition-all active:scale-95">
+                NY TID
+            </button>
+        </div>
+        
+        <button id="reset-words" onclick="resetGame()" class="mt-8 text-xs text-gray-400 underline hover:text-gray-600">
+            Nullstill alle ord
+        </button>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'pling') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'tick') {
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'end') {
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(110, audioCtx.currentTime);
+                oscillator.frequency.linearRampToValueAtTime(55, audioCtx.currentTime + 1);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 1);
+            }
+        }
+
+        const wordDatabase = [
+            { de: "Apfel", no: "Eple" }, { de: "Schule", no: "Skole" }, { de: "Hund", no: "Hund" },
+            { de: "Katze", no: "Katt" }, { de: "Haus", no: "Hus" }, { de: "Fahrrad", no: "Sykkel" },
+            { de: "Auto", no: "Bil" }, { de: "Brot", no: "Brød" }, { de: "Wasser", no: "Vann" },
+            { de: "Milch", no: "Melk" }, { de: "Käse", no: "Ost" }, { de: "Fußball", no: "Fotball" },
+            { de: "Lehrer", no: "Lærer" }, { de: "Buch", no: "Bok" }, { de: "Tisch", no: "Bord" },
+            { de: "Stuhl", no: "Stol" }, { de: "Fenster", no: "Vindu" }, { de: "Tür", no: "Dør" },
+            { de: "Handy", no: "Mobiltelefon" }, { de: "Computer", no: "Datamaskin" }, { de: "Freund", no: "Venn" },
+            { de: "Sommer", no: "Sommer" }, { de: "Winter", no: "Vinter" }, { de: "Sonne", no: "Sol" },
+            { de: "Regen", no: "Regn" }, { de: "Schnee", no: "Snø" }, { de: "Eis", no: "Is" },
+            { de: "Gitarre", no: "Gitar" }, { de: "Musik", no: "Musikk" }, { de: "Kino", no: "Kino" },
+            { de: "Ferien", no: "Ferie" }, { de: "Essen", no: "Mat" }, { de: "Trinken", no: "Drikke" },
+            { de: "Schlafen", no: "Sove" }, { de: "Laufen", no: "Løpe/Gå" }, { de: "Schwimmen", no: "Svømme" },
+            { de: "Singen", no: "Synge" }, { de: "Tanzen", no: "Danse" }, { de: "Himmel", no: "Himmel" },
+            { de: "Baum", no: "Tre" }, { de: "Blume", no: "Blomst" }, { de: "Vogel", no: "Fugl" },
+            { de: "Pferd", no: "Hest" }, { de: "Kopf", no: "Hode" }, { de: "Hand", no: "Hånd" },
+            { de: "Fuß", no: "Fot" }, { de: "Auge", no: "Øye" }, { de: "Mund", no: "Munn" },
+            { de: "Haare", no: "Hår" }, { de: "Kleidung", no: "Klær" }, { de: "Schuhe", no: "Sko" },
+            { de: "Hose", no: "Bukse" }, { de: "Hemd", no: "Skjorte" }, { de: "Tasche", no: "Veske/Lomme" },
+            { de: "Geld", no: "Penger" }, { de: "Zeit", no: "Tid" }, { de: "Uhr", no: "Klokke" },
+            { de: "Tag", no: "Dag" }, { de: "Nacht", no: "Natt" }, { de: "Woche", no: "Uke" },
+            { de: "Monat", no: "Måned" }, { de: "Jahr", no: "År" }, { de: "Stadt", no: "By" },
+            { de: "Land", no: "Land" }, { de: "Meer", no: "Hav" }, { de: "Berg", no: "Fjell" },
+            { de: "Wald", no: "Skog" }, { de: "Brille", no: "Briller" }, { de: "Küche", no: "Kjøkken" },
+            { de: "Bett", no: "Seng" }, { de: "Lampe", no: "Lampe" }, { de: "Zeitung", no: "Avis" },
+            { de: "Brief", no: "Brev" }, { de: "Stift", no: "Penn/Blyant" }, { de: "Papier", no: "Papir" },
+            { de: "Frühstück", no: "Frokost" }, { de: "Mittagessen", no: "Lunsj" }, { de: "Abendessen", no: "Middag" },
+            { de: "Kartoffel", no: "Potet" }, { de: "Tomate", no: "Tomat" }, { de: "Banane", no: "Banan" },
+            { de: "Saft", no: "Juice" }, { de: "Kaffee", no: "Kaffe" }, { de: "Tee", no: "Te" },
+            { de: "Zucker", no: "Sukker" }, { de: "Salz", no: "Salt" }, { de: "Löffel", no: "Skje" },
+            { de: "Gabel", no: "Gaffel" }, { de: "Messer", no: "Kniv" }, { de: "Teller", no: "Tallerken" },
+            { de: "Glas", no: "Glass" }, { de: "Tasse", no: "Kopp" }, { de: "Kühlschrank", no: "Kjøleskap" },
+            { de: "Fisch", no: "Fisk" }, { de: "Kuchen", no: "Kake" }, { de: "Schokolade", no: "Sjokolade" },
+            { de: "Bonbon", no: "Drops/Godteri" }, { de: "Geschenk", no: "Gave" }, { de: "Party", no: "Fest" },
+            { de: "Spiel", no: "Spill" }
+        ];
+
+        let usedWords = [];
+        let timeLeft = 60;
+        let timerInterval = null;
+
+        if (localStorage.getItem('hotseat_used')) {
+            usedWords = JSON.parse(localStorage.getItem('hotseat_used'));
+        }
+
+        function updateUI() {
+            document.getElementById('counter').innerText = `${usedWords.length} / ${wordDatabase.length}`;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 60;
+            const timerDisplay = document.getElementById('timer');
+            timerDisplay.innerText = timeLeft + "s";
+            timerDisplay.classList.remove('timer-low');
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = timeLeft + "s";
+                
+                // Ved nøyaktig 10 sekunder (og nedover), aktiver animasjon
+                if (timeLeft <= 10 && timeLeft > 0) {
+                    if (!timerDisplay.classList.contains('timer-low')) {
+                        timerDisplay.classList.add('timer-low');
+                    }
+                }
+
+                if (timeLeft <= 5 && timeLeft > 0) {
+                    playSound('tick');
+                }
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.classList.remove('timer-low');
+                    playSound('end');
+                    document.getElementById('german-word').innerText = "TIDEN ER UTE!";
+                    document.getElementById('norwegian-hint').innerText = "Bytt person i stolen";
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            playSound('pling');
+            startTimer();
+        }
+
+        function nextWord() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('word-screen').classList.remove('hidden');
+            document.getElementById('controls').classList.remove('hidden');
+
+            const availableWords = wordDatabase.filter(word => !usedWords.includes(word.de));
+
+            if (availableWords.length === 0) {
+                usedWords = [];
+                localStorage.removeItem('hotseat_used');
+                alert("Alle ordene er brukt! Vi starter forfra.");
+                nextWord();
+                return;
+            }
+
+            playSound('pling');
+            const randomIndex = Math.floor(Math.random() * availableWords.length);
+            const selectedWord = availableWords[randomIndex];
+
+            document.getElementById('german-word').innerText = selectedWord.de;
+            document.getElementById('norwegian-hint').innerText = `(${selectedWord.no})`;
+
+            usedWords.push(selectedWord.de);
+            localStorage.setItem('hotseat_used', JSON.stringify(usedWords));
+
+            updateUI();
+            startTimer();
+        }
+
+        function resetGame() {
+            if (confirm("Vil du nullstille listen?")) {
+                usedWords = [];
+                localStorage.removeItem('hotseat_used');
+                location.reload();
+            }
+        }
+
+        updateUI();
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
