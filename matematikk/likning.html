@@ -94,12 +94,19 @@
                 <span id="source-text">Laster oppgaver...</span>
             </div>
 
-            <!-- Nivå-visning -->
-            <div class="bg-slate-900/80 px-4 py-1.5 rounded-2xl border border-slate-700 flex items-center gap-2">
+            <!-- Nivå-visning (klikkbar for å velge nivå) -->
+            <button onclick="openLevelSelectModal()" class="bg-slate-900/80 hover:bg-slate-900 px-4 py-1.5 rounded-2xl border border-slate-700 hover:border-purple-500/60 flex items-center gap-2 transition">
                 <i class="fa-solid font-game text-amber-400 text-xs">NIVÅ</i>
                 <span id="level-num" class="font-game text-lg text-amber-300">1</span>
                 <span id="total-levels" class="text-slate-500 text-sm">/ 10</span>
-            </div>
+                <i class="fa-solid fa-chevron-down text-slate-500 text-xs ml-1"></i>
+            </button>
+
+            <!-- Angre-knapp -->
+            <button id="undo-btn" onclick="undoLastMove()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+                <i class="fa-solid fa-rotate-left text-amber-400"></i>
+                <span>Angre</span>
+            </button>
 
             <!-- Lærermodus / Sheets knapp -->
             <button onclick="openSettingsModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition">
@@ -297,6 +304,28 @@
         </div>
     </div>
 
+    <div id="level-select-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-slate-800 border-2 border-slate-700 p-6 rounded-3xl max-w-2xl w-full text-left shadow-2xl animate-pop relative max-h-[85vh] flex flex-col">
+            <button onclick="closeLevelSelectModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-4 shrink-0">
+                <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400">
+                    <i class="fa-solid fa-list-ol text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="font-game text-xl text-white">Velg nivå</h2>
+                    <p class="text-xs text-slate-400">Hopp direkte til et nivå du vil øve på</p>
+                </div>
+            </div>
+
+            <div id="level-select-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 overflow-y-auto pr-1">
+                <!-- Genereres dynamisk -->
+            </div>
+        </div>
+    </div>
+
     <div id="victory-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
         <div class="bg-slate-800 border-2 border-purple-500 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl animate-pop">
             <div class="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-400/40">
@@ -466,6 +495,7 @@
 
         let activeLevels = [...fallbackLevels];
         let currentLevelIdx = 0;
+        let stateHistory = [];
         let gameState = { left: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0 }, right: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0 } };
         let showFormalNotation = true;
         let googleSheetUrl = DEFAULT_SHEET_URL;
@@ -618,6 +648,8 @@
             document.getElementById('level-hint').innerText = level.forklaring || '';
 
             gameState = JSON.parse(JSON.stringify(level));
+            stateHistory = [];
+            updateUndoButtonState();
             cleanOpposites('left');
             cleanOpposites('right');
             render();
@@ -718,6 +750,8 @@
         }
 
         function applyOperation(op) {
+            pushHistory();
+
             if (op === 'div_2') {
                 divideBothSides(2);
             } else if (op === 'div_3') {
@@ -875,6 +909,63 @@
                 toast.classList.remove('opacity-100');
                 toast.classList.add('opacity-0');
             }, 1800);
+        }
+
+        // ===================== ANGRE (UNDO) =====================
+        function pushHistory() {
+            stateHistory.push(JSON.parse(JSON.stringify(gameState)));
+            if (stateHistory.length > 50) stateHistory.shift(); // unngå ubegrenset vekst
+            updateUndoButtonState();
+        }
+
+        function undoLastMove() {
+            if (stateHistory.length === 0) {
+                showToast('Ingenting å angre ennå.');
+                return;
+            }
+            gameState = stateHistory.pop();
+            updateUndoButtonState();
+            render();
+        }
+
+        function updateUndoButtonState() {
+            const btn = document.getElementById('undo-btn');
+            if (!btn) return;
+            const hasHistory = stateHistory.length > 0;
+            btn.disabled = !hasHistory;
+            btn.classList.toggle('opacity-40', !hasHistory);
+            btn.classList.toggle('cursor-not-allowed', !hasHistory);
+        }
+
+        // ===================== VELG NIVÅ =====================
+        function openLevelSelectModal() {
+            const grid = document.getElementById('level-select-grid');
+            grid.innerHTML = '';
+            activeLevels.forEach((level, idx) => {
+                const btn = document.createElement('button');
+                const isActive = idx === currentLevelIdx;
+                btn.className = `p-3 rounded-xl font-game flex flex-col items-center justify-center gap-1 border transition active:scale-95 ${
+                    isActive
+                        ? 'bg-purple-600 border-purple-400 text-white'
+                        : 'bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200'
+                }`;
+                btn.innerHTML = `
+                    <span class="text-lg">${idx + 1}</span>
+                    <span class="text-[9px] font-normal text-center leading-tight">${level.kategori || ''}</span>
+                `;
+                btn.onclick = () => selectLevel(idx);
+                grid.appendChild(btn);
+            });
+            document.getElementById('level-select-modal').classList.remove('hidden');
+        }
+
+        function closeLevelSelectModal() {
+            document.getElementById('level-select-modal').classList.add('hidden');
+        }
+
+        function selectLevel(idx) {
+            closeLevelSelectModal();
+            loadLevel(idx);
         }
 
         function updateEquationDisplay() {
