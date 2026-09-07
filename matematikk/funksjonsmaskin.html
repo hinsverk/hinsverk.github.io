@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funksjonsmaskinen - Med Konfetti</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slideIn {
+            0% { transform: translateX(-50px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes process {
+            0% { transform: scale(1) rotate(0deg); background-color: #3b82f6; }
+            25% { transform: scale(1.05) rotate(1deg); }
+            50% { transform: scale(1.1) rotate(-1deg); background-color: #8b5cf6; }
+            75% { transform: scale(1.05) rotate(1deg); }
+            100% { transform: scale(1) rotate(0deg); background-color: #3b82f6; }
+        }
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+        @keyframes antennaShake {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(15deg); }
+        }
+        @keyframes celebrate {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-40px) scale(1.1); }
+        }
+        @keyframes successFlash {
+            0%, 100% { background-color: inherit; }
+            50% { background-color: #22c55e; }
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .animate-process { animation: process 0.3s ease-in-out infinite; }
+        .eye-blink { animation: blink 4s infinite; }
+        .antenna { animation: antennaShake 1s ease-in-out infinite; }
+        .celebrate-robot { animation: celebrate 0.5s ease-in-out infinite; }
+        .success-bg { animation: successFlash 0.5s ease-in-out 4; }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            z-index: 50;
+            animation: confettiFall 3s linear forwards;
+        }
+        
+        .machine-body {
+            background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
+            border: 6px solid #64748b;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 25px rgba(0,0,0,0.2);
+            transition: background 0.3s;
+        }
+        .robot-eye {
+            background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 100%);
+        }
+
+        .mouth-base {
+            width: 60px;
+            height: 20px;
+            border-bottom: 4px solid #1e3a8a;
+            border-radius: 0 0 0 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .mouth-smile {
+            border-bottom: 6px solid #60a5fa;
+            border-radius: 0 0 50px 50px;
+            height: 25px;
+            filter: drop-shadow(0 0 5px #60a5fa);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col items-center justify-center p-4 font-sans overflow-hidden">
+
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 border border-slate-200 relative z-10">
+        <div class="flex justify-between items-start mb-2">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Funksjonsmaskinen 🤖</h1>
+                <p class="text-slate-600">Lær om funksjoner og regneregler</p>
+            </div>
+            <div class="flex flex-col gap-2">
+                <button onclick="toggleSecretMode()" id="secretModeBtn" class="bg-slate-800 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-slate-700 transition-colors">
+                    AKTIVER HEMMELIG MODUS
+                </button>
+                <button onclick="generateRandomRule()" id="randomRuleBtn" class="hidden bg-purple-100 text-purple-700 border border-purple-300 px-4 py-1 rounded-full text-[10px] font-bold hover:bg-purple-200 transition-colors">
+                    LAG NY TILFELDIG REGEL
+                </button>
+            </div>
+        </div>
+
+        <!-- Kontrollpanel -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+            <div id="ruleContainer">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Regneregel:</label>
+                <div class="flex gap-2">
+                    <span class="flex items-center text-xl font-mono font-bold text-blue-600">f(x) =</span>
+                    <input type="text" id="ruleInput" value="2x + 5" oninput="updateRobotDisplay()"
+                        class="w-full px-4 py-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-mono">
+                </div>
+            </div>
+            <div id="guessContainer" class="hidden">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Hva tror du regelen er?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="guessInput" placeholder="f.eks. 3x - 1" 
+                        class="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-lg font-mono">
+                    <button onclick="checkGuess()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold transition-all">SJEKK</button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Skriv inn et tall (x):</label>
+                <div class="flex gap-2">
+                    <input type="number" id="numberInput" value="4" 
+                        class="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-500 text-lg font-mono">
+                    <button onclick="runMachine()" id="runBtn" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition-all transform active:scale-95">
+                        KJØR!
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maskin-visualisering -->
+        <div id="robotWrapper" class="relative h-80 flex items-center justify-between px-10 mb-10">
+            <div id="inputSlot" class="w-16 h-16 flex items-center justify-center bg-green-100 border-4 border-green-500 rounded-full text-xl font-bold text-green-700 z-10 shadow-lg transition-all duration-300">?</div>
+
+            <div class="relative flex flex-col items-center">
+                <div class="flex gap-12 -mb-2">
+                    <div class="w-1 h-8 bg-slate-500 antenna origin-bottom relative"><div class="absolute -top-2 -left-1.5 w-4 h-4 bg-red-500 rounded-full shadow-[0_0_8px_red]"></div></div>
+                    <div class="w-1 h-8 bg-slate-500 antenna origin-bottom relative" style="animation-delay: 0.2s"><div class="absolute -top-2 -left-1.5 w-4 h-4 bg-red-500 rounded-full shadow-[0_0_8px_red]"></div></div>
+                </div>
+
+                <div id="machine" class="machine-body w-52 h-52 rounded-3xl flex flex-col items-center justify-between p-4 text-white relative z-20 overflow-hidden">
+                    <div class="flex gap-8 mt-4">
+                        <div class="w-10 h-10 rounded-full robot-eye flex items-center justify-center eye-blink">
+                            <div id="pupil1" class="w-4 h-4 bg-slate-900 rounded-full transition-transform duration-300"></div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full robot-eye flex items-center justify-center eye-blink">
+                            <div id="pupil2" class="w-4 h-4 bg-slate-900 rounded-full transition-transform duration-300"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-black/50 p-2 rounded-lg border border-blue-400/30 w-full text-center">
+                        <div id="displayRule" class="text-lg font-mono font-bold text-blue-300">2x + 5</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div id="robotMouth" class="mouth-base"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="outputSlot" class="w-16 h-16 flex items-center justify-center bg-orange-100 border-4 border-orange-500 rounded-full text-xl font-bold text-orange-700 z-10 shadow-lg transition-all duration-300">?</div>
+            <div class="absolute top-1/2 left-0 w-full h-2 bg-slate-200 -translate-y-1/2 -z-0"></div>
+        </div>
+
+        <!-- Logg -->
+        <div class="border-t pt-6">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-slate-700">Tabell (Logg):</h3>
+                <button onclick="clearLog()" class="text-xs text-slate-400 hover:text-red-500">Tøm logg</button>
+            </div>
+            <div id="log" class="space-y-2 max-h-40 overflow-y-auto font-mono text-sm">
+                <p class="text-slate-400 italic">Ingen data ennå...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isSecret = false;
+        let secretRule = "";
+
+        // Oppdaterer displayet på selve roboten
+        function updateRobotDisplay() {
+            const display = document.getElementById('displayRule');
+            const input = document.getElementById('ruleInput');
+            if (!isSecret) {
+                display.textContent = input.value || "f(x)";
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#f87171', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                document.body.appendChild(confetti);
+                
+                // Fjern elementet etter animasjonen er ferdig
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function generateRandomRule(silent = false) {
+            const types = ['add', 'sub', 'mul', 'combined'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const val1 = Math.floor(Math.random() * 9) + 2;
+            const val2 = Math.floor(Math.random() * 10) + 1;
+            
+            let rule = "";
+            switch(type) {
+                case 'add': rule = `x + ${val1}`; break;
+                case 'sub': rule = `x - ${val1}`; break;
+                case 'mul': rule = `${val1}x`; break;
+                case 'combined': rule = `${val1}x + ${val2}`; break;
+            }
+            
+            secretRule = rule;
+            document.getElementById('guessInput').value = "";
+            clearLog();
+            if (!silent) {
+                alert("En ny hemmelig regel er laget! Prøv noen tall for å finne den ut.");
+            }
+        }
+
+        function toggleSecretMode() {
+            isSecret = !isSecret;
+            const btn = document.getElementById('secretModeBtn');
+            const randomBtn = document.getElementById('randomRuleBtn');
+            const ruleContainer = document.getElementById('ruleContainer');
+            const guessContainer = document.getElementById('guessContainer');
+            const displayRule = document.getElementById('displayRule');
+            const ruleInput = document.getElementById('ruleInput');
+
+            if (isSecret) {
+                generateRandomRule(true); 
+                btn.textContent = "DEAKTIVER HEMMELIG MODUS";
+                btn.classList.replace('bg-slate-800', 'bg-red-600');
+                randomBtn.classList.remove('hidden');
+                ruleContainer.classList.add('hidden');
+                guessContainer.classList.remove('hidden');
+                displayRule.textContent = "???";
+            } else {
+                btn.textContent = "AKTIVER HEMMELIG MODUS";
+                btn.classList.replace('bg-red-600', 'bg-slate-800');
+                randomBtn.classList.add('hidden');
+                ruleContainer.classList.remove('hidden');
+                guessContainer.classList.add('hidden');
+                updateRobotDisplay();
+            }
+        }
+
+        function celebrateSuccess() {
+            const machine = document.getElementById('machine');
+            const mouth = document.getElementById('robotMouth');
+            const pupils = [document.getElementById('pupil1'), document.getElementById('pupil2')];
+            
+            createConfetti();
+            machine.classList.add('celebrate-robot', 'success-bg');
+            mouth.classList.add('mouth-smile');
+            pupils.forEach(p => p.style.transform = 'scale(1.8)');
+
+            setTimeout(() => {
+                machine.classList.remove('celebrate-robot', 'success-bg');
+                pupils.forEach(p => p.style.transform = 'scale(1)');
+                if (!isSecret) mouth.classList.remove('mouth-smile');
+            }, 3000);
+        }
+
+        function checkGuess() {
+            const guess = document.getElementById('guessInput').value.replace(/\s+/g, '').toLowerCase();
+            const actual = secretRule.replace(/\s+/g, '').toLowerCase();
+            
+            // Smartere sjekk som håndterer x2 vs 2x
+            if (guess === actual || (guess.includes('x') && evalGuess(guess, actual))) {
+                celebrateSuccess();
+                setTimeout(() => {
+                    alert("Riktig! Du fant den hemmelige regelen! 🎉");
+                    toggleSecretMode();
+                }, 1000);
+            } else {
+                alert("Ikke helt riktig ennå. Prøv med flere tall!");
+            }
+        }
+
+        function evalGuess(guessStr, actualStr) {
+            try {
+                // Sjekk om uttrykkene gir samme svar for 3 verdier
+                for(let testVal of [2, 5, 10]) {
+                    const g = eval(guessStr.replace(/x/g, `(${testVal})`).replace(/(\d)\(/g, '$1*('));
+                    const a = eval(actualStr.replace(/x/g, `(${testVal})`).replace(/(\d)\(/g, '$1*('));
+                    if (Math.abs(g - a) > 0.0001) return false;
+                }
+                return true;
+            } catch(e) { return false; }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<p class="text-slate-400 italic">Ingen data ennå...</p>';
+        }
+
+        function moveEyes(pos) {
+            const p1 = document.getElementById('pupil1');
+            const p2 = document.getElementById('pupil2');
+            const translations = { 'left': 'translateX(-6px)', 'center': 'translateX(0)', 'right': 'translateX(6px)', 'work': 'scale(1.2)' };
+            p1.style.transform = translations[pos];
+            p2.style.transform = translations[pos];
+        }
+
+        function runMachine() {
+            const ruleText = isSecret ? secretRule : document.getElementById('ruleInput').value;
+            const x = parseFloat(document.getElementById('numberInput').value);
+            const btn = document.getElementById('runBtn');
+            const inputSlot = document.getElementById('inputSlot');
+            const outputSlot = document.getElementById('outputSlot');
+            const machine = document.getElementById('machine');
+            const mouth = document.getElementById('robotMouth');
+            const log = document.getElementById('log');
+
+            if (isNaN(x)) return;
+
+            btn.disabled = true;
+            inputSlot.textContent = x;
+            outputSlot.textContent = "?";
+            outputSlot.classList.remove('bg-orange-500', 'text-white');
+            mouth.classList.remove('mouth-smile');
+
+            let result;
+            try {
+                let mathString = ruleText.toLowerCase().replace(/(\d)x/g, '$1*' + x).replace(/x/g, x);
+                mathString = mathString.replace(/[^-()\d/*+. ]/g, '');
+                result = eval(mathString);
+                result = Math.round(result * 100) / 100;
+            } catch (e) {
+                alert("Feil i regneregel!");
+                btn.disabled = false;
+                return;
+            }
+
+            moveEyes('left');
+            inputSlot.style.animation = 'slideIn 0.5s ease-out';
+            
+            setTimeout(() => {
+                moveEyes('work');
+                machine.classList.add('animate-process');
+                
+                setTimeout(() => {
+                    machine.classList.remove('animate-process');
+                    moveEyes('right');
+                    mouth.classList.add('mouth-smile');
+                    
+                    outputSlot.textContent = result;
+                    outputSlot.classList.add('bg-orange-500', 'text-white');
+                    
+                    if (log.querySelector('p.italic')) log.innerHTML = '';
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'flex justify-between bg-slate-50 p-2 rounded border border-slate-200';
+                    logEntry.innerHTML = `<span>x = <b>${x}</b></span> <span>&rarr;</span> <span>y = <b>${result}</b></span>`;
+                    log.prepend(logEntry);
+                    
+                    btn.disabled = false;
+                    setTimeout(() => {
+                        moveEyes('center');
+                        if (!btn.disabled && !machine.classList.contains('celebrate-robot')) mouth.classList.remove('mouth-smile');
+                    }, 2000);
+                }, 1200);
+            }, 500);
+        }
+
+        document.addEventListener('keypress', (e) => { if (e.key === 'Enter') runMachine(); });
+        
+        // Kjør ved start for å synkronisere
+        updateRobotDisplay();
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
