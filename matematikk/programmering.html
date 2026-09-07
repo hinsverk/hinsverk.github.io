@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <style>
         .CodeMirror {
-            height: 340px;
+            height: 360px;
             font-family: 'Fira Code', 'Courier New', Courier, monospace;
             font-size: 14px;
             border-radius: 0.5rem;
@@ -40,14 +40,14 @@
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
-<a href="../index.html" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-indigo-600 transition mb-6">
-    <i class="fa-solid fa-arrow-left mr-2"></i> Tilbake til hovedmenyen
-</a>
     
     <!-- Top Navigation Header -->
     <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3">
+                <a href="../index.html" class="p-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="Tilbake">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
                 <div class="bg-gradient-to-tr from-amber-500 to-blue-500 p-2 rounded-xl text-slate-900 font-bold text-xl flex items-center justify-center shadow-lg">
                     <i class="fa-brands fa-python text-white"></i>
                 </div>
@@ -55,12 +55,12 @@
                     <h1 class="font-bold text-lg text-white leading-none flex items-center gap-2">
                         Python Øvingsrom & Sandkasse
                     </h1>
-                    <p class="text-xs text-slate-400 mt-1">Lær programmering og test egen kode direkte i nettleseren</p>
+                    <p class="text-xs text-slate-400 mt-1">Lær programmering og test egen kode direkte i nettleseren (9. trinn)</p>
                 </div>
             </div>
 
             <!-- Pyodide Load Status & Actions -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
                 <div id="statusBadge" class="flex items-center gap-2 bg-slate-700/80 px-3 py-1.5 rounded-full text-xs font-medium text-amber-300 border border-amber-500/30">
                     <span class="relative flex h-2 w-2">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -69,12 +69,18 @@
                     <span id="statusText">Laster inn Python-motoren...</span>
                 </div>
                 
-                <button id="resetProgressBtn" class="text-xs text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-1 bg-slate-700/40 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-700">
-                    <i class="fa-solid fa-rotate-right"></i> Nullstill
+                <button id="resetProgressBtn" class="text-xs text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-1.5 bg-slate-700/40 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-rotate-right"></i> Nullstill framgang
                 </button>
             </div>
         </div>
     </header>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="hidden fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2.5 rounded-xl shadow-2xl z-50 text-xs font-medium flex items-center gap-2 border border-indigo-400/40 transition-all">
+        <i class="fa-solid fa-circle-info text-amber-300"></i>
+        <span id="toastMessage">Melding her</span>
+    </div>
 
     <!-- Main Application Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -117,6 +123,18 @@
                     <!-- Dynamic task options generated here -->
                 </select>
             </div>
+            
+            <!-- Quick Tips Box -->
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-4 text-xs text-slate-300 leading-relaxed">
+                <h3 class="font-bold text-amber-400 mb-1.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-lightbulb"></i> Nyttige snarveier
+                </h3>
+                <ul class="space-y-1 text-slate-400">
+                    <li><code class="bg-slate-900 px-1 rounded text-amber-300">Ctrl + Enter</code> : Kjør koden din</li>
+                    <li><code class="bg-slate-900 px-1 rounded text-amber-300">input()</code> : Ber brukeren om svar</li>
+                    <li><code class="bg-slate-900 px-1 rounded text-amber-300">#</code> : Lager en kommentar</li>
+                </ul>
+            </div>
         </aside>
 
         <!-- Right Column: Code Editor, Instructions, and Execution Output -->
@@ -157,24 +175,44 @@
                     <button id="toggleHintBtn" class="text-xs font-medium text-amber-400 hover:text-amber-300 flex items-center gap-1 focus:outline-none">
                         <i class="fa-solid fa-lightbulb"></i> <span id="hintBtnText">Vis hint</span>
                     </button>
-                    <div id="hintBox" class="hidden mt-2 p-3 bg-amber-950/40 border border-amber-500/30 rounded-lg text-amber-200 text-xs leading-relaxed">
+                    <div id="hintBox" class="hidden mt-2 p-3 bg-amber-950/40 border border-amber-500/30 rounded-lg text-amber-200 text-xs leading-relaxed font-mono">
                         <!-- Hint text -->
                     </div>
                 </div>
             </div>
 
-            <!-- Editor & Execution Controls -->
+            <!-- Editor & Toolbar Controls -->
             <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-lg flex flex-col">
-                <div class="bg-slate-850 px-4 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2">
+                <div class="bg-slate-850 px-4 py-2.5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-code text-indigo-400"></i>
                         <span class="text-sm font-semibold text-slate-200">Python Kodeeditor</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button id="resetCodeBtn" class="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md transition-colors flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-rotate-left"></i> Tilbakestill kode
+
+                    <!-- File Management & Quick Tools Bar -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="file" id="fileInput" accept=".py,.txt" class="hidden" />
+                        
+                        <button id="openFileBtn" class="px-2.5 py-1 text-xs bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-md transition flex items-center gap-1.5 border border-slate-600/50" title="Åpne .py-fil fra datamaskinen">
+                            <i class="fa-solid fa-folder-open text-amber-400"></i>
+                            <span>Åpne fil</span>
                         </button>
-                        <button id="runBtn" disabled class="px-4 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white rounded-md transition-all shadow flex items-center gap-1.5 cursor-pointer">
+
+                        <button id="downloadCodeBtn" class="px-2.5 py-1 text-xs bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-md transition flex items-center gap-1.5 border border-slate-600/50" title="Laste ned koden som .py-fil">
+                            <i class="fa-solid fa-download text-sky-400"></i>
+                            <span>Lagre fil (.py)</span>
+                        </button>
+
+                        <button id="copyCodeBtn" class="px-2.5 py-1 text-xs bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-md transition flex items-center gap-1.5 border border-slate-600/50" title="Kopier koden">
+                            <i class="fa-regular fa-copy text-indigo-300"></i>
+                            <span>Kopier</span>
+                        </button>
+
+                        <button id="resetCodeBtn" class="px-2.5 py-1 text-xs bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-rose-300 rounded-md transition flex items-center gap-1.5 border border-slate-600/50" title="Nullstill koden til start">
+                            <i class="fa-solid fa-arrow-rotate-left"></i>
+                        </button>
+
+                        <button id="runBtn" disabled class="px-4 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white rounded-md transition-all shadow flex items-center gap-1.5 cursor-pointer ml-1">
                             <i class="fa-solid fa-play"></i> Kjør kode (Ctrl+Enter)
                         </button>
                     </div>
@@ -204,8 +242,15 @@
 
                 <!-- Plot container if Matplotlib generated an image -->
                 <div id="plotContainer" class="hidden p-4 bg-slate-900 border-t border-slate-800 flex flex-col items-center">
-                    <span class="text-xs font-semibold text-slate-400 mb-2">Generert Graf / Figur (Matplotlib):</span>
-                    <img id="plotImage" class="max-w-full h-auto rounded-lg border border-slate-700 shadow" alt="Generert graf">
+                    <div class="w-full flex items-center justify-between mb-3">
+                        <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-chart-line text-sky-400"></i> Generert Graf / Figur (Matplotlib):
+                        </span>
+                        <button id="downloadPlotBtn" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 rounded transition flex items-center gap-1">
+                            <i class="fa-solid fa-file-image"></i> Last ned graf (PNG)
+                        </button>
+                    </div>
+                    <img id="plotImage" class="max-w-full h-auto rounded-lg border border-slate-700 shadow-lg" alt="Generert graf">
                 </div>
 
                 <!-- Validation Status Alert -->
@@ -221,7 +266,7 @@
         </section>
     </main>
 
-    <!-- Custom Interactive Input Modal (Replaces browser prompt for Google Sites iframe compatibility) -->
+    <!-- Custom Interactive Input Modal -->
     <div id="inputModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
             <div class="flex items-center gap-3">
@@ -230,7 +275,7 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-slate-100 text-base">Inndata kreves</h3>
-                    <p class="text-xs text-slate-400">Programmet ber om brukerinput</p>
+                    <p class="text-xs text-slate-400">Programmet ber om input fra brukeren</p>
                 </div>
             </div>
 
@@ -239,7 +284,7 @@
             </div>
 
             <div class="flex flex-col gap-1.5">
-                <input type="text" id="modalInputField" placeholder="Skriv inn svaret ditt her..." class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg p-3 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:outline-none font-mono" />
+                <input type="text" id="modalInputField" placeholder="Skriv svaret ditt her..." class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg p-3 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:outline-none font-mono" />
             </div>
 
             <div class="flex items-center justify-end gap-3 mt-1">
@@ -251,7 +296,7 @@
         </div>
     </div>
 
-    <!-- Custom Confirmation Modal (No browser alert/confirm) -->
+    <!-- Custom Confirmation Modal for Resetting Progress -->
     <div id="resetModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl">
             <h3 class="font-bold text-slate-100 text-lg mb-2 flex items-center gap-2">
@@ -272,14 +317,13 @@
     </div>
 
     <script>
-        // --- STREAMING_CHUNK:Defining task curriculum and sandbox configs... ---
         // --- Free Sandbox Task Definition ---
         const SANDBOX_TASK = {
             id: 'sandbox',
             level: 'Fri Modus',
             title: '⚡ Fri Python Sandkasse',
             theory: 'I sandkassen står du helt fritt! Her kan du skrive og teste din egen Python-kode, eksperimentere med matematiske formler, lage grafikk med <code>matplotlib</code> eller be om brukerinput med <code>input()</code>.',
-            instruction: 'Skriv hvilken som helst Python-kode i editoren og trykk på **Kjør kode (Ctrl+Enter)** for å evaluere programmet ditt.',
+            instruction: 'Skriv hvilken som helst Python-kode i editoren og trykk på **Kjør kode (Ctrl+Enter)**. Du kan også lagre koden som en file (.py) på PC-en din.',
             starterCode: `# --- FRI PYTHON SANDKASSE ---
 # Skriv og test din egen Python-kode her!
 
@@ -297,7 +341,7 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             }
         };
 
-        // --- Structured Learning Tasks ---
+        // --- Structured Learning Tasks Curriculum ---
         const tasks = [
             {
                 id: 1,
@@ -306,7 +350,7 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 theory: "I Python bruker vi funksjonen <code>print()</code> for å skrive ut tekst på skjermen.<br>Tekst må skrives i anførselstegn: <code>print(\"Hallo verden!\")</code>.",
                 instruction: "Lag et program som skriver ut teksten: <code>Jeg lærer Python!</code>",
                 starterCode: "# Skriv koden din her\n",
-                hint: "Bruk print(\"Jeg lærer Python!\")",
+                hint: "print(\"Jeg lærer Python!\")",
                 validate: (py, output) => {
                     return output.trim().includes("Jeg lærer Python!");
                 }
@@ -315,7 +359,7 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 id: 2,
                 level: "Nivå 1: Grunnleggende",
                 title: "Opprett en variabel",
-                theory: "En <b>variabel</b> brukes til å lagre en verdi.<br>Eksempel: <code>navn = \"Anna\"</code> eller <code>alder = 16</code>.",
+                theory: "En <b>variabel</b> brukes til å lagre en verdi.<br>Eksempel: <code>navn = \"Anna\"</code> eller <code>alder = 15</code>.",
                 instruction: "1. Opprett en variabel med navn <code>by</code> og gi den verdien <code>\"Oslo\"</code>.<br>2. Skriv ut variabelen med <code>print(by)</code>.",
                 starterCode: "# Lag variabelen 'by' og skriv den ut\n",
                 hint: "by = \"Oslo\"\nprint(by)",
@@ -341,7 +385,7 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 id: 4,
                 level: "Nivå 3: Betingelser",
                 title: "If / Else test",
-                theory: "Betingelser gjør at koden kan ta valg:<br><pre class=\"bg-slate-950 p-2 rounded text-amber-300 font-mono text-xs mt-1\">if alder >= 18:\n    print(\"Myndig\")\nelse:\n    print(\"Ikke myndig\")</pre>",
+                theory: "Betingelser gjør at koden kan ta valg:<br><pre class=\"bg-slate-950 p-2 rounded text-amber-300 font-mono text-xs mt-1\">if poeng >= 50:\n    print(\"Bestått\")\nelse:\n    print(\"Ikke bestått\")</pre>",
                 instruction: "Sett <code>poeng = 75</code>.<br>Skriv en <code>if/else</code>-setning som sjekker om <code>poeng >= 50</code>.<br>Hvis ja: skriv ut <code>\"Bestått\"</code>. Ellers: skriv ut <code>\"Ikke bestått\"</code>.",
                 starterCode: "poeng = 75\n\n# Skriv din if-setning her\n",
                 hint: "if poeng >= 50:\n    print(\"Bestått\")\nelse:\n    print(\"Ikke bestått\")",
@@ -353,7 +397,7 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 id: 5,
                 level: "Nivå 4: Løkker",
                 title: "For-løkke med range()",
-                theory: "En <code>for</code>-løkke kaller en kodeblokk flere ganger.<br><code>range(5)</code> gir tallene 0, 1, 2, 3, 4.",
+                theory: "En <code>for</code>-løkke kaller en kodeblokk flere ganger.<br><code>range(1, 6)</code> gir tallene 1, 2, 3, 4, 5.",
                 instruction: "Bruk en <code>for</code>-løkke med <code>range(1, 6)</code> for å skrive ut tallene 1 til 5.",
                 starterCode: "# Skriv for-løkken her\n",
                 hint: "for i in range(1, 6):\n    print(i)",
@@ -390,14 +434,14 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             },
             {
                 id: 8,
-                level: "Nivå 6: Interaktiv oppgave",
+                level: "Nivå 6: Interaktivitet & Omregning",
                 title: "Kalkulator: Gallon til liter",
                 theory: "<b>Brukerinput (input):</b><br>Med <code>input(\"Tekst\")</code> ber vi brukeren om å skrive inn en verdi. Siden <code>input()</code> returnerer tekst (str), må vi omforme den til et tall med <code>float(...)</code> for beregninger.<br>Eksempel: <code>tall = float(input(\"Skriv et tall: \"))</code>",
-                instruction: "I USA oppgis bensinpriser og volum i gallon i stedet for liter (1 gallon = 3,785 liter).<br><br>" +
+                instruction: "I USA oppgis volum i gallon i stedet for liter (1 gallon = 3,785 liter).<br><br>" +
                              "Lag et interaktivt program som omregner fra gallon til liter:<br>" +
-                             "1. Be brukeren oppgi antall gallon: <code>gallon = float(input(\"Oppgi antall gallon: \"))</code>.<br>" +
+                             "1. Be brukeren oppgi antall gallon med <code>float(input(...))</code>.<br>" +
                              "2. Regn ut mengden i liter i variabelen <code>liter</code> med formelen: <code>liter = gallon * 3.785</code>.<br>" +
-                             "3. Skriv ut svaret med en forklarende tekst, for eksempel: <code>print(\"Antall liter:\", liter)</code>.",
+                             "3. Skriv ut svaret med <code>print(...)</code>.",
                 starterCode: "# 1. Be brukeren om input for gallon\n# 2. Regn ut variabelen liter\n# 3. Skriv ut svaret\n",
                 hint: "gallon = float(input(\"Oppgi antall gallon: \"))\nliter = gallon * 3.785\nprint(\"Antall liter:\", liter)",
                 validate: (py, output) => {
@@ -407,15 +451,25 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             }
         ];
 
-        // --- STREAMING_CHUNK:Initializing Pyodide runtime engine and input handlers... ---
         // Global State Variables
-        let currentActiveTask = tasks[0]; // Active task or SANDBOX_TASK
+        let currentActiveTask = tasks[0];
         let pyodideInstance = null;
         let editor = null;
         let completedTasks = new Set(JSON.parse(localStorage.getItem('py_app_completed') || '[]'));
         let inputResolver = null;
 
-        // Custom function called by Python to open the in-app input modal and return a Promise
+        // Toast Notification Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Custom function called by Python to open input modal and return a Promise
         function showCustomInputModal(promptMsg) {
             return new Promise((resolve) => {
                 inputResolver = resolve;
@@ -449,10 +503,9 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
 
             try {
                 pyodideInstance = await loadPyodide();
-                // Load matplotlib for plotting support
                 await pyodideInstance.loadPackage(["matplotlib"]);
                 
-                // Redirection & AST Transformer to turn input(...) calls into async modal prompts
+                // Setup Python Async Code execution with AST Loop Guard & input() transformer
                 await pyodideInstance.runPythonAsync(`
                     import sys
                     import io
@@ -464,7 +517,16 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                     import builtins
                     import js
 
-                    class InputTransformer(ast.NodeTransformer):
+                    loop_counter = 0
+                    MAX_LOOPS = 15000
+
+                    def __check_loop_guard__():
+                        global loop_counter
+                        loop_counter += 1
+                        if loop_counter > MAX_LOOPS:
+                            raise TimeoutError("Uendelig løkke oppdaget! Kjøringen ble stoppet fordi koden kjørte mer enn 15 000 ganger uten å stoppe (f.eks. 'while True').")
+
+                    class CodeGuardTransformer(ast.NodeTransformer):
                         def visit_Call(self, node):
                             self.generic_visit(node)
                             if isinstance(node.func, ast.Name) and node.func.id == 'input':
@@ -477,6 +539,24 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                                 )
                             return node
 
+                        def _inject_guard(self, node):
+                            self.generic_visit(node)
+                            guard_call = ast.Expr(
+                                value=ast.Call(
+                                    func=ast.Name(id='__check_loop_guard__', ctx=ast.Load()),
+                                    args=[],
+                                    keywords=[]
+                                )
+                            )
+                            node.body.insert(0, guard_call)
+                            return node
+
+                        def visit_While(self, node):
+                            return self._inject_guard(node)
+
+                        def visit_For(self, node):
+                            return self._inject_guard(node)
+
                     async def custom_input_async(prompt_text=""):
                         prompt_msg = str(prompt_text) if prompt_text else "Skriv inn en verdi:"
                         res = await js.showCustomInputModal(prompt_msg)
@@ -485,6 +565,8 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                         return str(res).strip()
 
                     async def run_student_code(code_str):
+                        global loop_counter
+                        loop_counter = 0
                         plt.close('all')
                         buf = io.StringIO()
                         old_stdout = sys.stdout
@@ -496,12 +578,10 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                             clean_code = textwrap.dedent(code_str).strip()
                             parsed_ast = ast.parse(clean_code, mode='exec')
                             
-                            # Transform input(...) calls into await custom_input_async(...)
-                            transformer = InputTransformer()
+                            transformer = CodeGuardTransformer()
                             transformed_ast = transformer.visit(parsed_ast)
                             ast.fix_missing_locations(transformed_ast)
                             
-                            # Wrap transformed body inside an async main function
                             main_func = ast.AsyncFunctionDef(
                                 name='__student_async_main__',
                                 args=ast.arguments(
@@ -515,16 +595,23 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                             module = ast.Module(body=[main_func], type_ignores=[])
                             ast.fix_missing_locations(module)
                             
-                            exec_scope = globals()
+                            # Isolated execution scope without 'js' access
+                            exec_scope = {
+                                '__name__': '__main__',
+                                '__doc__': None,
+                                '__check_loop_guard__': __check_loop_guard__,
+                                'custom_input_async': custom_input_async,
+                                'plt': plt
+                            }
+                            
                             compiled_code = compile(module, filename="<student_code>", mode="exec")
                             exec(compiled_code, exec_scope)
                             
-                            # Execute the student code asynchronously
                             await exec_scope['__student_async_main__']()
                             
                             has_plot = len(plt.get_fignums()) > 0
                             if has_plot:
-                                plt.savefig('output_plot.png', bbox_inches='tight')
+                                plt.savefig('output_plot.png', bbox_inches='tight', dpi=150)
                         except Exception as e:
                             import traceback
                             err_msg = traceback.format_exc()
@@ -535,7 +622,7 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 `);
 
                 statusBadge.className = "flex items-center gap-2 bg-emerald-950/80 px-3 py-1.5 rounded-full text-xs font-medium text-emerald-300 border border-emerald-500/30";
-                statusText.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Python 3.11 er klar';
+                statusText.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Python-motor klar';
                 runBtn.disabled = false;
             } catch (err) {
                 console.error("Feil ved lasting av Pyodide:", err);
@@ -544,7 +631,6 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             }
         }
 
-        // --- STREAMING_CHUNK:Setting up CodeMirror editor and event handlers... ---
         function initEditor() {
             const textarea = document.getElementById('codeEditor');
             editor = CodeMirror.fromTextArea(textarea, {
@@ -557,7 +643,13 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 lineWrapping: true
             });
 
-            // Keyboard shortcut Ctrl+Enter or Cmd+Enter to run code
+            // Auto-save code on every keystroke
+            editor.on('change', () => {
+                if (currentActiveTask) {
+                    localStorage.setItem(`py_task_code_${currentActiveTask.id}`, editor.getValue());
+                }
+            });
+
             editor.setOption("extraKeys", {
                 "Ctrl-Enter": function() { runCode(); },
                 "Cmd-Enter": function() { runCode(); }
@@ -585,13 +677,11 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 if (foundTask) selectTask(foundTask);
             };
 
-            // Update Progress Bar
             const percent = Math.round((completedTasks.size / tasks.length) * 100);
             document.getElementById('progressBar').style.width = `${percent}%`;
             document.getElementById('progressPercent').innerText = `${percent}% fullført`;
         }
 
-        // --- STREAMING_CHUNK:Managing UI state and task execution... ---
         function selectTask(taskObj) {
             currentActiveTask = taskObj;
 
@@ -620,25 +710,20 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 }
             }
 
-            // Restore saved code or load starter code
             const savedCode = localStorage.getItem(`py_task_code_${taskObj.id}`);
             editor.setValue(savedCode !== null ? savedCode : taskObj.starterCode);
 
-            // Reset execution status and output boxes
             document.getElementById('validationResult').classList.add('hidden');
             document.getElementById('plotContainer').classList.add('hidden');
             document.getElementById('consoleOutput').innerText = "Klikk på \"Kjør kode\" for å teste programmet ditt...";
 
-            // Update dropdown selection sync
             const selectElem = document.getElementById('taskSelect');
             if (selectElem && !isSandbox) {
                 selectElem.value = taskObj.id;
             }
 
-            // Update UI list highlight
             renderTaskList();
             
-            // Highlight sandbox button if active
             const sandboxBtn = document.getElementById('sandboxLaunchBtn');
             if (isSandbox) {
                 sandboxBtn.classList.add('ring-2', 'ring-indigo-400', 'bg-indigo-900/90');
@@ -653,7 +738,6 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             const code = editor.getValue();
             const task = currentActiveTask;
 
-            // Save user code locally for the current task/sandbox
             localStorage.setItem(`py_task_code_${task.id}`, code);
 
             const consoleElem = document.getElementById('consoleOutput');
@@ -664,14 +748,13 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             plotContainer.classList.add('hidden');
 
             try {
-                // Execute Python code asynchronously in Pyodide
                 const runPy = pyodideInstance.globals.get('run_student_code');
                 const resultPy = await runPy(code);
 
                 const outputText = resultPy.get(0) || "";
                 const hasPlot = resultPy.get(1);
                 const errMsg = resultPy.get(2);
-                resultPy.destroy(); // Free memory
+                resultPy.destroy();
 
                 if (errMsg) {
                     consoleElem.innerText = (outputText ? outputText + "\n" : "") + errMsg;
@@ -681,7 +764,6 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
 
                 consoleElem.innerText = outputText || "(Ingen utskrift skjedde)";
 
-                // Show plot image if pyplot was used
                 if (hasPlot) {
                     const plotData = pyodideInstance.FS.readFile('output_plot.png');
                     const blob = new Blob([plotData], { type: 'image/png' });
@@ -689,9 +771,8 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                     plotContainer.classList.remove('hidden');
                 }
 
-                // Handle sandbox mode output vs task validation
                 if (task.id === 'sandbox') {
-                    showValidation(true, "Koden kjørte uten feil! 🚀", "Du kan fortsette å teste mer Python-kode i sandkassen.");
+                    showValidation(true, "Koden kjørte uten feil! 🚀", "Du kan fortsette å teste mer Python-kode eller lagre den som fil.");
                 } else {
                     const isValid = task.validate(pyodideInstance, outputText);
                     if (isValid) {
@@ -733,6 +814,58 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             }
         }
 
+        // File Operations: Download & Upload Python Code
+        function downloadCodeFile() {
+            const code = editor.getValue();
+            const fileName = currentActiveTask.id === 'sandbox' ? 'min_sandkasse.py' : `oppgave_${currentActiveTask.id}.py`;
+            const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(`Lastet ned ${fileName}!`);
+        }
+
+        function openCodeFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const contents = e.target.result;
+                editor.setValue(contents);
+                showToast(`Åpnet fil: ${file.name}`);
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
+        }
+
+        function copyCodeToClipboard() {
+            const code = editor.getValue();
+            navigator.clipboard.writeText(code).then(() => {
+                showToast("Koden er kopiert til utklippstavlen!");
+            }).catch(err => {
+                showToast("Kunne ikke kopiere koden.");
+            });
+        }
+
+        function downloadPlotImage() {
+            const plotImg = document.getElementById('plotImage');
+            if (!plotImg.src) return;
+
+            const link = document.createElement('a');
+            link.href = plotImg.src;
+            link.download = 'python_graf.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Lastet ned graf som PNG!");
+        }
+
         window.onload = function() {
             initEditor();
             renderTaskList();
@@ -742,7 +875,7 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
             // Run Code Button
             document.getElementById('runBtn').onclick = runCode;
 
-            // Input Submit Handlers (Button + Enter Key inside input)
+            // Input Modal Submit Handlers
             document.getElementById('submitInputBtn').onclick = handleInputSubmit;
             document.getElementById('modalInputField').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
@@ -751,18 +884,26 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 }
             });
 
-            // Launch Sandbox Mode Button
+            // Launch Sandbox Mode
             document.getElementById('sandboxLaunchBtn').onclick = function() {
                 selectTask(SANDBOX_TASK);
             };
 
-            // Reset Task Code Button
+            // File Management Handlers
+            document.getElementById('downloadCodeBtn').onclick = downloadCodeFile;
+            document.getElementById('openFileBtn').onclick = () => document.getElementById('fileInput').click();
+            document.getElementById('fileInput').onchange = openCodeFile;
+            document.getElementById('copyCodeBtn').onclick = copyCodeToClipboard;
+            document.getElementById('downloadPlotBtn').onclick = downloadPlotImage;
+
+            // Reset Task Code
             document.getElementById('resetCodeBtn').onclick = function() {
                 localStorage.removeItem(`py_task_code_${currentActiveTask.id}`);
                 editor.setValue(currentActiveTask.starterCode);
+                showToast("Tilbakestilte koden til utgangspunktet.");
             };
 
-            // Toggle Task Hint Drawer
+            // Toggle Task Hint
             document.getElementById('toggleHintBtn').onclick = function() {
                 const hintBox = document.getElementById('hintBox');
                 const btnText = document.getElementById('hintBtnText');
@@ -775,12 +916,12 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 }
             };
 
-            // Clear Console Output
+            // Clear Console
             document.getElementById('clearConsoleBtn').onclick = function() {
                 document.getElementById('consoleOutput').innerText = "";
             };
 
-            // Reset Progress Modal Handlers
+            // Reset All Progress Modal Handlers
             const resetModal = document.getElementById('resetModal');
             document.getElementById('resetProgressBtn').onclick = function() {
                 resetModal.classList.remove('hidden');
@@ -797,8 +938,14 @@ print(f"Ditt tilfeldige lykketall i dag er: {lykketall}")
                 localStorage.removeItem(`py_task_code_sandbox`);
                 resetModal.classList.add('hidden');
                 selectTask(tasks[0]);
+                showToast("All framgang er nullstilt.");
             };
         };
     </script>
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
 </body>
 </html>
