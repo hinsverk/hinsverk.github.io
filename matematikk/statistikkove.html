@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Øving til prøve i statistikk - 9. trinn</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti for rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+        .excel-grid input {
+            font-family: monospace;
+        }
+        .excel-grid input:focus {
+            outline: 2px solid #3b82f6;
+            z-index: 10;
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #2563eb;
+            color: #2563eb;
+            font-weight: 700;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- Navigation / Header -->
+    <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+                        <i class="fa-solid fa-chart-pie text-2xl text-yellow-300"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Statistikk-Master 9. trinn</h1>
+                        <p class="text-xs text-blue-200">Interaktiv øving til prøve i statistikk</p>
+                    </div>
+                </div>
+
+                <!-- Gamification elements -->
+                <div class="flex items-center space-x-4 bg-white/10 px-4 py-2 rounded-2xl backdrop-blur-md text-sm border border-white/10">
+                    <div class="flex items-center space-x-1.5" title="Erfaringspoeng">
+                        <i class="fa-solid fa-star text-amber-300 text-lg"></i>
+                        <span id="xp-display" class="font-bold text-base">0</span>
+                        <span class="text-xs text-blue-200">XP</span>
+                    </div>
+                    <div class="h-4 w-[1px] bg-white/20"></div>
+                    <div class="flex items-center space-x-1.5" title="Fullførte oppgaver">
+                        <i class="fa-solid fa-circle-check text-emerald-300 text-lg"></i>
+                        <span id="completed-count" class="font-bold text-base">0</span>
+                        <span class="text-xs text-blue-200">Løst</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex space-x-1 sm:space-x-4 mt-3 overflow-x-auto border-t border-white/10 pt-2 text-sm">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active text-white hover:text-yellow-200 px-3 py-2 rounded-t-lg font-medium whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-compass"></i> Oversikt
+                </button>
+                <button onclick="switchTab('practice')" id="tab-practice" class="tab-btn text-white/80 hover:text-white px-3 py-2 rounded-t-lg font-medium whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Øvingsoppgaver
+                </button>
+                <button onclick="switchTab('spreadsheet')" id="tab-spreadsheet" class="tab-btn text-white/80 hover:text-white px-3 py-2 rounded-t-lg font-medium whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-table"></i> Innebygd Regneark
+                </button>
+                <button onclick="switchTab('exam')" id="tab-exam" class="tab-btn text-white/80 hover:text-white px-3 py-2 rounded-t-lg font-medium whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap"></i> Prøvesimulator
+                </button>
+                <button onclick="switchTab('cheatsheet')" id="tab-cheatsheet" class="tab-btn text-white/80 hover:text-white px-3 py-2 rounded-t-lg font-medium whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> Formler & Teori
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- TAB 1: DASHBOARD / OVERSIKT -->
+        <section id="view-dashboard" class="space-y-6">
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none flex items-center pr-10">
+                    <i class="fa-solid fa-chart-column text-9xl"></i>
+                </div>
+                <div class="max-w-2xl relative z-10">
+                    <span class="bg-blue-500/40 text-blue-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Klar for prøven?</span>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold mt-2">Alt du trenger til statistikkprøven</h2>
+                    <p class="mt-2 text-blue-100 text-sm sm:text-base leading-relaxed">
+                        Her kan du øve på alt fra **frekvenstabeller** og **sentralmål** til **spredningsmål** og **regneark**. Gjør regneoppgavene for hånd, skriv forklaringer, og gjør regnearkoppgavene enten direkte her i appen eller i Google Sheets!
+                    </p>
+                    <div class="mt-6 flex flex-wrap gap-3">
+                        <button onclick="switchTab('practice')" class="bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i> Start med oppgaver
+                        </button>
+                        <button onclick="switchTab('spreadsheet')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-2.5 rounded-xl border border-white/20 backdrop-blur-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-table"></i> Åpne Regnearket
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topic Overview Cards (Based on Øveark) -->
+            <div>
+                <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-blue-600"></i> Hva du skal kunne til prøven (Øveark)
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Topic 1 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-bold mb-3">
+                            <i class="fa-solid fa-table-list"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800">1. Frekvens & Tabell</h4>
+                        <p class="text-xs text-slate-500 mt-1">Frekvens, relativ frekvens, prosent og frekvenstabell.</p>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Side 46 & 53</span>
+                            <button onclick="startCategoryPractice('frekvens')" class="text-blue-600 font-bold hover:underline">Øv nå &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- Topic 2 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg font-bold mb-3">
+                            <i class="fa-solid fa-calculator"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800">2. Sentralmål</h4>
+                        <p class="text-xs text-slate-500 mt-1">Gjennomsnitt, median og typetall. Både for hånd og i regneark.</p>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Side 62-81</span>
+                            <button onclick="startCategoryPractice('sentralmal')" class="text-emerald-600 font-bold hover:underline">Øv nå &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- Topic 3 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg font-bold mb-3">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800">3. Spredningsmål</h4>
+                        <p class="text-xs text-slate-500 mt-1">Variasjonsbredde, kvartiler ($Q_1, Q_3$) og kvartilbredde.</p>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Side 62-81</span>
+                            <button onclick="startCategoryPractice('spredning')" class="text-purple-600 font-bold hover:underline">Øv nå &rarr;</button>
+                        </div>
+                    </div>
+
+                    <!-- Topic 4 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg font-bold mb-3">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800">4. Diagrammer & Tolkning</h4>
+                        <p class="text-xs text-slate-500 mt-1">Velge riktig diagram, tolke sentralmål og begrunne svar.</p>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Side 47-49 & 78</span>
+                            <button onclick="startCategoryPractice('diagram')" class="text-amber-600 font-bold hover:underline">Øv nå &rarr;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regneark clarification banner -->
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                    <div class="p-3 bg-indigo-600 text-white rounded-xl text-xl mt-1 sm:mt-0">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-indigo-950">Må du bruke Google Sheets?</h4>
+                        <p class="text-sm text-indigo-800 mt-0.5">
+                            Nei! Du kan gjøre **alle regnearkoppgavene rett her i appen** under fanen "Innebygd Regneark". Skriv inn formler som <code class="bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-900 font-mono text-xs">=GJENNOMSNITT(A1:A10)</code>, <code class="bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-900 font-mono text-xs">=MEDIAN(A1:A10)</code>, <code class="bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-900 font-mono text-xs">=MODUS(A1:A10)</code> eller <code class="bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-900 font-mono text-xs">=SUMMER(A1:A10)</code>.
+                        </p>
+                    </div>
+                </div>
+                <button onclick="switchTab('spreadsheet')" class="whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-4 py-2 rounded-xl shadow-sm transition">
+                    Prøv regnearket &rarr;
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 2: PRACTICE TASKS / ØVING -->
+        <section id="view-practice" class="hidden space-y-6">
+            <!-- Filter & Mode Bar -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
+                    <span class="text-xs font-bold uppercase text-slate-400 mr-2">Tema:</span>
+                    <button onclick="filterPractice('all')" id="filter-btn-all" class="filter-btn bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Alle</button>
+                    <button onclick="filterPractice('frekvens')" id="filter-btn-frekvens" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">Frekvens & Tabell</button>
+                    <button onclick="filterPractice('sentralmal')" id="filter-btn-sentralmal" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">Sentralmål</button>
+                    <button onclick="filterPractice('spredning')" id="filter-btn-spredning" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">Spredningsmål</button>
+                    <button onclick="filterPractice('forklar')" id="filter-btn-forklar" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">Forklaring & Tolking</button>
+                    <button onclick="filterPractice('regneark')" id="filter-btn-regneark" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">Regneark</button>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="generateRandomTask()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-dice"></i> Generer ny tilfeldig oppgave
+                    </button>
+                </div>
+            </div>
+
+            <!-- Task Display Container -->
+            <div id="practice-container" class="space-y-6">
+                <!-- Dynamically filled by JS -->
+            </div>
+        </section>
+
+        <!-- TAB 3: BUILT-IN SPREADSHEET -->
+        <section id="view-spreadsheet" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel text-emerald-600"></i> Innebygd Regneark for Statistikk
+                        </h2>
+                        <p class="text-sm text-slate-500">
+                            Fyll inn datasett, bruk formler som <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-emerald-700">=GJENNOMSNITT(A1:A6)</code>, <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-emerald-700">=MEDIAN(A1:A6)</code>, <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-emerald-700">=MODUS(A1:A6)</code>, <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-emerald-700">=SUMMER(A1:A6)</code>, eller lag diagrammer direkte!
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="loadSpreadsheetPreset('karakterer')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold transition">
+                            Last inn: Karakterer
+                        </button>
+                        <button onclick="loadSpreadsheetPreset('skostorrelser')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold transition">
+                            Last inn: Skostørrelser
+                        </button>
+                        <button onclick="clearSpreadsheet()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg font-semibold transition">
+                            Nullstill tabell
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid & Formula Bar -->
+                <div class="border border-slate-300 rounded-xl overflow-hidden shadow-inner bg-slate-50">
+                    <!-- Formula Info Bar -->
+                    <div class="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center gap-3 text-xs font-mono text-slate-600 overflow-x-auto whitespace-nowrap">
+                        <span class="font-bold text-slate-800">FX Formeltips (Google Sheets / Excel):</span>
+                        <span>=SUMMER(A1:A10)</span> | 
+                        <span>=GJENNOMSNITT(A1:A10)</span> | 
+                        <span>=MEDIAN(A1:A10)</span> | 
+                        <span>=MODUS(A1:A10)</span> | 
+                        <span>=KVARTIL(A1:A10; 3) - KVARTIL(A1:A10; 1)</span>
+                    </div>
+
+                    <!-- Spreadsheet Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-700 border-collapse excel-grid">
+                            <thead class="text-xs uppercase bg-slate-200 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="p-2 border border-slate-300 text-center w-12 bg-slate-300">#</th>
+                                    <th class="p-2 border border-slate-300 text-center w-36">A (Kategori/Data)</th>
+                                    <th class="p-2 border border-slate-300 text-center w-36">B (Frekvens/Tall)</th>
+                                    <th class="p-2 border border-slate-300 text-center w-40">C (Relativ / Beregning)</th>
+                                    <th class="p-2 border border-slate-300 text-center w-40">D (Prosent / Tillegg)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="spreadsheet-body">
+                                <!-- Generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chart Generation Box -->
+                <div class="pt-4 border-t border-slate-200 flex flex-col md:flex-row gap-6">
+                    <div class="w-full md:w-1/3 space-y-3">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-chart-simple text-blue-600"></i> Generer Diagram fra Kolonne A & B
+                        </h3>
+                        <div>
+                            <label class="text-xs text-slate-500 block mb-1">Velg diagramtype:</label>
+                            <select id="chart-type-select" class="w-full text-sm border border-slate-300 rounded-lg p-2 bg-white">
+                                <option value="bar">Stolpediagram / Søylediagram</option>
+                                <option value="pie">Sektordiagram (Sirkel)</option>
+                                <option value="line">Linjediagram (Utvikling)</option>
+                            </select>
+                        </div>
+                        <button onclick="renderCustomChart()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2 rounded-xl transition shadow-sm">
+                            <i class="fa-solid fa-rotate"></i> Oppdater Diagram
+                        </button>
+                    </div>
+
+                    <div class="w-full md:w-2/3 bg-slate-50 p-4 rounded-xl border border-slate-200 min-h-[250px] flex items-center justify-center">
+                        <canvas id="spreadsheetChart" class="max-h-64"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: PRØVESIMULATOR -->
+        <section id="view-exam" class="hidden space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Prøvesimulator - Statistikk 9. trinn
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-1">
+                            Denne prøven inneholder 6 oppgaver som dekker alle målene fra øvearket. Gjør ditt beste!
+                        </p>
+                    </div>
+                    <div id="exam-timer" class="hidden text-right font-mono bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 rounded-xl font-bold">
+                        Tid: <span id="timer-count">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Exam intro screen -->
+                <div id="exam-start-screen" class="text-center py-10 space-y-4">
+                    <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                        <i class="fa-solid fa-clipboard-question"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800">Klar til å teste kunnskapene dine?</h3>
+                    <p class="text-sm text-slate-600 max-w-md mx-auto">
+                        Prøven tester både regning for hånd, teori/forklaring, sentralmål, spredningsmål og tolking av diagrammer. Du får umiddelbar karakterantydning og tilbakemelding.
+                    </p>
+                    <button onclick="startExam()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-2xl shadow-lg transition transform hover:scale-105 active:scale-95 text-base">
+                        Start Statistikkprøven
+                    </button>
+                </div>
+
+                <!-- Exam questions container -->
+                <div id="exam-questions-container" class="hidden space-y-8">
+                    <!-- Dynamic exam questions -->
+                </div>
+
+                <!-- Exam submission & result view -->
+                <div id="exam-result-view" class="hidden space-y-6 text-center py-6">
+                    <!-- Dynamic exam results -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: CHEATSHEET & THEORY -->
+        <section id="view-cheatsheet" class="hidden space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div class="border-b border-slate-200 pb-4">
+                    <h2 class="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-book-open text-purple-600"></i> Formler, Begreper & Regnearktips
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-1">Alt du må vite og huske til prøven i statistikk på 9. trinn.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Sentralmål card -->
+                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 p-5 rounded-2xl space-y-3">
+                        <h3 class="font-extrabold text-emerald-900 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-calculator"></i> Sentralmål
+                        </h3>
+                        <ul class="text-sm space-y-2.5 text-emerald-950">
+                            <li class="bg-white/80 p-3 rounded-xl border border-emerald-100">
+                                <strong class="text-emerald-700">Gjennomsnitt:</strong> Legg sammen alle verdiene og del på antallet verdier.
+                                <div class="text-xs font-mono text-slate-600 mt-1">Formel: Sum / Antall</div>
+                            </li>
+                            <li class="bg-white/80 p-3 rounded-xl border border-emerald-100">
+                                <strong class="text-emerald-700">Median:</strong> Det midterste tallet når datasettet er sortert fra minst til størst. Om det er et partall antall tall, tar du gjennomsnittet av de to midterste.
+                            </li>
+                            <li class="bg-white/80 p-3 rounded-xl border border-emerald-100">
+                                <strong class="text-emerald-700">Typetall:</strong> Den verdien som forekommer flest ganger (har høyest frekvens).
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Spredningsmål card -->
+                    <div class="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 p-5 rounded-2xl space-y-3">
+                        <h3 class="font-extrabold text-purple-900 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-arrows-left-right"></i> Spredningsmål
+                        </h3>
+                        <ul class="text-sm space-y-2.5 text-purple-950">
+                            <li class="bg-white/80 p-3 rounded-xl border border-purple-100">
+                                <strong class="text-purple-700">Variasjonsbredde:</strong> Forskjellen mellom største og minste verdi.
+                                <div class="text-xs font-mono text-slate-600 mt-1">Formel: Største verdi - Minste verdi</div>
+                            </li>
+                            <li class="bg-white/80 p-3 rounded-xl border border-purple-100">
+                                <strong class="text-purple-700">Kvartiler:</strong>
+                                Del datasettet i to like deler ved medianen.
+                                <br>&bull; <strong>Nedre kvartil ($Q_1$):</strong> Medianen i den nedre halvdelen.
+                                <br>&bull; <strong>Øvre kvartil ($Q_3$):</strong> Medianen i den øvre halvdelen.
+                            </li>
+                            <li class="bg-white/80 p-3 rounded-xl border border-purple-100">
+                                <strong class="text-purple-700">Kvartilbredde:</strong> Forskjellen mellom øvre og nedre kvartil ($Q_3 - Q_1$).
+                                <div class="text-xs font-mono text-purple-900 bg-purple-100/70 p-1.5 rounded mt-1">
+                                    I regneark: <code>=KVARTIL(( );3)-KVARTIL(( );1)</code>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Frekvens & Relativ Frekvens -->
+                    <div class="bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-200 p-5 rounded-2xl space-y-3">
+                        <h3 class="font-extrabold text-blue-900 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column"></i> Frekvens & Tabeller
+                        </h3>
+                        <ul class="text-sm space-y-2.5 text-blue-950">
+                            <li class="bg-white/80 p-3 rounded-xl border border-blue-100">
+                                <strong class="text-blue-700">Frekvens:</strong> Hvor mange ganger en spesiell observasjon eller svar forekommer.
+                            </li>
+                            <li class="bg-white/80 p-3 rounded-xl border border-blue-100">
+                                <strong class="text-blue-700">Relativ frekvens:</strong> Hvor stor andel observasjonen utgjør av totalen.
+                                <div class="text-xs font-mono text-slate-600 mt-1">Formel: Frekvens / Total frekvens</div>
+                                <div class="text-xs text-slate-500 mt-0.5">Ganging med 100 gir prosentsatsen! Summen av relativ frekvens skal alltid bli 1 (eller 100%).</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Regneark Formler -->
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-5 rounded-2xl space-y-3">
+                        <h3 class="font-extrabold text-amber-900 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-table"></i> Formler i Regneark (Google Sheets / Excel)
+                        </h3>
+                        <div class="bg-white/80 p-3 rounded-xl border border-amber-100 text-xs space-y-2 font-mono">
+                            <div class="flex justify-between border-b pb-1 gap-2">
+                                <span class="font-bold text-slate-700">Sum:</span>
+                                <span class="text-amber-800 font-bold">=SUMMER(A1:A10)</span>
+                            </div>
+                            <div class="flex justify-between border-b pb-1 gap-2">
+                                <span class="font-bold text-slate-700">Gjennomsnitt:</span>
+                                <span class="text-amber-800 font-bold">=GJENNOMSNITT(A1:A10)</span>
+                            </div>
+                            <div class="flex justify-between border-b pb-1 gap-2">
+                                <span class="font-bold text-slate-700">Median:</span>
+                                <span class="text-amber-800 font-bold">=MEDIAN(A1:A10)</span>
+                            </div>
+                            <div class="flex justify-between border-b pb-1 gap-2">
+                                <span class="font-bold text-slate-700">Typetall:</span>
+                                <span class="text-amber-800 font-bold">=MODUS(A1:A10)</span>
+                            </div>
+                            <div class="flex justify-between border-b pb-1 gap-2">
+                                <span class="font-bold text-slate-700">Variasjonsbredde:</span>
+                                <span class="text-amber-800 font-bold">=MAKS(A1:A10) - MIN(A1:A10)</span>
+                            </div>
+                            <div class="flex justify-between pt-1 gap-2">
+                                <span class="font-bold text-slate-700">Kvartilbredde:</span>
+                                <span class="text-amber-800 font-bold">=KVARTIL(A1:A10; 3) - KVARTIL(A1:A10; 1)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-center py-6 text-xs border-t border-slate-800 mt-10">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>Øvingsapp i Statistikk for 9. trinn &bull; Laget for tilpasset opplæring og prøveforberedelse</p>
+        </div>
+    </footer>
+
+    <script>
+        /* State Variables */
+        let userXP = 0;
+        let completedTasks = new Set();
+        let currentFilter = 'all';
+        let spreadsheetChartInstance = null;
+
+        /* Task Database (Covers all learning outcomes from Øveark) */
+        const taskDatabase = [
+            {
+                id: 'task-1',
+                category: 'frekvens',
+                difficulty: 'Lett',
+                title: 'Frekvens og Relativ Frekvens',
+                description: 'En klasse med 20 elever ble spurt om hvor mange søsken de har. Resultatene var:',
+                dataString: '0, 1, 2, 1, 0, 3, 1, 2, 1, 1, 0, 2, 4, 1, 0, 1, 2, 1, 3, 1',
+                question: 'Hva er frekvensen for at en elev har nøyaktig 1 søsken, og hva er den relative frekvensen (i prosent)?',
+                hint: 'Tell hvor mange som har tallet "1". Relativ frekvens = (frekvens / totalt antall) * 100%.',
+                answerType: 'multi-input',
+                inputs: [
+                    { id: 'frekvens', label: 'Frekvens (antall som har 1 søsken):', correctAnswer: '9' },
+                    { id: 'relativ', label: 'Relativ frekvens i prosent (%):', correctAnswer: '45' }
+                ],
+                explanation: 'Tallet 1 forekommer 9 ganger. Totalt antall elever er 20. Relativ frekvens blir da 9 / 20 = 0.45 = 45%.'
+            },
+            {
+                id: 'task-2',
+                category: 'sentralmal',
+                difficulty: 'Lett',
+                title: 'Beregning av Sentralmål for hånd',
+                description: 'I et matematikkprosjekt fikk syv elever følgende poengsum på en liten test:',
+                dataString: '4, 7, 5, 9, 7, 6, 4',
+                question: 'Finn gjennomsnitt, median og typetall for denne poengsummen.',
+                hint: 'Sorter tallene fra minst til størst for å finne medianen! [4, 4, 5, 6, 7, 7, 9]',
+                answerType: 'multi-input',
+                inputs: [
+                    { id: 'gjennomsnitt', label: 'Gjennomsnitt (rund av til 1 desimal om nødvendig):', correctAnswer: '6' },
+                    { id: 'median', label: 'Median:', correctAnswer: '6' },
+                    { id: 'typetall', label: 'Typetall (kan være flere, oppgi det minste dersom flere, eller et av dem):', correctAnswer: '4' } // 4 og 7 har begge frekvens 2
+                ],
+                explanation: 'Summen av tallene er 4 + 7 + 5 + 9 + 7 + 6 + 4 = 42. Del på 7 elever = 6. Sortert rekke: [4, 4, 5, 6, 7, 7, 9]. Midterste tall er 6. Både 4 og 7 har frekvens 2 (vi godtar enten 4 eller 7 som typetall).'
+            },
+            {
+                id: 'task-3',
+                category: 'spredning',
+                difficulty: 'Middels',
+                title: 'Variasjonsbredde, Kvartiler og Kvartilbredde',
+                description: 'Temperaturene (i °C) målt på midtdagen i en uke var:',
+                dataString: '12, 15, 11, 18, 20, 14, 16, 21',
+                question: 'Finn variasjonsbredden, nedre kvartil (Q1), øvre kvartil (Q3) og kvartilbredden.',
+                hint: 'Sorter tallene først: [11, 12, 14, 15, 16, 18, 20, 21]. Del i to halvdelar: Nedre [11, 12, 14, 15], Øvre [16, 18, 20, 21].',
+                answerType: 'multi-input',
+                inputs: [
+                    { id: 'varbredde', label: 'Variasjonsbredde:', correctAnswer: '10' },
+                    { id: 'q1', label: 'Nedre kvartil (Q1):', correctAnswer: '13' },
+                    { id: 'q3', label: 'Øvre kvartil (Q3):', correctAnswer: '19' },
+                    { id: 'qwidth', label: 'Kvartilbredde (Q3 - Q1):', correctAnswer: '6' }
+                ],
+                explanation: 'Variasjonsbredde = 21 - 11 = 10. Sortert: 11, 12, 14, 15 | 16, 18, 20, 21. Nedre del er (11, 12, 14, 15) med median (12+14)/2 = 13. Øvre del er (16, 18, 20, 21) med median (18+20)/2 = 19. Kvartilbredde = 19 - 13 = 6.'
+            },
+            {
+                id: 'task-4',
+                category: 'forklar',
+                difficulty: 'Middels',
+                title: 'Tolkning og Valg av Sentralmål',
+                description: 'En liten bedrift har 6 ansatte. Lønnen deres i kroner per måned er: 35 000, 37 000, 36 000, 38 000, 34 000, og direktørens lønn på 180 000.',
+                question: 'Hvilket sentralmål gir det mest realistiske bildet av lønnsnivået for en vanlig ansatt i bedriften, og hvorfor?',
+                options: [
+                    'Gjennomsnitt, fordi det tar med alles lønn i beregningen.',
+                    'Median, fordi direktørens ekstremt høye lønn drar gjennomsnittet kunstig opp.',
+                    'Typetall, fordi alle tjener det samme.',
+                    'Variasjonsbredde, fordi det viser spredningen.'
+                ],
+                correctOptionIndex: 1,
+                answerType: 'radio',
+                explanation: 'Siden direktøren tjener ekstremt mye mer enn resten (ekstremverdi), vil gjennomsnittet bli rundt 60 000 kr, som gir et misvisende bilde av hva en vanlig ansatt tjener. Medianen på ca. 36 500 kr gir et mye mer representativt bilde.'
+            },
+            {
+                id: 'task-5',
+                category: 'diagram',
+                difficulty: 'Lett',
+                title: 'Valg av Riktig Diagramtype',
+                description: 'Du skal vise hvordan en elev sin vekt har endret seg hver måned gjennom et helt år.',
+                question: 'Hvilket diagram passer best til å vise denne utviklingen over tid?',
+                options: [
+                    'Sektordiagram (sirkeldiagram)',
+                    'Stolpediagram / Søylediagram',
+                    'Linjediagram',
+                    'Boksplot'
+                ],
+                correctOptionIndex: 2,
+                answerType: 'radio',
+                explanation: 'Linjediagram er det beste valget for å vise endringer eller utvikling over tid (tidsserier).'
+            },
+            {
+                id: 'task-6',
+                category: 'regneark',
+                difficulty: 'Utfordrende',
+                title: 'Formler i Regneark',
+                description: 'I et regneark har du tallene 12, 15, 20, 25, 18 skrevet i cellene A1 til A5.',
+                question: 'Hva må du skrive i en ny celle for å regne ut gjennomsnittet i regnearket?',
+                options: [
+                    '=AVERAGE(A1+A5)',
+                    '=GJENNOMSNITT(A1:A5)',
+                    'GJENNOMSNITT(A1 til A5)',
+                    '=SUMMER(A1:A5)/2'
+                ],
+                correctOptionIndex: 1,
+                answerType: 'radio',
+                explanation: 'Formler i regneark starter alltid med likhetstegn (=), etterfulgt av funksjonsnavnet (GJENNOMSNITT eller AVERAGE) og celleområdet i parentes med kolonn (A1:A5).'
+            }
+        ];
+
+        /* Initialize Spreadsheet Data */
+        const initialSpreadsheetData = [
+            ['Karakter', 'Antall elever (Frekvens)', 'Relativ Frekvens', 'Prosent (%)'],
+            ['1', '1', '=B2/SUMMER(B2:B7)', '=C2*100'],
+            ['2', '3', '=B3/SUMMER(B2:B7)', '=C3*100'],
+            ['3', '8', '=B4/SUMMER(B2:B7)', '=C4*100'],
+            ['4', '6', '=B5/SUMMER(B2:B7)', '=C5*100'],
+            ['5', '4', '=B6/SUMMER(B2:B7)', '=C6*100'],
+            ['6', '2', '=B7/SUMMER(B2:B7)', '=C7*100'],
+            ['Totalt / Formler', '=SUMMER(B2:B7)', '=SUMMER(C2:C7)', '']
+        ];
+
+        let currentSpreadsheet = JSON.parse(JSON.stringify(initialSpreadsheetData));
+
+        function switchTab(tabId) {
+            const tabs = ['dashboard', 'practice', 'spreadsheet', 'exam', 'cheatsheet'];
+            tabs.forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active', 'text-white', 'font-bold');
+                document.getElementById(`tab-${t}`).classList.add('text-white/80');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('active', 'text-white', 'font-bold');
+            activeBtn.classList.remove('text-white/80');
+
+            if (tabId === 'spreadsheet') {
+                renderSpreadsheet();
+                renderCustomChart();
+            }
+        }
+
+        function startCategoryPractice(cat) {
+            switchTab('practice');
+            filterPractice(cat);
+        }
+
+        function filterPractice(category) {
+            currentFilter = category;
+            
+            // Update filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            const activeFilterBtn = document.getElementById(`filter-btn-${category}`);
+            if (activeFilterBtn) {
+                activeFilterBtn.classList.remove('bg-slate-100', 'text-slate-600');
+                activeFilterBtn.classList.add('bg-blue-600', 'text-white');
+            }
+
+            renderPracticeTasks();
+        }
+
+        function renderPracticeTasks() {
+            const container = document.getElementById('practice-container');
+            container.innerHTML = '';
+
+            const filteredTasks = currentFilter === 'all' 
+                ? taskDatabase 
+                : taskDatabase.filter(t => t.category === currentFilter);
+
+            if (filteredTasks.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-10">Ingen oppgaver i denne kategorien enda.</p>`;
+                return;
+            }
+
+            filteredTasks.forEach((task, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4';
+                
+                const isCompleted = completedTasks.has(task.id);
+
+                let badgeColor = 'bg-blue-100 text-blue-700';
+                if (task.difficulty === 'Middels') badgeColor = 'bg-amber-100 text-amber-700';
+                if (task.difficulty === 'Utfordrende') badgeColor = 'bg-rose-100 text-rose-700';
+
+                let inputHTML = '';
+
+                if (task.answerType === 'multi-input') {
+                    inputHTML = `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                            ${task.inputs.map(inp => `
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">${inp.label}</label>
+                                    <input type="text" id="${task.id}-${inp.id}" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ditt svar...">
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (task.answerType === 'radio') {
+                    inputHTML = `
+                        <div class="space-y-2 mt-3">
+                            ${task.options.map((opt, oIdx) => `
+                                <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition text-sm">
+                                    <input type="radio" name="${task.id}-option" value="${oIdx}" class="mt-0.5 text-blue-600">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${badgeColor}">${task.difficulty}</span>
+                            <h3 class="font-bold text-slate-800 text-base">${task.title}</h3>
+                        </div>
+                        ${isCompleted ? '<span class="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full"><i class="fa-solid fa-circle-check"></i> Løst (+20 XP)</span>' : ''}
+                    </div>
+
+                    <p class="text-sm text-slate-600">${task.description}</p>
+                    ${task.dataString ? `<div class="bg-slate-100 p-3 rounded-xl font-mono text-sm text-slate-800 font-bold border border-slate-200">${task.dataString}</div>` : ''}
+
+                    <div class="pt-1">
+                        <p class="font-semibold text-slate-800 text-sm">${task.question}</p>
+                        ${inputHTML}
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                        <button onclick="toggleHint('${task.id}')" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb"></i> Vis Hint
+                        </button>
+
+                        <button onclick="checkTaskAnswer('${task.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-5 py-2 rounded-xl transition shadow-sm">
+                            Sjekk Svar
+                        </button>
+                    </div>
+
+                    <div id="hint-${task.id}" class="hidden bg-indigo-50 border border-indigo-200 p-3 rounded-xl text-xs text-indigo-900">
+                        <strong>Hint:</strong> ${task.hint}
+                    </div>
+
+                    <div id="feedback-${task.id}" class="hidden p-4 rounded-xl text-sm font-medium"></div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function toggleHint(taskId) {
+            const hintElem = document.getElementById(`hint-${taskId}`);
+            hintElem.classList.toggle('hidden');
+        }
+
+        function checkTaskAnswer(taskId) {
+            const task = taskDatabase.find(t => t.id === taskId);
+            if (!task) return;
+
+            const feedbackElem = document.getElementById(`feedback-${taskId}`);
+            feedbackElem.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800');
+
+            let isCorrect = true;
+
+            if (task.answerType === 'multi-input') {
+                task.inputs.forEach(inp => {
+                    const userVal = document.getElementById(`${task.id}-${inp.id}`).value.trim().replace(',', '.');
+                    const targetVal = inp.correctAnswer.replace(',', '.');
+
+                    // Flexible match for numeric floats
+                    if (Math.abs(parseFloat(userVal) - parseFloat(targetVal)) > 0.1 && userVal !== targetVal) {
+                        isCorrect = false;
+                    }
+                });
+            } else if (task.answerType === 'radio') {
+                const selected = document.querySelector(`input[name="${task.id}-option"]:checked`);
+                if (!selected || parseInt(selected.value) !== task.correctOptionIndex) {
+                    isCorrect = false;
+                }
+            }
+
+            if (isCorrect) {
+                feedbackElem.classList.add('bg-emerald-100', 'text-emerald-800', 'border', 'border-emerald-200');
+                feedbackElem.innerHTML = `
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-lg mt-0.5"></i>
+                        <div>
+                            <strong>Riktig! Supert jobbet!</strong>
+                            <p class="text-xs mt-1 text-emerald-900">${task.explanation}</p>
+                        </div>
+                    </div>
+                `;
+
+                if (!completedTasks.has(taskId)) {
+                    completedTasks.add(taskId);
+                    userXP += 20;
+                    updateHeaderStats();
+                    confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } });
+                }
+            } else {
+                feedbackElem.classList.add('bg-rose-100', 'text-rose-800', 'border', 'border-rose-200');
+                feedbackElem.innerHTML = `
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-xmark text-rose-600 text-lg mt-0.5"></i>
+                        <div>
+                            <strong>Ikke helt riktig ennå. Trykk på "Vis Hint" eller prøv igjen!</strong>
+                            <p class="text-xs mt-1 text-rose-900">${task.explanation}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateHeaderStats() {
+            document.getElementById('xp-display').innerText = userXP;
+            document.getElementById('completed-count').innerText = completedTasks.size;
+        }
+
+        function generateRandomTask() {
+            const arrLength = 7;
+            const randomNums = Array.from({length: arrLength}, () => Math.floor(Math.random() * 10) + 1).sort((a,b)=>a-b);
+            
+            // Calc stats
+            const sum = randomNums.reduce((a,b)=>a+b, 0);
+            const mean = (sum / arrLength).toFixed(1);
+            const median = randomNums[Math.floor(arrLength / 2)];
+
+            const newTask = {
+                id: 'gen-' + Date.now(),
+                category: 'sentralmal',
+                difficulty: 'Middels',
+                title: 'Tilfeldig Generert Regneoppgave',
+                description: 'Du har fått gitt følgende datasett med tall:',
+                dataString: randomNums.join(', '),
+                question: 'Regn ut gjennomsnittet (rund av til 1 desimal) og medianen for disse tallene.',
+                hint: `Siden datasettet har ${arrLength} tall og allerede er sortert, er medianen tall nummer 4. Summen er ${sum}.`,
+                answerType: 'multi-input',
+                inputs: [
+                    { id: 'gen-mean', label: 'Gjennomsnitt:', correctAnswer: mean.toString() },
+                    { id: 'gen-median', label: 'Median:', correctAnswer: median.toString() }
+                ],
+                explanation: `Summen av tallene er ${sum}. ${sum} / ${arrLength} = ${mean}. Det midterste tallet i rekken er ${median}.`
+            };
+
+            taskDatabase.unshift(newTask);
+            filterPractice('all');
+        }
+
+        function renderSpreadsheet() {
+            const tbody = document.getElementById('spreadsheet-body');
+            tbody.innerHTML = '';
+
+            currentSpreadsheet.forEach((row, rIdx) => {
+                const tr = document.createElement('tr');
+                tr.className = rIdx === 0 ? 'bg-slate-100 font-bold' : '';
+
+                // Row header #
+                const th = document.createElement('td');
+                th.className = 'p-2 border border-slate-300 text-center font-bold text-xs bg-slate-200 text-slate-600';
+                th.innerText = rIdx + 1;
+                tr.appendChild(th);
+
+                row.forEach((cellVal, cIdx) => {
+                    const td = document.createElement('td');
+                    td.className = 'p-1 border border-slate-300';
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'w-full p-1.5 text-xs rounded border-none bg-transparent focus:bg-white focus:ring-1 focus:ring-blue-500';
+                    input.value = cellVal;
+
+                    // Display calculated value if it starts with '='
+                    if (typeof cellVal === 'string' && cellVal.startsWith('=')) {
+                        const calculated = evaluateFormula(cellVal, currentSpreadsheet);
+                        input.value = cellVal; // show formula when editing
+                        input.title = `Formel: ${cellVal} => Resultat: ${calculated}`;
+                    }
+
+                    input.onchange = (e) => {
+                        currentSpreadsheet[rIdx][cIdx] = e.target.value;
+                        renderSpreadsheet();
+                        renderCustomChart();
+                    };
+
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* Helper to extract numbers from cell range string e.g., "A1:A10" */
+        function getRangeValues(rangeStr, sheet) {
+            const rangeMatch = rangeStr.toUpperCase().match(/([A-D])([1-9]):([A-D])([1-9])/);
+            if (!rangeMatch) return [];
+
+            const startCol = rangeMatch[1].charCodeAt(0) - 65;
+            const startRow = parseInt(rangeMatch[2]) - 1;
+            const endCol = rangeMatch[3].charCodeAt(0) - 65;
+            const endRow = parseInt(rangeMatch[4]) - 1;
+
+            let values = [];
+            for (let r = startRow; r <= endRow; r++) {
+                for (let c = startCol; c <= endCol; c++) {
+                    if (sheet[r] && sheet[r][c] !== undefined) {
+                        let val = sheet[r][c];
+                        if (typeof val === 'string' && val.startsWith('=')) {
+                            val = evaluateFormula(val, sheet);
+                        }
+                        let num = parseFloat(val);
+                        if (!isNaN(num)) values.push(num);
+                    }
+                }
+            }
+            return values;
+        }
+
+        /* Quartile Helper */
+        function calculateQuartile(values, qNum) {
+            if (!values || values.length === 0) return 0;
+            const sorted = [...values].sort((a, b) => a - b);
+            
+            if (qNum === 1) {
+                const lowerHalf = sorted.slice(0, Math.floor(sorted.length / 2));
+                if (lowerHalf.length === 0) return sorted[0];
+                const mid = Math.floor(lowerHalf.length / 2);
+                return lowerHalf.length % 2 !== 0 ? lowerHalf[mid] : (lowerHalf[mid - 1] + lowerHalf[mid]) / 2;
+            } else if (qNum === 3) {
+                const upperHalf = sorted.slice(Math.ceil(sorted.length / 2));
+                if (upperHalf.length === 0) return sorted[sorted.length - 1];
+                const mid = Math.floor(upperHalf.length / 2);
+                return upperHalf.length % 2 !== 0 ? upperHalf[mid] : (upperHalf[mid - 1] + upperHalf[mid]) / 2;
+            }
+            return 0;
+        }
+
+        function extractRangeValuesFromFunc(str, sheet) {
+            const match = str.match(/\(\s*([A-D][1-9]:[A-D][1-9])\s*\)/);
+            if (match) {
+                return getRangeValues(match[1], sheet);
+            }
+            return [];
+        }
+
+        /* Enhanced Formula Evaluator */
+        function evaluateFormula(formulaStr, sheet) {
+            try {
+                let expr = formulaStr.trim();
+                if (expr.startsWith('=')) expr = expr.substring(1);
+
+                return evaluateExpression(expr, sheet);
+            } catch (err) {
+                return '#FEIL!';
+            }
+        }
+
+        function evaluateExpression(expr, sheet) {
+            expr = expr.trim();
+            if (!expr) return 0;
+
+            // Handle Subtraction outside nested functions
+            if (expr.includes('-')) {
+                const parts = splitByTopOperator(expr, '-');
+                if (parts.length > 1) {
+                    let res = evaluateExpression(parts[0], sheet);
+                    for (let i = 1; i < parts.length; i++) {
+                        res -= evaluateExpression(parts[i], sheet);
+                    }
+                    return Number.isInteger(res) ? res : parseFloat(res.toFixed(2));
+                }
+            }
+
+            // Handle Addition
+            if (expr.includes('+')) {
+                const parts = splitByTopOperator(expr, '+');
+                if (parts.length > 1) {
+                    let res = 0;
+                    for (let p of parts) {
+                        res += evaluateExpression(p, sheet);
+                    }
+                    return Number.isInteger(res) ? res : parseFloat(res.toFixed(2));
+                }
+            }
+
+            // Handle Multiplication
+            if (expr.includes('*')) {
+                const parts = splitByTopOperator(expr, '*');
+                if (parts.length > 1) {
+                    let res = evaluateExpression(parts[0], sheet);
+                    for (let i = 1; i < parts.length; i++) {
+                        res *= evaluateExpression(parts[i], sheet);
+                    }
+                    return Number.isInteger(res) ? res : parseFloat(res.toFixed(2));
+                }
+            }
+
+            // Handle Division
+            if (expr.includes('/')) {
+                const parts = splitByTopOperator(expr, '/');
+                if (parts.length > 1) {
+                    let res = evaluateExpression(parts[0], sheet);
+                    for (let i = 1; i < parts.length; i++) {
+                        const denom = evaluateExpression(parts[i], sheet);
+                        if (denom !== 0) res /= denom;
+                        else return '#DEL0!';
+                    }
+                    return Number.isInteger(res) ? res : parseFloat(res.toFixed(3));
+                }
+            }
+
+            const upper = expr.toUpperCase();
+
+            // Function: KVARTIL(A1:A10; 3) or KVARTIL(A1:A10, 1)
+            if (upper.startsWith('KVARTIL') || upper.startsWith('QUARTILE')) {
+                const match = upper.match(/KVARTIL\s*\(\s*([A-D][1-9]:[A-D][1-9])\s*[\;\,]\s*([1-3])\s*\)/);
+                if (match) {
+                    const values = getRangeValues(match[1], sheet);
+                    const qNum = parseInt(match[2]);
+                    return calculateQuartile(values, qNum);
+                }
+            }
+
+            // Function: SUMMER / SUMME / SUM
+            if (upper.startsWith('SUMMER') || upper.startsWith('SUMME') || upper.startsWith('SUM')) {
+                const values = extractRangeValuesFromFunc(upper, sheet);
+                const sum = values.reduce((a, b) => a + b, 0);
+                return Number.isInteger(sum) ? sum : parseFloat(sum.toFixed(2));
+            }
+
+            // Function: GJENNOMSNITT / AVERAGE
+            if (upper.startsWith('GJENNOMSNITT') || upper.startsWith('AVERAGE')) {
+                const values = extractRangeValuesFromFunc(upper, sheet);
+                if (!values.length) return 0;
+                const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                return parseFloat(avg.toFixed(2));
+            }
+
+            // Function: MEDIAN
+            if (upper.startsWith('MEDIAN')) {
+                const values = extractRangeValuesFromFunc(upper, sheet);
+                if (!values.length) return 0;
+                values.sort((a, b) => a - b);
+                const mid = Math.floor(values.length / 2);
+                const med = values.length % 2 !== 0 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+                return parseFloat(med.toFixed(2));
+            }
+
+            // Function: MODUS / TYPETALL / MODE
+            if (upper.startsWith('MODUS') || upper.startsWith('TYPETALL') || upper.startsWith('MODE')) {
+                const values = extractRangeValuesFromFunc(upper, sheet);
+                if (!values.length) return 0;
+                const counts = {};
+                let maxCount = 0;
+                let mode = values[0];
+                values.forEach(v => {
+                    counts[v] = (counts[v] || 0) + 1;
+                    if (counts[v] > maxCount) {
+                        maxCount = counts[v];
+                        mode = v;
+                    }
+                });
+                return mode;
+            }
+
+            // Function: MAKS / MAX
+            if (upper.startsWith('MAKS') || upper.startsWith('MAX')) {
+                const values = extractRangeValuesFromFunc(upper, sheet);
+                return values.length ? Math.max(...values) : 0;
+            }
+
+            // Function: MIN
+            if (upper.startsWith('MIN')) {
+                const values = extractRangeValuesFromFunc(upper, sheet);
+                return values.length ? Math.min(...values) : 0;
+            }
+
+            // Single Cell Reference like A1
+            const cellMatch = upper.match(/^([A-D])([1-9])$/);
+            if (cellMatch) {
+                const c = cellMatch[1].charCodeAt(0) - 65;
+                const r = parseInt(cellMatch[2]) - 1;
+                if (sheet[r] && sheet[r][c] !== undefined) {
+                    let val = sheet[r][c];
+                    if (typeof val === 'string' && val.startsWith('=')) {
+                        val = evaluateFormula(val, sheet);
+                    }
+                    return parseFloat(val) || 0;
+                }
+            }
+
+            return parseFloat(expr) || 0;
+        }
+
+        function splitByTopOperator(str, op) {
+            let parts = [];
+            let current = '';
+            let depth = 0;
+
+            for (let i = 0; i < str.length; i++) {
+                const char = str[i];
+                if (char === '(') depth++;
+                else if (char === ')') depth--;
+
+                if (char === op && depth === 0) {
+                    parts.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            if (current) parts.push(current);
+            return parts;
+        }
+
+        function renderCustomChart() {
+            const ctx = document.getElementById('spreadsheetChart').getContext('2d');
+            const chartType = document.getElementById('chart-type-select').value;
+
+            // Extract labels from Column A (rows 1..N-1) and values from Column B
+            let labels = [];
+            let dataValues = [];
+
+            for (let r = 1; r < currentSpreadsheet.length - 1; r++) {
+                const label = currentSpreadsheet[r][0];
+                let val = currentSpreadsheet[r][1];
+
+                if (typeof val === 'string' && val.startsWith('=')) {
+                    val = evaluateFormula(val, currentSpreadsheet);
+                }
+
+                if (label !== '' && !isNaN(parseFloat(val))) {
+                    labels.push(label);
+                    dataValues.push(parseFloat(val));
+                }
+            }
+
+            if (spreadsheetChartInstance) {
+                spreadsheetChartInstance.destroy();
+            }
+
+            spreadsheetChartInstance = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frekvens / Verdi',
+                        data: dataValues,
+                        backgroundColor: [
+                            '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: chartType === 'pie' }
+                    }
+                }
+            });
+        }
+
+        function clearSpreadsheet() {
+            currentSpreadsheet = [
+                ['Kategori / Data', 'Frekvens', 'Relativ Frekvens', 'Prosent (%)'],
+                ['', '', '', ''],
+                ['', '', '', ''],
+                ['', '', '', ''],
+                ['', '', '', ''],
+                ['Totalt', '', '', '']
+            ];
+            renderSpreadsheet();
+            renderCustomChart();
+        }
+
+        function loadSpreadsheetPreset(preset) {
+            if (preset === 'karakterer') {
+                currentSpreadsheet = JSON.parse(JSON.stringify(initialSpreadsheetData));
+            } else if (preset === 'skostorrelser') {
+                currentSpreadsheet = [
+                    ['Skostørrelse', 'Antall elever', 'Relativ Frekvens', 'Prosent (%)'],
+                    ['36', '2', '=B2/SUMMER(B2:B6)', '=C2*100'],
+                    ['37', '5', '=B3/SUMMER(B2:B6)', '=C3*100'],
+                    ['38', '9', '=B4/SUMMER(B2:B6)', '=C4*100'],
+                    ['39', '6', '=B5/SUMMER(B2:B6)', '=C5*100'],
+                    ['40', '3', '=B6/SUMMER(B2:B6)', '=C6*100'],
+                    ['Totalt', '=SUMMER(B2:B6)', '=SUMMER(C2:C6)', '']
+                ];
+            }
+            renderSpreadsheet();
+            renderCustomChart();
+        }
+
+        const examQuestions = [
+            {
+                q: '1. I en klasse svarte elevers ukepenger (i kr): 100, 150, 100, 200, 150, 500, 100. Hva er typetallet?',
+                type: 'number',
+                correct: '100',
+                points: 1
+            },
+            {
+                q: '2. Regn ut medianen for følgende tall: 3, 7, 2, 9, 12, 8.',
+                type: 'number',
+                correct: '7.5', // sortert: 2, 3, 7, 8, 9, 12 -> median (7+8)/2 = 7.5
+                points: 2
+            },
+            {
+                q: '3. Hva kaller vi forskjell mellom øvre kvartil (Q3) og nedre kvartil (Q1)?',
+                type: 'mc',
+                options: ['Variasjonsbredde', 'Gjennomsnitt', 'Kvartilbredde', 'Standardavvik'],
+                correctIdx: 2,
+                points: 1
+            },
+            {
+                q: '4. Hvilket diagram egner seg BEST til å vise hvor stor prosentandel ulike fritidsaktiviteter utgjør av en hel skoledag?',
+                type: 'mc',
+                options: ['Linjediagram', 'Sektordiagram (sirkeldiagram)', 'Stolpediagram', 'Histogram'],
+                correctIdx: 1,
+                points: 1
+            },
+            {
+                q: '5. En frekvenstabell viser at 5 av 25 elever fikk karakteren 6. Hva er den relative frekvensen oppgitt i prosent?',
+                type: 'number',
+                correct: '20',
+                points: 2
+            },
+            {
+                q: '6. Hvilken regnearkformel er RIKTIG for å finn den største verdien i cellene fra B2 til B10?',
+                type: 'mc',
+                options: ['=HOYESTE(B2:B10)', '=MAKS(B2:B10)', '=STØRST(B2:B10)', '=TOPP(B2:B10)'],
+                correctIdx: 1,
+                points: 1
+            }
+        ];
+
+        function startExam() {
+            document.getElementById('exam-start-screen').classList.add('hidden');
+            const qContainer = document.getElementById('exam-questions-container');
+            qContainer.classList.remove('hidden');
+            qContainer.innerHTML = '';
+
+            examQuestions.forEach((eq, idx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3';
+
+                let inputHTML = '';
+                if (eq.type === 'number') {
+                    inputHTML = `<input type="text" id="eq-ans-${idx}" class="w-full sm:w-1/2 border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500" placeholder="Skriv inn tallet ditt...">`;
+                } else if (eq.type === 'mc') {
+                    inputHTML = `
+                        <div class="space-y-2">
+                            ${eq.options.map((opt, oIdx) => `
+                                <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50/50 cursor-pointer text-sm">
+                                    <input type="radio" name="eq-mc-${idx}" value="${oIdx}">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                qDiv.innerHTML = `
+                    <p class="font-bold text-slate-800 text-sm">${eq.q}</p>
+                    ${inputHTML}
+                `;
+                qContainer.appendChild(qDiv);
+            });
+
+            // Submit button
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl shadow-md transition text-base mt-6';
+            submitBtn.innerText = 'Lever Prøven';
+            submitBtn.onclick = submitExam;
+            qContainer.appendChild(submitBtn);
+        }
+
+        function submitExam() {
+            let score = 0;
+            let maxScore = examQuestions.reduce((a, b) => a + b.points, 0);
+
+            examQuestions.forEach((eq, idx) => {
+                if (eq.type === 'number') {
+                    const val = document.getElementById(`eq-ans-${idx}`).value.trim().replace(',', '.');
+                    if (val === eq.correct) {
+                        score += eq.points;
+                    }
+                } else if (eq.type === 'mc') {
+                    const selected = document.querySelector(`input[name="eq-mc-${idx}"]:checked`);
+                    if (selected && parseInt(selected.value) === eq.correctIdx) {
+                        score += eq.points;
+                    }
+                }
+            });
+
+            // Calculate Grade Antydning
+            let grade = 2;
+            const pct = (score / maxScore) * 100;
+            if (pct >= 90) grade = 6;
+            else if (pct >= 75) grade = 5;
+            else if (pct >= 55) grade = 4;
+            else if (pct >= 40) grade = 3;
+
+            const qContainer = document.getElementById('exam-questions-container');
+            qContainer.classList.add('hidden');
+
+            const resView = document.getElementById('exam-result-view');
+            resView.classList.remove('hidden');
+
+            resView.innerHTML = `
+                <div class="max-w-md mx-auto space-y-4">
+                    <div class="w-24 h-24 bg-indigo-100 text-indigo-700 rounded-full flex flex-col items-center justify-center mx-auto border-4 border-indigo-200">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Karakter</span>
+                        <span class="text-4xl font-extrabold">${grade}</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800">Du fikk ${score} av ${maxScore} poeng!</h3>
+                    <p class="text-sm text-slate-600">
+                        ${grade >= 4 ? 'Flott jobba! Du viser god forståelse for statistikk på 9. trinn.' : 'Godt forsøk! Øv litt mer på sentralmål og regnearkformler, så sitter 6-eren!'}
+                    </p>
+                    <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl shadow transition text-sm">
+                        Prøv På Nytt
+                    </button>
+                </div>
+            `;
+
+            if (grade >= 4) {
+                confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        /* Initial Load setup */
+        window.onload = function() {
+            renderPracticeTasks();
+        };
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
