@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
   <style>
     .widget {
       position: absolute;
@@ -51,6 +52,24 @@
       border-color: #6366f1;
       background-color: #eef2ff;
     }
+    /* Styling for rik tekst i tekstredigeringen */
+    [contenteditable] ul {
+      list-style-type: disc;
+      padding-left: 1.5rem;
+      margin-top: 0.25rem;
+      margin-bottom: 0.25rem;
+    }
+    [contenteditable] ol {
+      list-style-type: decimal;
+      padding-left: 1.5rem;
+      margin-top: 0.25rem;
+      margin-bottom: 0.25rem;
+    }
+    [contenteditable]:empty:before {
+      content: attr(placeholder);
+      color: #94a3b8;
+      cursor: text;
+    }
   </style>
 </head>
 <body id="main-body" class="h-screen w-screen overflow-hidden bg-slate-800 text-slate-800 relative bg-custom-cover" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop');">
@@ -65,7 +84,6 @@
     </div>
   </div>
 
-  <!-- VERKTØYMENY NEDERST -->
   <div class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md border border-white/40 shadow-2xl rounded-2xl px-4 py-2 flex items-center gap-2 z-50 overflow-x-auto max-w-[95vw]">
     <button onclick="createWidget('clock')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Klokke og Dato">
       <i class="fa-regular fa-clock text-xl text-indigo-600 group-hover:scale-110 transition-transform"></i>
@@ -136,7 +154,6 @@
     </button>
   </div>
 
-  <!-- BAKGRUNNS-MODAL -->
   <div id="bg-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl">
       <div class="flex justify-between items-center mb-4">
@@ -375,7 +392,7 @@
       handle.onmousedown = dragMouseDown;
 
       function dragMouseDown(e) {
-        if (e.target.closest('.draggable-student') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
+        if (e.target.closest('.draggable-student') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON' || e.target.isContentEditable) return;
         e = e || window.event;
         e.preventDefault();
         pos3 = e.clientX;
@@ -454,14 +471,96 @@
       const container = createWidgetFrame(id, 'Beskjed / Tekst', 'fa-solid fa-note-sticky text-sky-500', 'tekstboks', savedConfig);
       if (!savedConfig) {
         const el = document.getElementById(id);
-        if (el) el.style.width = '380px';
+        if (el) {
+          el.style.width = '440px';
+          el.style.height = '340px';
+        }
       }
       container.innerHTML = `
-        <div class="flex flex-col h-full">
-          <textarea id="tekstboks-input" oninput="saveTekstboksContent()" placeholder="Skriv beskjeder eller oppgaver til klassen her..." class="w-full h-48 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 resize-y font-sans shadow-inner flex-1"></textarea>
+        <div class="flex flex-col h-full gap-2">
+          <!-- Formateringsverktøylinje -->
+          <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs select-none">
+            <!-- Fontvelger -->
+            <select onchange="changeFontName('${id}', this.value)" class="bg-white border border-slate-300 rounded-lg px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer text-slate-700" title="Endre font">
+              <option value="sans-serif">Standard</option>
+              <option value="serif">Serif</option>
+              <option value="monospace">Monospace</option>
+              <option value="Comic Sans MS, cursive">Håndskrift</option>
+            </select>
+
+            <!-- Tekststørrelse -->
+            <select onchange="changeFontSize('${id}', this.value)" class="bg-white border border-slate-300 rounded-lg px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-400 cursor-pointer text-slate-700" title="Fontstørrelse">
+              <option value="14px">14px</option>
+              <option value="18px" selected>18px (Normal)</option>
+              <option value="24px">24px (Stor)</option>
+              <option value="32px">32px (Meget stor)</option>
+              <option value="48px">48px (Kjempestor)</option>
+              <option value="64px">64px (Gigantisk)</option>
+            </select>
+
+            <div class="h-4 w-[1px] bg-slate-300 mx-0.5"></div>
+
+            <!-- Tekststil knapper -->
+            <button onclick="formatText('${id}', 'bold')" class="w-6 h-6 rounded hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 transition" title="Fet tekst">B</button>
+            <button onclick="formatText('${id}', 'italic')" class="w-6 h-6 rounded hover:bg-slate-200 flex items-center justify-center italic font-serif text-slate-700 transition" title="Kursiv">I</button>
+            <button onclick="formatText('${id}', 'underline')" class="w-6 h-6 rounded hover:bg-slate-200 flex items-center justify-center underline text-slate-700 transition" title="Understreking">U</button>
+
+            <div class="h-4 w-[1px] bg-slate-300 mx-0.5"></div>
+
+            <!-- Lister -->
+            <button onclick="formatText('${id}', 'insertUnorderedList')" class="w-6 h-6 rounded hover:bg-slate-200 flex items-center justify-center text-slate-700 transition" title="Kulepunkter">
+              <i class="fa-solid fa-list-ul text-xs"></i>
+            </button>
+            <button onclick="formatText('${id}', 'insertOrderedList')" class="w-6 h-6 rounded hover:bg-slate-200 flex items-center justify-center text-slate-700 transition" title="Nummerering">
+              <i class="fa-solid fa-list-ol text-xs"></i>
+            </button>
+
+            <div class="h-4 w-[1px] bg-slate-300 mx-0.5"></div>
+
+            <!-- Fargevelgere -->
+            <div class="flex items-center gap-1">
+              <button onclick="changeTextColor('${id}', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-slate-300 hover:scale-110 transition" title="Mørk"></button>
+              <button onclick="changeTextColor('${id}', '#2563eb')" class="w-4 h-4 rounded-full bg-blue-600 border border-slate-300 hover:scale-110 transition" title="Blå"></button>
+              <button onclick="changeTextColor('${id}', '#dc2626')" class="w-4 h-4 rounded-full bg-red-600 border border-slate-300 hover:scale-110 transition" title="Rød"></button>
+              <button onclick="changeTextColor('${id}', '#16a34a')" class="w-4 h-4 rounded-full bg-green-600 border border-slate-300 hover:scale-110 transition" title="Grønn"></button>
+              <input type="color" onchange="changeTextColor('${id}', this.value)" class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0" title="Velg farge">
+            </div>
+          </div>
+
+          <!-- Redigerbart område -->
+          <div id="${id}-editor" contenteditable="true" oninput="saveTekstboksContent('${id}')" placeholder="Skriv beskjeder eller oppgaver til klassen her..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-base text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 overflow-y-auto flex-1 font-sans shadow-inner min-h-[140px]"></div>
         </div>
       `;
-      loadTekstboksContent();
+      loadTekstboksContent(id);
+    }
+
+    function formatText(wId, command, value = null) {
+      const editor = document.getElementById(`${wId}-editor`);
+      if (!editor) return;
+      editor.focus();
+      document.execCommand(command, false, value);
+      saveTekstboksContent(wId);
+    }
+
+    function changeFontName(wId, fontName) {
+      formatText(wId, 'fontName', fontName);
+    }
+
+    function changeFontSize(wId, size) {
+      const editor = document.getElementById(`${wId}-editor`);
+      if (!editor) return;
+      editor.focus();
+      document.execCommand('fontSize', false, '7');
+      const fontEls = editor.querySelectorAll('font[size="7"]');
+      fontEls.forEach(el => {
+        el.removeAttribute('size');
+        el.style.fontSize = size;
+      });
+      saveTekstboksContent(wId);
+    }
+
+    function changeTextColor(wId, color) {
+      formatText(wId, 'foreColor', color);
     }
 
     function initClockWidget(id, savedConfig) {
@@ -952,11 +1051,9 @@
       const textarea = document.getElementById(`${wId}-list`);
       const nameInput = document.getElementById(`${wId}-name-input`);
       if (!textarea || !textarea.value.trim()) {
-        alert("Vennligst skriv inn noen navn først!");
         return;
       }
       if (!nameInput || !nameInput.value.trim()) {
-        alert("Vennligst skriv inn et navn på listen (f.eks. 6B)!");
         return;
       }
       const name = nameInput.value.trim();
@@ -1138,7 +1235,6 @@
       }, 100);
     }
 
-    // --- BAKGRUNNSBEHANDLING ---
     function toggleBackgroundModal() {
       const modal = document.getElementById('bg-modal');
       if (modal) modal.classList.toggle('hidden');
@@ -1219,19 +1315,26 @@
       renderDagsplan();
     }
 
-    // --- LOGIKK FOR TEKSTBOKS ---
-    function saveTekstboksContent() {
-      const input = document.getElementById('tekstboks-input');
-      if (input) {
-        localStorage.setItem('tekstboksContent', input.value);
+    function saveTekstboksContent(wId = 'widget-tekstboks') {
+      const editor = document.getElementById(`${wId}-editor`) || document.getElementById('tekstboks-input');
+      if (editor) {
+        const content = editor.innerHTML || editor.value;
+        localStorage.setItem(`tekstboksContent_${wId}`, content);
+        localStorage.setItem('tekstboksContent', content);
       }
     }
 
-    function loadTekstboksContent() {
-      const saved = localStorage.getItem('tekstboksContent');
-      const input = document.getElementById('tekstboks-input');
-      if (saved !== null && input) {
-        input.value = saved;
+    function loadTekstboksContent(wId = 'widget-tekstboks') {
+      const saved = localStorage.getItem(`tekstboksContent_${wId}`) || localStorage.getItem('tekstboksContent');
+      const editor = document.getElementById(`${wId}-editor`);
+      const oldInput = document.getElementById('tekstboks-input');
+
+      if (saved !== null) {
+        if (editor) {
+          editor.innerHTML = saved;
+        } else if (oldInput) {
+          oldInput.value = saved;
+        }
       }
     }
 
