@@ -354,6 +354,11 @@
 
         const PAGE_SIZE = 10;
 
+        // Unik lagringsnøkkel for denne filen. Endres automatisk hver gang du laster ned en
+        // oppdatert HTML-fil, slik at gammel bufret fremgang i nettleseren aldri kan skygge for
+        // ferske standardoppgaver i en nylig eksportert fil.
+        const STORAGE_KEY = /*__STORAGE_KEY_START__*/'deutschmaster_state_v3'/*__STORAGE_KEY_END__*/;
+
         // Global State
         let categories = [];
         let activeCategoryId = 'leddsetninger';
@@ -380,7 +385,7 @@
 
         function saveState() {
             try {
-                localStorage.setItem('deutschmaster_state_v3', JSON.stringify({
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
                     categories, activeCategoryId, activeSubcategoryId, currentPage, userAnswers, checkedAnswers
                 }));
             } catch (e) {
@@ -390,7 +395,7 @@
 
         function loadState() {
             try {
-                const saved = localStorage.getItem('deutschmaster_state_v3');
+                const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     categories = (Array.isArray(parsed.categories) && parsed.categories.length)
@@ -1239,22 +1244,44 @@
             URL.revokeObjectURL(url);
         }
 
+        function generateStorageSuffix() {
+            return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+        }
+
         function exportUpdatedHtml() {
             try {
-                const startMarker = '/*__DEFAULT_CATEGORIES_START__*/';
-                const endMarker = '/*__DEFAULT_CATEGORIES_END__*/';
+                const catStartMarker = '/*__DEFAULT_CATEGORIES_START__*/';
+                const catEndMarker = '/*__DEFAULT_CATEGORIES_END__*/';
+                const keyStartMarker = '/*__STORAGE_KEY_START__*/';
+                const keyEndMarker = '/*__STORAGE_KEY_END__*/';
 
-                const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-                const startIdx = fullHtml.indexOf(startMarker);
-                const endIdx = fullHtml.indexOf(endMarker);
+                let fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 
-                if (startIdx === -1 || endIdx === -1) {
+                const catStartIdx = fullHtml.indexOf(catStartMarker);
+                const catEndIdx = fullHtml.indexOf(catEndMarker);
+                const keyStartIdx = fullHtml.indexOf(keyStartMarker);
+                const keyEndIdx = fullHtml.indexOf(keyEndMarker);
+
+                if (catStartIdx === -1 || catEndIdx === -1 || keyStartIdx === -1 || keyEndIdx === -1) {
                     alert('Fant ikke riktig sted i filen å sette inn oppgavene i. Prøv å laste siden på nytt (uten ulagrede endringer) og forsøk igjen.');
                     return;
                 }
 
-                const before = fullHtml.slice(0, startIdx + startMarker.length);
-                const after = fullHtml.slice(endIdx);
+                // 1) Sett inn en helt fersk, unik lagringsnøkkel, slik at gammel bufret fremgang
+                //    i nettleseren (f.eks. fra denne fanen, eller en tidligere nedlastet fil)
+                //    aldri kan overstyre de ferske standardoppgavene i den nye fila.
+                const newStorageKey = "'deutschmaster_state_v3_" + generateStorageSuffix() + "'";
+                let html2 = fullHtml.slice(0, keyStartIdx + keyStartMarker.length)
+                    + newStorageKey
+                    + fullHtml.slice(keyEndIdx);
+
+                // Indeksene for kategori-markørene må regnes ut på nytt siden strengen er endret
+                const catStartIdx2 = html2.indexOf(catStartMarker);
+                const catEndIdx2 = html2.indexOf(catEndMarker);
+
+                // 2) Sett inn de nåværende emnene/oppgavene som nye standardoppgaver
+                const before = html2.slice(0, catStartIdx2 + catStartMarker.length);
+                const after = html2.slice(catEndIdx2);
                 // Escape "</" slik at en avsluttende script-tag inni en oppgavetekst ikke ødelegger fila
                 const dataBlock = JSON.stringify(categories, null, 4).replace(/<\//g, '<\\/');
                 const newHtml = before + dataBlock + after;
@@ -1535,8 +1562,7 @@ Returner bare en gyldig JSON-struktur som følger dette formatet:
             }
         }
     </script>
-
-  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
 <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
     <i class="fa-solid fa-arrow-left"></i>
     <span>Tilbake til Lærerverktøy</span>
