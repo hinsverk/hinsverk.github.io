@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hot Seat - Tysk</title>
+    <title>Hot Seat - Tysk med Redigering</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
@@ -15,7 +16,7 @@
         }
 
         .word-card {
-            min-height: 300px;
+            min-height: 280px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -30,97 +31,192 @@
 
         @keyframes pulse-red {
             0% { transform: scale(1); color: #ef4444; }
-            50% { transform: scale(1.2); color: #b91c1c; }
+            50% { transform: scale(1.15); color: #b91c1c; }
             100% { transform: scale(1); color: #ef4444; }
+        }
+
+        /* Custom scrollbar for edit view */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-3 md:p-6 bg-slate-100 text-slate-800">
 
-    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 text-center border-4 border-yellow-400">
-        <h1 class="text-3xl font-black text-gray-800 mb-2 uppercase tracking-tighter italic">
-            🔥 Hot Seat: Tysk 🔥
-        </h1>
-        <p class="text-sm text-gray-500 mb-6 font-medium">Forklar ordet uten å si det!</p>
-
-        <!-- Statusfelt -->
-        <div class="flex justify-between items-center mb-8 px-4 bg-gray-50 rounded-xl py-3">
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-5 md:p-8 text-center border-4 border-amber-400 relative overflow-hidden">
+        
+        <!-- App Overskrift & Tab-Velger -->
+        <div class="flex flex-col sm:flex-row justify-between items-center pb-4 mb-6 border-b border-gray-100 gap-3">
             <div class="text-left">
-                <span class="block text-xs uppercase font-bold text-gray-400">Tid igjen</span>
-                <span id="timer" class="text-2xl font-black text-blue-600 inline-block transition-all">60s</span>
+                <h1 class="text-2xl md:text-3xl font-black text-gray-800 uppercase tracking-tighter italic flex items-center gap-2">
+                    🔥 Hot Seat: Tysk
+                </h1>
+                <p class="text-xs text-gray-500 font-medium">Forklar ordet uten å si det!</p>
             </div>
-            <div class="text-right">
-                <span class="block text-xs uppercase font-bold text-gray-400">Ord brukt</span>
-                <span id="counter" class="text-2xl font-black text-gray-700">0 / 0</span>
-            </div>
-        </div>
-
-        <!-- Ordfelt -->
-        <div id="display-area" class="word-card bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 mb-8">
-            <div id="start-screen">
-                <p class="text-xl text-gray-600 mb-4 px-4">Klar for en ny runde?</p>
-                <button onclick="nextWord()" class="bg-yellow-400 hover:bg-yellow-500 text-black font-black py-4 px-8 rounded-full text-xl shadow-lg transition-transform active:scale-95">
-                    START SPILLET
+            
+            <!-- Modus-knapper -->
+            <div class="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
+                <button id="tab-game-btn" onclick="switchTab('game')" class="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all bg-amber-400 text-gray-900 shadow-sm">
+                    <i class="fa-solid fa-gamepad mr-1.5"></i>Spill
+                </button>
+                <button id="tab-edit-btn" onclick="switchTab('edit')" class="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all text-gray-500 hover:text-gray-800">
+                    <i class="fa-solid fa-pen-to-square mr-1.5"></i>Rediger (<span id="total-words-badge">0</span>)
                 </button>
             </div>
+        </div>
 
-            <div id="word-screen" class="hidden">
-                <h2 id="german-word" class="text-5xl md:text-7xl font-black text-red-600 mb-4 break-words px-2 uppercase">---</h2>
-                <p id="norwegian-hint" class="text-xl md:text-2xl text-gray-500 font-bold italic">(norsk betydning)</p>
+        <!-- ========================================== -->
+        <!-- SPILLEMODUS (GAME MODE)                     -->
+        <!-- ========================================== -->
+        <div id="game-view" class="space-y-6">
+            <!-- Statusfelt -->
+            <div class="flex justify-between items-center px-6 bg-slate-50 rounded-2xl py-3 border border-slate-100">
+                <div class="text-left">
+                    <span class="block text-xs uppercase font-extrabold text-gray-400 tracking-wider">Tid igjen</span>
+                    <span id="timer" class="text-3xl font-black text-blue-600 inline-block transition-all">60s</span>
+                </div>
+                <div class="text-right">
+                    <span class="block text-xs uppercase font-extrabold text-gray-400 tracking-wider">Ord brukt</span>
+                    <span id="counter" class="text-3xl font-black text-gray-700">0 / 0</span>
+                </div>
+            </div>
+
+            <!-- Ordfelt / Hovedskjerm -->
+            <div id="display-area" class="word-card bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-6 relative">
+                <div id="start-screen">
+                    <p class="text-lg text-gray-600 mb-6 font-medium">Klar for en ny runde med klassen eller venner?</p>
+                    <button onclick="nextWord()" class="bg-amber-400 hover:bg-amber-500 text-gray-900 font-black py-4 px-10 rounded-full text-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 mx-auto">
+                        <i class="fa-solid fa-play"></i> START SPILLET
+                    </button>
+                </div>
+
+                <div id="word-screen" class="hidden">
+                    <span class="text-xs uppercase tracking-widest text-amber-600 font-bold mb-2 block">Tysk ord</span>
+                    <h2 id="german-word" class="text-4xl md:text-6xl font-black text-red-600 mb-3 break-words px-2 uppercase tracking-tight">---</h2>
+                    <p id="norwegian-hint" class="text-lg md:text-2xl text-slate-500 font-bold italic">(norsk betydning)</p>
+                </div>
+            </div>
+
+            <!-- Spillkontroller -->
+            <div id="controls" class="hidden grid grid-cols-2 gap-4">
+                <button onclick="nextWord()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-forward"></i> NESTE ORD
+                </button>
+                <button onclick="resetTimer()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-4 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> NY TID
+                </button>
+            </div>
+            
+            <div class="pt-2 flex justify-between items-center text-xs text-gray-400 border-t border-gray-100">
+                <button onclick="confirmResetProgress()" class="hover:text-red-600 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Nullstill fremdrift
+                </button>
+                <span id="info-status" class="italic">Klar til start</span>
             </div>
         </div>
 
-        <!-- Knapper -->
-        <div id="controls" class="hidden grid grid-cols-2 gap-4">
-            <button onclick="nextWord()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95">
-                NESTE ORD
-            </button>
-            <button onclick="resetTimer()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 rounded-2xl transition-all active:scale-95">
-                NY TID
-            </button>
+        <!-- ========================================== -->
+        <!-- REDIGERINGSMODUS (EDIT MODE)              -->
+        <!-- ========================================== -->
+        <div id="edit-view" class="hidden space-y-6 text-left">
+            
+            <!-- Verktøylinje: Importer / Eksporter & Nullstill -->
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-file-export"></i> Filbehandling & Sikkerhetskopi
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <!-- Eksporter JSON -->
+                    <button onclick="exportJSON()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm">
+                        <i class="fa-solid fa-download"></i> Eksporter JSON
+                    </button>
+                    
+                    <!-- Importer JSON -->
+                    <label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm text-center">
+                        <i class="fa-solid fa-upload"></i> Importer JSON
+                        <input type="file" id="import-file-input" accept=".json" class="hidden" onchange="importJSON(event)">
+                    </label>
+
+                    <!-- Gjenopprett Standard -->
+                    <button onclick="confirmRestoreDefaults()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+                        <i class="fa-solid fa-rotate-left"></i> Standardliste
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manuell registrering av nytt ord -->
+            <form onsubmit="handleAddWord(event)" class="bg-amber-50 p-4 rounded-2xl border border-amber-200 space-y-3">
+                <h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-plus-circle"></i> Legg til nytt ord manuelt
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                    <input type="text" id="new-de" placeholder="Tysk ord (f.eks. Hund)" required
+                        class="sm:col-span-2 px-3 py-2 rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm font-semibold">
+                    <input type="text" id="new-no" placeholder="Norsk oversettelse (f.eks. Hund)" required
+                        class="sm:col-span-2 px-3 py-2 rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm font-semibold">
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-black py-2 px-4 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-check"></i> Legg til
+                    </button>
+                </div>
+            </form>
+
+            <!-- Søk & Ordoversikt -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Ord i databasen (<span id="edit-word-count">0</span>)
+                    </h3>
+                    <div class="relative w-48">
+                        <input type="text" id="search-input" oninput="renderWordList()" placeholder="Søk ord..."
+                            class="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Scrollbar ordliste -->
+                <div class="max-h-64 overflow-y-auto custom-scrollbar border border-slate-200 rounded-2xl bg-white divide-y divide-slate-100">
+                    <div id="word-list-container" class="divide-y divide-slate-100">
+                        <!-- Dynamiske ord legges inn her -->
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <button id="reset-words" onclick="resetGame()" class="mt-8 text-xs text-gray-400 underline hover:text-gray-600">
-            Nullstill alle ord
-        </button>
+
+    </div>
+
+    <!-- TILPASSET MODAL POPUP FOR MELDINGER OG CONFIRMATION -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-4 border-amber-400 text-center space-y-4 transform transition-all">
+            <div id="modal-icon" class="text-4xl text-amber-500">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <h3 id="modal-title" class="text-xl font-black text-gray-800">Melding</h3>
+            <p id="modal-message" class="text-sm text-gray-600 leading-relaxed">Dette er en viktig beskjed.</p>
+            <div id="modal-actions" class="flex justify-center gap-3 pt-2">
+                <button id="modal-confirm-btn" class="bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold px-5 py-2.5 rounded-xl text-sm transition-transform active:scale-95">
+                    OK
+                </button>
+                <button id="modal-cancel-btn" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-5 py-2.5 rounded-xl text-sm transition-all">
+                    Avbryt
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        function playSound(type) {
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            if (type === 'pling') {
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.5);
-            } else if (type === 'tick') {
-                oscillator.type = 'square';
-                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.1);
-            } else if (type === 'end') {
-                oscillator.type = 'sawtooth';
-                oscillator.frequency.setValueAtTime(110, audioCtx.currentTime);
-                oscillator.frequency.linearRampToValueAtTime(55, audioCtx.currentTime + 1);
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 1);
-            }
-        }
-
-        const wordDatabase = [
+        // Standard ordliste hvis ingen finnes i localStorage
+        const defaultWordDatabase = [
             { de: "Apfel", no: "Eple" }, { de: "Schule", no: "Skole" }, { de: "Hund", no: "Hund" },
             { de: "Katze", no: "Katt" }, { de: "Haus", no: "Hus" }, { de: "Fahrrad", no: "Sykkel" },
             { de: "Auto", no: "Bil" }, { de: "Brot", no: "Brød" }, { de: "Wasser", no: "Vann" },
@@ -157,16 +253,116 @@
             { de: "Spiel", no: "Spill" }
         ];
 
+        // Tilstandsvariabler
+        let wordDatabase = [];
         let usedWords = [];
         let timeLeft = 60;
         let timerInterval = null;
 
-        if (localStorage.getItem('hotseat_used')) {
-            usedWords = JSON.parse(localStorage.getItem('hotseat_used'));
+        // Lyd-konfigurasjon med Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                if (type === 'pling') {
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.4);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.4);
+                } else if (type === 'tick') {
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.08);
+                } else if (type === 'end') {
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(110, audioCtx.currentTime);
+                    oscillator.frequency.linearRampToValueAtTime(55, audioCtx.currentTime + 0.8);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.8);
+                }
+            } catch (e) {
+                console.warn("Lydavspilling feilet:", e);
+            }
+        }
+
+        function initData() {
+            // Last inn ordliste fra localStorage eller bruk standard
+            const savedDb = localStorage.getItem('hotseat_custom_db');
+            if (savedDb) {
+                try {
+                    wordDatabase = JSON.parse(savedDb);
+                } catch (e) {
+                    wordDatabase = [...defaultWordDatabase];
+                }
+            } else {
+                wordDatabase = [...defaultWordDatabase];
+            }
+
+            // Last inn brukte ord
+            const savedUsed = localStorage.getItem('hotseat_used');
+            if (savedUsed) {
+                try {
+                    usedWords = JSON.parse(savedUsed);
+                } catch (e) {
+                    usedWords = [];
+                }
+            } else {
+                usedWords = [];
+            }
+
+            updateUI();
+        }
+
+        function saveWordDatabase() {
+            localStorage.setItem('hotseat_custom_db', JSON.stringify(wordDatabase));
+            updateUI();
+        }
+
+        function saveUsedWords() {
+            localStorage.setItem('hotseat_used', JSON.stringify(usedWords));
+            updateUI();
         }
 
         function updateUI() {
             document.getElementById('counter').innerText = `${usedWords.length} / ${wordDatabase.length}`;
+            document.getElementById('total-words-badge').innerText = wordDatabase.length;
+            document.getElementById('edit-word-count').innerText = wordDatabase.length;
+        }
+
+        function switchTab(tab) {
+            const gameView = document.getElementById('game-view');
+            const editView = document.getElementById('edit-view');
+            const gameBtn = document.getElementById('tab-game-btn');
+            const editBtn = document.getElementById('tab-edit-btn');
+
+            if (tab === 'game') {
+                gameView.classList.remove('hidden');
+                editView.classList.add('hidden');
+                gameBtn.className = "flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all bg-amber-400 text-gray-900 shadow-sm";
+                editBtn.className = "flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all text-gray-500 hover:text-gray-800";
+            } else {
+                gameView.classList.add('hidden');
+                editView.classList.remove('hidden');
+                editBtn.className = "flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all bg-amber-400 text-gray-900 shadow-sm";
+                gameBtn.className = "flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all text-gray-500 hover:text-gray-800";
+                renderWordList();
+            }
         }
 
         function startTimer() {
@@ -180,7 +376,6 @@
                 timeLeft--;
                 timerDisplay.innerText = timeLeft + "s";
                 
-                // Ved nøyaktig 10 sekunder (og nedover), aktiver animasjon
                 if (timeLeft <= 10 && timeLeft > 0) {
                     if (!timerDisplay.classList.contains('timer-low')) {
                         timerDisplay.classList.add('timer-low');
@@ -211,6 +406,11 @@
                 audioCtx.resume();
             }
 
+            if (wordDatabase.length === 0) {
+                showModal("Tom ordliste", "Legg til noen ord i redigeringsmodusen først!", "info");
+                return;
+            }
+
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('word-screen').classList.remove('hidden');
             document.getElementById('controls').classList.remove('hidden');
@@ -219,9 +419,10 @@
 
             if (availableWords.length === 0) {
                 usedWords = [];
-                localStorage.removeItem('hotseat_used');
-                alert("Alle ordene er brukt! Vi starter forfra.");
-                nextWord();
+                saveUsedWords();
+                showModal("Runde fullført!", "Alle ordene i databasen har blitt brukt. Vi starter runden på nytt!", "info", () => {
+                    nextWord();
+                });
                 return;
             }
 
@@ -233,22 +434,233 @@
             document.getElementById('norwegian-hint').innerText = `(${selectedWord.no})`;
 
             usedWords.push(selectedWord.de);
-            localStorage.setItem('hotseat_used', JSON.stringify(usedWords));
+            saveUsedWords();
 
-            updateUI();
             startTimer();
         }
 
-        function resetGame() {
-            if (confirm("Vil du nullstille listen?")) {
-                usedWords = [];
-                localStorage.removeItem('hotseat_used');
-                location.reload();
-            }
+        function confirmResetProgress() {
+            showModal(
+                "Nullstill fremdrift?",
+                "Dette vil nullstille listen over ord som allerede er trukket i spillet. Ordlisten slettes ikke.",
+                "confirm",
+                () => {
+                    usedWords = [];
+                    saveUsedWords();
+                    document.getElementById('start-screen').classList.remove('hidden');
+                    document.getElementById('word-screen').classList.add('hidden');
+                    document.getElementById('controls').classList.add('hidden');
+                    clearInterval(timerInterval);
+                    document.getElementById('timer').innerText = "60s";
+                    document.getElementById('timer').classList.remove('timer-low');
+                    document.getElementById('info-status').innerText = "Fremdrift nullstilt";
+                }
+            );
         }
 
-        updateUI();
+        function renderWordList() {
+            const container = document.getElementById('word-list-container');
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+            container.innerHTML = '';
+
+            const filteredWords = wordDatabase.filter(w => 
+                w.de.toLowerCase().includes(searchVal) || w.no.toLowerCase().includes(searchVal)
+            );
+
+            if (filteredWords.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-slate-400 text-xs italic">
+                        Ingen ord funnet.
+                    </div>
+                `;
+                return;
+            }
+
+            filteredWords.forEach((word) => {
+                const originalIndex = wordDatabase.findIndex(item => item.de === word.de && item.no === word.no);
+                const isUsed = usedWords.includes(word.de);
+
+                const itemEl = document.createElement('div');
+                itemEl.className = 'flex justify-between items-center p-3 hover:bg-slate-50 transition-colors';
+                itemEl.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <span class="font-black text-slate-800 text-sm truncate" title="${escapeHtml(word.de)}">
+                            ${escapeHtml(word.de)}
+                        </span>
+                        <span class="text-slate-400 text-xs font-semibold truncate" title="${escapeHtml(word.no)}">
+                            (${escapeHtml(word.no)})
+                        </span>
+                        ${isUsed ? '<span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">Brukt</span>' : ''}
+                    </div>
+                    <button onclick="removeWord(${originalIndex})" class="text-slate-300 hover:text-red-500 p-1.5 rounded-lg transition-colors" title="Slett ord">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                `;
+                container.appendChild(itemEl);
+            });
+        }
+
+        function handleAddWord(e) {
+            e.preventDefault();
+            const deInput = document.getElementById('new-de');
+            const noInput = document.getElementById('new-no');
+
+            const deVal = deInput.value.trim();
+            const noVal = noInput.value.trim();
+
+            if (!deVal || !noVal) return;
+
+            // Sjekk for duplikat
+            const exists = wordDatabase.some(w => w.de.toLowerCase() === deVal.toLowerCase());
+            if (exists) {
+                showModal("Ord finnes allerede", `Det tyske ordet "${deVal}" ligger allerede i ordlisten.`, "info");
+                return;
+            }
+
+            wordDatabase.unshift({ de: deVal, no: noVal });
+            saveWordDatabase();
+            
+            deInput.value = '';
+            noInput.value = '';
+            deInput.focus();
+
+            renderWordList();
+        }
+
+        function removeWord(index) {
+            if (index < 0 || index >= wordDatabase.length) return;
+            const removedWord = wordDatabase[index];
+            wordDatabase.splice(index, 1);
+            
+            // Slett også fra brukte ord hvis det var der
+            usedWords = usedWords.filter(w => w !== removedWord.de);
+            
+            saveWordDatabase();
+            saveUsedWords();
+            renderWordList();
+        }
+
+        function confirmRestoreDefaults() {
+            showModal(
+                "Gjenopprett standardliste?",
+                "Dette vil erstatte din nåværende ordliste med standard listen over ~100 tyske ord.",
+                "confirm",
+                () => {
+                    wordDatabase = [...defaultWordDatabase];
+                    usedWords = [];
+                    saveWordDatabase();
+                    saveUsedWords();
+                    renderWordList();
+                    showModal("Suksess", "Standard ordliste har blitt gjenopprettet!", "info");
+                }
+            );
+        }
+
+        function exportJSON() {
+            if (wordDatabase.length === 0) {
+                showModal("Ingen ord", "Det er ingen ord å eksportere.", "info");
+                return;
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(wordDatabase, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `hotseat_tysk_ordliste_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Støtt enten array direkte [{de:..., no:...}] eller objekt med words nøkkel {words: [...]}
+                    let list = Array.isArray(importedData) ? importedData : importedData.words;
+
+                    if (!Array.isArray(list)) {
+                        throw new Error("Ugyldig JSON-format. Må være en matrise (array) med ord-objekter.");
+                    }
+
+                    // Valider at elementene har 'de' og 'no' felt
+                    const validList = list.filter(item => item && typeof item.de === 'string' && typeof item.no === 'string');
+
+                    if (validList.length === 0) {
+                        showModal("Formatfeil", "Filen inneholder ingen gyldige ordpar med 'de' og 'no'.", "info");
+                        return;
+                    }
+
+                    showModal(
+                        "Importer Ordliste",
+                        `Fant ${validList.length} ord i filen. Vil du overskrive den nåværende ordlisten?`,
+                        "confirm",
+                        () => {
+                            wordDatabase = validList;
+                            usedWords = [];
+                            saveWordDatabase();
+                            saveUsedWords();
+                            renderWordList();
+                            showModal("Suksess", `Importerte ${validList.length} ord!`, "info");
+                        }
+                    );
+                } catch (err) {
+                    showModal("Klarte ikke lese filen", "Sjekk at JSON-filen er gyldig formatert. Feilmelding: " + err.message, "info");
+                }
+                // Nullstill input slik at samme fil kan velges på nytt om ønskelig
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function showModal(title, message, type = 'info', onConfirm = null) {
+            const modal = document.getElementById('custom-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+            const modalIcon = document.getElementById('modal-icon');
+
+            modalTitle.innerText = title;
+            modalMessage.innerText = message;
+
+            if (type === 'confirm') {
+                modalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
+                modalCancelBtn.classList.remove('hidden');
+            } else {
+                modalIcon.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
+                modalCancelBtn.classList.add('hidden');
+            }
+
+            modalConfirmBtn.onclick = () => {
+                modal.classList.add('hidden');
+                if (onConfirm) onConfirm();
+            };
+
+            modalCancelBtn.onclick = () => {
+                modal.classList.add('hidden');
+            };
+
+            modal.classList.remove('hidden');
+        }
+
+        // Hjelpefunksjon for å unngå XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        // Initialiser appen ved oppstart
+        window.onload = function() {
+            initData();
+        };
     </script>
+
   <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
 <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
     <i class="fa-solid fa-arrow-left"></i>
