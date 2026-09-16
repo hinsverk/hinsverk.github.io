@@ -59,20 +59,37 @@
 
   <!-- Header / Navigation Bar -->
   <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <i class="fa-solid fa-chalkboard-user text-white text-xl"></i>
-        </div>
-        <div>
-          <h1 class="font-outfit font-bold text-xl bg-gradient-to-r from-white via-slate-200 to-indigo-200 bg-clip-text text-transparent">
-            Klasseromquiz
-          </h1>
-          <p class="text-xs text-slate-400 font-medium">Dashboard</p>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Left section: Back Button + Divider + App Logo & Title -->
+      <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
+        <!-- Integrated Back Button -->
+        <a href="index.html" 
+           class="inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl border border-slate-700/80 hover:border-slate-600 shadow-sm transition-all text-xs font-semibold group shrink-0">
+          <i class="fa-solid fa-arrow-left text-slate-400 group-hover:text-white transition-colors"></i>
+          <span class="hidden sm:inline">Tilbake til Lærerverktøy</span>
+          <span class="sm:hidden">Tilbake</span>
+        </a>
+
+        <!-- Vertical Divider -->
+        <div class="h-6 w-px bg-slate-800 shrink-0"></div>
+
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+            <i class="fa-solid fa-chalkboard-user text-white text-xl"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="font-outfit font-bold text-lg sm:text-xl bg-gradient-to-r from-white via-slate-200 to-indigo-200 bg-clip-text text-transparent truncate">
+              Klasseromquiz
+            </h1>
+            <p class="text-[10px] sm:text-xs text-slate-400 font-medium truncate">Dashboard</p>
+          </div>
         </div>
       </div>
 
-      <div class="flex items-center space-x-2">
+      <!-- Right section: Mode badge -->
+      <div class="flex items-center space-x-2 shrink-0">
         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
           <i class="fa-solid fa-display mr-1.5"></i> Lærermodus
         </span>
@@ -210,7 +227,7 @@
     <!-- Center Display Area (Countdown OR Card) -->
     <div class="flex-1 flex items-center justify-center my-4 max-w-5xl w-full mx-auto relative">
 
-      <!-- Completely OPAQUE Countdown Screen (prevents sneak peeks) -->
+      <!-- Countdown Screen -->
       <div id="countdown-container" class="absolute inset-0 flex flex-col items-center justify-center z-30 bg-slate-950 rounded-3xl border-2 border-indigo-500/30 shadow-2xl">
         <div class="text-slate-400 font-bold text-xl sm:text-2xl mb-6 tracking-widest uppercase flex items-center gap-3">
           <i class="fa-solid fa-stopwatch animate-pulse text-indigo-400"></i>
@@ -535,7 +552,6 @@
           if (Array.isArray(imported)) {
             questions = imported;
             saveQuestions();
-            alert('Spørsmål ble importert!');
           } else {
             alert('Ugyldig filformat. Filen må inneholde en liste med spørsmål.');
           }
@@ -572,7 +588,6 @@
 
       let count = 3;
       
-      // Update visual style for "3"
       setCountdownStyle(numElem, "3", "text-amber-400 drop-shadow-[0_10px_35px_rgba(245,158,11,0.5)]");
       playBeep(440, 'sine', 0.15);
 
@@ -681,7 +696,6 @@
        ========================================================================== */
     function setupKeyboardListeners() {
       window.addEventListener('keydown', (e) => {
-        // Ignore space bar triggers if user is typing in textareas or inputs
         const activeElem = document.activeElement;
         const isTyping = activeElem && (activeElem.tagName === 'INPUT' || activeElem.tagName === 'TEXTAREA');
 
@@ -706,10 +720,5 @@
       });
     }
   </script>
-  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
 </body>
 </html>
