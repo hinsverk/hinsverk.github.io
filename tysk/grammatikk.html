@@ -3,470 +3,456 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeutschMaster - Tysk grammatikk og øving</title>
+    <title>Norsk GrammatikkLab</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
+    <!-- FontAwesome for ikonsett -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
                     }
                 }
             }
         }
     </script>
     <style>
-        .glass-panel {
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+        }
+        .glass-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(12px);
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col selection:bg-amber-200 selection:text-amber-900">
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
 
-    <!-- Header -->
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 border-b border-slate-800">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetToHome()">
-                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-amber-500 via-red-500 to-slate-900 p-0.5 flex items-center justify-center shadow-md">
-                    <div class="bg-slate-900 w-full h-full rounded-[10px] flex items-center justify-center">
-                        <i class="fa-solid fa-language text-amber-400 text-xl"></i>
-                    </div>
+    <!-- Top Navigation -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchMode('student')">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/30">
+                    G
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-lg md:text-xl tracking-tight leading-none text-white">Deutsch<span class="text-amber-400">Master</span></h1>
-                    <p class="text-xs text-slate-400 font-medium mt-0.5">Interaktiv tysk grammatikk</p>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">GrammatikkLab</h1>
+                    <p class="text-xs text-indigo-300 font-medium">Norsk språktrening</p>
                 </div>
             </div>
 
-            <!-- Header Controls & Score -->
-            <div class="flex items-center space-x-3">
-                <div class="bg-slate-800/80 rounded-xl px-3.5 py-1.5 border border-slate-700/60 flex items-center space-x-4">
-                    <div class="text-center">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Poeng</span>
-                        <span id="headerScore" class="font-bold text-amber-400 text-base">0</span>
-                    </div>
-                    <div class="h-6 w-px bg-slate-700"></div>
-                    <div class="text-center">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fullført</span>
-                        <span id="headerCompleted" class="font-bold text-emerald-400 text-base">0/10</span>
-                    </div>
-                </div>
-
-                <button onclick="openTeacherRoom()" class="bg-teal-700 hover:bg-teal-600 text-white font-semibold text-xs md:text-sm px-3.5 py-2 rounded-xl transition flex items-center gap-2 shadow-md">
+            <!-- Mode Selector Tabs -->
+            <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
+                <button id="navStudentBtn" onclick="switchMode('student')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-indigo-600 text-white shadow">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Elevvisning</span>
+                </button>
+                <button id="navTeacherBtn" onclick="switchMode('teacher')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-2">
                     <i class="fa-solid fa-chalkboard-user"></i>
-                    <span class="hidden sm:inline">Lærerrom</span>
+                    <span>Lærerrom</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Banner / Quick Rule Info -->
-        <div id="ruleBanner" class="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 md:p-5 flex items-start gap-4 shadow-sm relative overflow-hidden">
-            <div class="bg-amber-500 text-white p-3 rounded-xl flex-shrink-0 shadow-sm mt-0.5">
-                <i class="fa-solid fa-lightbulb text-xl"></i>
-            </div>
-            <div class="space-y-1 pr-6">
-                <h2 id="ruleBannerTitle" class="font-bold text-amber-900 text-base md:text-lg"></h2>
-                <p id="ruleBannerText" class="text-xs md:text-sm text-amber-800 leading-relaxed"></p>
-            </div>
-            <button onclick="document.getElementById('ruleBanner').classList.add('hidden')" class="absolute top-3 right-3 text-amber-700 hover:text-amber-900 p-1">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+        <!-- Notification / Toast Message -->
+        <div id="toastMessage" class="hidden fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3">
+            <div id="toastIcon" class="text-emerald-400 text-xl"><i class="fa-solid fa-circle-check"></i></div>
+            <div id="toastText" class="text-xs font-medium">Melding sendt</div>
         </div>
 
-        <!-- Topic Categories Tabs -->
-        <div class="flex items-center justify-between border-b border-slate-200 pb-3 overflow-x-auto gap-2">
-            <div class="flex items-center space-x-2 min-w-max" id="categoryContainer">
-                <!-- Dynamic topics populated via JS -->
+        <!-- ============================================================ -->
+        <!-- ELEVVISNING (STUDENT VIEW) -->
+        <!-- ============================================================ -->
+        <div id="studentView" class="space-y-6">
+            
+            <!-- Category Tabs Navigation -->
+            <div id="topicTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <!-- Dynamically populated categories -->
             </div>
-        </div>
 
-        <!-- Subcategory (oppgavetype) Tabs -->
-        <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Oppgavetype:</span>
-            <div class="flex items-center gap-2 flex-wrap" id="subcategoryContainer">
-                <!-- Dynamic oppgavetyper populated via JS -->
+            <!-- Subcategories Horizontal Bar -->
+            <div id="subcategoryTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-1 text-sm">
+                <!-- Dynamically populated subcategories -->
             </div>
-        </div>
 
-        <!-- Active Category Info Bar -->
-        <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <div>
-                <h2 id="categoryTitleDisplay" class="font-extrabold text-lg md:text-xl text-slate-900">
-                    <!-- Title -->
-                </h2>
-                <p id="categoryDescDisplay" class="text-xs md:text-sm text-slate-500 mt-0.5">
-                    <!-- Description -->
-                </p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button onclick="checkAllAnswers()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm shadow-md transition flex items-center gap-2">
-                    <i class="fa-solid fa-list-check"></i>
-                    <span>Sjekk alle svar</span>
-                </button>
-                <button onclick="resetCurrentSubcategory()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold px-3 py-2 rounded-xl text-xs md:text-sm transition flex items-center gap-1.5" title="Start på nytt">
-                    <i class="fa-solid fa-rotate-left"></i>
-                    <span>Nullstill</span>
-                </button>
-            </div>
-        </div>
+            <!-- Main Worksheet Card -->
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-200/80 overflow-hidden">
+                <!-- Card Header with Progress -->
+                <div class="bg-gradient-to-r from-indigo-900 to-slate-900 p-6 text-white flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <span id="quizSubcategoryBadge" class="inline-block bg-indigo-500/30 text-indigo-200 text-xs uppercase tracking-wider font-bold px-3 py-1 rounded-full mb-1 border border-indigo-400/30">
+                            Kategori
+                        </span>
+                        <h2 id="quizTitle" class="text-xl md:text-2xl font-bold">Oppgavesett</h2>
+                    </div>
 
-        <!-- Pagination (10 oppgaver per side) -->
-        <div id="paginationBar" class="hidden"></div>
-
-        <!-- Exercises Container (current page, 10 stk) -->
-        <div id="exercisesList" class="space-y-4">
-            <!-- Rendered by JS -->
-        </div>
-
-        <!-- Global Action Bar at bottom of list -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
-            <div id="bottomCheckLabel" class="text-xs md:text-sm text-slate-600 font-medium">
-                <!-- Set by JS -->
-            </div>
-            <button onclick="checkAllAnswers()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-check-double"></i>
-                <span>Sjekk svar på denne siden</span>
-            </button>
-        </div>
-
-        <!-- AI Generator Modal -->
-        <div id="aiModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
-            <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-slate-100 max-h-[90vh] overflow-y-auto">
-                <div class="flex items-center justify-between border-b pb-4">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
-                            <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    <!-- Progress Badge -->
+                    <div class="flex items-center gap-3 bg-slate-800/80 px-4 py-2 rounded-2xl border border-slate-700">
+                        <div class="text-right">
+                            <div class="text-[10px] uppercase font-bold text-slate-400">Poengsum</div>
+                            <div class="text-base font-extrabold text-emerald-400"><span id="scoreVal">0</span> poeng</div>
                         </div>
+                        <div class="w-px h-8 bg-slate-700"></div>
                         <div>
-                            <h3 class="font-bold text-slate-900 text-lg">AI-oppgavegenerator</h3>
-                            <p class="text-xs text-slate-500">Lag 10 skreddersydde oppgaver med Gemini</p>
+                            <div class="text-[10px] uppercase font-bold text-slate-400">Viser oppgaver</div>
+                            <div class="text-base font-extrabold text-white"><span id="pageRangeVal">0-0</span> av <span id="totalExCount">0</span></div>
                         </div>
                     </div>
-                    <button onclick="closeAiModal()" class="text-slate-400 hover:text-slate-600 p-1">
-                        <i class="fa-solid fa-xmark text-lg"></i>
+                </div>
+
+                <!-- Exercise Content Area -->
+                <div class="p-6 md:p-8 space-y-6">
+                    <!-- Rule or Instruction Hint -->
+                    <div id="ruleHintBox" class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex items-start gap-3 text-indigo-900 text-sm">
+                        <i class="fa-solid fa-lightbulb text-amber-500 text-lg mt-0.5"></i>
+                        <p id="ruleHintText" class="leading-relaxed">Regelforklaring vises her.</p>
+                    </div>
+
+                    <!-- Pagination Top Bar (if needed) -->
+                    <div id="pageNavTop" class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Oppgaveside <span id="currentPageNum">1</span></span>
+                        <div id="pageButtonsContainer" class="flex gap-1"></div>
+                    </div>
+
+                    <!-- 10 Exercises List Container -->
+                    <div id="exerciseListContainer" class="space-y-6">
+                        <!-- Up to 10 exercises dynamically populated here -->
+                    </div>
+
+                    <!-- Page Actions & Footer Controls -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-200">
+                        <button id="checkAllBtn" onclick="checkAllAnswers()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                            <i class="fa-solid fa-check-double text-base"></i>
+                            <span>Sjekk alle svar på denne siden</span>
+                        </button>
+
+                        <div class="flex items-center gap-2">
+                            <button id="prevPageBtn" onclick="changePage(-1)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrow-left"></i>
+                                <span>Forrige 10</span>
+                            </button>
+                            <button id="nextPageBtn" onclick="changePage(1)" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs shadow transition flex items-center gap-1.5">
+                                <span>Neste 10</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- LÆRERROM (TEACHER ROOM) -->
+        <!-- ============================================================ -->
+        <div id="teacherView" class="hidden space-y-6">
+            
+            <!-- Dashboard Banner -->
+            <div class="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-400"></i>
+                        <span>Lærerrom & Oppgaveadministrasjon</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">
+                        Administrer emner, oppgaver og synkroniser direkte med din GitHub Gist.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="manualFetchGist()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition shadow">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Synkroniser fra GitHub Gist</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- GitHub Sync & Export Panel -->
+            <section class="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-5 space-y-3">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-800 mb-1 flex items-center gap-1.5">
+                            <i class="fa-brands fa-github text-base"></i> GitHub Gist Integrasjon
+                        </h3>
+                        <p class="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                            Appen henter automatisk nyeste oppgaver fra din tilknyttede GitHub Gist Raw URL ved hver oppstart. 
+                            Endrer du oppgavene på Gist, oppdateres de automatisk for alle elever.
+                        </p>
+                    </div>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Tilkoblet Gist
+                    </span>
+                </div>
+
+                <div class="pt-2 flex flex-wrap gap-2">
+                    <button onclick="manualFetchGist()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Hent ferskeste fra Gist nå
+                    </button>
+                    <button onclick="exportJson()" class="bg-white hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2 rounded-xl text-xs border border-slate-300 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-export"></i> Eksporter som JSON
+                    </button>
+                    <button onclick="document.getElementById('importJsonInput').click()" class="bg-white hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2 rounded-xl text-xs border border-slate-300 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-import"></i> Importer fra JSON
+                    </button>
+                    <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJson(event)">
+                </div>
+            </section>
+
+            <!-- Exercise Management Editor -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-md p-6 space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-600"></i>
+                        <span>Rediger og legg til oppgaver</span>
+                    </h3>
+                    <button onclick="openExerciseModal('new')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-plus"></i> Legg til ny oppgave
                     </button>
                 </div>
 
-                <form onsubmit="generateAIExercises(event)" class="space-y-4">
-
+                <!-- Category and Subcategory Selector for Teacher -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Emne</label>
-                        <select id="aiTopicSelect" onchange="onAiTopicChange()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-medium bg-white"></select>
-                    </div>
-                    <div id="aiNewTopicWrap" class="hidden">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Navn på nytt emne</label>
-                        <input type="text" id="aiNewTopicName" placeholder="f.eks. Perfektum"
-                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-medium">
-                    </div>
-
-                    <div id="aiSubcatSelectWrap">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Oppgavetype</label>
-                        <select id="aiSubcatSelect" onchange="onAiSubcatChange()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-medium bg-white"></select>
-                    </div>
-                    <div id="aiNewSubcatWrap" class="hidden space-y-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Navn på ny oppgavetype</label>
-                            <input type="text" id="aiNewSubcatName" placeholder="f.eks. Oversettelse"
-                                class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-medium">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">Type oppgave</label>
-                            <select id="aiNewSubcatType" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-medium bg-white">
-                                <option value="oversettelse">Oversettelse (norsk → tysk)</option>
-                                <option value="innfylling">Innfylling (luke i tysk setning)</option>
-                                <option value="annet">Annet / blandet</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Tema eller grammatikkregel</label>
-                        <input type="text" id="aiThemeInput" required placeholder="f.eks. Leddsetninger med obwohl og dass, eller presens av modalverb"
-                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm font-medium">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Nivå</label>
-                        <select id="aiLevel" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 outline-none text-sm font-medium bg-white">
-                            <option value="Ungdomsskole / VGS (A2)">Ungdomsskole / VGS (A2)</option>
-                            <option value="Nybegynner (A1)">Nybegynner (A1)</option>
-                            <option value="Viderekommen (B1)">Viderekommen (B1)</option>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Velg Hovedkategori</label>
+                        <select id="teacherCategorySelect" onchange="onTeacherCategoryChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <!-- Populated dynamically -->
                         </select>
                     </div>
-
-                    <div class="pt-2">
-                        <button type="submit" id="aiSubmitBtn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm">
-                            <i class="fa-solid fa-sparkles"></i> Generer 10 nye oppgaver
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Teacher Room (Lærerrom) -->
-        <div id="teacherModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 hidden">
-            <div class="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100">
-                <div class="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-5 md:px-6 py-4 flex items-center justify-between z-10 rounded-t-3xl gap-3 flex-wrap">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center flex-shrink-0">
-                            <i class="fa-solid fa-chalkboard-user text-lg"></i>
-                        </div>
-                        <div>
-                            <h2 class="font-extrabold text-lg text-slate-900">Lærerrom</h2>
-                            <p class="text-xs text-slate-500">Administrer emner, oppgavetyper og oppgaver</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="openAiModalFromTeacher()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs md:text-sm px-3.5 py-2 rounded-xl transition flex items-center gap-2 shadow-md">
-                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-                            <span>Generer med AI</span>
-                        </button>
-                        <button onclick="closeTeacherRoom()" class="text-slate-400 hover:text-slate-600 p-2">
-                            <i class="fa-solid fa-xmark text-lg"></i>
-                        </button>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Velg Underkategori</label>
+                        <select id="teacherSubcategorySelect" onchange="onTeacherSubcategoryChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <!-- Populated dynamically -->
+                        </select>
                     </div>
                 </div>
-                <div id="teacherRoomContent" class="p-5 md:p-6 space-y-6">
-                    <!-- Rendered by JS -->
+
+                <!-- Exercise List Table -->
+                <div class="overflow-x-auto border border-slate-200 rounded-2xl">
+                    <table class="w-full text-left text-xs text-slate-700">
+                        <thead class="bg-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
+                            <tr>
+                                <th class="p-3">#</th>
+                                <th class="p-3">Spørsmål / Setning</th>
+                                <th class="p-3">Riktig Svar</th>
+                                <th class="p-3 text-right">Handlinger</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacherExerciseTableBody" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
                 </div>
-                <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden" onchange="importJsonFile(event)">
             </div>
         </div>
 
     </main>
 
+    <!-- Modal for Adding/Editing Exercise -->
+    <div id="exerciseModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 id="modalTitle" class="font-bold text-base text-slate-800">Ny oppgave</h3>
+                <button onclick="closeExerciseModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="exerciseForm" onsubmit="saveExercise(event)" class="space-y-4">
+                <input type="hidden" id="modalExId">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Spørsmålstekst / Oppgavetekst</label>
+                    <textarea id="modalPrompt" required rows="2" placeholder="F.eks. Skriv riktig form: En gutt, flere ___" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Riktig svar</label>
+                    <input type="text" id="modalAnswer" required placeholder="F.eks. gutter" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Svaralternativer (valgfritt, komma-separert for flervalg)</label>
+                    <input type="text" id="modalOptions" placeholder="F.eks. gutter, gutten, guttene" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Regeltips / Forklaring</label>
+                    <input type="text" id="modalHint" placeholder="F.eks. Flertall av hankjønnssubstantiv slutter ofte på -er." class="w-full border border-slate-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeExerciseModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">Avbryt</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow">Lagre oppgave</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT APPLICATION LOGIC -->
     <script>
         // ============================================================
-        // Default Exercise Data — organized as Topics -> Oppgavetyper -> Oppgaver
+        // Application State & Default Data
         // ============================================================
-        const defaultCategories = /*__DEFAULT_CATEGORIES_START__*/[
+        const GIST_URL = 'https://gist.githubusercontent.com/hinsverk/f56b30e0ce6aa8a3ee0bfc671e316651/raw/e2a7b39dc5792dca5a3af5cfa674cb4beb6e85fe/gistfile1.json';
+
+        let categories = [
             {
-                id: 'leddsetninger',
-                title: 'Leddsetninger (subjunksjoner)',
-                description: 'Øv på verbplassering etter weil, dass, wenn, ob, obwohl og als.',
-                ruleHint: 'I tyske leddsetninger (etter ord som weil, dass, wenn, ob, obwohl, als) plasseres det bøyde verbet HELT TIL SLUTT i setningen! Eksempel: Ich bleibe zu Hause, weil ich krank bin.',
+                id: 'substantiv',
+                title: 'Substantiv',
+                icon: 'fa-box',
                 subcategories: [
                     {
-                        id: 'oversettelse',
-                        title: 'Oversettelse',
-                        baseType: 'oversettelse',
+                        id: 'ubestemt-bestemt',
+                        title: 'Ubestemt og bestemt form',
+                        rule: 'Substantiv har ubestemt form (en gutt) og bestemt form (gutten).',
                         exercises: [
-                            { id: 1, type: 'oversettelse', prompt: 'Jeg kommer ikke fordi jeg er syk.', answer: 'Ich komme nicht, weil ich krank bin.', altAnswers: ['Ich komme nicht weil ich krank bin'], explanation: 'Leddsetningskonjunksjonen "weil" sender verbet "bin" helt til slutt.' },
-                            { id: 2, type: 'oversettelse', prompt: 'Han sier at han elsker musikk.', answer: 'Er sagt, dass er Musik liebt.', altAnswers: ['Er sagt dass er Musik liebt'], explanation: 'Etter "dass" kommer subjektet (er), deretter objektet (Musik) og verbet til slutt (liebt).' },
-                            { id: 3, type: 'oversettelse', prompt: 'Hvis du har tid, kan vi gå på kino.', answer: 'Wenn du Zeit hast, können wir ins Kino gehen.', altAnswers: ['Wenn du Zeit hast können wir ins Kino gehen'], explanation: 'Når leddsetningen (wenn du Zeit hast) kommer først, står verbet i hovedsetningen (können) rett etter komma.' },
-                            { id: 4, type: 'oversettelse', prompt: 'Jeg vet ikke om hun kommer i dag.', answer: 'Ich weiß nicht, ob sie heute kommt.', altAnswers: ['Ich weiß nicht ob sie heute kommt', 'Ich weiss nicht, ob sie heute kommt'], explanation: '"ob" betyr "om" i spørrende leddsetninger. Verbet "kommt" står til slutt.' },
-                            { id: 5, type: 'oversettelse', prompt: 'Selv om det regner, går han en tur.', answer: 'Obwohl es regnet, geht er spazieren.', altAnswers: ['Obwohl es regnet geht er spazieren'], explanation: '"Obwohl" betyr selv om og sender verbet "regnet" til slutt i leddsetningen.' },
-                            { id: 6, type: 'oversettelse', prompt: 'Da jeg var barn, bodde jeg i Tyskland.', answer: 'Als ich ein Kind war, wohnte ich in Deutschland.', altAnswers: ['Als ich Kind war, wohnte ich in Deutschland'], explanation: '"Als" brukes om en fortidig engangshendelse eller periode (da jeg var...).' },
-                            { id: 7, type: 'oversettelse', prompt: 'Hun er glad fordi hun har bestått eksamen.', answer: 'Sie ist froh, weil sie die Prüfung bestanden hat.', altAnswers: ['Sie ist glücklich, weil sie die Prüfung bestanden hat'], explanation: 'I sammensatte verbtider (hat bestanden) skal det bøyde hjelpeverbet (hat) helt til slutt.' }
+                            { id: 1, prompt: 'Skriv i bestemt form entall: "en gutt" -> ___', answer: 'gutten', options: ['gutten', 'gutter', 'guttene'], hint: 'Legg til -en i entall hankjønn.' },
+                            { id: 2, prompt: 'Skriv i ubestemt form flertall: "ei jente" -> flere ___', answer: 'jenter', options: ['jenter', 'jenta', 'jentene'], hint: 'Hunkjønn får ofte -er i flertall.' },
+                            { id: 3, prompt: 'Skriv i bestemt form flertall: "et hus" -> alle ___', answer: 'husene', options: ['hus', 'huset', 'husene'], hint: 'Intetkjønn får -ene i bestemt flertall.' },
+                            { id: 4, prompt: 'Skriv i bestemt form entall: "ei bok" -> ___', answer: 'boka', options: ['boka', 'bøker', 'bøkene'], hint: 'Hunkjønn slutter på -a i bestemt form entall.' },
+                            { id: 5, prompt: 'Skriv i ubestemt form entall: "___ stol"', answer: 'en stol', options: ['en stol', 'ei stol', 'et stol'], hint: 'Stol er hankjønn.' }
                         ]
                     },
                     {
-                        id: 'innfylling',
-                        title: 'Innfylling',
-                        baseType: 'innfylling',
+                        id: 'kjonn',
+                        title: 'Kjønn (en, ei, et)',
+                        rule: 'Norske substantiv deles inn i hankjønn (en), hunkjønn (ei) og intetkjønn (et).',
                         exercises: [
-                            { id: 1, type: 'innfylling', prompt: 'Ich bleibe zu Hause, ___ es regnet.', answer: 'weil', altAnswers: ['da'], explanation: '"weil" (fordi) begrunner hvorfor han blir hjemme.' },
-                            { id: 2, type: 'innfylling', prompt: 'Er fragt, ___ wir morgen Zeit haben.', answer: 'ob', altAnswers: [], explanation: '"ob" brukes her fordi det uttrykker et uvisst spørsmål (om vi har tid).' },
-                            { id: 3, type: 'innfylling', prompt: 'Wir wissen, dass er sehr gut Deutsch ___ (sprechen).', answer: 'spricht', altAnswers: [], explanation: 'Verbet "sprechen" bøyes i 3. person entall (er spricht) og plasseres til slutt.' }
+                            { id: 6, prompt: 'Velg riktig artikkel for "___ hus"', answer: 'et', options: ['en', 'ei', 'et'], hint: 'Hus er intetkjønn.' },
+                            { id: 7, prompt: 'Velg riktig artikkel for "___ stol"', answer: 'en', options: ['en', 'ei', 'et'], hint: 'Stol er hankjønn.' },
+                            { id: 8, prompt: 'Velg riktig artikkel for "___ klokke"', answer: 'ei', options: ['en', 'ei', 'et'], hint: 'Klokke er hunkjønn.' }
                         ]
                     }
                 ]
             },
             {
-                id: 'kasus',
-                title: 'Kasus (akkusativ og dativ)',
-                description: 'Øv på kasus etter preposisjoner og verb.',
-                ruleHint: 'Akkusativ: durch, für, gegen, ohne, um | Dativ: aus, bei, mit, nach, seit, von, zu',
+                id: 'verb',
+                title: 'Verb',
+                icon: 'fa-person-running',
                 subcategories: [
                     {
-                        id: 'oversettelse',
-                        title: 'Oversettelse',
-                        baseType: 'oversettelse',
+                        id: 'presens',
+                        title: 'Presens (Nåtid)',
+                        rule: 'Presens forteller hva som skjer nå. De fleste verb slutter på -r i presens.',
                         exercises: [
-                            { id: 1, type: 'oversettelse', prompt: 'Gaven er til deg.', answer: 'Das Geschenk ist für dich.', altAnswers: ['Das Geschenk ist fuer dich'], explanation: '"für" styrer akkusativ. Pronomenet "du" blir til "dich" i akkusativ.' },
-                            { id: 2, type: 'oversettelse', prompt: 'Hun bor hos sin mor.', answer: 'Sie wohnt bei ihrer Mutter.', altAnswers: ['Sie wohnt bei ihrer mutter'], explanation: '"bei" styrer alltid dativ.' },
-                            { id: 3, type: 'oversettelse', prompt: 'Vi går gjennom parken.', answer: 'Wir gehen durch den Park.', altAnswers: ['Wir gehen durch den park'], explanation: '"durch" styrer akkusativ.' },
-                            { id: 4, type: 'oversettelse', prompt: 'Boken er til meg.', answer: 'Das Buch ist für mich.', altAnswers: ['Das Buch ist fuer mich'], explanation: '"für" styrer akkusativ (ich -> mich).' },
-                            { id: 5, type: 'oversettelse', prompt: 'Han hjelper sin venn.', answer: 'Er hilft seinem Freund.', altAnswers: [], explanation: 'Verbet "helfen" styrer dativ i tysk.' }
-                        ]
-                    },
-                    {
-                        id: 'innfylling',
-                        title: 'Innfylling',
-                        baseType: 'innfylling',
-                        exercises: [
-                            { id: 1, type: 'innfylling', prompt: 'Wir fahren mit ___ (der Bus - dativ) nach Berlin.', answer: 'dem Bus', altAnswers: ['dem'], explanation: 'Preposisjonen "mit" styrer alltid dativ. Der Bus blir til dem Bus.' },
-                            { id: 2, type: 'innfylling', prompt: 'Er geht ohne ___ (der Hund) spazieren.', answer: 'den Hund', altAnswers: ['den'], explanation: '"ohne" styrer alltid akkusativ (der Hund -> den Hund).' },
-                            { id: 3, type: 'innfylling', prompt: 'Nach ___ (die Schule) gehe ich nach Hause.', answer: 'der Schule', altAnswers: ['der'], explanation: '"nach" styrer dativ. Hunkjønn die blir til der.' },
-                            { id: 4, type: 'innfylling', prompt: 'Ich komme aus ___ (Deutschland).', answer: 'Deutschland', altAnswers: [], explanation: '"aus" styrer dativ.' },
-                            { id: 5, type: 'innfylling', prompt: 'Seit ___ (ein Jahr) lerne ich Deutsch.', answer: 'einem Jahr', altAnswers: ['einem jahr'], explanation: '"seit" styrer dativ.' }
-                        ]
-                    }
-                ]
-            },
-            {
-                id: 'modalverb',
-                title: 'Modalverb',
-                description: 'Können, müssen, wollen, sollen, dürfen og mögen.',
-                ruleHint: 'Hovedverbet står i infinitiv helt til slutt i helsetninger med modalverb. Eksempel: Ich muss heute lernen.',
-                subcategories: [
-                    {
-                        id: 'oversettelse',
-                        title: 'Oversettelse',
-                        baseType: 'oversettelse',
-                        exercises: [
-                            { id: 1, type: 'oversettelse', prompt: 'Jeg må studere i dag.', answer: 'Ich muss heute lernen.', altAnswers: ['Ich muss heute studieren'], explanation: 'Modalverbet "muss" er bøyd på plass 2, mens hovedverbet "lernen" står i infinitiv til slutt.' },
-                            { id: 2, type: 'oversettelse', prompt: 'Kan du hjelpe meg?', answer: 'Kannst du mir helfen?', altAnswers: [], explanation: 'I spørresetninger står modalverbet først, og hovedverbet "helfen" i infinitiv til slutt.' },
-                            { id: 3, type: 'oversettelse', prompt: 'Han vil ikke spise grønnsaker.', answer: 'Er will kein Gemüse essen.', altAnswers: ['Er will nicht Gemüse essen'], explanation: 'Modalverbet "will" står på plass 2, hovedverbet "essen" i infinitiv til slutt.' },
-                            { id: 4, type: 'oversettelse', prompt: 'Dere må gjøre leksene.', answer: 'Ihr müsst die Hausaufgaben machen.', altAnswers: ['Ihr muesst die Hausaufgaben machen'], explanation: 'Modalverbet "müsst" bøyes for "ihr".' },
-                            { id: 5, type: 'oversettelse', prompt: 'Hun kan snakke tysk.', answer: 'Sie kann Deutsch sprechen.', altAnswers: [], explanation: 'Modalverbet "kann" står på plass 2, infinitiv "sprechen" til slutt.' },
-                            { id: 6, type: 'oversettelse', prompt: 'Vi skal gå på kino i kveld.', answer: 'Wir sollen heute Abend ins Kino gehen.', altAnswers: ['Wir wollen heute Abend ins Kino gehen'], explanation: 'Hovedverbet "gehen" plasseres i infinitiv til slutt.' }
-                        ]
-                    },
-                    {
-                        id: 'innfylling',
-                        title: 'Innfylling',
-                        baseType: 'innfylling',
-                        exercises: [
-                            { id: 1, type: 'innfylling', prompt: 'Wir ___ (wollen) morgen nach Berlin fahren.', answer: 'wollen', altAnswers: [], explanation: 'Flertall "wir wollen".' },
-                            { id: 2, type: 'innfylling', prompt: '___ (dürfen) ich hier sitzen?', answer: 'Darf', altAnswers: ['darf'], explanation: '1. person entall av dürfen er "ich darf".' },
-                            { id: 3, type: 'innfylling', prompt: 'Er ___ (sollen) mehr Wasser trinken.', answer: 'soll', altAnswers: [], explanation: '3. person entall er "er soll".' },
-                            { id: 4, type: 'innfylling', prompt: 'Mein Bruder ___ (können) sehr gut schwimmen.', answer: 'kann', altAnswers: [], explanation: 'Mein Bruder (er) -> kann.' }
+                            { id: 9, prompt: 'Gjør om til presens: å spise -> Hun ___ et eple.', answer: 'spiser', options: ['spiser', 'spiste', 'har spist'], hint: 'Legg til -r på infinitiv.' },
+                            { id: 10, prompt: 'Gjør om til presens: å løpe -> Gutten ___ fort.', answer: 'løper', options: ['løper', 'løp', 'har løpt'], hint: 'Infinitiv å løpe blir løper i presens.' }
                         ]
                     }
                 ]
             }
-        ]/*__DEFAULT_CATEGORIES_END__*/;
+        ];
 
-        const PAGE_SIZE = 10;
-
-        // Unik lagringsnøkkel for denne filen. Endres automatisk hver gang du laster ned en
-        // oppdatert HTML-fil, slik at gammel bufret fremgang i nettleseren aldri kan skygge for
-        // ferske standardoppgaver i en nylig eksportert fil.
-        const STORAGE_KEY = /*__STORAGE_KEY_START__*/'deutschmaster_state_v3'/*__STORAGE_KEY_END__*/;
-
-        // Global State
-        let categories = [];
-        let activeCategoryId = 'leddsetninger';
-        let activeSubcategoryId = 'oversettelse';
+        let currentMode = 'student'; // 'student' | 'teacher'
+        let activeCategoryId = 'substantiv';
+        let activeSubcategoryId = 'ubestemt-bestemt';
         let currentPage = 1;
-        let userAnswers = {};    // Key format: `${topicId}_${subcatId}_${exerciseId}`
-        let checkedAnswers = {}; // Key format: `${topicId}_${subcatId}_${exerciseId}` -> boolean
+        const itemsPerPage = 10;
+        let score = 0;
+        let userAnswersMap = {}; // exId -> { answer, isChecked, isCorrect }
 
-        // Teacher Room (Lærerrom) transient state
-        let teacherState = {
-            trTopicId: null,
-            trSubcatId: null,
-            addingSubcat: false,
-            editingExercise: null // null | 'new' | exerciseId(number)
-        };
+        // Teacher state
+        let teacherCatId = 'substantiv';
+        let teacherSubcatId = 'ubestemt-bestemt';
 
         // ============================================================
-        // Init
+        // Application Initialization
         // ============================================================
-        window.onload = function() {
-            loadState();
+        window.onload = async function() {
+            loadFromLocalStorage();
+            await fetchGistExercises();
             renderApp();
         };
 
-        function saveState() {
+        async function fetchGistExercises() {
+            if (!GIST_URL) return;
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                    categories, activeCategoryId, activeSubcategoryId, currentPage, userAnswers, checkedAnswers
-                }));
-            } catch (e) {
-                console.warn('LocalStorage utilgjengelig', e);
+                const response = await fetch(GIST_URL + '?t=' + Date.now());
+                if (!response.ok) throw new Error('Status ' + response.status);
+                const data = await response.json();
+                
+                const loadedCats = Array.isArray(data) ? data : (data && data.categories);
+                if (Array.isArray(loadedCats) && loadedCats.length > 0) {
+                    categories = loadedCats;
+                    saveToLocalStorage();
+                    showToast('Vellykket synkronisert med GitHub Gist!', 'success');
+                }
+            } catch (err) {
+                console.warn('Kunne ikke hente fra GitHub Gist. Bruker lokal cache.', err);
             }
         }
 
-        function loadState() {
+        async function manualFetchGist() {
+            await fetchGistExercises();
+            renderApp();
+        }
+
+        function saveToLocalStorage() {
             try {
-                const saved = localStorage.getItem(STORAGE_KEY);
+                localStorage.setItem('grammatikk_categories', JSON.stringify(categories));
+            } catch (e) {
+                console.error('Klarte ikke å lagre til localStorage', e);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('grammatikk_categories');
                 if (saved) {
-                    const parsed = JSON.parse(saved);
-                    categories = (Array.isArray(parsed.categories) && parsed.categories.length)
-                        ? parsed.categories
-                        : JSON.parse(JSON.stringify(defaultCategories));
-                    if (parsed.activeCategoryId) activeCategoryId = parsed.activeCategoryId;
-                    if (parsed.activeSubcategoryId) activeSubcategoryId = parsed.activeSubcategoryId;
-                    if (parsed.currentPage) currentPage = parsed.currentPage;
-                    if (parsed.userAnswers) userAnswers = parsed.userAnswers;
-                    if (parsed.checkedAnswers) checkedAnswers = parsed.checkedAnswers;
-                } else {
-                    categories = JSON.parse(JSON.stringify(defaultCategories));
+                    categories = JSON.parse(saved);
                 }
             } catch (e) {
-                console.warn('Kunne ikke laste lagret tilstand', e);
-                categories = JSON.parse(JSON.stringify(defaultCategories));
+                console.error('Klarte ikke å lese fra localStorage', e);
             }
-
-            if (!categories.length) categories = JSON.parse(JSON.stringify(defaultCategories));
-
-            if (!categories.find(c => c.id === activeCategoryId)) {
-                activeCategoryId = categories[0].id;
-            }
-            const cat = getActiveCategory();
-            if (!cat.subcategories || !cat.subcategories.find(s => s.id === activeSubcategoryId)) {
-                activeSubcategoryId = (cat.subcategories && cat.subcategories[0]) ? cat.subcategories[0].id : null;
-            }
-            if (!currentPage || currentPage < 1) currentPage = 1;
-
-            teacherState.trTopicId = activeCategoryId;
-            teacherState.trSubcatId = activeSubcategoryId;
-        }
-
-        function resetAllToDefault() {
-            if (!confirm('Dette sletter alle egne endringer og gjenoppretter standardoppgavene. Fortsette?')) return;
-            categories = JSON.parse(JSON.stringify(defaultCategories));
-            activeCategoryId = categories[0].id;
-            activeSubcategoryId = categories[0].subcategories[0].id;
-            currentPage = 1;
-            userAnswers = {};
-            checkedAnswers = {};
-            teacherState = { trTopicId: activeCategoryId, trSubcatId: activeSubcategoryId, addingSubcat: false, editingExercise: null };
-            saveState();
-            renderApp();
-            renderTeacherRoom();
         }
 
         // ============================================================
-        // Helpers
+        // UI Navigation & Rendering
         // ============================================================
-        function slugify(str) {
-            return (str || '').toLowerCase().trim()
-                .replace(/æ/g, 'ae').replace(/ø/g, 'o').replace(/å/g, 'a')
-                .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ä/g, 'a')
-                .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'emne';
+        function switchMode(mode) {
+            currentMode = mode;
+            const studentView = document.getElementById('studentView');
+            const teacherView = document.getElementById('teacherView');
+            const navStudentBtn = document.getElementById('navStudentBtn');
+            const navTeacherBtn = document.getElementById('navTeacherBtn');
+
+            if (mode === 'student') {
+                studentView.classList.remove('hidden');
+                teacherView.classList.add('hidden');
+                navStudentBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-indigo-600 text-white shadow";
+                navTeacherBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-2";
+            } else {
+                studentView.classList.add('hidden');
+                teacherView.classList.remove('hidden');
+                navTeacherBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-indigo-600 text-white shadow";
+                navStudentBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-2";
+                renderTeacherRoom();
+            }
         }
 
-        function uniqueId(base, existingIds) {
-            let id = base, n = 2;
-            while (existingIds.includes(id)) { id = `${base}-${n}`; n++; }
-            return id;
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
-        function escapeQuotes(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, '&amp;').replace(/'/g, '\\\'').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        function renderApp() {
+            renderTopicTabs();
+            renderSubcategoryTabs();
+            renderExercisePage();
+            if (currentMode === 'teacher') renderTeacherRoom();
         }
 
         function getActiveCategory() {
@@ -475,1097 +461,480 @@
 
         function getActiveSubcategory() {
             const cat = getActiveCategory();
-            if (!cat || !cat.subcategories || !cat.subcategories.length) return null;
-            return cat.subcategories.find(s => s.id === activeSubcategoryId) || cat.subcategories[0];
+            return (cat && cat.subcategories) ? (cat.subcategories.find(s => s.id === activeSubcategoryId) || cat.subcategories[0]) : null;
         }
 
-        function totalPages(subcat) {
-            if (!subcat) return 1;
-            return Math.max(1, Math.ceil((subcat.exercises || []).length / PAGE_SIZE));
+        function renderTopicTabs() {
+            const container = document.getElementById('topicTabsContainer');
+            container.innerHTML = categories.map(cat => {
+                const active = cat.id === activeCategoryId;
+                const activeClasses = active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 font-bold' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 font-semibold';
+                return `
+                    <button onclick="selectCategory('${cat.id}')" class="px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 whitespace-nowrap transition ${activeClasses}">
+                        <i class="fa-solid ${cat.icon || 'fa-bookmark'}"></i>
+                        <span>${cat.title}</span>
+                    </button>
+                `;
+            }).join('');
         }
 
-        function getPagedExercises(subcat) {
-            if (!subcat) return [];
-            const start = (currentPage - 1) * PAGE_SIZE;
-            return (subcat.exercises || []).slice(start, start + PAGE_SIZE);
-        }
-
-        function getTeacherTopic() {
-            return categories.find(c => c.id === teacherState.trTopicId) || categories[0];
-        }
-
-        function getTeacherSubcat() {
-            const t = getTeacherTopic();
-            if (!t) return null;
-            return (t.subcategories || []).find(s => s.id === teacherState.trSubcatId) || (t.subcategories || [])[0] || null;
-        }
-
-        // ============================================================
-        // Navigation / rendering — practice view
-        // ============================================================
-        function renderApp() {
-            renderCategories();
-            renderView();
-        }
-
-        function renderView() {
+        function selectCategory(catId) {
+            activeCategoryId = catId;
             const cat = getActiveCategory();
-            const subcat = getActiveSubcategory();
-            renderRuleBanner(cat);
-            renderSubcategories(cat);
-            renderInfoBar(cat, subcat);
-            renderPagination(subcat);
-            renderExercises(subcat);
-            updateHeaderStats(subcat);
+            activeSubcategoryId = (cat.subcategories && cat.subcategories.length > 0) ? cat.subcategories[0].id : null;
+            currentPage = 1;
+            renderApp();
         }
 
-        function resetToHome() {
-            selectCategory(categories[0].id);
-        }
-
-        function selectCategory(id) {
-            if (activeCategoryId !== id) {
-                activeCategoryId = id;
-                const cat = getActiveCategory();
-                activeSubcategoryId = (cat.subcategories && cat.subcategories[0]) ? cat.subcategories[0].id : null;
-                currentPage = 1;
-                saveState();
-                renderApp();
-            }
-        }
-
-        function selectSubcategory(id) {
-            if (activeSubcategoryId !== id) {
-                activeSubcategoryId = id;
-                currentPage = 1;
-                saveState();
-                renderView();
-            }
-        }
-
-        function goToPage(p) {
-            const subcat = getActiveSubcategory();
-            const pages = totalPages(subcat);
-            currentPage = Math.min(Math.max(1, p), pages);
-            saveState();
-            renderView();
-        }
-
-        function renderRuleBanner(cat) {
-            const titleEl = document.getElementById('ruleBannerTitle');
-            const textEl = document.getElementById('ruleBannerText');
-            if (!titleEl || !textEl) return;
-            titleEl.textContent = `Gullregel: ${cat.title}`;
-            textEl.textContent = cat.ruleHint || 'Ingen regel lagt til for dette emnet ennå. Legg til i Lærerrom.';
-        }
-
-        function renderCategories() {
-            const container = document.getElementById('categoryContainer');
-            container.innerHTML = '';
-            categories.forEach(cat => {
-                const isActive = cat.id === activeCategoryId;
-                const btn = document.createElement('button');
-                btn.className = `px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold transition whitespace-nowrap ${
-                    isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`;
-                btn.textContent = cat.title;
-                btn.onclick = () => selectCategory(cat.id);
-                container.appendChild(btn);
-            });
-        }
-
-        function renderSubcategories(cat) {
-            const container = document.getElementById('subcategoryContainer');
-            container.innerHTML = '';
-            const subs = cat.subcategories || [];
-            if (!subs.length) {
-                container.innerHTML = '<span class="text-xs text-slate-400 italic">Ingen oppgavetyper i dette emnet ennå. Legg til i Lærerrom.</span>';
+        function renderSubcategoryTabs() {
+            const container = document.getElementById('subcategoryTabsContainer');
+            const cat = getActiveCategory();
+            if (!cat || !cat.subcategories || cat.subcategories.length === 0) {
+                container.innerHTML = '<span class="text-xs text-slate-400 italic">Ingen underkategorier</span>';
                 return;
             }
-            subs.forEach(sc => {
-                const isActive = sc.id === activeSubcategoryId;
-                const btn = document.createElement('button');
-                btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap border ${
-                    isActive ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                }`;
-                btn.textContent = `${sc.title} (${(sc.exercises || []).length})`;
-                btn.onclick = () => selectSubcategory(sc.id);
-                container.appendChild(btn);
-            });
+
+            container.innerHTML = cat.subcategories.map(sub => {
+                const active = sub.id === activeSubcategoryId;
+                const activeClasses = active ? 'bg-slate-900 text-white font-bold' : 'bg-slate-200/60 text-slate-700 hover:bg-slate-200 font-medium';
+                return `
+                    <button onclick="selectSubcategory('${sub.id}')" class="px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition ${activeClasses}">
+                        ${sub.title}
+                    </button>
+                `;
+            }).join('');
         }
 
-        function renderInfoBar(cat, subcat) {
-            document.getElementById('categoryTitleDisplay').textContent = subcat ? `${cat.title} · ${subcat.title}` : cat.title;
-            document.getElementById('categoryDescDisplay').textContent = cat.description || '';
+        function selectSubcategory(subId) {
+            activeSubcategoryId = subId;
+            currentPage = 1;
+            renderApp();
         }
 
-        function renderPagination(subcat) {
-            const bar = document.getElementById('paginationBar');
-            const pages = totalPages(subcat);
-            if (!subcat || pages <= 1) {
-                bar.classList.add('hidden');
-                bar.innerHTML = '';
+        function renderExercisePage() {
+            const subcat = getActiveSubcategory();
+            const quizTitle = document.getElementById('quizTitle');
+            const quizSubcategoryBadge = document.getElementById('quizSubcategoryBadge');
+            const ruleHintText = document.getElementById('ruleHintText');
+            const exerciseListContainer = document.getElementById('exerciseListContainer');
+            const totalExCount = document.getElementById('totalExCount');
+            const pageRangeVal = document.getElementById('pageRangeVal');
+            const currentPageNum = document.getElementById('currentPageNum');
+            const pageButtonsContainer = document.getElementById('pageButtonsContainer');
+
+            if (!subcat || !subcat.exercises || subcat.exercises.length === 0) {
+                quizTitle.innerText = "Ingen oppgaver tilgjengelig";
+                quizSubcategoryBadge.innerText = getActiveCategory() ? getActiveCategory().title : "";
+                ruleHintText.innerText = "Det er ikke lagt til noen oppgaver her ennå.";
+                exerciseListContainer.innerHTML = '<p class="text-center text-slate-400 py-8 text-sm">Bruk lærerrommet for å legge til nye oppgaver.</p>';
+                totalExCount.innerText = "0";
+                pageRangeVal.innerText = "0-0";
                 return;
             }
-            bar.classList.remove('hidden');
-            bar.className = 'bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center gap-2 flex-wrap';
-            bar.innerHTML = '';
 
-            const prev = document.createElement('button');
-            prev.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed';
-            prev.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-            prev.disabled = currentPage <= 1;
-            prev.onclick = () => goToPage(currentPage - 1);
-            bar.appendChild(prev);
+            const total = subcat.exercises.length;
+            const maxPages = Math.ceil(total / itemsPerPage);
+            if (currentPage > maxPages) currentPage = maxPages;
+            if (currentPage < 1) currentPage = 1;
 
-            for (let p = 1; p <= pages; p++) {
-                const b = document.createElement('button');
-                b.className = `w-8 h-8 rounded-lg text-xs font-bold transition ${p === currentPage ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`;
-                b.textContent = p;
-                b.onclick = () => goToPage(p);
-                bar.appendChild(b);
-            }
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, total);
+            const pageExercises = subcat.exercises.slice(startIndex, endIndex);
 
-            const next = document.createElement('button');
-            next.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed';
-            next.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-            next.disabled = currentPage >= pages;
-            next.onclick = () => goToPage(currentPage + 1);
-            bar.appendChild(next);
+            quizSubcategoryBadge.innerText = getActiveCategory().title;
+            quizTitle.innerText = subcat.title;
+            ruleHintText.innerText = subcat.rule || "Svar på oppgavene nedenfor.";
+            totalExCount.innerText = total;
+            pageRangeVal.innerText = `${startIndex + 1}-${endIndex}`;
+            currentPageNum.innerText = `${currentPage} av ${maxPages}`;
+
+            // Render Page Number Tabs
+            pageButtonsContainer.innerHTML = Array.from({ length: maxPages }, (_, i) => i + 1).map(p => `
+                <button onclick="goToPage(${p})" class="px-2.5 py-1 text-xs rounded-lg font-bold transition ${p === currentPage ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                    ${p}
+                </button>
+            `).join('');
+
+            // Render up to 10 exercises on page
+            exerciseListContainer.innerHTML = pageExercises.map((ex, index) => {
+                const globalNum = startIndex + index + 1;
+                const savedState = userAnswersMap[ex.id] || { answer: '', isChecked: false, isCorrect: false };
+
+                let feedbackMarkup = '';
+                if (savedState.isChecked) {
+                    if (savedState.isCorrect) {
+                        feedbackMarkup = `
+                            <div class="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+                                <span>Riktig svar! Bra jobba!</span>
+                            </div>`;
+                    } else {
+                        feedbackMarkup = `
+                            <div class="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-start gap-2">
+                                <i class="fa-solid fa-circle-xmark text-rose-600 text-base mt-0.5"></i>
+                                <div>
+                                    <span>Feil svar. Riktig var: <strong>"${ex.answer}"</strong>.</span>
+                                    ${ex.hint ? `<p class="text-[11px] text-rose-700 mt-0.5">${ex.hint}</p>` : ''}
+                                </div>
+                            </div>`;
+                    }
+                }
+
+                let inputArea = '';
+                if (ex.options && ex.options.length > 0) {
+                    inputArea = `
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            ${ex.options.map(opt => {
+                                const selected = savedState.answer === opt;
+                                const activeClass = selected ? 'border-indigo-600 bg-indigo-100 text-indigo-900 font-bold' : 'border-slate-200 hover:border-indigo-400 bg-white text-slate-700';
+                                return `
+                                    <button type="button" onclick="selectCardOption(${ex.id}, '${opt.replace(/'/g, "\\'")}')" class="ex-option-${ex.id} border-2 ${activeClass} p-2.5 rounded-xl text-xs font-semibold transition text-center">
+                                        ${opt}
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                        <input type="hidden" id="input_${ex.id}" value="${savedState.answer}">
+                    `;
+                } else {
+                    inputArea = `
+                        <input type="text" id="input_${ex.id}" value="${savedState.answer}" oninput="onTextInputChange(${ex.id}, this.value)" placeholder="Skriv svaret ditt..." class="w-full bg-slate-50 border-2 border-slate-200 focus:border-indigo-600 rounded-xl p-3 font-medium text-slate-800 text-xs focus:outline-none transition">
+                    `;
+                }
+
+                return `
+                    <div class="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/90 hover:border-indigo-200 transition space-y-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <span class="w-7 h-7 rounded-xl bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                                    ${globalNum}
+                                </span>
+                                <h3 class="font-bold text-slate-800 text-sm md:text-base leading-snug">
+                                    ${ex.prompt}
+                                </h3>
+                            </div>
+                            <button onclick="checkSingleAnswer(${ex.id})" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shrink-0 transition flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-check"></i>
+                                <span>Sjekk</span>
+                            </button>
+                        </div>
+
+                        ${inputArea}
+                        <div id="feedback_${ex.id}">${feedbackMarkup}</div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        function updateHeaderStats(subcat) {
-            let totalScore = 0;
-            Object.keys(checkedAnswers).forEach(key => {
-                if (checkedAnswers[key] === true) totalScore += 10;
+        function selectCardOption(exId, value) {
+            document.querySelectorAll(`.ex-option-${exId}`).forEach(b => {
+                b.classList.remove('border-indigo-600', 'bg-indigo-100', 'text-indigo-900', 'font-bold');
+                b.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
             });
+            event.currentTarget.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+            event.currentTarget.classList.add('border-indigo-600', 'bg-indigo-100', 'text-indigo-900', 'font-bold');
 
-            let completed = 0;
-            const total = subcat ? (subcat.exercises || []).length : 0;
-            if (subcat) {
-                (subcat.exercises || []).forEach(ex => {
-                    const key = `${activeCategoryId}_${activeSubcategoryId}_${ex.id}`;
-                    if (checkedAnswers[key] !== undefined) completed++;
-                });
-            }
-
-            document.getElementById('headerScore').textContent = totalScore;
-            document.getElementById('headerCompleted').textContent = `${completed}/${total}`;
+            document.getElementById(`input_${exId}`).value = value;
+            if (!userAnswersMap[exId]) userAnswersMap[exId] = {};
+            userAnswersMap[exId].answer = value;
         }
 
-        function normalizeText(str) {
-            if (!str) return '';
-            return str
-                .toLowerCase()
-                .trim()
-                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "")
-                .replace(/\s+/g, " ");
+        function onTextInputChange(exId, value) {
+            if (!userAnswersMap[exId]) userAnswersMap[exId] = {};
+            userAnswersMap[exId].answer = value.trim();
         }
 
-        function evaluateExercise(ex, userInput) {
-            if (!userInput || !userInput.trim()) return false;
-            const userNorm = normalizeText(userInput);
-            const correctNorm = normalizeText(ex.answer);
-            const isAltCorrect = (ex.altAnswers || []).some(alt => normalizeText(alt) === userNorm);
-            return (userNorm === correctNorm) || isAltCorrect;
-        }
-
-        function submitSingleAnswer(e, exId) {
-            e.preventDefault();
+        function checkSingleAnswer(exId) {
             const subcat = getActiveSubcategory();
-            if (!subcat) return;
-            const ex = (subcat.exercises || []).find(item => item.id === exId);
+            if (!subcat || !subcat.exercises) return;
+            const ex = subcat.exercises.find(e => e.id === exId);
             if (!ex) return;
 
-            const key = `${activeCategoryId}_${activeSubcategoryId}_${exId}`;
-            const inputVal = document.getElementById(`input_${exId}`).value;
+            const inputElem = document.getElementById(`input_${exId}`);
+            const val = inputElem ? inputElem.value.trim() : '';
 
-            userAnswers[key] = inputVal;
-            checkedAnswers[key] = evaluateExercise(ex, inputVal);
+            if (!val) {
+                showToast('Skriv eller velg et svar før du sjekker!', 'error');
+                return;
+            }
 
-            saveState();
-            renderView();
+            const isCorrect = val.toLowerCase() === ex.answer.toLowerCase();
+            const prev = userAnswersMap[exId];
+
+            if (!prev || !prev.isCorrect) {
+                if (isCorrect) {
+                    score += 10;
+                    document.getElementById('scoreVal').innerText = score;
+                }
+            }
+
+            userAnswersMap[exId] = {
+                answer: val,
+                isChecked: true,
+                isCorrect: isCorrect
+            };
+
+            renderExercisePage();
         }
 
         function checkAllAnswers() {
             const subcat = getActiveSubcategory();
-            if (!subcat) return;
-            getPagedExercises(subcat).forEach(ex => {
-                const key = `${activeCategoryId}_${activeSubcategoryId}_${ex.id}`;
-                const inputEl = document.getElementById(`input_${ex.id}`);
-                const val = inputEl ? inputEl.value : (userAnswers[key] || '');
-                userAnswers[key] = val;
-                checkedAnswers[key] = evaluateExercise(ex, val);
-            });
-            saveState();
-            renderView();
-        }
+            if (!subcat || !subcat.exercises) return;
 
-        function resetCurrentSubcategory() {
-            const subcat = getActiveSubcategory();
-            if (!subcat) return;
-            (subcat.exercises || []).forEach(ex => {
-                const key = `${activeCategoryId}_${activeSubcategoryId}_${ex.id}`;
-                delete userAnswers[key];
-                delete checkedAnswers[key];
-            });
-            saveState();
-            renderView();
-        }
+            const total = subcat.exercises.length;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, total);
+            const pageExercises = subcat.exercises.slice(startIndex, endIndex);
 
-        function speakGerman(text) {
-            if ('speechSynthesis' in window && text) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'de-DE';
-                utterance.rate = 0.85;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
+            let checkedCount = 0;
+            pageExercises.forEach(ex => {
+                const inputElem = document.getElementById(`input_${ex.id}`);
+                const val = inputElem ? inputElem.value.trim() : '';
+                if (val) {
+                    const isCorrect = val.toLowerCase() === ex.answer.toLowerCase();
+                    const prev = userAnswersMap[ex.id];
 
-        function onInputChange(exId, value) {
-            const key = `${activeCategoryId}_${activeSubcategoryId}_${exId}`;
-            userAnswers[key] = value;
-            saveState();
-        }
+                    if (!prev || !prev.isCorrect) {
+                        if (isCorrect) {
+                            score += 10;
+                        }
+                    }
 
-        function renderExercises(subcat) {
-            const listContainer = document.getElementById('exercisesList');
-            const bottomLabel = document.getElementById('bottomCheckLabel');
-            listContainer.innerHTML = '';
-
-            if (!subcat) {
-                listContainer.innerHTML = `<div class="bg-white rounded-2xl p-8 border border-dashed border-slate-300 text-center text-slate-400 text-sm">
-                    Dette emnet har ingen oppgavetyper ennå. Åpne <button onclick="openTeacherRoom()" class="text-indigo-600 font-semibold underline">Lærerrom</button> for å legge til en.
-                </div>`;
-                if (bottomLabel) bottomLabel.textContent = '';
-                return;
-            }
-
-            const pageExercises = getPagedExercises(subcat);
-            const startIndex = (currentPage - 1) * PAGE_SIZE;
-
-            if (!pageExercises.length) {
-                listContainer.innerHTML = `<div class="bg-white rounded-2xl p-8 border border-dashed border-slate-300 text-center text-slate-400 text-sm">
-                    Ingen oppgaver i «${escapeHtml(subcat.title)}» ennå. Legg til i <button onclick="openTeacherRoom()" class="text-indigo-600 font-semibold underline">Lærerrom</button>, eller generer med AI.
-                </div>`;
-                if (bottomLabel) bottomLabel.textContent = '';
-                return;
-            }
-
-            pageExercises.forEach((ex, i) => {
-                const index = startIndex + i;
-                const key = `${activeCategoryId}_${activeSubcategoryId}_${ex.id}`;
-                const savedAnswer = userAnswers[key] || '';
-                const isChecked = checkedAnswers[key] !== undefined;
-                const isCorrect = checkedAnswers[key] === true;
-                const typeLabel = ex.type === 'oversettelse' ? 'Oversett til tysk' : ex.type === 'innfylling' ? 'Fyll inn i luken' : 'Skriv svaret';
-
-                const card = document.createElement('div');
-                card.className = `bg-white rounded-2xl p-5 border shadow-sm transition space-y-4 ${
-                    isChecked
-                        ? (isCorrect ? 'border-emerald-300 bg-emerald-50/30' : 'border-rose-300 bg-rose-50/30')
-                        : 'border-slate-200 hover:border-slate-300'
-                }`;
-
-                card.innerHTML = `
-                    <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-indigo-100 text-indigo-700 font-bold text-xs px-2.5 py-1 rounded-lg">
-                                Oppgave ${index + 1}
-                            </span>
-                            <span class="text-xs text-slate-400 font-medium">
-                                ${typeLabel}
-                            </span>
-                        </div>
-                        <button onclick="speakGerman('${escapeQuotes(ex.answer)}')" class="text-xs text-slate-400 hover:text-indigo-600 flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg transition" title="Hør uttale">
-                            <i class="fa-solid fa-volume-high text-indigo-500"></i>
-                            <span class="hidden sm:inline">Uttale</span>
-                        </button>
-                    </div>
-
-                    <div class="space-y-1">
-                        <h3 class="text-base md:text-lg font-bold text-slate-900 leading-snug">
-                            ${escapeHtml(ex.prompt)}
-                        </h3>
-                    </div>
-
-                    <form onsubmit="submitSingleAnswer(event, ${ex.id})" class="space-y-3">
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <input type="text"
-                                id="input_${ex.id}"
-                                value="${escapeQuotes(savedAnswer)}"
-                                oninput="onInputChange(${ex.id}, this.value)"
-                                ${isChecked ? 'disabled' : ''}
-                                placeholder="Skriv det tyske svaret her..."
-                                autocomplete="off"
-                                spellcheck="false"
-                                class="flex-1 text-sm md:text-base px-4 py-2.5 rounded-xl border-2 ${
-                                    isChecked
-                                        ? (isCorrect ? 'border-emerald-400 bg-emerald-50 text-emerald-900' : 'border-rose-400 bg-rose-50 text-rose-900')
-                                        : 'border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100'
-                                } outline-none font-medium transition bg-white text-slate-900">
-
-                            <button type="submit"
-                                ${isChecked ? 'disabled' : ''}
-                                class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-1.5 whitespace-nowrap shadow-sm">
-                                <span>Sjekk svar</span>
-                                <i class="fa-solid fa-arrow-right text-xs"></i>
-                            </button>
-                        </div>
-                    </form>
-
-                    ${isChecked ? `
-                        <div class="p-3.5 rounded-xl border text-xs md:text-sm space-y-1.5 ${
-                            isCorrect ? 'bg-emerald-100/60 border-emerald-200 text-emerald-900' : 'bg-rose-100/60 border-rose-200 text-rose-900'
-                        }">
-                            <div class="font-bold flex items-center gap-2">
-                                <i class="fa-solid ${isCorrect ? 'fa-circle-check text-emerald-600' : 'fa-circle-xmark text-rose-600'} text-base"></i>
-                                <span>${isCorrect ? 'Riktig!' : 'Ikke helt. Korrekt svar:'}</span>
-                                <span class="font-mono underline text-slate-900">${escapeHtml(ex.answer)}</span>
-                            </div>
-                            ${ex.explanation ? `<p class="text-slate-700 text-xs leading-relaxed pl-6">${escapeHtml(ex.explanation)}</p>` : ''}
-                        </div>
-                    ` : ''}
-                `;
-
-                listContainer.appendChild(card);
+                    userAnswersMap[ex.id] = {
+                        answer: val,
+                        isChecked: true,
+                        isCorrect: isCorrect
+                    };
+                    checkedCount++;
+                }
             });
 
-            if (bottomLabel) {
-                bottomLabel.textContent = `Side ${currentPage} av ${totalPages(subcat)} — besvar oppgavene ovenfor og trykk sjekk svar for umiddelbar rettelse.`;
-            }
-        }
+            document.getElementById('scoreVal').innerText = score;
+            renderExercisePage();
 
-        // ============================================================
-        // Lærerrom (Teacher Room)
-        // ============================================================
-        function openTeacherRoom() {
-            if (!teacherState.trTopicId || !categories.find(c => c.id === teacherState.trTopicId)) {
-                teacherState.trTopicId = activeCategoryId;
-                teacherState.trSubcatId = activeSubcategoryId;
-            }
-            document.getElementById('teacherModal').classList.remove('hidden');
-            renderTeacherRoom();
-        }
-
-        function closeTeacherRoom() {
-            document.getElementById('teacherModal').classList.add('hidden');
-            teacherState.addingSubcat = false;
-            teacherState.editingExercise = null;
-        }
-
-        function selectTeacherTopic(id) {
-            teacherState.trTopicId = id;
-            const t = categories.find(c => c.id === id);
-            teacherState.trSubcatId = (t && t.subcategories && t.subcategories[0]) ? t.subcategories[0].id : null;
-            teacherState.addingSubcat = false;
-            teacherState.editingExercise = null;
-            renderTeacherRoom();
-        }
-
-        function selectTeacherSubcat(id) {
-            teacherState.trSubcatId = id;
-            teacherState.editingExercise = null;
-            renderTeacherRoom();
-        }
-
-        function addTopicPrompt() {
-            const name = prompt('Navn på nytt emne (f.eks. "Perfektum"):');
-            if (!name || !name.trim()) return;
-            const id = uniqueId(slugify(name), categories.map(c => c.id));
-            const newTopic = { id, title: name.trim(), description: '', ruleHint: '', subcategories: [] };
-            categories.push(newTopic);
-            teacherState.trTopicId = id;
-            teacherState.trSubcatId = null;
-            saveState();
-            renderApp();
-            renderTeacherRoom();
-        }
-
-        function deleteTopic(id) {
-            if (categories.length <= 1) { alert('Du må ha minst ett emne.'); return; }
-            const t = categories.find(c => c.id === id);
-            if (!confirm(`Slette emnet «${t ? t.title : id}» og alle oppgavene i det? Dette kan ikke angres.`)) return;
-
-            categories = categories.filter(c => c.id !== id);
-
-            if (activeCategoryId === id) {
-                activeCategoryId = categories[0].id;
-                activeSubcategoryId = (categories[0].subcategories && categories[0].subcategories[0]) ? categories[0].subcategories[0].id : null;
-                currentPage = 1;
-            }
-            if (teacherState.trTopicId === id) {
-                teacherState.trTopicId = categories[0].id;
-                teacherState.trSubcatId = (categories[0].subcategories && categories[0].subcategories[0]) ? categories[0].subcategories[0].id : null;
-            }
-
-            saveState();
-            renderApp();
-            renderTeacherRoom();
-        }
-
-        function saveTopicDetails() {
-            const t = getTeacherTopic();
-            if (!t) return;
-            const title = document.getElementById('teacherTopicTitle').value.trim();
-            t.title = title || t.title;
-            t.description = document.getElementById('teacherTopicDesc').value.trim();
-            t.ruleHint = document.getElementById('teacherTopicRule').value.trim();
-            saveState();
-            renderApp();
-            renderTeacherRoom();
-        }
-
-        function toggleAddSubcatForm() {
-            teacherState.addingSubcat = !teacherState.addingSubcat;
-            renderTeacherRoom();
-        }
-
-        function createSubcategory() {
-            const t = getTeacherTopic();
-            if (!t) return;
-            const nameEl = document.getElementById('newSubcatName');
-            const typeEl = document.getElementById('newSubcatType');
-            const name = nameEl.value.trim();
-            const type = typeEl.value;
-            if (!name) { alert('Skriv et navn på oppgavetypen.'); return; }
-
-            t.subcategories = t.subcategories || [];
-            const id = uniqueId(slugify(name), t.subcategories.map(s => s.id));
-            t.subcategories.push({ id, title: name, baseType: type, exercises: [] });
-
-            teacherState.trSubcatId = id;
-            teacherState.addingSubcat = false;
-
-            saveState();
-            renderApp();
-            renderTeacherRoom();
-        }
-
-        function deleteSubcategory(subcatId) {
-            const t = getTeacherTopic();
-            if (!t) return;
-            if ((t.subcategories || []).length <= 1) { alert('Emnet må ha minst én oppgavetype.'); return; }
-            const sc = t.subcategories.find(s => s.id === subcatId);
-            if (!confirm(`Slette oppgavetypen «${sc ? sc.title : subcatId}» og alle oppgavene i den?`)) return;
-
-            t.subcategories = t.subcategories.filter(s => s.id !== subcatId);
-
-            if (teacherState.trSubcatId === subcatId) {
-                teacherState.trSubcatId = t.subcategories[0] ? t.subcategories[0].id : null;
-            }
-            if (activeCategoryId === t.id && activeSubcategoryId === subcatId) {
-                activeSubcategoryId = t.subcategories[0] ? t.subcategories[0].id : null;
-                currentPage = 1;
-            }
-
-            saveState();
-            renderApp();
-            renderTeacherRoom();
-        }
-
-        function openExerciseForm(mode) {
-            teacherState.editingExercise = mode; // 'new' or numeric id
-            renderTeacherRoom();
-        }
-
-        function cancelExerciseForm() {
-            teacherState.editingExercise = null;
-            renderTeacherRoom();
-        }
-
-        function saveExerciseForm() {
-            const subcat = getTeacherSubcat();
-            if (!subcat) { alert('Velg eller opprett en oppgavetype først.'); return; }
-
-            const promptVal = document.getElementById('exFormPrompt').value.trim();
-            const answerVal = document.getElementById('exFormAnswer').value.trim();
-            const altVal = document.getElementById('exFormAlt').value.trim();
-            const explVal = document.getElementById('exFormExpl').value.trim();
-
-            if (!promptVal || !answerVal) { alert('Oppgavetekst og korrekt svar er påkrevd.'); return; }
-
-            const altAnswers = altVal ? altVal.split(',').map(s => s.trim()).filter(Boolean) : [];
-
-            if (teacherState.editingExercise === 'new') {
-                subcat.exercises = subcat.exercises || [];
-                const maxId = subcat.exercises.reduce((m, ex) => Math.max(m, ex.id), 0);
-                subcat.exercises.push({
-                    id: maxId + 1,
-                    type: subcat.baseType,
-                    prompt: promptVal,
-                    answer: answerVal,
-                    altAnswers,
-                    explanation: explVal
-                });
+            if (checkedCount === 0) {
+                showToast('Du må fylle ut minst én oppgave før du sjekker alle.', 'error');
             } else {
-                const ex = (subcat.exercises || []).find(e => e.id === teacherState.editingExercise);
+                showToast(`Sjekket ${checkedCount} oppgaver på denne siden!`, 'success');
+            }
+        }
+
+        function changePage(direction) {
+            const subcat = getActiveSubcategory();
+            if (!subcat || !subcat.exercises) return;
+
+            const maxPages = Math.ceil(subcat.exercises.length / itemsPerPage);
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > maxPages) currentPage = maxPages;
+
+            renderExercisePage();
+        }
+
+        function goToPage(pageNum) {
+            currentPage = pageNum;
+            renderExercisePage();
+        }
+
+        // ============================================================
+        // Teacher Room Administration Logic
+        // ============================================================
+        function renderTeacherRoom() {
+            const catSelect = document.getElementById('teacherCategorySelect');
+            const subcatSelect = document.getElementById('teacherSubcategorySelect');
+
+            catSelect.innerHTML = categories.map(c => `<option value="${c.id}" ${c.id === teacherCatId ? 'selected' : ''}>${c.title}</option>`).join('');
+            
+            const currentCat = categories.find(c => c.id === teacherCatId) || categories[0];
+            if (currentCat && currentCat.subcategories) {
+                subcatSelect.innerHTML = currentCat.subcategories.map(s => `<option value="${s.id}" ${s.id === teacherSubcatId ? 'selected' : ''}>${s.title}</option>`).join('');
+            } else {
+                subcatSelect.innerHTML = '<option value="">Ingen underkategorier</option>';
+            }
+
+            renderTeacherExerciseTable();
+        }
+
+        function onTeacherCategoryChange(catId) {
+            teacherCatId = catId;
+            const cat = categories.find(c => c.id === catId);
+            if (cat && cat.subcategories && cat.subcategories.length > 0) {
+                teacherSubcatId = cat.subcategories[0].id;
+            } else {
+                teacherSubcatId = null;
+            }
+            renderTeacherRoom();
+        }
+
+        function onTeacherSubcategoryChange(subId) {
+            teacherSubcatId = subId;
+            renderTeacherExerciseTable();
+        }
+
+        function renderTeacherExerciseTable() {
+            const tbody = document.getElementById('teacherExerciseTableBody');
+            const cat = categories.find(c => c.id === teacherCatId);
+            const sub = cat ? (cat.subcategories || []).find(s => s.id === teacherSubcatId) : null;
+
+            if (!sub || !sub.exercises || sub.exercises.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">Ingen oppgaver funnet her.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sub.exercises.map((ex, idx) => `
+                <tr class="hover:bg-slate-50/80">
+                    <td class="p-3 font-bold text-slate-400">${idx + 1}</td>
+                    <td class="p-3 font-medium text-slate-800">${ex.prompt}</td>
+                    <td class="p-3 font-bold text-emerald-700">${ex.answer}</td>
+                    <td class="p-3 text-right space-x-1">
+                        <button onclick="openExerciseModal(${ex.id})" class="text-indigo-600 hover:text-indigo-800 p-1.5 font-bold">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteExercise(${ex.id})" class="text-rose-600 hover:text-rose-800 p-1.5 font-bold">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openExerciseModal(exId) {
+            const modal = document.getElementById('exerciseModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalExId = document.getElementById('modalExId');
+            const modalPrompt = document.getElementById('modalPrompt');
+            const modalAnswer = document.getElementById('modalAnswer');
+            const modalOptions = document.getElementById('modalOptions');
+            const modalHint = document.getElementById('modalHint');
+
+            modal.classList.remove('hidden');
+
+            if (exId === 'new') {
+                modalTitle.innerText = "Legg til ny oppgave";
+                modalExId.value = "new";
+                modalPrompt.value = "";
+                modalAnswer.value = "";
+                modalOptions.value = "";
+                modalHint.value = "";
+            } else {
+                modalTitle.innerText = "Rediger oppgave";
+                const cat = categories.find(c => c.id === teacherCatId);
+                const sub = cat ? cat.subcategories.find(s => s.id === teacherSubcatId) : null;
+                const ex = sub ? sub.exercises.find(e => e.id === exId) : null;
+
                 if (ex) {
-                    ex.prompt = promptVal;
-                    ex.answer = answerVal;
-                    ex.altAnswers = altAnswers;
-                    ex.explanation = explVal;
+                    modalExId.value = ex.id;
+                    modalPrompt.value = ex.prompt;
+                    modalAnswer.value = ex.answer;
+                    modalOptions.value = ex.options ? ex.options.join(', ') : '';
+                    modalHint.value = ex.hint || '';
+                }
+            }
+        }
+
+        function closeExerciseModal() {
+            document.getElementById('exerciseModal').classList.add('hidden');
+        }
+
+        function saveExercise(event) {
+            event.preventDefault();
+            const exId = document.getElementById('modalExId').value;
+            const prompt = document.getElementById('modalPrompt').value.trim();
+            const answer = document.getElementById('modalAnswer').value.trim();
+            const optionsRaw = document.getElementById('modalOptions').value.trim();
+            const hint = document.getElementById('modalHint').value.trim();
+
+            const options = optionsRaw ? optionsRaw.split(',').map(s => s.trim()).filter(Boolean) : null;
+
+            const cat = categories.find(c => c.id === teacherCatId);
+            const sub = cat ? cat.subcategories.find(s => s.id === teacherSubcatId) : null;
+
+            if (!sub) return;
+
+            if (exId === 'new') {
+                const newEx = {
+                    id: Date.now(),
+                    prompt,
+                    answer,
+                    options,
+                    hint
+                };
+                sub.exercises.push(newEx);
+            } else {
+                const ex = sub.exercises.find(e => e.id == exId);
+                if (ex) {
+                    ex.prompt = prompt;
+                    ex.answer = answer;
+                    ex.options = options;
+                    ex.hint = hint;
                 }
             }
 
-            teacherState.editingExercise = null;
-            saveState();
+            saveToLocalStorage();
+            closeExerciseModal();
             renderApp();
-            renderTeacherRoom();
+            showToast('Oppgave lagret lokalt!', 'success');
         }
 
         function deleteExercise(exId) {
-            const t = getTeacherTopic();
-            const subcat = getTeacherSubcat();
-            if (!subcat) return;
-            if (!confirm('Slette denne oppgaven?')) return;
+            const cat = categories.find(c => c.id === teacherCatId);
+            const sub = cat ? cat.subcategories.find(s => s.id === teacherSubcatId) : null;
+            if (!sub) return;
 
-            subcat.exercises = (subcat.exercises || []).filter(e => e.id !== exId);
-
-            const key = `${t.id}_${subcat.id}_${exId}`;
-            delete userAnswers[key];
-            delete checkedAnswers[key];
-
-            if (teacherState.editingExercise === exId) teacherState.editingExercise = null;
-
-            saveState();
+            sub.exercises = sub.exercises.filter(e => e.id !== exId);
+            saveToLocalStorage();
             renderApp();
-            renderTeacherRoom();
-        }
-
-        function renderTeacherRoom() {
-            const container = document.getElementById('teacherRoomContent');
-            if (!container) return;
-
-            if (!teacherState.trTopicId || !categories.find(c => c.id === teacherState.trTopicId)) {
-                teacherState.trTopicId = categories[0] ? categories[0].id : null;
-            }
-            const topic = getTeacherTopic();
-            if (topic && (!teacherState.trSubcatId || !(topic.subcategories || []).find(s => s.id === teacherState.trSubcatId))) {
-                teacherState.trSubcatId = (topic.subcategories && topic.subcategories[0]) ? topic.subcategories[0].id : null;
-            }
-            const subcat = getTeacherSubcat();
-
-            let html = '';
-
-            // --- Del / eksporter / importer ---
-            html += `<section class="bg-indigo-50/60 border border-indigo-200 rounded-2xl p-4 space-y-3">
-                <div>
-                    <h3 class="text-xs font-bold uppercase tracking-wide text-indigo-700 mb-1">Del oppgavesettet</h3>
-                    <p class="text-xs text-slate-600 leading-relaxed">
-                        Last ned en oppdatert HTML-fil for å dele alle oppgavene dine med andre — de får da nøyaktig
-                        samme oppgavesett ferdig lastet inn, uten at de må gjøre noe selv. JSON er nyttig som
-                        sikkerhetskopi, eller for å flytte oppgaver mellom to ulike HTML-filer.
-                    </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="exportUpdatedHtml()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
-                        <i class="fa-solid fa-download"></i>Last ned oppdatert HTML-fil
-                    </button>
-                    <button onclick="exportJson()" class="bg-white hover:bg-slate-50 text-slate-600 font-semibold px-3.5 py-2 rounded-xl text-xs border border-slate-200 flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-export"></i>Eksporter som JSON
-                    </button>
-                    <button onclick="document.getElementById('importJsonInput').click()" class="bg-white hover:bg-slate-50 text-slate-600 font-semibold px-3.5 py-2 rounded-xl text-xs border border-slate-200 flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-import"></i>Importer fra JSON
-                    </button>
-                </div>
-            </section>`;
-
-            // --- Topics ---
-            html += `<section>
-                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Emner</h3>
-                <div class="flex flex-wrap gap-2">`;
-            categories.forEach(c => {
-                const isActive = topic && c.id === topic.id;
-                html += `<div class="relative">
-                    <button onclick="selectTeacherTopic('${c.id}')" class="pl-3 pr-7 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap border ${
-                        isActive ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }">${escapeHtml(c.title)}</button>
-                    <button onclick="event.stopPropagation(); deleteTopic('${c.id}')" title="Slett emne" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] ${isActive ? 'text-white/70 hover:text-white' : 'text-slate-400 hover:text-rose-500'}">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>`;
-            });
-            html += `<button onclick="addTopicPrompt()" class="px-3 py-2 rounded-xl text-xs font-bold border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50 whitespace-nowrap">
-                    <i class="fa-solid fa-plus mr-1"></i>Nytt emne
-                </button>
-            </div></section>`;
-
-            if (topic) {
-                // --- Topic details ---
-                html += `<section class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Emnedetaljer</h3>
-                    <div class="grid gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tittel</label>
-                            <input id="teacherTopicTitle" value="${escapeQuotes(topic.title)}" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-teal-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Beskrivelse</label>
-                            <input id="teacherTopicDesc" value="${escapeQuotes(topic.description || '')}" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-teal-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Grammatikkregel (vises i infoboksen øverst på øvingssiden)</label>
-                            <textarea id="teacherTopicRule" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-teal-500">${escapeHtml(topic.ruleHint || '')}</textarea>
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button onclick="saveTopicDetails()" class="bg-teal-700 hover:bg-teal-600 text-white font-bold px-4 py-2 rounded-xl text-xs">Lagre emne</button>
-                    </div>
-                </section>`;
-
-                // --- Subcategories ---
-                html += `<section>
-                    <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Oppgavetyper i «${escapeHtml(topic.title)}»</h3>
-                    <div class="flex flex-wrap gap-2">`;
-                (topic.subcategories || []).forEach(sc => {
-                    const isActive = subcat && sc.id === subcat.id;
-                    html += `<div class="relative">
-                        <button onclick="selectTeacherSubcat('${sc.id}')" class="pl-3 pr-7 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap border ${
-                            isActive ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }">${escapeHtml(sc.title)} (${(sc.exercises || []).length})</button>
-                        <button onclick="event.stopPropagation(); deleteSubcategory('${sc.id}')" title="Slett oppgavetype" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] ${isActive ? 'text-white/70 hover:text-white' : 'text-slate-400 hover:text-rose-500'}">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>`;
-                });
-                html += `<button onclick="toggleAddSubcatForm()" class="px-3 py-2 rounded-xl text-xs font-bold border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50 whitespace-nowrap">
-                        <i class="fa-solid fa-plus mr-1"></i>Ny oppgavetype
-                    </button></div>`;
-
-                if (teacherState.addingSubcat) {
-                    html += `<div class="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-200 flex flex-wrap items-end gap-2">
-                        <div class="flex-1 min-w-[140px]">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Navn</label>
-                            <input id="newSubcatName" placeholder="f.eks. Oversettelse" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Type</label>
-                            <select id="newSubcatType" class="px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-amber-500 bg-white">
-                                <option value="oversettelse">Oversettelse</option>
-                                <option value="innfylling">Innfylling</option>
-                                <option value="annet">Annet</option>
-                            </select>
-                        </div>
-                        <button onclick="createSubcategory()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg text-xs">Opprett</button>
-                        <button onclick="toggleAddSubcatForm()" class="text-slate-500 text-xs font-semibold px-2 py-2">Avbryt</button>
-                    </div>`;
-                }
-                html += `</section>`;
-
-                // --- Exercises ---
-                html += `<section class="space-y-3">
-                    <div class="flex items-center justify-between flex-wrap gap-2">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">
-                            ${subcat ? `Oppgaver i «${escapeHtml(subcat.title)}» (${(subcat.exercises || []).length} stk)` : 'Ingen oppgavetype valgt'}
-                        </h3>
-                        ${subcat ? `<button onclick="openExerciseForm('new')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5">
-                            <i class="fa-solid fa-plus"></i>Legg til oppgave
-                        </button>` : ''}
-                    </div>`;
-
-                if (subcat && teacherState.editingExercise !== null) {
-                    const isNew = teacherState.editingExercise === 'new';
-                    const ex = isNew ? null : (subcat.exercises || []).find(e => e.id === teacherState.editingExercise);
-                    html += `<div class="bg-indigo-50/60 border border-indigo-200 rounded-2xl p-4 space-y-3">
-                        <h4 class="text-xs font-bold text-indigo-800">${isNew ? 'Ny oppgave' : 'Rediger oppgave'} — ${escapeHtml(subcat.title)}</h4>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Oppgavetekst</label>
-                            <textarea id="exFormPrompt" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">${escapeHtml(ex ? ex.prompt : '')}</textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Korrekt svar</label>
-                            <input id="exFormAnswer" value="${escapeQuotes(ex ? ex.answer : '')}" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Alternative svar (kommaseparert, valgfritt)</label>
-                            <input id="exFormAlt" value="${escapeQuotes(ex && ex.altAnswers ? ex.altAnswers.join(', ') : '')}" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Forklaring (valgfritt)</label>
-                            <textarea id="exFormExpl" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500">${escapeHtml(ex ? (ex.explanation || '') : '')}</textarea>
-                        </div>
-                        <div class="flex justify-end gap-2">
-                            <button onclick="cancelExerciseForm()" class="text-slate-500 text-xs font-semibold px-3 py-2">Avbryt</button>
-                            <button onclick="saveExerciseForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs">Lagre oppgave</button>
-                        </div>
-                    </div>`;
-                }
-
-                if (subcat) {
-                    if ((subcat.exercises || []).length) {
-                        html += `<div class="space-y-2">`;
-                        subcat.exercises.forEach((ex, i) => {
-                            html += `<div class="flex items-start gap-3 bg-white border border-slate-200 rounded-xl p-3">
-                                <span class="bg-slate-100 text-slate-500 font-bold text-xs px-2 py-1 rounded-lg mt-0.5">${i + 1}</span>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(ex.prompt)}</p>
-                                    <p class="text-xs text-slate-500 truncate">Svar: <span class="font-mono">${escapeHtml(ex.answer)}</span></p>
-                                </div>
-                                <div class="flex items-center gap-1 flex-shrink-0">
-                                    <button onclick="openExerciseForm(${ex.id})" class="text-slate-400 hover:text-indigo-600 p-1.5" title="Rediger"><i class="fa-solid fa-pen"></i></button>
-                                    <button onclick="deleteExercise(${ex.id})" class="text-slate-400 hover:text-rose-500 p-1.5" title="Slett"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>`;
-                        });
-                        html += `</div>`;
-                    } else {
-                        html += `<p class="text-xs text-slate-400 italic">Ingen oppgaver ennå. Legg til manuelt over, eller generer med AI.</p>`;
-                    }
-                }
-
-                html += `</section>`;
-            } else {
-                html += `<p class="text-sm text-slate-400 italic">Opprett et emne for å komme i gang.</p>`;
-            }
-
-            html += `<div class="pt-2 border-t border-slate-100 flex justify-end">
-                <button onclick="resetAllToDefault()" class="text-xs text-slate-400 hover:text-rose-500 font-semibold">
-                    <i class="fa-solid fa-clock-rotate-left mr-1"></i>Gjenopprett standardoppgaver
-                </button>
-            </div>`;
-
-            container.innerHTML = html;
+            showToast('Oppgave slettet!', 'info');
         }
 
         // ============================================================
-        // Del / eksporter / importer oppgavesett
+        // JSON Import & Export Utilities
         // ============================================================
-        function downloadFile(filename, content, mime) {
-            const blob = new Blob([content], { type: mime });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function generateStorageSuffix() {
-            return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-        }
-
-        function exportUpdatedHtml() {
-            try {
-                const catStartMarker = '/*__DEFAULT_CATEGORIES_START__*/';
-                const catEndMarker = '/*__DEFAULT_CATEGORIES_END__*/';
-                const keyStartMarker = '/*__STORAGE_KEY_START__*/';
-                const keyEndMarker = '/*__STORAGE_KEY_END__*/';
-
-                let fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-
-                const catStartIdx = fullHtml.indexOf(catStartMarker);
-                const catEndIdx = fullHtml.indexOf(catEndMarker);
-                const keyStartIdx = fullHtml.indexOf(keyStartMarker);
-                const keyEndIdx = fullHtml.indexOf(keyEndMarker);
-
-                if (catStartIdx === -1 || catEndIdx === -1 || keyStartIdx === -1 || keyEndIdx === -1) {
-                    alert('Fant ikke riktig sted i filen å sette inn oppgavene i. Prøv å laste siden på nytt (uten ulagrede endringer) og forsøk igjen.');
-                    return;
-                }
-
-                // 1) Sett inn en helt fersk, unik lagringsnøkkel, slik at gammel bufret fremgang
-                //    i nettleseren (f.eks. fra denne fanen, eller en tidligere nedlastet fil)
-                //    aldri kan overstyre de ferske standardoppgavene i den nye fila.
-                const newStorageKey = "'deutschmaster_state_v3_" + generateStorageSuffix() + "'";
-                let html2 = fullHtml.slice(0, keyStartIdx + keyStartMarker.length)
-                    + newStorageKey
-                    + fullHtml.slice(keyEndIdx);
-
-                // Indeksene for kategori-markørene må regnes ut på nytt siden strengen er endret
-                const catStartIdx2 = html2.indexOf(catStartMarker);
-                const catEndIdx2 = html2.indexOf(catEndMarker);
-
-                // 2) Sett inn de nåværende emnene/oppgavene som nye standardoppgaver
-                const before = html2.slice(0, catStartIdx2 + catStartMarker.length);
-                const after = html2.slice(catEndIdx2);
-                // Escape "</" slik at en avsluttende script-tag inni en oppgavetekst ikke ødelegger fila
-                const dataBlock = JSON.stringify(categories, null, 4).replace(/<\//g, '<\\/');
-                const newHtml = before + dataBlock + after;
-
-                downloadFile('grammatikkoving.html', newHtml, 'text/html');
-            } catch (err) {
-                console.error(err);
-                alert('Kunne ikke lage en oppdatert HTML-fil: ' + err.message);
-            }
-        }
-
         function exportJson() {
-            const dataStr = JSON.stringify(categories, null, 2);
-            downloadFile('deutschmaster-oppgaver.json', dataStr, 'application/json');
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(categories, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "grammatikk_oppgaver.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
 
-        function importJsonFile(event) {
+        function importJson(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const parsed = JSON.parse(e.target.result);
-                    const newCategories = Array.isArray(parsed) ? parsed : parsed.categories;
-
-                    if (!Array.isArray(newCategories) || !newCategories.length) {
-                        throw new Error('Filen inneholder ingen gyldige emner.');
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        categories = importedData;
+                        saveToLocalStorage();
+                        renderApp();
+                        showToast('Importerte JSON-oppgaver vellykket!', 'success');
+                    } else {
+                        showToast('Ugyldig JSON-format.', 'error');
                     }
-                    const valid = newCategories.every(c => c && c.id && c.title && Array.isArray(c.subcategories));
-                    if (!valid) {
-                        throw new Error('Filen har ikke riktig format (mangler emner/oppgavetyper).');
-                    }
-
-                    if (!confirm(`Importere ${newCategories.length} emne(r) fra filen? Dette erstatter alle nåværende emner og oppgaver i denne fila.`)) {
-                        event.target.value = '';
-                        return;
-                    }
-
-                    categories = newCategories;
-                    activeCategoryId = categories[0].id;
-                    activeSubcategoryId = (categories[0].subcategories && categories[0].subcategories[0]) ? categories[0].subcategories[0].id : null;
-                    currentPage = 1;
-                    teacherState.trTopicId = activeCategoryId;
-                    teacherState.trSubcatId = activeSubcategoryId;
-
-                    saveState();
-                    renderApp();
-                    renderTeacherRoom();
-                    alert('Import fullført!');
                 } catch (err) {
-                    alert('Kunne ikke importere filen: ' + err.message);
-                } finally {
-                    event.target.value = '';
+                    showToast('Feil ved lesing av JSON-fil.', 'error');
                 }
             };
             reader.readAsText(file);
         }
 
-        // ============================================================
-        // AI Generator
-        // ============================================================
-        function openAiModalFromTeacher() {
-            populateAiSelectors();
-            document.getElementById('aiThemeInput').value = '';
-            document.getElementById('aiModal').classList.remove('hidden');
-        }
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toastMessage');
+            const toastText = document.getElementById('toastText');
+            const toastIcon = document.getElementById('toastIcon');
 
-        function closeAiModal() {
-            document.getElementById('aiModal').classList.add('hidden');
-        }
+            toastText.innerText = msg;
+            toast.classList.remove('hidden');
 
-        function populateAiSelectors() {
-            const topicSelect = document.getElementById('aiTopicSelect');
-            topicSelect.innerHTML = '';
-            categories.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.title;
-                topicSelect.appendChild(opt);
-            });
-            const newTopicOpt = document.createElement('option');
-            newTopicOpt.value = '__new__';
-            newTopicOpt.textContent = '+ Nytt emne …';
-            topicSelect.appendChild(newTopicOpt);
-
-            const defaultTopicId = (teacherState.trTopicId && categories.find(c => c.id === teacherState.trTopicId))
-                ? teacherState.trTopicId
-                : (categories[0] ? categories[0].id : '__new__');
-            topicSelect.value = defaultTopicId;
-
-            onAiTopicChange();
-        }
-
-        function populateAiSubcatSelector(topicId, preferredSubcatId) {
-            const subSelect = document.getElementById('aiSubcatSelect');
-            subSelect.innerHTML = '';
-            const topic = categories.find(c => c.id === topicId);
-            (topic ? (topic.subcategories || []) : []).forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = s.title;
-                subSelect.appendChild(opt);
-            });
-            const newOpt = document.createElement('option');
-            newOpt.value = '__new__';
-            newOpt.textContent = '+ Ny oppgavetype …';
-            subSelect.appendChild(newOpt);
-
-            if (topic && preferredSubcatId && topic.subcategories.find(s => s.id === preferredSubcatId)) {
-                subSelect.value = preferredSubcatId;
-            } else if (topic && topic.subcategories.length) {
-                subSelect.value = topic.subcategories[0].id;
-            } else {
-                subSelect.value = '__new__';
-            }
-        }
-
-        function onAiTopicChange() {
-            const topicSelect = document.getElementById('aiTopicSelect');
-            const isNewTopic = topicSelect.value === '__new__';
-            document.getElementById('aiNewTopicWrap').classList.toggle('hidden', !isNewTopic);
-
-            const subcatWrap = document.getElementById('aiSubcatSelectWrap');
-            if (isNewTopic) {
-                subcatWrap.classList.add('hidden');
-                document.getElementById('aiNewSubcatWrap').classList.remove('hidden');
-            } else {
-                subcatWrap.classList.remove('hidden');
-                populateAiSubcatSelector(topicSelect.value, teacherState.trSubcatId);
-                onAiSubcatChange();
-            }
-        }
-
-        function onAiSubcatChange() {
-            const isNewSubcat = document.getElementById('aiSubcatSelect').value === '__new__';
-            document.getElementById('aiNewSubcatWrap').classList.toggle('hidden', !isNewSubcat);
-        }
-
-        function buildAiPrompts(baseType, topicName, subcatName, level, theme) {
-            let typeInstruction;
-            if (baseType === 'oversettelse') {
-                typeInstruction = 'Alle oppgavene skal være oversettelsesoppgaver: gi en norsk setning i "prompt", og det korrekte tyske svaret i "answer". Sett "type" til "oversettelse".';
-            } else if (baseType === 'innfylling') {
-                typeInstruction = 'Alle oppgavene skal være innfyllingsoppgaver: gi en tysk setning med en luke markert med ___ i "prompt" (gjerne med infinitiv i parentes der det er naturlig), og riktig ord/bøyning i "answer". Sett "type" til "innfylling".';
-            } else {
-                typeInstruction = 'Lag korte, varierte grammatikkoppgaver (spørsmål, korriger feilen, bøy verbet e.l.) i "prompt", og riktig svar i "answer". Sett "type" til "annet".';
-            }
-
-            const systemPrompt = `Du er en tysklærer for norske elever. Lag 10 oppgaver i JSON-format.
-Bruk standard norsk stor bokstav kun i starten på setninger (ikke engelsk Title Case i overskrifter eller oppgavetekster).
-Husk at det bøyde verbet skal helt til slutt i tyske leddsetninger (etter weil, dass, wenn, ob, obwohl osv.) der det er relevant for temaet.
-${typeInstruction}
-Generer gyldig JSON. Svarene må ha korrekte tyske tegn (ä, ö, ü, ß).`;
-
-            const userPrompt = `Lag 10 tysk-oppgaver på nivå ${level} om temaet: ${theme}.
-Emnet oppgavene tilhører heter "${topicName}", og oppgavetypen heter "${subcatName}".
-Returner bare en gyldig JSON-struktur som følger dette formatet:
-{
-  "exercises": [
-    {
-      "id": 1,
-      "type": "${baseType}",
-      "prompt": "Oppgavetekst",
-      "answer": "Korrekt tysk svar",
-      "altAnswers": ["Alternative godkjente svar"],
-      "explanation": "Kort forklaring av grammatikken"
-    }
-  ]
-}`;
-            return { systemPrompt, userPrompt };
-        }
-
-        async function generateAIExercises(e) {
-            e.preventDefault();
-
-            const topicSelectVal = document.getElementById('aiTopicSelect').value;
-            const subcatSelectVal = document.getElementById('aiSubcatSelect').value;
-            const isNewTopic = topicSelectVal === '__new__';
-            const isNewSubcat = isNewTopic || subcatSelectVal === '__new__';
-
-            const newTopicName = document.getElementById('aiNewTopicName').value.trim();
-            const newSubcatName = document.getElementById('aiNewSubcatName').value.trim();
-            const newSubcatType = document.getElementById('aiNewSubcatType').value;
-
-            const theme = document.getElementById('aiThemeInput').value.trim();
-            const level = document.getElementById('aiLevel').value;
-            const submitBtn = document.getElementById('aiSubmitBtn');
-
-            if (isNewTopic && !newTopicName) { alert('Skriv et navn på det nye emnet.'); return; }
-            if (isNewSubcat && !newSubcatName) { alert('Skriv et navn på den nye oppgavetypen.'); return; }
-            if (!theme) return;
-
-            let targetTopic;
-            if (isNewTopic) {
-                const id = uniqueId(slugify(newTopicName), categories.map(c => c.id));
-                targetTopic = { id, title: newTopicName, description: `Øvingssett om ${newTopicName}.`, ruleHint: '', subcategories: [] };
-                categories.push(targetTopic);
-            } else {
-                targetTopic = categories.find(c => c.id === topicSelectVal);
-            }
-            if (!targetTopic) { alert('Fant ikke valgt emne.'); return; }
-
-            let targetSubcat, baseType;
-            if (isNewSubcat) {
-                baseType = newSubcatType;
-                targetTopic.subcategories = targetTopic.subcategories || [];
-                const id = uniqueId(slugify(newSubcatName), targetTopic.subcategories.map(s => s.id));
-                targetSubcat = { id, title: newSubcatName, baseType, exercises: [] };
-                targetTopic.subcategories.push(targetSubcat);
-            } else {
-                targetSubcat = targetTopic.subcategories.find(s => s.id === subcatSelectVal);
-                baseType = targetSubcat ? targetSubcat.baseType : 'annet';
-            }
-            if (!targetSubcat) { alert('Fant ikke valgt oppgavetype.'); return; }
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Genererer 10 oppgaver...`;
-
-            const { systemPrompt, userPrompt } = buildAiPrompts(baseType, targetTopic.title, targetSubcat.title, level, theme);
-
-            try {
-                const apiKey = ""; // Canvas runtime injection
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-                const payload = {
-                    contents: [{ parts: [{ text: userPrompt }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: {
-                        responseMimeType: "application/json"
-                    }
-                };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error('Kunne ikke hente AI-genererte oppgaver');
-                }
-
-                const result = await response.json();
-                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (!jsonText) throw new Error('Ingen data mottatt fra AI');
-
-                const generatedData = JSON.parse(jsonText);
-                const maxId = (targetSubcat.exercises || []).reduce((m, ex) => Math.max(m, ex.id), 0);
-                const newExercises = (generatedData.exercises || []).map((ex, idx) => ({
-                    id: maxId + idx + 1,
-                    type: baseType,
-                    prompt: ex.prompt,
-                    answer: ex.answer,
-                    altAnswers: ex.altAnswers || [],
-                    explanation: ex.explanation || ''
-                }));
-
-                targetSubcat.exercises = (targetSubcat.exercises || []).concat(newExercises);
-
-                activeCategoryId = targetTopic.id;
-                activeSubcategoryId = targetSubcat.id;
-                currentPage = totalPages(targetSubcat);
-                teacherState.trTopicId = targetTopic.id;
-                teacherState.trSubcatId = targetSubcat.id;
-
-                saveState();
-                renderApp();
-                renderTeacherRoom();
-                closeAiModal();
-            } catch (err) {
-                console.error(err);
-                alert('Det oppstod en feil under generering av oppgavene: ' + err.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<i class="fa-solid fa-sparkles"></i> Generer 10 nye oppgaver`;
-            }
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
         }
     </script>
-    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
 </body>
 </html>
