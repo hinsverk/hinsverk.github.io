@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Norsk Begrepsbygger - Forsterket Opplæring</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-area, #printable-area * {
+                visibility: visible;
+            }
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header / Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid font-bold fa-book-open text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-900 text-lg sm:text-xl leading-tight">Begrepsbyggeren</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Norsk forsterket opplæring • Viderekomment nivå</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button onclick="switchTab('flashcards')" id="tab-flashcards" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-sky-100 text-sky-800 transition">
+                    <i class="fa-solid fa-layer-group mr-1.5"></i>Kort
+                </button>
+                <button onclick="switchTab('quiz')" id="tab-quiz" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-circle-question mr-1.5"></i>Quiz
+                </button>
+                <button onclick="switchTab('matching')" id="tab-matching" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-puzzle-piece mr-1.5"></i>Matchespill
+                </button>
+                <button onclick="switchTab('worksheet')" id="tab-worksheet" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-print mr-1.5"></i>Oppgaveark
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Category & Controls Bar -->
+    <div class="bg-white border-b border-slate-200 py-3 no-print">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            
+            <!-- Dynamic Category Pills -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none" id="category-bar">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1 flex-shrink-0">Tema:</span>
+                <!-- Generated dynamically in JS -->
+            </div>
+
+            <!-- Action Controls (Import / Export / Add) -->
+            <div class="flex items-center space-x-2 flex-shrink-0 self-end md:self-auto">
+                <!-- Hidden file input for JSON import -->
+                <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="handleJSONImport(event)">
+                
+                <button onclick="triggerJSONImport()" class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-200 transition flex items-center" title="Importer begrepsdatabase fra JSON-fil">
+                    <i class="fa-solid fa-file-import mr-1.5 text-indigo-600"></i> Importer
+                </button>
+                
+                <button onclick="exportVocabularyJSON()" class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-200 transition flex items-center" title="Laste ned begrepsdatabasen som JSON-fil">
+                    <i class="fa-solid fa-file-export mr-1.5 text-emerald-600"></i> Eksporter
+                </button>
+
+                <button onclick="openAddWordModal()" class="text-xs font-bold text-sky-800 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg border border-sky-200 transition flex items-center">
+                    <i class="fa-solid fa-plus mr-1 text-sky-600"></i> Nytt ord
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-20 right-5 z-50 transform translate-y-[-100px] opacity-0 transition-all duration-300 bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 border border-slate-700 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message">Handling utført!</span>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- VIEW 1: FLASHCARDS -->
+        <section id="view-flashcards" class="space-y-6">
+            <div class="flex justify-between items-center bg-sky-50 p-4 rounded-xl border border-sky-100">
+                <div>
+                    <h2 class="text-lg font-bold text-sky-950">Interaktive Begrepskort</h2>
+                    <p class="text-xs text-sky-700">Klikk på kortet for å snu det. Bruk pilene for å navigere i begrepene.</p>
+                </div>
+                <div class="text-right">
+                    <span id="card-counter" class="text-xs sm:text-sm font-bold text-sky-800 bg-white px-3 py-1 rounded-full shadow-sm border border-sky-100">1 / 1</span>
+                </div>
+            </div>
+
+            <!-- Flashcard Display -->
+            <div class="max-w-xl mx-auto perspective-1000 my-8">
+                <div id="flashcard" onclick="flipCard()" class="transform-style-3d transition-transform duration-500 cursor-pointer min-h-[340px] bg-white rounded-2xl shadow-xl border border-slate-200 p-8 flex flex-col justify-between relative group hover:border-sky-300">
+                    
+                    <!-- Front Side -->
+                    <div id="card-front" class="backface-hidden flex flex-col justify-center items-center text-center h-full my-auto space-y-4">
+                        <span id="card-badge" class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full uppercase tracking-wider">Kategori</span>
+                        <h3 id="card-term" class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-snug">Ord eller uttrykk</h3>
+                        <p class="text-xs text-slate-400 mt-4 flex items-center">
+                            <i class="fa-solid fa-rotate mr-1.5 text-sky-500"></i> Klikk for å se forklaring og eksempler
+                        </p>
+                    </div>
+
+                    <!-- Back Side -->
+                    <div id="card-back" class="rotate-y-180 backface-hidden absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                                <span class="text-xs text-sky-400 uppercase font-bold tracking-wider">Forklaring</span>
+                                <button onclick="event.stopPropagation(); readText()" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-slate-200 transition">
+                                    <i class="fa-solid fa-volume-high mr-1"></i> Les opp
+                                </button>
+                            </div>
+                            <p id="card-definition" class="text-base sm:text-lg font-medium text-slate-100">Forklaring av ordet.</p>
+                            
+                            <div class="mt-4 pt-2 border-t border-slate-700/60">
+                                <span class="text-xs text-emerald-400 font-semibold block mb-1">Eksempel i setning:</span>
+                                <p id="card-example" class="text-xs sm:text-sm italic text-slate-300 bg-slate-800/80 p-3 rounded-lg border border-slate-700">"Eksempelsetning som viser ordet i kontekst."</p>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-slate-400 flex justify-between items-center pt-3 border-t border-slate-700/40">
+                            <span>Syrisk/Arabisk hint: <strong id="card-hint" class="text-sky-300 font-normal">Hint</strong></span>
+                            <span class="text-sky-400 font-medium hidden sm:inline">Klikk for å snu</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Controls -->
+            <div class="flex justify-center items-center space-x-4">
+                <button onclick="prevCard()" class="w-12 h-12 rounded-full bg-white hover:bg-slate-100 text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition active:scale-95">
+                    <i class="fa-solid fa-chevron-left text-lg"></i>
+                </button>
+                <button onclick="shuffleCards()" class="px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-sm transition flex items-center">
+                    <i class="fa-solid fa-shuffle mr-2"></i> Stokk om
+                </button>
+                <button onclick="nextCard()" class="w-12 h-12 rounded-full bg-sky-600 hover:bg-sky-700 text-white shadow-md flex items-center justify-center transition active:scale-95">
+                    <i class="fa-solid fa-chevron-right text-lg"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW 2: QUIZ -->
+        <section id="view-quiz" class="hidden space-y-6">
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-bold text-indigo-950">Kontekst & Begrepsquiz</h2>
+                    <p class="text-xs text-indigo-700">Velg det ordet eller uttrykket som passer best inn i setningen.</p>
+                </div>
+                <div class="bg-white px-4 py-2 rounded-xl border border-indigo-100 text-right">
+                    <div class="text-xs text-slate-500 uppercase font-bold">Poengsum</div>
+                    <div id="quiz-score" class="text-xl font-black text-indigo-600">0 / 0</div>
+                </div>
+            </div>
+
+            <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-md">
+                <div id="quiz-container" class="space-y-6">
+                    <!-- Dynamic Quiz Content -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: MATCHING GAME -->
+        <section id="view-matching" class="hidden space-y-6">
+            <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-bold text-emerald-950">Matchespill</h2>
+                    <p class="text-xs text-emerald-700">Koble begrepet på venstre side sammen med riktig forklaring på høyre side.</p>
+                </div>
+                <button onclick="initMatchingGame()" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Ny runde
+                </button>
+            </div>
+
+            <div id="matching-board" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dynamic Matching columns -->
+            </div>
+        </section>
+
+        <!-- VIEW 4: WORKSHEET GENERATOR (OPPGAVEARK) -->
+        <section id="view-worksheet" class="hidden space-y-6">
+            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-amber-950">Utskriftsklart Oppgaveark</h2>
+                    <p class="text-xs text-amber-800">Generer oppgaver du kan skrive ut til eleven for papirarbeid eller lekse.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="renderWorksheet()" class="px-3 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-arrows-rotate mr-1"></i> Nye oppgaver
+                    </button>
+                    <button onclick="toggleFasit()" id="fasit-btn" class="px-3 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-eye mr-1"></i> Vis Fasit
+                    </button>
+                    <button onclick="window.print()" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 shadow transition">
+                        <i class="fa-solid fa-print mr-1.5"></i> Skriv ut oppgaveark
+                    </button>
+                </div>
+            </div>
+
+            <!-- Printable Worksheet Area -->
+            <div id="printable-area" class="bg-white border border-slate-300 p-8 sm:p-12 rounded-xl shadow-sm text-slate-900 space-y-8">
+                <!-- Header for print -->
+                <div class="border-b-2 border-slate-800 pb-4 flex justify-between items-end">
+                    <div>
+                        <h1 class="text-2xl font-black uppercase tracking-wide text-slate-900">Arbeidsark: Norske Begreper & Uttrykk</h1>
+                        <p class="text-xs text-slate-600" id="worksheet-subtitle">Forsterket norskopplæring • Tema: Alle begreper</p>
+                    </div>
+                    <div class="text-right space-y-1 text-xs text-slate-700">
+                        <div><strong>Navn:</strong> ______________________</div>
+                        <div><strong>Dato:</strong> ______________________</div>
+                    </div>
+                </div>
+
+                <!-- Exercise 1: Match Term to Meaning -->
+                <div class="space-y-4">
+                    <h3 class="text-base font-bold bg-slate-100 p-2 rounded text-slate-800 border-l-4 border-slate-800">
+                        Oppgave 1: Forbind begrepet med riktig forklaring
+                    </h3>
+                    <p class="text-xs text-slate-600 italic">Trekk en linje fra uttrykket til venstre til den forklaringen som passer til høyre.</p>
+                    
+                    <div id="worksheet-match-list" class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm py-2">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Exercise 2: Fill in the blank -->
+                <div class="space-y-4 pt-4">
+                    <h3 class="text-base font-bold bg-slate-100 p-2 rounded text-slate-800 border-l-4 border-slate-800">
+                        Oppgave 2: Sett inn riktig begrep i setningen
+                    </h3>
+                    <p class="text-xs text-slate-600 italic">Velg blant disse ordene: <span id="worksheet-wordbank" class="font-semibold text-slate-800"></span></p>
+
+                    <ol id="worksheet-fill-list" class="list-decimal list-inside space-y-3 text-sm pt-2">
+                        <!-- Populated via JS -->
+                    </ol>
+                </div>
+
+                <!-- Exercise 3: Make your own sentence -->
+                <div class="space-y-4 pt-4">
+                    <h3 class="text-base font-bold bg-slate-100 p-2 rounded text-slate-800 border-l-4 border-slate-800">
+                        Oppgave 3: Lag dine egne setninger
+                    </h3>
+                    <p class="text-xs text-slate-600 italic">Velg to av uttrykkene fra oppgave 1 og skriv én hel setning med hver av dem hvor du viser at du forstår hva det betyr.</p>
+                    
+                    <div class="space-y-4 pt-2">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">1. Uttrykk: ____________________________________________________</p>
+                            <div class="border-b border-slate-300 h-8"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">2. Uttrykk: ____________________________________________________</p>
+                            <div class="border-b border-slate-300 h-8"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Answer Key (Fasit) -->
+                <div id="fasit-section" class="hidden border-t-2 border-dashed border-red-300 pt-6 mt-8 space-y-3 bg-red-50/50 p-4 rounded-lg">
+                    <h3 class="text-sm font-bold text-red-800 uppercase tracking-wider"><i class="fa-solid fa-key mr-1"></i> FASIT (Lærerveiledning)</h3>
+                    <div id="fasit-content" class="text-xs text-slate-700 space-y-2">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Add Custom Word -->
+    <div id="add-word-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900">Legg til nytt begrep</h3>
+                <button onclick="closeAddWordModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <form id="add-word-form" onsubmit="handleAddWord(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Begrep / Uttrykk *</label>
+                    <input type="text" id="new-term" required placeholder="f.eks. Å bite i det sure eplet" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kategori</label>
+                    <select id="new-cat" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                        <option value="fagspråk">Skole & Fagspråk</option>
+                        <option value="idiomer">Idiomer & Uttrykk</option>
+                        <option value="samfunn">Samfunn & Kultur</option>
+                        <option value="hverdag">Hverdagspråk</option>
+                        <option value="medier">Medier & Kommunikasjon</option>
+                        <option value="nyanser">Nyanserte Ord</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Forklaring *</label>
+                    <textarea id="new-def" required placeholder="Hva betyr ordet på enkel norsk?" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none h-16 text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Eksempel i setning</label>
+                    <input type="text" id="new-ex" placeholder="f.eks. Han måtte bite i det sure eplet og beklage." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Syrisk/Arabisk hint (valgfritt)</label>
+                    <input type="text" id="new-hint" placeholder="f.eks. Arabisk tilsvarende ord eller uttrykk" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeAddWordModal()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Avbryt</button>
+                    <button type="submit" class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700">Lagre begrep</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Expanded initial vocabulary merged and deduplicated
+        const baseVocabulary = [
+            // Original starter set
+            {
+                id: 1,
+                term: "Å slå to fluer i én smekk",
+                category: "idiomer",
+                definition: "Å oppnå to mål eller løse to oppgaver samtidig med én enkelt handling.",
+                example: "Når jeg sykler til skolen får jeg både mosjon og gratis transport – da slår jeg to fluer i én smekk!",
+                hint: "ضرب عصفورين بحجر (Treffe to fugler med én stein)"
+            },
+            {
+                id: 2,
+                term: "Å ha mange jern i ilden",
+                category: "idiomer",
+                definition: "Å drive med mange aktiviteter, prosjekter eller oppgaver på samme tid.",
+                example: "Hun spiller fotball, jobber deltid og går på kurs, så hun har virkelig mange jern i ilden.",
+                hint: "لديه العديد من المشاريع في وقت واحد"
+            },
+            {
+                id: 3,
+                term: "Å tråkke i salaten",
+                category: "idiomer",
+                definition: "Å gjøre eller si noe flaut, dumt eller klønete som sårer eller fornærmer noen.",
+                example: "Jeg spurte om hvordan det gikk med kjæresten hans rett etter at de hadde gjort det slutt – der tråkket jeg virkelig i salaten!",
+                hint: "ارتكاب خطأ محرج أو غير لبق"
+            },
+            {
+                id: 4,
+                term: "Å ta noe med en klype salt",
+                category: "idiomer",
+                definition: "Å ikke tro helt uskritisk på det noen sier; å være litt skeptisk.",
+                example: "Nyheter i sosiale medier bør man ofte ta med en klype salt.",
+                hint: "أخذ الأمر مع بعض الشك"
+            },
+            {
+                id: 5,
+                term: "Å stå på bar bakke",
+                category: "idiomer",
+                definition: "Å mangle penger, hus eller ressurser; å være helt uten hjelp eller midler.",
+                example: "Etter at huset brant ned, sto familien overnaturlig nok på bar bakke.",
+                hint: "أن تكون بلا شيء أو بلا دعم"
+            },
+            {
+                id: 6,
+                term: "Å se skogen for bare trær",
+                category: "idiomer",
+                definition: "Å henge seg så mye opp i små detaljer at man mister oversikten over helheten.",
+                example: "Når du rydder hele rommet, må du ikke bruke to timer på én skuff – da ser du ikke skogen for bare trær.",
+                hint: "التركيز على التفاصيل ونسيان الصورة الكبيرة"
+            },
+            {
+                id: 8,
+                term: "Årsak og virkning",
+                category: "fagspråk",
+                definition: "Sammenhengen mellom hvorfor noe skjer (årsak) og hva som blir resultatet av det (virkning).",
+                example: "Læreren ba oss forklare årsak og virkning til utbruddet av første verdenskrig.",
+                hint: "السبب والنتيجة (Cause and Effect)"
+            },
+            {
+                id: 11,
+                term: "Hensiktsmessig",
+                category: "nyanser",
+                definition: "Noe som er smart, praktisk eller egnet for å nå et bestemt mål.",
+                example: "Det er mer hensiktsmessig å lage en timeplan hvis du har mye lekser.",
+                hint: "مناسب أو ملائم للهدف"
+            },
+            {
+                id: 12,
+                term: "Motstridende",
+                category: "nyanser",
+                definition: "Informasjon eller påstander som ikke passer sammen eller som motsier hverandre.",
+                example: "Avisene ga motstridende opplysninger om hva som egentlig hadde skjedd.",
+                hint: "متناقض أو متعارض"
+            },
+
+            // New JSON imported set (merged and deduplicated)
+            {
+                id: 14,
+                term: "Å drøfte",
+                category: "fagspråk",
+                definition: "Å belyse en sak fra flere sider ved å trekke fram både argumenter for og imot før man konkluderer.",
+                example: "I samfunnsfagsoppgaven skal vi drøfte fordeler og ulemper med sosiale medier.",
+                hint: "مناقشة الموضوع من عدة جوانب"
+            },
+            {
+                id: 15,
+                term: "Å sammenligne",
+                category: "fagspråk",
+                definition: "Å peke på hva som er likt og hva som er forskjellig mellom to eller flere ting.",
+                example: "Teksten ber oss sammenligne levekår i Norge og i utlandet.",
+                hint: "مقارنة الأشياء ببعضها"
+            },
+            {
+                id: 16,
+                term: "Å begrunne",
+                category: "fagspråk",
+                definition: "Å forklare hvorfor man mener noe, ved å gi årsaker eller argumenter.",
+                example: "Du må begrunne svaret ditt slik at lærer skjønner hvorfor du valgte alternativ B.",
+                hint: "توضيح الأسباب أو التعليل"
+            },
+            {
+                id: 17,
+                term: "Å redegjøre",
+                category: "fagspråk",
+                definition: "Å gi en grundig og klar forklaring eller fremstilling av et tema uten å ta personlig stilling.",
+                example: "Eleven måtte redegjøre for årsakene til første verdenskrig.",
+                hint: "شرح أو توضيح مفصل"
+            },
+            {
+                id: 18,
+                term: "Å vurdere",
+                category: "fagspråk",
+                definition: "Å undersøke og tenke nøye over noe for å gi en dom eller konklusjon.",
+                example: "Vi må vurdere om tiltaket har hatt den effekten vi ønsket.",
+                hint: "تقييم أو تقدير الأمر"
+            },
+            {
+                id: 19,
+                term: "Å definere",
+                category: "fagspråk",
+                definition: "Å forklare nøyaktig hva et ord eller et begrep betyr.",
+                example: "Kan du definere hva demokrati betyr med egne ord?",
+                hint: "تحديد أو تعريف المعنى"
+            },
+            {
+                id: 20,
+                term: "Å konkludere",
+                category: "fagspråk",
+                definition: "Å komme fram til et endelig resultat eller oppsummering til slutt.",
+                example: "Etter å ha sett på tallene, kan vi konkludere med at salget har økt.",
+                hint: "الاستنتاج أو الخروج بنتيجة"
+            },
+            {
+                id: 21,
+                term: "Å analysere",
+                category: "fagspråk",
+                definition: "Å dele opp en tekst eller et fenomén i mindre deler for å undersøke hvordan delene henger sammen.",
+                example: "I norsktimen skal vi analysere et dikt skrevet av Ibsen.",
+                hint: "تحليل النص أو المفهوم"
+            },
+            {
+                id: 22,
+                term: "Å tolke",
+                category: "fagspråk",
+                definition: "Å finne en dypere mening eller forståelse i noe, for eksempel en tekst, et bilde eller et kunstverk.",
+                example: "Hvordan vil du tolke budskapet i denne novellen?",
+                hint: "تفسير المعنى الضمني"
+            },
+            {
+                id: 23,
+                term: "Å reflektere",
+                category: "fagspråk",
+                definition: "Å tenke nøye igjennom og bruke egne erfaringer eller kunnskap til å forstå noe bedre.",
+                example: "I loggen skal du reflektere over hva du har lært i dag.",
+                hint: "التفكير العميق والـتأمل"
+            },
+            {
+                id: 24,
+                term: "Å illustrere",
+                category: "fagspråk",
+                definition: "Å gjøre noe tydeligere ved hjelp av eksempler, tegninger eller tabeller.",
+                example: "Læreren brukte et diagram for å illustrere utviklingen.",
+                hint: "توضيح بالأمثلة أو الرسم"
+            },
+            {
+                id: 25,
+                term: "Å utdype",
+                category: "fagspråk",
+                definition: "Å forklare noe mer detaljert slik at informasjonen blir fullstendig.",
+                example: "Kan du utdype det du sa om hvorfor problemet oppstod?",
+                hint: "التوسع أو التعمق في الشرح"
+            },
+            {
+                id: 26,
+                term: "Å oppsummere",
+                category: "fagspråk",
+                definition: "Å kort gi de viktigste punktene i en tekst eller en samtale.",
+                example: "Til slutt vil jeg oppsummere de tre viktigste poengene.",
+                hint: "تلخيص النقاط الرئيسية"
+            },
+            {
+                id: 27,
+                term: "Å påstå",
+                category: "fagspråk",
+                definition: "Å si at noe er fakta, ofte uten at man har bevist det ennå.",
+                example: "Forskerne påstår at søvn påvirker karakterene våre.",
+                hint: "ادعاء أو زعم شيء"
+            },
+            {
+                id: 28,
+                term: "Et argument",
+                category: "samfunn",
+                definition: "En begrunnelse eller et poeng som skal støtte eller minke støtten til en påstand.",
+                example: "Hun kom med et veldig godt argument for hvorfor vi bør kildesortere.",
+                hint: "حجة أو دليل"
+            },
+            {
+                id: 29,
+                term: "Kildekritikk",
+                category: "fagspråk",
+                definition: "Å undersøke om informasjonen man finner er til å stole på og hvem som står bak den.",
+                example: "Vi må bruke kildekritikk når vi søker etter nyheter på internett.",
+                hint: "نقد المصادر والتحقق منها"
+            },
+            {
+                id: 30,
+                term: "Plagiat",
+                category: "skole",
+                definition: "Å kopiere andres tekst eller ideer uten å oppgi kilden, slik at det ser ut som ditt eget arbeid.",
+                example: "Å kopiere rett fra Wikipedia regnes som plagiat på skolen.",
+                hint: "السرقة الأدبية أو النسخ"
+            },
+            {
+                id: 31,
+                term: "En hypotese",
+                category: "fagspråk",
+                definition: "En antakelse eller kvalifisert gjetning om noe som man må teste for å se om stemmer.",
+                example: "I naturfag leste vi at en hypotese må kunne testes gjennom forsøk.",
+                hint: "فرضية علمية قابل للتجربة"
+            },
+            {
+                id: 32,
+                term: "Et begrep",
+                category: "fagspråk",
+                definition: "Et ord som uttrykker en bestemt idé eller et faglig konsept.",
+                example: "Demokrati er et sentralt begrep i samfunnsfag.",
+                hint: "مفهوم أو مصطلح"
+            },
+            {
+                id: 33,
+                term: "En konsekvens",
+                category: "samfunn",
+                definition: "Noe som skjer som en følge eller et resultat av en tidligere handling.",
+                example: "En konsekvens av for lite søvn kan være dårlig konsentrasjon.",
+                hint: "نتيجة أو عاقبة"
+            },
+            {
+                id: 34,
+                term: "En kontekst",
+                category: "fagspråk",
+                definition: "Sammenhengen et ord, en situasjon eller en hendelse står i.",
+                example: "Det er lettere å forstå ordet når du ser det i en kontekst.",
+                hint: "سياق الكلام أو الظروف"
+            },
+            {
+                id: 35,
+                term: "Relevant",
+                category: "fagspråk",
+                definition: "Noe som har betydning for saken, eller som hører til temaet.",
+                example: "Du må bare bruke informasjon som er relevant for oppgaven.",
+                hint: "ذو صلة بالموضوع"
+            },
+            {
+                id: 36,
+                term: "Å påvirke",
+                category: "hverdag",
+                definition: "Å ha en effekt på hvordan noen tenker, føler eller hvordan noe utvikler seg.",
+                example: "Reklame kan påvirke hva slags klær vi kjøper.",
+                hint: "التأثير على شيء"
+            },
+            {
+                id: 37,
+                term: "Rettighet",
+                category: "samfunn",
+                definition: "Noe du har juridisk eller moralsk krav på å gjøre, ha eller få.",
+                example: "Alle barn har rettighet til utdanning ifølge FN.",
+                hint: "حق من الحقوق"
+            },
+            {
+                id: 38,
+                term: "Plikt",
+                category: "samfunn",
+                definition: "Noe du må eller er forpliktet til å gjøre ifølge regler eller lover.",
+                example: "Det er vår plikt å følge reglene i samfunnet.",
+                hint: "واجب أو التزام"
+            },
+            {
+                id: 39,
+                term: "Årsak",
+                category: "fagspråk",
+                definition: "Grunnen til at noe skjer.",
+                example: "Tung snø var årsaken til at bussen ble forsinket.",
+                hint: "سبب وقوع الشيء"
+            },
+            {
+                id: 40,
+                term: "Virkning",
+                category: "fagspråk",
+                definition: "Effekten eller resultatet av en årsak.",
+                example: "Medisinen hadde god virkning mot smertene.",
+                hint: "تأثير أو نتيجة"
+            },
+            {
+                id: 41,
+                term: "Holdning",
+                category: "samfunn",
+                definition: "En personlig mening, oppfatning eller måte å se verden på over tid.",
+                example: "Han har en positiv holdning til å lære nye språk.",
+                hint: "موقف أو اتجاه فكري"
+            },
+            {
+                id: 42,
+                term: "Klima",
+                category: "samfunn",
+                definition: "Gjennomsnittlig vær over lang tid, eller miljøet/stemningen i en gruppe.",
+                example: "Det var et godt arbeidsmiljø og klima i klassen.",
+                hint: "مناخ أو جو عام"
+            },
+            {
+                id: 43,
+                term: "Ressurs",
+                category: "samfunn",
+                definition: "Noe man har eller kan bruke til å skape verdi eller løse et problem (f.eks. penger, tid, olje eller kunnskap).",
+                example: "Tid er en viktig ressurs når man skal forberede seg til eksamen.",
+                hint: "مصدر أو مورد"
+            },
+            {
+                id: 44,
+                term: "Å publisere",
+                category: "medier",
+                definition: "Å gjøre en tekst, bilde eller fil tilgjengelig for offentligheten.",
+                example: "Avisa valgte å publisere artikkelen på nett.",
+                hint: "نشر للملأ"
+            },
+            {
+                id: 45,
+                term: "Kritisk",
+                category: "fagspråk",
+                definition: "Å ikke godta ting uten videre, men undersøke grundig om det er sant eller riktig.",
+                example: "Det er viktig å ha et kritisk blikk på nyheter i sosiale medier.",
+                hint: "تفكر نقدي"
+            },
+            {
+                id: 46,
+                term: "Struktur",
+                category: "fagspråk",
+                definition: "Oppbygningen, organiseringen eller rekkefølgen av deler i en tekst eller helhet.",
+                example: "Teksten har en god struktur med innledning, hoveddel og avslutning.",
+                hint: "بنية أو هيكلية"
+            },
+            {
+                id: 47,
+                term: "Å formulere",
+                category: "fagspråk",
+                definition: "Å uttrykke en tanke eller en mening med ord, skriftlig eller muntlig.",
+                example: "Prøv å formulere spørsmålet ditt på en så tydelig måte som mulig.",
+                hint: "صياغة الجملة أو Fكرة"
+            },
+            {
+                id: 48,
+                term: "Mangfold",
+                category: "samfunn",
+                definition: "Et stort variasjonsområde eller sammensetning av mange forskjellige typer, f.eks. kulturelt mangfold.",
+                example: "Skolen feirer mangfoldet blant sine elever.",
+                hint: "التنوع أو التعددية"
+            },
+            {
+                id: 49,
+                term: "Minoritet",
+                category: "samfunn",
+                definition: "En gruppe utgjør en mindre del av en befolkning eller samling.",
+                example: "Sammene er en urfolksminoritet i Norge.",
+                hint: "أقلية عددية"
+            },
+            {
+                id: 50,
+                term: "Majoritet",
+                category: "samfunn",
+                definition: "Flertallet i en gruppe eller befolkning (mer enn halvparten).",
+                example: "Majoriteten av elevene stemte for å ha temadag.",
+                hint: "أغلبية عددية"
+            },
+            {
+                id: 51,
+                term: "Bærekraftig",
+                category: "samfunn",
+                definition: "Noe som oppfyller dagens behov uten å ødelegge for fremtidige generasjoner.",
+                example: "Vi må finne mer bærekraftige måter å bruke energi på.",
+                hint: "استدامة"
+            },
+            {
+                id: 52,
+                term: "Å motbevise",
+                category: "fagspråk",
+                definition: "Å vise med fakta eller eksperimenter at en påstand er feil.",
+                example: "Forskeren klarte å motbevise den gamle teorien.",
+                hint: "دحض أو إثبات عكس الشيء"
+            },
+            {
+                id: 53,
+                term: "Objektiv",
+                category: "fagspråk",
+                definition: "Nøytral og basert på fakta uten å bli påvirket av personlige følelser eller meninger.",
+                example: "En god nyhetsjournalist skal prøve å være objektiv.",
+                hint: "موضوعي وغير انحيازي"
+            },
+            {
+                id: 54,
+                term: "Subjektiv",
+                category: "fagspråk",
+                definition: "Basert på personlige oppfatninger, følelser eller smaksord i stedet for ren fakta.",
+                example: "Hva som er fin musikk er en helt subjektiv mening.",
+                hint: "شخصي أو ذاتي"
+            },
+            {
+                id: 55,
+                term: "Anonym",
+                category: "medier",
+                definition: "Når navnet til personen som sier eller gjør noe holdes hemmelig.",
+                example: "Man kan svare på undersøkelsen og være helt anonym.",
+                hint: "مجهول الهوية"
+            },
+            {
+                id: 56,
+                term: "Å bekrefte",
+                category: "hverdag",
+                definition: "Å si eller vise at noe faktisk stemmer eller er sant.",
+                example: "Politiet kunne bekrefte at ulykken hadde skjedd.",
+                hint: "تأكيد أو إثبات"
+            },
+            {
+                id: 57,
+                term: "En konflikt",
+                category: "samfunn",
+                definition: "En uenighet, strid eller kamp mellom to eller flere parter.",
+                example: "Klassen prøvde å løse konflikten ved å snakke sammen.",
+                hint: "نزاع أو صراع"
+            },
+            {
+                id: 58,
+                term: "Å engasjere seg",
+                category: "samfunn",
+                definition: "Å delta aktivt og bry seg om en sak eller aktivitet.",
+                example: "Mange ungdommer engasjerer seg i miljøsaken.",
+                hint: "المشاركة والاهتمام الفعال"
+            },
+            {
+                id: 59,
+                term: "Å prioritere",
+                category: "hverdag",
+                definition: "Å velge hva som er viktigst og må gjøres først.",
+                example: "Du bør prioritere å gjøre lekser før du spiller dataspill.",
+                hint: "تحديد الأولويات"
+            },
+            {
+                id: 60,
+                term: "Innhold",
+                category: "fagspråk",
+                definition: "Det som finnes inni noe, eller det en tekst eller film handler om.",
+                example: "Artikkelen har et veldig nyttig innhold.",
+                hint: "المحتوى"
+            },
+            {
+                id: 61,
+                term: "Format",
+                category: "fagspråk",
+                definition: "Formen, størrelsen eller oppsettet på et dokument, bilde eller fil.",
+                example: "Du må levere oppgaven i PDF-format.",
+                hint: "تنسيق أو صيغة"
+            },
+            {
+                id: 62,
+                term: "Målgruppe",
+                category: "medier",
+                definition: "Den bestemte gruppen med mennesker som en tekst, film eller reklame er laget for.",
+                example: "Ungdommer mellom 13 og 18 år er målgruppen for denne appen.",
+                hint: "الجمهور المستهدف"
+            },
+            {
+                id: 63,
+                term: "Å inkludere",
+                category: "samfunn",
+                definition: "Å ta med noen eller noe inn i et fellesskap eller en helhet.",
+                example: "Det er viktig å inkludere alle i leken i friminuttet.",
+                hint: "إدماج أو إشراك"
+            }
+        ];
+
+        // Deduplication helper based on normalized term string
+        function deduplicateVocabulary(arr) {
+            const seen = new Set();
+            return arr.filter(item => {
+                if (!item || !item.term) return false;
+                const normalized = item.term.trim().toLowerCase();
+                if (seen.has(normalized)) return false;
+                seen.add(normalized);
+                return true;
+            });
+        }
+
+        // Category label map
+        const categoryLabels = {
+            'alle': 'Alle begreper',
+            'fagspråk': 'Skole & Fagspråk',
+            'idiomer': 'Idiomer & Uttrykk',
+            'samfunn': 'Samfunn & Kultur',
+            'skole': 'Skole & Utdanning',
+            'hverdag': 'Hverdagspråk',
+            'medier': 'Medier & Kommunikasjon',
+            'nyanser': 'Nyanserte Ord'
+        };
+
+        // State variables
+        let vocabulary = deduplicateVocabulary(baseVocabulary);
+        let currentFilter = 'alle';
+        let filteredVocab = [...vocabulary];
+        let currentCardIndex = 0;
+        let isCardFlipped = false;
+        let quizScore = 0;
+
+        // Initialize state on window load
+        window.onload = function() {
+            renderCategoryFilterButtons();
+            filterCategory('alle');
+            initQuiz();
+            initMatchingGame();
+            renderWorksheet();
+        };
+
+        // Toast notifications
+        function showToast(msg, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const message = document.getElementById('toast-message');
+
+            message.innerText = msg;
+            icon.className = isSuccess ? 'fa-solid fa-circle-check text-emerald-400' : 'fa-solid fa-circle-exclamation text-amber-400';
+
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-100px]', 'opacity-0');
+            }, 3000);
+        }
+
+        // Dynamic category filter bar generator
+        function renderCategoryFilterButtons() {
+            const bar = document.getElementById('category-bar');
+            // Extract available categories from current vocabulary
+            const categoriesInUse = Array.from(new Set(vocabulary.map(v => v.category)));
+            const availableCategories = ['alle', ...categoriesInUse];
+
+            let html = `<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1 flex-shrink-0">Tema:</span>`;
+
+            availableCategories.forEach(cat => {
+                const label = categoryLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
+                html += `
+                    <button onclick="filterCategory('${cat}')" class="cat-btn px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition flex-shrink-0" data-cat="${cat}">
+                        ${label}
+                    </button>
+                `;
+            });
+
+            bar.innerHTML = html;
+        }
+
+        // Navigation between views
+        function switchTab(tabName) {
+            ['flashcards', 'quiz', 'matching', 'worksheet'].forEach(tab => {
+                const view = document.getElementById(`view-${tab}`);
+                const btn = document.getElementById(`tab-${tab}`);
+                if (tab === tabName) {
+                    view.classList.remove('hidden');
+                    btn.className = "px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-sky-100 text-sky-800 transition";
+                } else {
+                    view.classList.add('hidden');
+                    btn.className = "px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition";
+                }
+            });
+        }
+
+        // Category Filter
+        function filterCategory(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = "cat-btn px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800 text-white shadow-sm whitespace-nowrap flex-shrink-0";
+                } else {
+                    btn.className = "cat-btn px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition whitespace-nowrap flex-shrink-0";
+                }
+            });
+
+            if (cat === 'alle') {
+                filteredVocab = [...vocabulary];
+            } else {
+                filteredVocab = vocabulary.filter(v => v.category === cat);
+            }
+
+            currentCardIndex = 0;
+            updateFlashcard();
+            renderWorksheet();
+        }
+
+        // Flashcard Logic
+        function updateFlashcard() {
+            if (filteredVocab.length === 0) {
+                document.getElementById('card-term').innerText = "Ingen begreper valgt";
+                document.getElementById('card-definition').innerText = "Velg et annet tema eller legg til et begrep.";
+                document.getElementById('card-counter').innerText = "0 / 0";
+                return;
+            }
+            
+            const item = filteredVocab[currentCardIndex];
+            const cardEl = document.getElementById('flashcard');
+            
+            // Unflip first if needed
+            if (isCardFlipped) {
+                cardEl.classList.remove('rotate-y-180');
+                isCardFlipped = false;
+            }
+
+            setTimeout(() => {
+                document.getElementById('card-term').innerText = item.term;
+                document.getElementById('card-definition').innerText = item.definition;
+                document.getElementById('card-example').innerText = `"${item.example}"`;
+                document.getElementById('card-hint').innerText = item.hint || 'Ingen hint satt';
+                document.getElementById('card-counter').innerText = `${currentCardIndex + 1} / ${filteredVocab.length}`;
+
+                const badge = document.getElementById('card-badge');
+                const catLabel = categoryLabels[item.category] || item.category;
+                badge.innerText = catLabel;
+
+                if (item.category === 'idiomer') {
+                    badge.className = 'px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                } else if (item.category === 'fagspråk' || item.category === 'skole') {
+                    badge.className = 'px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                } else if (item.category === 'samfunn') {
+                    badge.className = 'px-3 py-1 bg-sky-100 text-sky-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                } else {
+                    badge.className = 'px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                }
+            }, isCardFlipped ? 250 : 0);
+        }
+
+        function flipCard() {
+            if (filteredVocab.length === 0) return;
+            const cardEl = document.getElementById('flashcard');
+            isCardFlipped = !isCardFlipped;
+            if (isCardFlipped) {
+                cardEl.classList.add('rotate-y-180');
+            } else {
+                cardEl.classList.remove('rotate-y-180');
+            }
+        }
+
+        function nextCard() {
+            if (filteredVocab.length === 0) return;
+            currentCardIndex = (currentCardIndex + 1) % filteredVocab.length;
+            updateFlashcard();
+        }
+
+        function prevCard() {
+            if (filteredVocab.length === 0) return;
+            currentCardIndex = (currentCardIndex - 1 + filteredVocab.length) % filteredVocab.length;
+            updateFlashcard();
+        }
+
+        function shuffleCards() {
+            filteredVocab.sort(() => Math.random() - 0.5);
+            currentCardIndex = 0;
+            updateFlashcard();
+            showToast("Kortstokken er stokket om!");
+        }
+
+        function readText() {
+            if (filteredVocab.length === 0) return;
+            const item = filteredVocab[currentCardIndex];
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(`${item.term}. ${item.definition}`);
+                utterance.lang = 'nb-NO';
+                window.speechSynthesis.speak(utterance);
+            } else {
+                showToast("Taleopplesning støttes ikke i denne nettleseren.", false);
+            }
+        }
+
+        // Quiz Logic
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+            quizScore = 0;
+            
+            const quizList = [...filteredVocab].sort(() => Math.random() - 0.5).slice(0, 10);
+            document.getElementById('quiz-score').innerText = `0 / ${quizList.length}`;
+
+            if (quizList.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 text-sm">Ingen spørsmål tilgjengelig for dette temaet.</p>`;
+                return;
+            }
+
+            quizList.forEach((item, index) => {
+                const options = generateQuizOptions(item);
+                const qCard = document.createElement('div');
+                qCard.className = "border border-slate-200 p-5 rounded-xl space-y-3 bg-slate-50/50";
+                
+                // Create sentence with blank
+                let sentenceWithBlank = item.example.replace(new RegExp(escapeRegExp(item.term), 'gi'), '________');
+
+                qCard.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <span class="text-xs font-bold text-slate-400">Spørsmål ${index + 1}</span>
+                        <span class="text-xs font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">${categoryLabels[item.category] || item.category}</span>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-800">Fyll inn det utelatte ordet/uttrykket:</p>
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 text-sm italic text-slate-700">"${sentenceWithBlank}"</div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2" id="q-options-${index}">
+                        ${options.map(opt => `
+                            <button onclick="checkQuizAnswer(this, ${opt.id === item.id}, ${index}, ${quizList.length})" class="text-left p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs sm:text-sm font-medium transition">
+                                ${opt.term}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(qCard);
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function generateQuizOptions(correctItem) {
+            let opts = [correctItem];
+            let otherItems = vocabulary.filter(v => v.id !== correctItem.id);
+            otherItems.sort(() => Math.random() - 0.5);
+            for (let i = 0; i < Math.min(3, otherItems.length); i++) {
+                opts.push(otherItems[i]);
+            }
+            return opts.sort(() => Math.random() - 0.5);
+        }
+
+        function checkQuizAnswer(btn, isCorrect, qIndex, totalQuestions) {
+            const optionsGroup = document.getElementById(`q-options-${qIndex}`).querySelectorAll('button');
+            optionsGroup.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                btn.className = "text-left p-3 rounded-lg border border-emerald-500 bg-emerald-100 text-emerald-900 font-bold text-xs sm:text-sm";
+                quizScore++;
+            } else {
+                btn.className = "text-left p-3 rounded-lg border border-red-500 bg-red-100 text-red-900 font-bold text-xs sm:text-sm";
+            }
+            document.getElementById('quiz-score').innerText = `${quizScore} / ${totalQuestions}`;
+        }
+
+        // Matching Game Logic
+        let selectedTermBtn = null;
+        let selectedDefBtn = null;
+
+        function initMatchingGame() {
+            const board = document.getElementById('matching-board');
+            board.innerHTML = '';
+            selectedTermBtn = null;
+            selectedDefBtn = null;
+
+            const pool = filteredVocab.length >= 4 ? filteredVocab : vocabulary;
+            const subset = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
+            const terms = [...subset].sort(() => Math.random() - 0.5);
+            const defs = [...subset].sort(() => Math.random() - 0.5);
+
+            let termsHtml = `<div class="space-y-3"><h3 class="text-xs font-bold text-slate-400 uppercase">Begrep</h3>`;
+            terms.forEach(item => {
+                termsHtml += `
+                    <button onclick="selectMatchTerm(this, ${item.id})" class="term-match-btn w-full text-left p-4 bg-white border border-slate-200 hover:border-emerald-400 rounded-xl text-xs sm:text-sm font-bold text-slate-800 shadow-sm transition">
+                        ${item.term}
+                    </button>
+                `;
+            });
+            termsHtml += `</div>`;
+
+            let defsHtml = `<div class="space-y-3"><h3 class="text-xs font-bold text-slate-400 uppercase">Forklaring</h3>`;
+            defs.forEach(item => {
+                defsHtml += `
+                    <button onclick="selectMatchDef(this, ${item.id})" class="def-match-btn w-full text-left p-4 bg-white border border-slate-200 hover:border-emerald-400 rounded-xl text-xs sm:text-sm font-normal text-slate-700 shadow-sm transition">
+                        ${item.definition}
+                    </button>
+                `;
+            });
+            defsHtml += `</div>`;
+
+            board.innerHTML = termsHtml + defsHtml;
+        }
+
+        function selectMatchTerm(btn, id) {
+            document.querySelectorAll('.term-match-btn').forEach(b => {
+                if (!b.disabled) b.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+            });
+            btn.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+            selectedTermBtn = { btn, id };
+            checkMatchingPair();
+        }
+
+        function selectMatchDef(btn, id) {
+            document.querySelectorAll('.def-match-btn').forEach(b => {
+                if (!b.disabled) b.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+            });
+            btn.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+            selectedDefBtn = { btn, id };
+            checkMatchingPair();
+        }
+
+        function checkMatchingPair() {
+            if (selectedTermBtn && selectedDefBtn) {
+                if (selectedTermBtn.id === selectedDefBtn.id) {
+                    // Success Match
+                    selectedTermBtn.btn.className = "w-full text-left p-4 bg-emerald-100 border border-emerald-400 text-emerald-800 rounded-xl text-xs sm:text-sm font-bold opacity-70 cursor-default";
+                    selectedDefBtn.btn.className = "w-full text-left p-4 bg-emerald-100 border border-emerald-400 text-emerald-800 rounded-xl text-xs sm:text-sm opacity-70 cursor-default";
+                    selectedTermBtn.btn.disabled = true;
+                    selectedDefBtn.btn.disabled = true;
+                } else {
+                    // Wrong Match
+                    const t = selectedTermBtn.btn;
+                    const d = selectedDefBtn.btn;
+                    t.classList.add('bg-red-100', 'border-red-400');
+                    d.classList.add('bg-red-100', 'border-red-400');
+                    setTimeout(() => {
+                        t.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'bg-red-100', 'border-red-400');
+                        d.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'bg-red-100', 'border-red-400');
+                    }, 800);
+                }
+                selectedTermBtn = null;
+                selectedDefBtn = null;
+            }
+        }
+
+        // Worksheet Rendering
+        function renderWorksheet() {
+            const listToUse = filteredVocab.length >= 4 ? filteredVocab : vocabulary;
+            const items = [...listToUse].sort(() => Math.random() - 0.5).slice(0, 6);
+
+            document.getElementById('worksheet-subtitle').innerText = `Forsterket norskopplæring • Tema: ${categoryLabels[currentFilter] || currentFilter}`;
+
+            // Exercise 1: Matching
+            const matchContainer = document.getElementById('worksheet-match-list');
+            matchContainer.innerHTML = '';
+            
+            const shuffledDefs = [...items].sort(() => Math.random() - 0.5);
+
+            let matchColA = `<div class="space-y-3">`;
+            let matchColB = `<div class="space-y-3">`;
+
+            items.forEach((item, idx) => {
+                matchColA += `<div class="p-2 border-b border-slate-200"><strong>${idx + 1}.</strong> ${item.term}</div>`;
+            });
+
+            const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+            shuffledDefs.forEach((item, idx) => {
+                matchColB += `<div class="p-2 border-b border-slate-200"><strong>${letters[idx]}.</strong> ${item.definition}</div>`;
+            });
+
+            matchColA += `</div>`;
+            matchColB += `</div>`;
+            matchContainer.innerHTML = matchColA + matchColB;
+
+            // Exercise 2: Fill in blanks
+            const wordBank = document.getElementById('worksheet-wordbank');
+            wordBank.innerText = items.map(i => i.term).join(' • ');
+
+            const fillContainer = document.getElementById('worksheet-fill-list');
+            fillContainer.innerHTML = '';
+            
+            items.forEach((item) => {
+                const sentence = item.example.replace(new RegExp(escapeRegExp(item.term), 'gi'), '_______________________');
+                const li = document.createElement('li');
+                li.className = "py-1 text-slate-800";
+                li.innerHTML = `"${sentence}"`;
+                fillContainer.appendChild(li);
+            });
+
+            // Fasit
+            const fasitContent = document.getElementById('fasit-content');
+            let fasitHtml = `<div><strong>Oppgave 1 Fasit:</strong></div><ul class="list-disc list-inside">`;
+            items.forEach((item, idx) => {
+                const letterMatched = letters[shuffledDefs.findIndex(d => d.id === item.id)];
+                fasitHtml += `<li>${idx + 1} ➔ ${letterMatched} (${item.term})</li>`;
+            });
+            fasitHtml += `</ul><div class="mt-2"><strong>Oppgave 2 Rekkefølge:</strong> ${items.map(i => i.term).join(', ')}</div>`;
+            fasitContent.innerHTML = fasitHtml;
+        }
+
+        function toggleFasit() {
+            const fasit = document.getElementById('fasit-section');
+            const btn = document.getElementById('fasit-btn');
+            if (fasit.classList.contains('hidden')) {
+                fasit.classList.remove('hidden');
+                btn.innerHTML = `<i class="fa-solid fa-eye-slash mr-1"></i> Skjul Fasit`;
+            } else {
+                fasit.classList.add('hidden');
+                btn.innerHTML = `<i class="fa-solid fa-eye mr-1"></i> Vis Fasit`;
+            }
+        }
+
+        // Modal Controls
+        function openAddWordModal() {
+            document.getElementById('add-word-modal').classList.remove('hidden');
+        }
+
+        function closeAddWordModal() {
+            document.getElementById('add-word-modal').classList.add('hidden');
+            document.getElementById('add-word-form').reset();
+        }
+
+        function handleAddWord(e) {
+            e.preventDefault();
+            const term = document.getElementById('new-term').value.trim();
+            const category = document.getElementById('new-cat').value;
+            const definition = document.getElementById('new-def').value.trim();
+            const example = document.getElementById('new-ex').value.trim() || `Det er viktig å forstå hva "${term}" betyr.`;
+            const hint = document.getElementById('new-hint').value.trim() || 'Eget tilpasset ord';
+
+            const newObj = {
+                id: Date.now(),
+                term,
+                category,
+                definition,
+                example,
+                hint
+            };
+
+            vocabulary.unshift(newObj);
+            vocabulary = deduplicateVocabulary(vocabulary);
+
+            renderCategoryFilterButtons();
+            filterCategory(currentFilter);
+            initQuiz();
+            initMatchingGame();
+            closeAddWordModal();
+            showToast(`"${term}" ble lagt til i databasen!`);
+        }
+
+        // JSON EXPORT & IMPORT
+        function exportVocabularyJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(vocabulary, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `norsk_begreper_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("JSON-fil eksportert!");
+        }
+
+        function triggerJSONImport() {
+            document.getElementById('json-file-input').click();
+        }
+
+        function handleJSONImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        // Merge and deduplicate
+                        const beforeCount = vocabulary.length;
+                        const merged = deduplicateVocabulary([...importedData, ...vocabulary]);
+                        const addedCount = merged.length - beforeCount;
+
+                        vocabulary = merged;
+                        renderCategoryFilterButtons();
+                        filterCategory(currentFilter);
+                        initQuiz();
+                        initMatchingGame();
+
+                        showToast(`Suksess! Importerte ${importedData.length} ord (${addedCount} nye unike).`);
+                    } else {
+                        showToast("Feil ved import: JSON-filen må inneholde en liste/array.", false);
+                    }
+                } catch (err) {
+                    showToast("Kunne ikke lese JSON-filen. Sjekk formatet.", false);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
+        }
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
