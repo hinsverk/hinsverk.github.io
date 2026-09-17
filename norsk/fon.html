@@ -74,16 +74,13 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg sm:text-xl leading-tight">Begrepsbyggeren</h1>
-                    <p class="text-xs text-slate-500 hidden sm:block">Norsk forsterket opplæring • Viderekomment nivå</p>
+                    <p class="text-xs text-slate-500 hidden sm:block">Norsk forsterket opplæring • Tilpasset nivåer</p>
                 </div>
             </div>
             
             <div class="flex items-center space-x-2">
                 <button onclick="switchTab('flashcards')" id="tab-flashcards" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-sky-100 text-sky-800 transition">
                     <i class="fa-solid fa-layer-group mr-1.5"></i>Kort
-                </button>
-                <button onclick="switchTab('quiz')" id="tab-quiz" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition">
-                    <i class="fa-solid fa-circle-question mr-1.5"></i>Quiz
                 </button>
                 <button onclick="switchTab('matching')" id="tab-matching" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition">
                     <i class="fa-solid fa-puzzle-piece mr-1.5"></i>Matchespill
@@ -101,13 +98,12 @@
             
             <!-- Dynamic Category Pills -->
             <div class="flex items-center space-x-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none" id="category-bar">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1 flex-shrink-0">Tema:</span>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1 flex-shrink-0">Nivå / Tema:</span>
                 <!-- Generated dynamically in JS -->
             </div>
 
             <!-- Action Controls (Import / Export / Add) -->
             <div class="flex items-center space-x-2 flex-shrink-0 self-end md:self-auto">
-                <!-- Hidden file input for JSON import -->
                 <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="handleJSONImport(event)">
                 
                 <button onclick="triggerJSONImport()" class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-200 transition flex items-center" title="Importer begrepsdatabase fra JSON-fil">
@@ -198,27 +194,7 @@
             </div>
         </section>
 
-        <!-- VIEW 2: QUIZ -->
-        <section id="view-quiz" class="hidden space-y-6">
-            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex justify-between items-center">
-                <div>
-                    <h2 class="text-lg font-bold text-indigo-950">Kontekst & Begrepsquiz</h2>
-                    <p class="text-xs text-indigo-700">Velg det ordet eller uttrykket som passer best inn i setningen.</p>
-                </div>
-                <div class="bg-white px-4 py-2 rounded-xl border border-indigo-100 text-right">
-                    <div class="text-xs text-slate-500 uppercase font-bold">Poengsum</div>
-                    <div id="quiz-score" class="text-xl font-black text-indigo-600">0 / 0</div>
-                </div>
-            </div>
-
-            <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-md">
-                <div id="quiz-container" class="space-y-6">
-                    <!-- Dynamic Quiz Content -->
-                </div>
-            </div>
-        </section>
-
-        <!-- VIEW 3: MATCHING GAME -->
+        <!-- VIEW 2: MATCHING GAME -->
         <section id="view-matching" class="hidden space-y-6">
             <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex justify-between items-center">
                 <div>
@@ -235,7 +211,7 @@
             </div>
         </section>
 
-        <!-- VIEW 4: WORKSHEET GENERATOR (OPPGAVEARK) -->
+        <!-- VIEW 3: WORKSHEET GENERATOR -->
         <section id="view-worksheet" class="hidden space-y-6">
             <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -255,12 +231,10 @@
                 </div>
             </div>
 
-            <!-- Printable Worksheet Area -->
             <div id="printable-area" class="bg-white border border-slate-300 p-8 sm:p-12 rounded-xl shadow-sm text-slate-900 space-y-8">
-                <!-- Header for print -->
                 <div class="border-b-2 border-slate-800 pb-4 flex justify-between items-end">
                     <div>
-                        <h1 class="text-2xl font-black uppercase tracking-wide text-slate-900">Arbeidsark: Norske Begreper & Uttrykk</h1>
+                        <h1 class="text-2xl font-black uppercase tracking-wide text-slate-900">Arbeidsark: Norske Begreper & Ord</h1>
                         <p class="text-xs text-slate-600" id="worksheet-subtitle">Forsterket norskopplæring • Tema: Alle begreper</p>
                     </div>
                     <div class="text-right space-y-1 text-xs text-slate-700">
@@ -269,55 +243,45 @@
                     </div>
                 </div>
 
-                <!-- Exercise 1: Match Term to Meaning -->
                 <div class="space-y-4">
                     <h3 class="text-base font-bold bg-slate-100 p-2 rounded text-slate-800 border-l-4 border-slate-800">
-                        Oppgave 1: Forbind begrepet med riktig forklaring
+                        Oppgave 1: Forbind ordet med riktig forklaring
                     </h3>
-                    <p class="text-xs text-slate-600 italic">Trekk en linje fra uttrykket til venstre til den forklaringen som passer til høyre.</p>
+                    <p class="text-xs text-slate-600 italic">Trekk en linje fra ordet til venstre til forklaringen som passer til høyre.</p>
                     
-                    <div id="worksheet-match-list" class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm py-2">
-                        <!-- Populated via JS -->
-                    </div>
+                    <div id="worksheet-match-list" class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm py-2"></div>
                 </div>
 
-                <!-- Exercise 2: Fill in the blank -->
                 <div class="space-y-4 pt-4">
                     <h3 class="text-base font-bold bg-slate-100 p-2 rounded text-slate-800 border-l-4 border-slate-800">
-                        Oppgave 2: Sett inn riktig begrep i setningen
+                        Oppgave 2: Sett inn riktig ord i setningen
                     </h3>
                     <p class="text-xs text-slate-600 italic">Velg blant disse ordene: <span id="worksheet-wordbank" class="font-semibold text-slate-800"></span></p>
 
-                    <ol id="worksheet-fill-list" class="list-decimal list-inside space-y-3 text-sm pt-2">
-                        <!-- Populated via JS -->
-                    </ol>
+                    <ol id="worksheet-fill-list" class="list-decimal list-inside space-y-3 text-sm pt-2"></ol>
                 </div>
 
-                <!-- Exercise 3: Make your own sentence -->
                 <div class="space-y-4 pt-4">
                     <h3 class="text-base font-bold bg-slate-100 p-2 rounded text-slate-800 border-l-4 border-slate-800">
                         Oppgave 3: Lag dine egne setninger
                     </h3>
-                    <p class="text-xs text-slate-600 italic">Velg to av uttrykkene fra oppgave 1 og skriv én hel setning med hver av dem hvor du viser at du forstår hva det betyr.</p>
+                    <p class="text-xs text-slate-600 italic">Velg to av ordene fra oppgave 1 og skriv én hel setning med hver av dem.</p>
                     
                     <div class="space-y-4 pt-2">
                         <div>
-                            <p class="text-xs font-semibold text-slate-700">1. Uttrykk: ____________________________________________________</p>
+                            <p class="text-xs font-semibold text-slate-700">1. Ord: ____________________________________________________</p>
                             <div class="border-b border-slate-300 h-8"></div>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-slate-700">2. Uttrykk: ____________________________________________________</p>
+                            <p class="text-xs font-semibold text-slate-700">2. Ord: ____________________________________________________</p>
                             <div class="border-b border-slate-300 h-8"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Answer Key (Fasit) -->
                 <div id="fasit-section" class="hidden border-t-2 border-dashed border-red-300 pt-6 mt-8 space-y-3 bg-red-50/50 p-4 rounded-lg">
                     <h3 class="text-sm font-bold text-red-800 uppercase tracking-wider"><i class="fa-solid fa-key mr-1"></i> FASIT (Lærerveiledning)</h3>
-                    <div id="fasit-content" class="text-xs text-slate-700 space-y-2">
-                        <!-- Populated dynamically -->
-                    </div>
+                    <div id="fasit-content" class="text-xs text-slate-700 space-y-2"></div>
                 </div>
             </div>
         </section>
@@ -334,18 +298,18 @@
             
             <form id="add-word-form" onsubmit="handleAddWord(event)" class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Begrep / Uttrykk *</label>
-                    <input type="text" id="new-term" required placeholder="f.eks. Å bite i det sure eplet" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm">
+                    <label class="block font-semibold text-slate-700 mb-1">Begrep / Ord *</label>
+                    <input type="text" id="new-term" required placeholder="f.eks. Å hjelpe" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Kategori</label>
+                    <label class="block font-semibold text-slate-700 mb-1">Nivå / Kategori</label>
                     <select id="new-cat" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
-                        <option value="fagspråk">Skole & Fagspråk</option>
-                        <option value="idiomer">Idiomer & Uttrykk</option>
+                        <option value="begynner">Begynnerord (A1)</option>
+                        <option value="hverdag_lett">Lettere Hverdagsord (A2)</option>
+                        <option value="fagspråk">Skole & Fagspråk (B1/B2)</option>
+                        <option value="idiomer">Idiomer & Uttrykk (B2)</option>
                         <option value="samfunn">Samfunn & Kultur</option>
-                        <option value="hverdag">Hverdagspråk</option>
                         <option value="medier">Medier & Kommunikasjon</option>
-                        <option value="nyanser">Nyanserte Ord</option>
                     </select>
                 </div>
                 <div>
@@ -354,60 +318,52 @@
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Eksempel i setning</label>
-                    <input type="text" id="new-ex" placeholder="f.eks. Han måtte bite i det sure eplet og beklage." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                    <input type="text" id="new-ex" placeholder="f.eks. Jeg vil hjelpe deg." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Syrisk/Arabisk hint (valgfritt)</label>
-                    <input type="text" id="new-hint" placeholder="f.eks. Arabisk tilsvarende ord eller uttrykk" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                    <input type="text" id="new-hint" placeholder="f.eks. Arabisk tilsvarende ord" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
                 </div>
 
                 <div class="pt-2 flex justify-end space-x-2">
                     <button type="button" onclick="closeAddWordModal()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Avbryt</button>
-                    <button type="submit" class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700">Lagre begrep</button>
+                    <button type="submit" class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700">Lagre ord</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // Helper function for regex escaping
         function escapeRegExp(string) {
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
-        // Smart masking function to reliably blank out words even when inflected or formatted differently
         function maskTermInSentence(term, example) {
             if (!term || !example) return example || '';
 
-            // 1. Try exact term match
             let regexExact = new RegExp(escapeRegExp(term), 'gi');
             if (regexExact.test(example)) {
                 return example.replace(regexExact, '________');
             }
 
-            // Clean leading infinitives or articles ("å ", "en ", "et ", "ei ")
             let cleanTerm = term.replace(/^(å|en|et|ei)\s+/i, '').trim();
 
-            // 2. Try clean term match
             let regexClean = new RegExp(escapeRegExp(cleanTerm), 'gi');
             if (regexClean.test(example)) {
                 return example.replace(regexClean, '________');
             }
 
-            // 3. Multi-word phrase/idiom matching (e.g., "slå to fluer i én smekk", "tråkke i salaten")
             let words = cleanTerm.split(/\s+/);
             if (words.length > 1) {
                 let firstWordStem = words[0].replace(/(e|en|et|er|et|e)$/i, '');
                 for (let len = words.length - 1; len >= 1; len--) {
                     let tail = words.slice(words.length - len).join(' ');
                     if (tail.length >= 3) {
-                        // Look for verb stem + words in-between + tail (e.g., "slår jeg to fluer i én smekk")
                         let patternWithInBetween = new RegExp('\\b' + escapeRegExp(firstWordStem) + '[a-zæøå]*(\\s+\\w+){0,3}\\s+' + escapeRegExp(tail), 'gi');
                         if (patternWithInBetween.test(example)) {
                             return example.replace(patternWithInBetween, '________');
                         }
                         
-                        // Look for tail phrase alone
                         let regexTail = new RegExp(escapeRegExp(tail), 'gi');
                         if (regexTail.test(example)) {
                             return example.replace(regexTail, '________');
@@ -416,20 +372,18 @@
                 }
             }
 
-            // 4. Single-word stem & inflection matching (e.g. "årsak" -> "årsaken", "bærekraftig" -> "bærekraftige")
             let stem = cleanTerm.replace(/(e|en|et|er|es|ede|ete|ing|ig)?$/i, '');
-            if (stem.length >= 3) {
+            if (stem.length >= 2) {
                 let inflectedRegex = new RegExp('\\b' + escapeRegExp(stem) + '[a-zæøå]*\\b', 'gi');
                 if (inflectedRegex.test(example)) {
                     return example.replace(inflectedRegex, '________');
                 }
             }
 
-            // 5. Fallback for custom words: find any significant word (>= 4 chars)
             for (let w of words) {
                 let wClean = w.replace(/^[^\wæøå]+|[^\wæøå]+$/gi, '');
                 let wStem = wClean.replace(/(e|en|et|er|es|ede|ete|ing|ig)?$/i, '');
-                if (wStem.length >= 3) {
+                if (wStem.length >= 2) {
                     let fallbackRegex = new RegExp('\\b' + escapeRegExp(wStem) + '[a-zæøå]*\\b', 'gi');
                     if (fallbackRegex.test(example)) {
                         return example.replace(fallbackRegex, '________');
@@ -440,483 +394,173 @@
             return example;
         }
 
-        // Expanded initial vocabulary merged and deduplicated
         const baseVocabulary = [
-            {
-                id: 1,
-                term: "Å slå to fluer i én smekk",
-                category: "idiomer",
-                definition: "Å oppnå to mål eller løse to oppgaver samtidig med én enkelt handling.",
-                example: "Når jeg sykler til skolen får jeg både mosjon og gratis transport – da slår jeg to fluer i én smekk!",
-                hint: "ضرب عصفورين بحجر (Treffe to fugler med én stein)"
-            },
-            {
-                id: 2,
-                term: "Å ha mange jern i ilden",
-                category: "idiomer",
-                definition: "Å drive med mange aktiviteter, prosjekter eller oppgaver på samme tid.",
-                example: "Hun spiller fotball, jobber deltid og går på kurs, så hun har virkelig mange jern i ilden.",
-                hint: "لديه العديد من المشاريع في وقت واحد"
-            },
-            {
-                id: 3,
-                term: "Å tråkke i salaten",
-                category: "idiomer",
-                definition: "Å gjøre eller si noe flaut, dumt eller klønete som sårer eller fornærmer noen.",
-                example: "Jeg spurte om hvordan det gikk med kjæresten hans rett etter at de hadde gjort det slutt – der tråkket jeg virkelig i salaten!",
-                hint: "ارتكاب خطأ محرج أو غير لبق"
-            },
-            {
-                id: 4,
-                term: "Å ta noe med en klype salt",
-                category: "idiomer",
-                definition: "Å ikke tro helt uskritisk på det noen sier; å være litt skeptisk.",
-                example: "Nyheter i sosiale medier bør man ofte ta med en klype salt.",
-                hint: "أخذ الأمر مع بعض الشك"
-            },
-            {
-                id: 5,
-                term: "Å stå på bar bakke",
-                category: "idiomer",
-                definition: "Å mangle penger, hus eller ressurser; å være helt uten hjelp eller midler.",
-                example: "Etter at huset brant ned, sto familien overnaturlig nok på bar bakke.",
-                hint: "أن تكون بلا شيء أو بلا دعم"
-            },
-            {
-                id: 6,
-                term: "Å se skogen for bare trær",
-                category: "idiomer",
-                definition: "Å henge seg så mye opp i små detaljer at man mister oversikten over helheten.",
-                example: "Når du rydder hele rommet, må du ikke bruke to timer på én skuff – da ser du ikke skogen for bare trær.",
-                hint: "التركيز على التفاصيل ونسيان الصورة الكبيرة"
-            },
-            {
-                id: 8,
-                term: "Årsak og virkning",
-                category: "fagspråk",
-                definition: "Sammenhengen mellom hvorfor noe skjer (årsak) og hva som blir resultatet av det (virkning).",
-                example: "Læreren ba oss forklare årsak og virkning til utbruddet av første verdenskrig.",
-                hint: "السبب والنتيجة (Cause and Effect)"
-            },
-            {
-                id: 11,
-                term: "Hensiktsmessig",
-                category: "nyanser",
-                definition: "Noe som er smart, praktisk eller egnet for å nå et bestemt mål.",
-                example: "Det er mer hensiktsmessig å lage en timeplan hvis du har mye lekser.",
-                hint: "مناسب أو ملائم للهدف"
-            },
-            {
-                id: 12,
-                term: "Motstridende",
-                category: "nyanser",
-                definition: "Informasjon eller påstander som ikke passer sammen eller som motsier hverandre.",
-                example: "Avisene ga motstridende opplysninger om hva som egentlig hadde skjedd.",
-                hint: "متناقض أو متعارض"
-            },
-            {
-                id: 14,
-                term: "Å drøfte",
-                category: "fagspråk",
-                definition: "Å belyse en sak fra flere sider ved å trekke fram både argumenter for og imot før man konkluderer.",
-                example: "I samfunnsfagsoppgaven skal vi drøfte fordeler og ulemper med sosiale medier.",
-                hint: "مناقشة الموضوع من عدة جوانب"
-            },
-            {
-                id: 15,
-                term: "Å sammenligne",
-                category: "fagspråk",
-                definition: "Å peke på hva som er likt og hva som er forskjellig mellom to eller flere ting.",
-                example: "Teksten ber oss sammenligne levekår i Norge og i utlandet.",
-                hint: "مقارنة الأشياء ببعضها"
-            },
-            {
-                id: 16,
-                term: "Å begrunne",
-                category: "fagspråk",
-                definition: "Å forklare hvorfor man mener noe, ved å gi årsaker eller argumenter.",
-                example: "Du må begrunne svaret ditt slik at lærer skjønner hvorfor du valgte alternativ B.",
-                hint: "توضيح الأسباب أو التعليل"
-            },
-            {
-                id: 17,
-                term: "Å redegjøre",
-                category: "fagspråk",
-                definition: "Å gi en grundig og klar forklaring eller fremstilling av et tema uten å ta personlig stilling.",
-                example: "Eleven måtte redegjøre for årsakene til første verdenskrig.",
-                hint: "شرح أو توضيح مفصل"
-            },
-            {
-                id: 18,
-                term: "Å vurdere",
-                category: "fagspråk",
-                definition: "Å undersøke og tenke nøye over noe for å gi en dom eller konklusjon.",
-                example: "Vi må vurdere om tiltaket har hatt den effekten vi ønsket.",
-                hint: "تقييم أو تقدير الأمر"
-            },
-            {
-                id: 19,
-                term: "Å definere",
-                category: "fagspråk",
-                definition: "Å forklare nøyaktig hva et ord eller et begrep betyr.",
-                example: "Kan du definere hva demokrati betyr med egne ord?",
-                hint: "تحديد أو تعريف المعنى"
-            },
-            {
-                id: 20,
-                term: "Å konkludere",
-                category: "fagspråk",
-                definition: "Å komme fram til et endelig resultat eller oppsummering til slutt.",
-                example: "Etter å ha sett på tallene, kan vi konkludere med at salget har økt.",
-                hint: "الاستنتاج أو الخروج بنتيجة"
-            },
-            {
-                id: 21,
-                term: "Å analysere",
-                category: "fagspråk",
-                definition: "Å dele opp en tekst eller et fenomén i mindre deler for å undersøke hvordan delene henger sammen.",
-                example: "I norsktimen skal vi analysere et dikt skrevet av Ibsen.",
-                hint: "تحليل النص أو المفهوم"
-            },
-            {
-                id: 22,
-                term: "Å tolke",
-                category: "fagspråk",
-                definition: "Å finne en dypere mening eller forståelse i noe, for eksempel en tekst, et bilde eller et kunstverk.",
-                example: "Hvordan vil du tolke budskapet i denne novellen?",
-                hint: "تفسير المعنى الضمني"
-            },
-            {
-                id: 23,
-                term: "Å reflektere",
-                category: "fagspråk",
-                definition: "Å tenke nøye igjennom og bruke egne erfaringer eller kunnskap til å forstå noe bedre.",
-                example: "I loggen skal du reflektere over hva du har lært i dag.",
-                hint: "التفكير العميق والـتأمل"
-            },
-            {
-                id: 24,
-                term: "Å illustrere",
-                category: "fagspråk",
-                definition: "Å gjøre noe tydeligere ved hjelp av eksempler, tegninger eller tabeller.",
-                example: "Læreren brukte et diagram for å illustrere utviklingen.",
-                hint: "توضيح بالأمثلة أو الرسم"
-            },
-            {
-                id: 25,
-                term: "Å utdype",
-                category: "fagspråk",
-                definition: "Å forklare noe mer detaljert slik at informasjonen blir fullstendig.",
-                example: "Kan du utdype det du sa om hvorfor problemet oppstod?",
-                hint: "التوسع أو التعمق في الشرح"
-            },
-            {
-                id: 26,
-                term: "Å oppsummere",
-                category: "fagspråk",
-                definition: "Å kort gi de viktigste punktene i en tekst eller en samtale.",
-                example: "Til slutt vil jeg oppsummere de tre viktigste poengene.",
-                hint: "تلخيص النقاط الرئيسية"
-            },
-            {
-                id: 27,
-                term: "Å påstå",
-                category: "fagspråk",
-                definition: "Å si at noe er fakta, ofte uten at man har bevist det ennå.",
-                example: "Forskerne påstår at søvn påvirker karakterene våre.",
-                hint: "ادعاء أو زعم شيء"
-            },
-            {
-                id: 28,
-                term: "Et argument",
-                category: "samfunn",
-                definition: "En begrunnelse eller et poeng som skal støtte eller minke støtten til en påstand.",
-                example: "Hun kom med et veldig godt argument for hvorfor vi bør kildesortere.",
-                hint: "حجة أو دليل"
-            },
-            {
-                id: 29,
-                term: "Kildekritikk",
-                category: "fagspråk",
-                definition: "Å undersøke om informasjonen man finner er til å stole på og hvem som står bak den.",
-                example: "Vi må bruke kildekritikk når vi søker etter nyheter på internett.",
-                hint: "نقد المصادر والتحقق منها"
-            },
-            {
-                id: 30,
-                term: "Plagiat",
-                category: "skole",
-                definition: "Å kopiere andres tekst eller ideer uten å oppgi kilden, slik at det ser ut som ditt eget arbeid.",
-                example: "Å kopiere rett fra Wikipedia regnes som plagiat på skolen.",
-                hint: "السرقة الأدبية أو النسخ"
-            },
-            {
-                id: 31,
-                term: "En hypotese",
-                category: "fagspråk",
-                definition: "En antakelse eller kvalifisert gjetning om noe som man må teste for å se om stemmer.",
-                example: "I naturfag leste vi at en hypotese må kunne testes gjennom forsøk.",
-                hint: "فرضية علمية قابل للتجربة"
-            },
-            {
-                id: 32,
-                term: "Et begrep",
-                category: "fagspråk",
-                definition: "Et ord som uttrykker en bestemt idé eller et faglig konsept.",
-                example: "Demokrati er et sentralt begrep i samfunnsfag.",
-                hint: "مفهوم أو مصطلح"
-            },
-            {
-                id: 33,
-                term: "En konsekvens",
-                category: "samfunn",
-                definition: "Noe som skjer som en følge eller et resultat av en tidligere handling.",
-                example: "En konsekvens av for lite søvn kan være dårlig konsentrasjon.",
-                hint: "نتيجة أو عاقبة"
-            },
-            {
-                id: 34,
-                term: "En kontekst",
-                category: "fagspråk",
-                definition: "Sammenhengen et ord, en situasjon eller en hendelse står i.",
-                example: "Det er lettere å forstå ordet når du ser det i en kontekst.",
-                hint: "سياق الكلام أو الظروف"
-            },
-            {
-                id: 35,
-                term: "Relevant",
-                category: "fagspråk",
-                definition: "Noe som har betydning for saken, eller som hører til temaet.",
-                example: "Du må bare bruke informasjon som er relevant for oppgaven.",
-                hint: "ذو صلة بالموضوع"
-            },
-            {
-                id: 36,
-                term: "Å påvirke",
-                category: "hverdag",
-                definition: "Å ha en effekt på hvordan noen tenker, føler eller hvordan noe utvikler seg.",
-                example: "Reklame kan påvirke hva slags klær vi kjøper.",
-                hint: "التأثير على شيء"
-            },
-            {
-                id: 37,
-                term: "Rettighet",
-                category: "samfunn",
-                definition: "Noe du har juridisk eller moralsk krav på å gjøre, ha eller få.",
-                example: "Alle barn har rettighet til utdanning ifølge FN.",
-                hint: "حق من الحقوق"
-            },
-            {
-                id: 38,
-                term: "Plikt",
-                category: "samfunn",
-                definition: "Noe du må eller er forpliktet til å gjøre ifølge regler eller lover.",
-                example: "Det er vår plikt å følge reglene i samfunnet.",
-                hint: "واجب أو التزام"
-            },
-            {
-                id: 39,
-                term: "Årsak",
-                category: "fagspråk",
-                definition: "Grunnen til at noe skjer.",
-                example: "Tung snø var årsaken til at bussen ble forsinket.",
-                hint: "سبب وقوع الشيء"
-            },
-            {
-                id: 40,
-                term: "Virkning",
-                category: "fagspråk",
-                definition: "Effekten eller resultatet av en årsak.",
-                example: "Medisinen hadde god virkning mot smertene.",
-                hint: "تأثير أو نتيجة"
-            },
-            {
-                id: 41,
-                term: "Holdning",
-                category: "samfunn",
-                definition: "En personlig mening, oppfatning eller måte å se verden på over tid.",
-                example: "Han har en positiv holdning til å lære nye språk.",
-                hint: "موقف أو اتجاه فكري"
-            },
-            {
-                id: 42,
-                term: "Klima",
-                category: "samfunn",
-                definition: "Gjennomsnittlig vær over lang tid, eller miljøet/stemningen i en gruppe.",
-                example: "Det var et godt arbeidsmiljø og klima i klassen.",
-                hint: "مناخ أو جو عام"
-            },
-            {
-                id: 43,
-                term: "Ressurs",
-                category: "samfunn",
-                definition: "Noe man har eller kan bruke til å skape verdi eller løse et problem (f.eks. penger, tid, olje eller kunnskap).",
-                example: "Tid er en viktig ressurs når man skal forberede seg til eksamen.",
-                hint: "مصدر أو مورد"
-            },
-            {
-                id: 44,
-                term: "Å publisere",
-                category: "medier",
-                definition: "Å gjøre en tekst, bilde eller fil tilgjengelig for offentligheten.",
-                example: "Avisa valgte å publisere artikkelen på nett.",
-                hint: "نشر للملأ"
-            },
-            {
-                id: 45,
-                term: "Kritisk",
-                category: "fagspråk",
-                definition: "Å ikke godta ting uten videre, men undersøke grundig om det er sant eller riktig.",
-                example: "Det er viktig å ha et kritisk blikk på nyheter i sosiale medier.",
-                hint: "تفكر نقدي"
-            },
-            {
-                id: 46,
-                term: "Struktur",
-                category: "fagspråk",
-                definition: "Oppbygningen, organiseringen eller rekkefølgen av deler i en tekst eller helhet.",
-                example: "Teksten har en god struktur med innledning, hoveddel og avslutning.",
-                hint: "بنية أو هيكلية"
-            },
-            {
-                id: 47,
-                term: "Å formulere",
-                category: "fagspråk",
-                definition: "Å uttrykke en tanke eller en mening med ord, skriftlig eller muntlig.",
-                example: "Prøv å formulere spørsmålet ditt på en så tydelig måte som mulig.",
-                hint: "صياغة الجملة أو Fكرة"
-            },
-            {
-                id: 48,
-                term: "Mangfold",
-                category: "samfunn",
-                definition: "Et stort variasjonsområde eller sammensetning av mange forskjellige typer, f.eks. kulturelt mangfold.",
-                example: "Skolen feirer mangfoldet blant sine elever.",
-                hint: "التنوع أو التعددية"
-            },
-            {
-                id: 49,
-                term: "Minoritet",
-                category: "samfunn",
-                definition: "En gruppe utgjør en mindre del av en befolkning eller samling.",
-                example: "Sammene er en urfolksminoritet i Norge.",
-                hint: "أقلية عددية"
-            },
-            {
-                id: 50,
-                term: "Majoritet",
-                category: "samfunn",
-                definition: "Flertallet i en gruppe eller befolkning (mer enn halvparten).",
-                example: "Majoriteten av elevene stemte for å ha temadag.",
-                hint: "أغلبية عددية"
-            },
-            {
-                id: 51,
-                term: "Bærekraftig",
-                category: "samfunn",
-                definition: "Noe som oppfyller dagens behov uten å ødelegge for fremtidige generasjoner.",
-                example: "Vi må finne mer bærekraftige måter å bruke energi på.",
-                hint: "استدامة"
-            },
-            {
-                id: 52,
-                term: "Å motbevise",
-                category: "fagspråk",
-                definition: "Å vise med fakta eller eksperimenter at en påstand er feil.",
-                example: "Forskeren klarte å motbevise den gamle teorien.",
-                hint: "دحض أو إثبات عكس الشيء"
-            },
-            {
-                id: 53,
-                term: "Objektiv",
-                category: "fagspråk",
-                definition: "Nøytral og basert på fakta uten å bli påvirket av personlige følelser eller meninger.",
-                example: "En god nyhetsjournalist skal prøve å være objektiv.",
-                hint: "موضوعي وغير انحيازي"
-            },
-            {
-                id: 54,
-                term: "Subjektiv",
-                category: "fagspråk",
-                definition: "Basert på personlige oppfatninger, følelser eller smaksord i stedet for ren fakta.",
-                example: "Hva som er fin musikk er en helt subjektiv mening.",
-                hint: "شخصي أو ذاتي"
-            },
-            {
-                id: 55,
-                term: "Anonym",
-                category: "medier",
-                definition: "Når navnet til personen som sier eller gjør noe holdes hemmelig.",
-                example: "Man kan svare på undersøkelsen og være helt anonym.",
-                hint: "مجهول الهوية"
-            },
-            {
-                id: 56,
-                term: "Å bekrefte",
-                category: "hverdag",
-                definition: "Å si eller vise at noe faktisk stemmer eller er sant.",
-                example: "Politiet kunne bekrefte at ulykken hadde skjedd.",
-                hint: "تأكيد أو إثبات"
-            },
-            {
-                id: 57,
-                term: "En konflikt",
-                category: "samfunn",
-                definition: "En uenighet, strid eller kamp mellom to eller flere parter.",
-                example: "Klassen prøvde å løse konflikten ved å snakke sammen.",
-                hint: "نزاع أو صراع"
-            },
-            {
-                id: 58,
-                term: "Å engasjere seg",
-                category: "samfunn",
-                definition: "Å delta aktivt og bry seg om en sak eller aktivitet.",
-                example: "Mange ungdommer engasjerer seg i miljøsaken.",
-                hint: "المشاركة والاهتمام الفعال"
-            },
-            {
-                id: 59,
-                term: "Å prioritere",
-                category: "hverdag",
-                definition: "Å velge hva som er viktigst og må gjøres først.",
-                example: "Du bør prioritere å gjøre lekser før du spiller dataspill.",
-                hint: "تحديد الأولويات"
-            },
-            {
-                id: 60,
-                term: "Innhold",
-                category: "fagspråk",
-                definition: "Det som finnes inni noe, eller det en tekst eller film handler om.",
-                example: "Artikkelen har et veldig nyttig innhold.",
-                hint: "المحتوى"
-            },
-            {
-                id: 61,
-                term: "Format",
-                category: "fagspråk",
-                definition: "Formen, størrelsen eller oppsettet på et dokument, bilde eller fil.",
-                example: "Du må levere oppgaven i PDF-format.",
-                hint: "تنسيق أو صيغة"
-            },
-            {
-                id: 62,
-                term: "Målgruppe",
-                category: "medier",
-                definition: "Den bestemte gruppen med mennesker som en tekst, film eller reklame er laget for.",
-                example: "Ungdommer mellom 13 og 18 år er målgruppen for denne appen.",
-                hint: "الجمهور المستهدف"
-            },
-            {
-                id: 63,
-                term: "Å inkludere",
-                category: "samfunn",
-                definition: "Å ta med noen eller noe inn i et fellesskap eller en helhet.",
-                example: "Det er viktig å inkludere alle i leken i friminuttet.",
-                hint: "إدماج أو إشراك"
-            }
+            // ==================== BEGYNNERORD (A1) - 50 ORD ====================
+            { id: 101, term: "Hei", category: "begynner", definition: "Et ord vi sier når vi møter noen.", example: "Hei! Hvordan går det?", hint: "مرحبا" },
+            { id: 102, term: "Ja", category: "begynner", definition: "Betyr at noe stemmer eller at du er enig.", example: "Ja, jeg liker fotball.", hint: "نعم" },
+            { id: 103, term: "Nei", category: "begynner", definition: "Betyr det motsatte av ja.", example: "Nei, jeg er ikke trøtt.", hint: "لا" },
+            { id: 104, term: "Takk", category: "begynner", definition: "Et fint ord vi sier når noen gir oss noe eller er snille.", example: "Takk for maten!", hint: "شكرا" },
+            { id: 105, term: "En skule / skole", category: "begynner", definition: "Stedet der barn og ungdom lærer.", example: "Jeg går på skolen hver dag.", hint: "مدرسة" },
+            { id: 106, term: "En elev", category: "begynner", definition: "En person som går på skolen.", example: "Det er 20 elever i klassen.", hint: "تلميذ / طالب" },
+            { id: 107, term: "En lærer", category: "begynner", definition: "En person som jobber med å lære bort ting på skolen.", example: "Læreren hjelper meg med norsk.", hint: "معلم / مدرس" },
+            { id: 108, term: "En bok", category: "begynner", definition: "Noe med ark og skrift som vi kan lese i.", example: "Jeg leser en spennende bok.", hint: "كتاب" },
+            { id: 109, term: "En penn", category: "begynner", definition: "Noe vi bruker til å skrive med.", example: "Jeg skriver med en blå penn.", hint: "قلم" },
+            { id: 110, term: "En stol", category: "begynner", definition: "Et møbel vi sitter på.", example: "Sitt på stolen din.", hint: "كرسي" },
+            { id: 111, term: "Et bord", category: "begynner", definition: "Et møbel vi legger bøkene eller maten på.", example: "Boken ligger på bordet.", hint: "طاولة" },
+            { id: 112, term: "Å spise", category: "begynner", definition: "Å putte mat i munnen og svelge.", example: "Vi skal spise lunsj nå.", hint: "يأكل" },
+            { id: 113, term: "Å drikke", category: "begynner", definition: "Å få i seg væske som vann eller melk.", example: "Jeg vil drikke litt vann.", hint: "يشرب" },
+            { id: 114, term: "Vann", category: "begynner", definition: "Væske vi må drikke for å leve.", example: "Kan jeg få et glass vann?", hint: "ماء" },
+            { id: 115, term: "Mat", category: "begynner", definition: "Det vi spiser når vi er sulte.", example: "Maten smaker veldig godt.", hint: "طعام" },
+            { id: 116, term: "Å se", category: "begynner", definition: "Å bruke øynene til å kikke på noe.", example: "Jeg kan se en fugl ute.", hint: "يرى / ينظر" },
+            { id: 117, term: "Å høre", category: "begynner", definition: "Å oppfatte lyd med ørene.", example: "Hører du at det ringer?", hint: "يسمع" },
+            { id: 118, term: "Stor", category: "begynner", definition: "Noe som tar mye plass; det motsatte av liten.", example: "Elefanten er et stort dyr.", hint: "كبير" },
+            { id: 119, term: "Liten", category: "begynner", definition: "Noe som tar lite plass; det motsatte av stor.", example: "Musa er veldig liten.", hint: "صغير" },
+            { id: 120, term: "Gutt", category: "begynner", definition: "Et barn som er hankjønn.", example: "Gutten spiler fotball.", hint: "ولد" },
+            { id: 121, term: "Jente", category: "begynner", definition: "Et barn som er hunkjønn.", example: "Jenta tegner en tegning.", hint: "بنت" },
+            { id: 122, term: "Mamma", category: "begynner", definition: "Et annet ord for mor.", example: "Mamma henter meg på skolen.", hint: "أم" },
+            { id: 123, term: "Pappa", category: "begynner", definition: "Et annet ord for far.", example: "Pappa lager middag i dag.", hint: "أب" },
+            { id: 124, term: "Et hus", category: "begynner", definition: "En bygning der folk bor.", example: "Vi bor i et rødt hus.", hint: "بيت / منزل" },
+            { id: 125, term: "En bil", category: "begynner", definition: "Et kjøretøy med fire hjul som vi kjører på veien.", example: "Han kjører en rød bil.", hint: "سيارة" },
+            { id: 126, term: "Dag", category: "begynner", definition: "Tiden fra solen står opp til den går ned.", example: "Ha en fin dag!", hint: "يوم" },
+            { id: 127, term: "Natt", category: "begynner", definition: "Tiden da det er mørkt ute og vi sover.", example: "God natt og sov godt.", hint: "ليلة" },
+            { id: 128, term: "Glad", category: "begynner", definition: "Å føle seg fornøyd og i godt humør.", example: "Jeg blir glad når solen skinner.", hint: "سعيد" },
+            { id: 129, term: "Trøtt", category: "begynner", definition: "Når kroppen trenger å sove.", example: "Jeg er trøtt om kvelden.", hint: "تعبان / نعسان" },
+            { id: 130, term: "Å gå", category: "begynner", definition: "Å flytte seg ved å bruke beina.", example: "Vi skal gå til klasserommet.", hint: "يمشي" },
+            { id: 131, term: "Å komme", category: "begynner", definition: "Å bewege seg mot stedet man er.", example: "Bussen kommer om to minutter.", hint: "يأتي" },
+            { id: 132, term: "Å snakke", category: "begynner", definition: "Å bruke stemmen til å si ord.", example: "Kan du snakke litt sakte?", hint: "يتكلم" },
+            { id: 133, term: "Å skrive", category: "begynner", definition: "Å lage bokstaver og ord med en penn eller på data.", example: "Vi skal skrive i boka.", hint: "يكتب" },
+            { id: 134, term: "Å lese", category: "begynner", definition: "Å se på bokstaver og skjønne hva som står der.", example: "Liker du å lese?", hint: "يقرأ" },
+            { id: 135, term: "Navn", category: "begynner", definition: "Det du kalles for.", example: "Mitt navn er Ali.", hint: "اسم" },
+            { id: 136, term: "Hund", category: "begynner", definition: "Et vanlig kjæledyr som bjeffer.", example: "Hunden løper i hagen.", hint: "كلب" },
+            { id: 137, term: "Katt", category: "begynner", definition: "Et lite kjæledyr som sier mjau.", example: "Katten sover på sofaen.", hint: "قطة" },
+            { id: 138, term: "Sol", category: "begynner", definition: "Den gule stjerna på himmelen som gir lys og varme.", example: "Sola skinner i dag.", hint: "شمس" },
+            { id: 139, term: "Regn", category: "begynner", definition: "Vann som faller fra skyene på himmelen.", example: "Det plasker ned med regn.", hint: "مطر" },
+            { id: 140, term: "Snø", category: "begynner", definition: "Hvit, kald nedbør om vinteren.", example: "Vi kan lage en snømann i snøen.", hint: "ثلج" },
+            { id: 141, term: "Kald", category: "begynner", definition: "Motsatte av varm; lav temperatur.", example: "Det er kaldt ute om vinteren.", hint: "بارد" },
+            { id: 142, term: "Varm", category: "begynner", definition: "Høy temperatur; god og lun.", example: "Maten er god og varm.", hint: "حار / دافئ" },
+            { id: 143, term: "Å sove", category: "begynner", definition: "Å hvile kroppen helt om natten.", example: "Barn må sove mange timer.", hint: "ينام" },
+            { id: 144, term: "En venn", category: "begynner", definition: "En person du liker å være sammen med og stoler på.", example: "Min beste venn heter Jonas.", hint: "صديق" },
+            { id: 145, term: "Å leke", category: "begynner", definition: "Å ha det gøy med spill, leker eller spill i friminuttet.", example: "Elevene vil leke ute.", hint: "يلعب" },
+            { id: 146, term: "Klasserom", category: "begynner", definition: "Rommet på skolen der elever lærer.", example: "Gå inn i klasserommet.", hint: "غرفة الصف" },
+            { id: 147, term: "Friminutt", category: "begynner", definition: "Pause mellom timene på skolen.", example: "I friminuttet kan vi gå ut.", hint: "استراحة مدرسية" },
+            { id: 148, term: "Klokke", category: "begynner", definition: "Noe som viser hva tiden er.", example: "Klokka er ti.", hint: "ساعة" },
+            { id: 149, term: "En tall", category: "begynner", definition: "Tegn for mengde, som 1, 2, 3.", example: "Vi lærer tall i matematikken.", hint: "رقم" },
+            { id: 150, term: "Å sitte", category: "begynner", definition: "Å ha kroppen i hvile på en stol.", example: "Du må sitte på plass din.", hint: "يجلس" },
+
+            // ==================== LETTERE HVERDAGSORD (A2) - 50 ORD ====================
+            { id: 201, term: "Å hjelpe", category: "hverdag_lett", definition: "Å gjøre noe for å gjøre det lettere for noen andre.", example: "Kan du hjelpe meg med denne oppgaven?", hint: "مساعدة" },
+            { id: 202, term: "Å forklare", category: "hverdag_lett", definition: "Å si noe på en måte som gjør at andre skjønner det.", example: "Læreren kan forklare hva ordet betyr.", hint: "شرح" },
+            { id: 203, term: "Å prøve", category: "hverdag_lett", definition: "Å forsøke å gjøre noe selv om det er litt vanskelig.", example: "Jeg skal prøve mitt beste på testen.", hint: "محاولة" },
+            { id: 204, term: "Vanskelig", category: "hverdag_lett", definition: "Noe som ikke er lett å få til.", example: "Dette regnestykket var litt vanskelig.", hint: "صعب" },
+            { id: 205, term: "Enkel", category: "hverdag_lett", definition: "Noe som er lett å skjønne eller gjøre.", example: "Oppgaven var enkel å løse.", hint: "سهل" },
+            { id: 206, term: "Forskjellig", category: "hverdag_lett", definition: "Ikke likt; ulikt hverandre.", example: "Vi har på oss forskjellige farger.", hint: "مختلف" },
+            { id: 207, term: "Lik", category: "hverdag_lett", definition: "Helt nesten det samme som noe annet.", example: "Skoene våre er helt like.", hint: "مماثل / متشابه" },
+            { id: 208, term: "Å glemme", category: "hverdag_lett", definition: "Å ikke huske på noe.", example: "Pass på å ikke glemme matpakken din.", hint: "نسيان" },
+            { id: 209, term: "Å huske", category: "hverdag_lett", definition: "Å ta vare på en tanke eller minne i hodet.", example: "Jeg må huske å ta med pennen.", hint: "تذكر" },
+            { id: 210, term: "En feil", category: "hverdag_lett", definition: "Noe som ikke ble helt riktig.", example: "Det gjør ingenting om du gjør en feil.", hint: "خطأ" },
+            { id: 211, term: "Viktig", category: "hverdag_lett", definition: "Noe man må følge godt med på eller bry seg om.", example: "Det er viktig å sove nok.", hint: "مهم" },
+            { id: 212, term: "Å starte", category: "hverdag_lett", definition: "Å begynne på noe.", example: "Timen starter klokken åtte.", hint: "يبدأ" },
+            { id: 213, term: "Å slutte", category: "hverdag_lett", definition: "Å være ferdig med noe.", example: "Skolen slutter klokken to.", hint: "ينتهي" },
+            { id: 214, term: "Å finne", category: "hverdag_lett", definition: "Å oppdage hvor noe er hen.", example: "Kan du finne viskelæret ditt?", hint: "يجد" },
+            { id: 215, term: "Å miste", category: "hverdag_lett", definition: "Når du ikke vet hvor tingen din ble av.", example: "Jeg mister alltid pennen min.", hint: "يفقد" },
+            { id: 216, term: "Sikker", category: "hverdag_lett", definition: "Når du er helt trygg på at svaret stemmer.", example: "Er du sikker på at bussen går nå?", hint: "متأكد" },
+            { id: 217, term: "Å spørre", category: "hverdag_lett", definition: "Å si noe for å få et svar fra noen.", example: "Du kan spørre læreren om hjelp.", hint: "يسأل" },
+            { id: 218, term: "Et svar", category: "hverdag_lett", definition: "Det du sier tilbake når noen spør deg.", example: "Det var helt riktig svar!", hint: "إجابة" },
+            { id: 219, term: "En oppgave", category: "hverdag_lett", definition: "Arbeid eller spørsmål du skal gjøre.", example: "Gjør oppgave 3 på side 10.", hint: "تمرين / مهمة" },
+            { id: 220, term: "En gruppe", category: "hverdag_lett", definition: "Flere personer som jobber eller er sammen.", example: "Vi skal jobbe i grupper i dag.", hint: "مجموعة" },
+            { id: 221, term: "Å samarbeide", category: "hverdag_lett", definition: "Å jobbe fint sammen for å klare noe.", example: "Elevene er flinke til å samarbeide.", hint: "يتعاون" },
+            { id: 222, term: "Å lytte", category: "hverdag_lett", definition: "Å følge nøye med på det noen sier.", example: "Du må lytte når andre snakker.", hint: "يستمع" },
+            { id: 223, term: "Forstå", category: "hverdag_lett", definition: "Å skjønne hva noe betyr.", example: "Jeg skjønner hva du mener.", hint: "يفهم" },
+            { id: 224, term: "En regel", category: "hverdag_lett", definition: "Beskjed om hva som er lov og ikke lov.", example: "Klassen har laget klare regler.", hint: "قاعدة" },
+            { id: 225, term: "Et sted", category: "hverdag_lett", definition: "En plass i et rom eller ute.", example: "Dette er et koselig sted.", hint: "مكان" },
+            { id: 226, term: "En tid", category: "hverdag_lett", definition: "Timer, minutter eller et øyeblikk.", example: "Har du tid til å hjelpe meg?", hint: "وقت" },
+            { id: 227, term: "Tidlig", category: "hverdag_lett", definition: "Mye før rute eller før vanlig tid.", example: "Han våkner alltid veldig tidlig.", hint: "مبكراً" },
+            { id: 228, term: "Sent", category: "hverdag_lett", definition: "Langt ut på kvelden eller etter fristen.", example: "Det ble sent før jeg la meg.", hint: "متأخراً" },
+            { id: 229, term: "Å bruke", category: "hverdag_lett", definition: "Å ha nytte av en ting for å gjøre noe.", example: "Vi bruker saks til å klippe.", hint: "يستخدم" },
+            { id: 230, term: "Å hente", category: "hverdag_lett", definition: "Å gå og ta med seg noe tilbake.", example: "Kan du hente boka di?", hint: "يحضر" },
+            { id: 231, term: "Å levere", category: "hverdag_lett", definition: "Å gi fra seg oppgaven til læreren.", example: "Vi må levere arket nå.", hint: "يسلّم" },
+            { id: 232, term: "Ferdig", category: "hverdag_lett", definition: "Når du er helt klar med oppgaven.", example: "Jeg er ferdig med leksene mine.", hint: "منتهي / جاهز" },
+            { id: 233, term: "Neste", category: "hverdag_lett", definition: "Den tingen eller personen som kommer etterpå.", example: "Neste uke skal vi på tur.", hint: "التالي" },
+            { id: 234, term: "Forrige", category: "hverdag_lett", definition: "Den som var rett før denne.", example: "Forrige time hadde vi gym.", hint: "السابق" },
+            { id: 235, term: "Å vise", category: "hverdag_lett", definition: "Å peke på eller la noen se på noe.", example: "Kan du vise meg tegningen din?", hint: "يظهر / يري" },
+            { id: 236, term: "Å fortelle", category: "hverdag_lett", definition: "Å si en historie eller forklare hva som skjedde.", example: "Hun vil fortelle om helgen sin.", hint: "يخبر / يحكي" },
+            { id: 237, term: "Sann", category: "hverdag_lett", definition: "Noe som stemmer helt med virkeligheten.", example: "Historien var helt sann.", hint: "حقيقي / صحيح" },
+            { id: 238, term: "Feil", category: "hverdag_lett", definition: "Noe som ikke er sant eller riktig.", example: "Det var feil svar.", hint: "خاطئ" },
+            { id: 239, term: "Å passe på", category: "hverdag_lett", definition: "Å passe godt på noe så det ikke blir ødelagt.", example: "Du må passe på sakene dine.", hint: "يعتني بـ" },
+            { id: 240, term: "Sint", category: "hverdag_lett", definition: "Følelse når man blir sur eller irritert.", example: "Han ble sint da han mistet ballen.", hint: "غاضب" },
+            { id: 241, term: "Redd", category: "hverdag_lett", definition: "Når man føler frykt for noe.", example: "Er du redd for edderkopper?", hint: "خائف" },
+            { id: 242, term: "Rolig", category: "hverdag_lett", definition: "Å være stille, trygg og uten stress.", example: "Det er rolig i klasserommet.", hint: "هادئ" },
+            { id: 243, term: "Sliten", category: "hverdag_lett", definition: "Når du har lite energi igjen i kroppen.", example: "Jeg er sliten etter treningen.", hint: "مرهق" },
+            { id: 244, term: "En beskjed", category: "hverdag_lett", definition: "Informasjon du får om hva du skal gjøre.", example: "Læreren ga oss en klar beskjed.", hint: "رسالة / تعليمات" },
+            { id: 245, term: "En pause", category: "hverdag_lett", definition: "Kort tid der man stopper å jobbe for å hvile.", example: "Vi tar en ti minutters pause.", hint: "استراحة" },
+            { id: 246, term: "Nødvendig", category: "hverdag_lett", definition: "Noe man må ha eller gjøre.", example: "Det er nødvendig å ha med seg mat.", hint: "ضروري" },
+            { id: 247, term: "Aktivitet", category: "hverdag_lett", definition: "Noe man gjør, f.eks. lek, sport eller læring.", example: "Hvilken aktivitet liker du best?", hint: "نشاط" },
+            { id: 248, term: "Spennende", category: "hverdag_lett", definition: "Noe som er veldig gøy og gjør deg ivrig.", example: "Filmen var veldig spennende.", hint: "مثير" },
+            { id: 249, term: "Sammen", category: "hverdag_lett", definition: "Å være to eller flere folk i lag.", example: "Vi kan gjøre leksene sammen.", hint: "معاً" },
+            { id: 250, term: "Alene", category: "hverdag_lett", definition: "Uten noen andre til stede.", example: "Han sitter alene og leser.", hint: "بمفرده" },
+
+            // ==================== VIDEREKOMMENT / FAGSPRÅK / IDIOMER ====================
+            { id: 1, term: "Å slå to fluer i én smekk", category: "idiomer", definition: "Å oppnå to mål eller løse to oppgaver samtidig med én enkelt handling.", example: "Når jeg sykler til skolen får jeg både mosjon og gratis transport – da slår jeg to fluer i én smekk!", hint: "ضرب عصفورين بحجر" },
+            { id: 2, term: "Å ha mange jern i ilden", category: "idiomer", definition: "Å drive med mange aktiviteter, prosjekter eller oppgaver på samme tid.", example: "Hun spiller fotball, jobber deltid og går på kurs, så hun har virkelig mange jern i ilden.", hint: "لديه العديد من المشاريع في وقت واحد" },
+            { id: 3, term: "Å tråkke i salaten", category: "idiomer", definition: "Å gjøre eller si noe flaut, dumt eller klønete som sårer eller fornærmer noen.", example: "Jeg spurte om hvordan det gikk med kjæresten hans rett etter at de hadde gjort det slutt – der tråkket jeg virkelig i salaten!", hint: "ارتكاب خطأ محرج" },
+            { id: 4, term: "Å ta noe med en klype salt", category: "idiomer", definition: "Å ikke tro helt uskritisk på det noen sier; å være litt skeptisk.", example: "Nyheter i sosiale medier bør man ofte ta med en klype salt.", hint: "أخذ الأمر مع بعض الشك" },
+            { id: 5, term: "Å stå på bar bakke", category: "idiomer", definition: "Å mangle penger, hus eller ressurser; å være helt uten hjelp eller midler.", example: "Etter at huset brant ned, sto familien overnaturlig nok på bar bakke.", hint: "أن تكون بلا شيء أو بلا دعم" },
+            { id: 6, term: "Å se skogen for bare trær", category: "idiomer", definition: "Å henge seg så mye opp i små detaljer at man mister oversikten over helheten.", example: "Når du rydder hele rommet, må du ikke bruke to timer på én skuff – da ser du ikke skogen for bare trær.", hint: "التركيز على التفاصيل ونسيان الصورة الكبيرة" },
+            { id: 8, term: "Årsak og virkning", category: "fagspråk", definition: "Sammenhengen mellom hvorfor noe skjer (årsak) og hva som blir resultatet av det (virkning).", example: "Læreren ba oss forklare årsak og virkning til utbruddet av første verdenskrig.", hint: "السبب والنتيجة" },
+            { id: 11, term: "Hensiktsmessig", category: "nyanser", definition: "Noe som er smart, praktisk eller egnet for å nå et bestemt mål.", example: "Det er mer hensiktsmessig å lage en timeplan hvis du har mye lekser.", hint: "مناسب أو ملائم للهدف" },
+            { id: 12, term: "Motstridende", category: "nyanser", definition: "Informasjon eller påstander som ikke passer sammen eller som motsier hverandre.", example: "Avisene ga motstridende opplysninger om hva som egentlig hadde skjedd.", hint: "متناقض أو متعارض" },
+            { id: 14, term: "Å drøfte", category: "fagspråk", definition: "Å belyse en sak fra flere sider ved å trekke fram både argumenter for og imot før man konkluderer.", example: "I samfunnsfagsoppgaven skal vi drøfte fordeler og ulemper med sosiale medier.", hint: "مناقشة الموضوع من عدة جوانب" },
+            { id: 15, term: "Å sammenligne", category: "fagspråk", definition: "Å peke på hva som er likt og hva som er forskjellig mellom to eller flere ting.", example: "Teksten ber oss sammenligne levekår i Norge og i utlandet.", hint: "مقارنة الأشياء ببعضها" },
+            { id: 16, term: "Å begrunne", category: "fagspråk", definition: "Å forklare hvorfor man mener noe, ved å gi årsaker eller argumenter.", example: "Du må begrunne svaret ditt slik at lærer skjønner hvorfor du valgte alternativ B.", hint: "توضيح الأسباب" },
+            { id: 17, term: "Å redegjøre", category: "fagspråk", definition: "Å gi en grundig og klar forklaring eller fremstilling av et tema uten å ta personlig stilling.", example: "Eleven måtte redegjøre for årsakene til første verdenskrig.", hint: "شرح أو توضيح مفصل" },
+            { id: 18, term: "Å vurdere", category: "fagspråk", definition: "Å undersøke og tenke nøye over noe for å gi en dom eller konklusjon.", example: "Vi må vurdere om tiltaket har hatt den effekten vi ønsket.", hint: "تقييم أو تقدير الأمر" },
+            { id: 19, term: "Å definere", category: "fagspråk", definition: "Å forklare nøyaktig hva et ord eller et begrep betyr.", example: "Kan du definere hva demokrati betyr med egne ord?", hint: "تحديد أو تعريف المعنى" },
+            { id: 20, term: "Å konkludere", category: "fagspråk", definition: "Å komme fram til et endelig resultat eller oppsummering til slutt.", example: "Etter å ha sett på tallene, kan vi konkludere med at salget har økt.", hint: "الاستنتاج أو الخروج بنتيجة" },
+            { id: 21, term: "Å analysere", category: "fagspråk", definition: "Å dele opp en tekst eller et fenomén i mindre deler for å undersøke hvordan delene henger sammen.", example: "I norsktimen skal vi analysere et dikt skrevet av Ibsen.", hint: "تحليل النص" },
+            { id: 22, term: "Å tolke", category: "fagspråk", definition: "Å finne en dypere mening eller forståelse i noe, for eksempel en tekst, et bilde eller et kunstverk.", example: "Hvordan vil du tolke budskapet i denne novellen?", hint: "تفسير المعنى الضمني" },
+            { id: 23, term: "Å reflektere", category: "fagspråk", definition: "Å tenke nøye igjennom og bruke egne erfaringer eller kunnskap til å forstå noe bedre.", example: "I loggen skal du reflektere over hva du har lært i dag.", hint: "التفكير العميق والـتأمل" },
+            { id: 24, term: "Å illustrere", category: "fagspråk", definition: "Å gjøre noe tydeligere ved hjelp av eksempler, tegninger eller tabeller.", example: "Læreren brukte et diagram for å illustrere utviklingen.", hint: "توضيح بالأمثلة أو الرسم" },
+            { id: 25, term: "Å utdype", category: "fagspråk", definition: "Å forklare noe mer detaljert slik at informasjonen blir fullstendig.", example: "Kan du utdype det du sa om hvorfor problemet oppstod?", hint: "التوسع eller التعمق في الشرح" },
+            { id: 26, term: "Å oppsummere", category: "fagspråk", definition: "Å kort gi de viktigste punktene i en tekst eller en samtale.", example: "Til slutt vil jeg oppsummere de tre viktigste poengene.", hint: "تلخيص النقاط الرئيسية" },
+            { id: 27, term: "Å påstå", category: "fagspråk", definition: "Å si at noe er fakta, ofte uten at man har bevist det ennå.", example: "Forskerne påstår at søvn påvirker karakterene våre.", hint: "ادعاء أو زعم شيء" },
+            { id: 28, term: "Et argument", category: "samfunn", definition: "En begrunnelse eller et poeng som skal støtte eller minke støtten til en påstand.", example: "Hun kom med et veldig godt argument for hvorfor vi bør kildesortere.", hint: "حجة أو دليل" },
+            { id: 29, term: "Kildekritikk", category: "fagspråk", definition: "Å undersøke om informasjonen man finner er til å stole på og hvem som står bak den.", example: "Vi må bruke kildekritikk når vi søker etter nyheter på internett.", hint: "نقد المصادر" },
+            { id: 30, term: "Plagiat", category: "skole", definition: "Å kopiere andres tekst eller ideer uten å oppgi kilden, slik at det ser ut som ditt eget arbeid.", example: "Å kopiere rett fra Wikipedia regnes som plagiat på skolen.", hint: "السرقة الأدبية" },
+            { id: 31, term: "En hypotese", category: "fagspråk", definition: "En antakelse eller kvalifisert gjetning om noe som man må teste for å se om stemmer.", example: "I naturfag leste vi at en hypotese må kunne testes gjennom forsøk.", hint: "فرضية علمية" },
+            { id: 32, term: "Et begrep", category: "fagspråk", definition: "Et ord som uttrykker en bestemt idé eller et faglig konsept.", example: "Demokrati er et sentralt begrep i samfunnsfag.", hint: "مفهوم أو مصطلح" },
+            { id: 33, term: "En konsekvens", category: "samfunn", definition: "Noe som skjer som en følge eller et resultat av en tidligere handling.", example: "En konsekvens av for lite søvn kan være dårlig konsentrasjon.", hint: "نتيجة أو عاقبة" },
+            { id: 34, term: "En kontekst", category: "fagspråk", definition: "Sammenhengen et ord, en situasjon eller en hendelse står i.", example: "Det er lettere å forstå ordet når du ser det i en kontekst.", hint: "سياق الكلام" },
+            { id: 35, term: "Relevant", category: "fagspråk", definition: "Noe som har betydning for saken, eller som hører til temaet.", example: "Du må bare bruke informasjon som er relevant for oppgaven.", hint: "ذو صلة بالموضوع" },
+            { id: 36, term: "Å påvirke", category: "samfunn", definition: "Å ha en effekt på hvordan noen tenker, føler eller hvordan noe utvikler seg.", example: "Reklame kan påvirke hva slags klær vi kjøper.", hint: "التأثير على شيء" },
+            { id: 37, term: "Rettighet", category: "samfunn", definition: "Noe du har juridisk eller moralsk krav på å gjøre, ha eller få.", example: "Alle barn har rettighet til utdanning ifølge FN.", hint: "حق من الحقوق" },
+            { id: 38, term: "Plikt", category: "samfunn", definition: "Noe du må eller er forpliktet til å gjøre ifølge regler eller lover.", example: "Det er vår plikt å følge reglene i samfunnet.", hint: "واجب أو التزام" },
+            { id: 39, term: "Årsak", category: "fagspråk", definition: "Grunnen til at noe skjer.", example: "Tung snø var årsaken til at bussen ble forsinket.", hint: "سبب وقوع الشيء" },
+            { id: 40, term: "Virkning", category: "fagspråk", definition: "Effekten eller resultatet av en årsak.", example: "Medisinen hadde god virkning mot smertene.", hint: "تأثير أو نتيجة" },
+            { id: 41, term: "Holdning", category: "samfunn", definition: "En personlig mening, oppfatning eller måte å se verden på over tid.", example: "Han har en positiv holdning til å lære nye språk.", hint: "موقف أو اتجاه فكري" },
+            { id: 42, term: "Klima", category: "samfunn", definition: "Gjennomsnittlig vær over lang tid, eller miljøet/stemningen i en gruppe.", example: "Det var et godt arbeidsmiljø og klima i klassen.", hint: "مناخ أو جو عام" },
+            { id: 43, term: "Ressurs", category: "samfunn", definition: "Noe man har eller kan bruke til å skape verdi eller løse et problem.", example: "Tid er en viktig ressurs når man skal forberede seg til eksamen.", hint: "مصدر أو مورد" },
+            { id: 44, term: "Å publisere", category: "medier", definition: "Å gjøre en tekst, bilde eller fil tilgjengelig for offentligheten.", example: "Avisa valgte å publisere artikkelen på nett.", hint: "نشر للملأ" },
+            { id: 45, term: "Kritisk", category: "fagspråk", definition: "Å ikke godta ting uten videre, men undersøke grundig om det er sant eller riktig.", example: "Det er viktig å ha et kritisk blikk på nyheter i sosiale medier.", hint: "تفكر نقدي" },
+            { id: 46, term: "Struktur", category: "fagspråk", definition: "Oppbygningen, organiseringen eller rekkefølgen av deler i en tekst eller helhet.", example: "Teksten har en god struktur med innledning, hoveddel og avslutning.", hint: "بنية أو هيكلية" },
+            { id: 47, term: "Å formulere", category: "fagspråk", definition: "Å uttrykke en tanke eller en mening med ord, skriftlig eller muntlig.", example: "Prøv å formulere spørsmålet ditt på en så tydelig måte som mulig.", hint: "صياغة الجملة" },
+            { id: 48, term: "Mangfold", category: "samfunn", definition: "Et stort variasjonsområde eller sammensetning av mange forskjellige typer.", example: "Skolen feirer mangfoldet blant sine elever.", hint: "التنوع أو التعددية" },
+            { id: 49, term: "Minoritet", category: "samfunn", definition: "En gruppe utgjør en mindre del av en befolkning eller samling.", example: "Sammene er en urfolksminoritet i Norge.", hint: "أقلية عددية" },
+            { id: 50, term: "Majoritet", category: "samfunn", definition: "Flertallet i en gruppe eller befolkning (mer enn halvparten).", example: "Majoriteten av elevene stemte for å ha temadag.", hint: "أغلبية عددية" },
+            { id: 51, term: "Bærekraftig", category: "samfunn", definition: "Noe som oppfyller dagens behov uten å ødelegge for fremtidige generasjoner.", example: "Vi må finne mer bærekraftige måter å bruke energi på.", hint: "استدامة" },
+            { id: 52, term: "Å motbevise", category: "fagspråk", definition: "Å vise med fakta eller eksperimenter at en påstand er feil.", example: "Forskeren klarte å motbevise den gamle teorien.", hint: "دحض" },
+            { id: 53, term: "Objektiv", category: "fagspråk", definition: "Nøytral og basert på fakta uten å bli påvirket av personlige følelser eller meninger.", example: "En god nyhetsjournalist skal prøve å være objektiv.", hint: "موضوعي" },
+            { id: 54, term: "Subjektiv", category: "fagspråk", definition: "Basert på personlige oppfatninger, følelser eller smaksord i stedet for ren fakta.", example: "Hva som er fin musikk er en helt subjektiv mening.", hint: "شخصي أو ذاتي" },
+            { id: 55, term: "Anonym", category: "medier", definition: "Når navnet til personen som sier eller gjør noe holdes hemmelig.", example: "Man kan svare på undersøkelsen og være helt anonym.", hint: "مجهول الهوية" },
+            { id: 56, term: "Å bekrefte", category: "fagspråk", definition: "Å si eller vise at noe faktisk stemmer eller er sant.", example: "Politiet kunne bekrefte at ulykken hadde skjedd.", hint: "تأكيد أو إثبات" },
+            { id: 57, term: "En konflikt", category: "samfunn", definition: "En uenighet, strid eller kamp mellom to eller flere parter.", example: "Klassen prøvde å løse konflikten ved å snakke sammen.", hint: "نزاع أو صراع" },
+            { id: 58, term: "Å engasjere seg", category: "samfunn", definition: "Å delta aktivt og bry seg om en sak eller aktivitet.", example: "Mange ungdommer engasjerer seg i miljøsaken.", hint: "المشاركة والاهتمام" },
+            { id: 59, term: "Å prioritere", category: "fagspråk", definition: "Å velge hva som er viktigst og må gjøres først.", example: "Du bør prioritere å gjøre lekser før du spiller dataspill.", hint: "تحديد الأولويات" },
+            { id: 60, term: "Innhold", category: "fagspråk", definition: "Det som finnes inni noe, eller det en tekst eller film handler om.", example: "Artikkelen har et veldig nyttig innhold.", hint: "المحتوى" },
+            { id: 61, term: "Format", category: "fagspråk", definition: "Formen, størrelsen eller oppsettet på et dokument, bilde eller fil.", example: "Du må levere oppgaven i PDF-format.", hint: "تنسيق أو صيغة" },
+            { id: 62, term: "Målgruppe", category: "medier", definition: "Den bestemte gruppen med mennesker som en tekst, film eller reklame er laget for.", example: "Ungdommer mellom 13 og 18 år er målgruppen for denne appen.", hint: "الجمهور المستهدف" },
+            { id: 63, term: "Å inkludere", category: "samfunn", definition: "Å ta med noen eller noe inn i et fellesskap eller en helhet.", example: "Det er viktig å inkludere alle i leken i friminuttet.", hint: "إدماج أو إشراك" }
         ];
 
-        // Deduplication helper based on normalized term string
         function deduplicateVocabulary(arr) {
             const seen = new Set();
             return arr.filter(item => {
@@ -928,36 +572,31 @@
             });
         }
 
-        // Category label map
         const categoryLabels = {
-            'alle': 'Alle begreper',
+            'alle': 'Alle ord/begreper',
+            'begynner': 'Begynnerord (A1)',
+            'hverdag_lett': 'Lettere Hverdagsord (A2)',
             'fagspråk': 'Skole & Fagspråk',
             'idiomer': 'Idiomer & Uttrykk',
             'samfunn': 'Samfunn & Kultur',
             'skole': 'Skole & Utdanning',
-            'hverdag': 'Hverdagspråk',
             'medier': 'Medier & Kommunikasjon',
             'nyanser': 'Nyanserte Ord'
         };
 
-        // State variables
         let vocabulary = deduplicateVocabulary(baseVocabulary);
         let currentFilter = 'alle';
         let filteredVocab = [...vocabulary];
         let currentCardIndex = 0;
         let isCardFlipped = false;
-        let quizScore = 0;
 
-        // Initialize state on window load
         window.onload = function() {
             renderCategoryFilterButtons();
             filterCategory('alle');
-            initQuiz();
             initMatchingGame();
             renderWorksheet();
         };
 
-        // Toast notifications
         function showToast(msg, isSuccess = true) {
             const toast = document.getElementById('toast');
             const icon = document.getElementById('toast-icon');
@@ -975,16 +614,20 @@
             }, 3000);
         }
 
-        // Dynamic category filter bar generator
         function renderCategoryFilterButtons() {
             const bar = document.getElementById('category-bar');
-            // Extract available categories from current vocabulary
+            
+            const preferredOrder = ['alle', 'begynner', 'hverdag_lett', 'fagspråk', 'idiomer', 'samfunn', 'medier', 'nyanser'];
             const categoriesInUse = Array.from(new Set(vocabulary.map(v => v.category)));
-            const availableCategories = ['alle', ...categoriesInUse];
+            
+            let sortedCats = preferredOrder.filter(cat => cat === 'alle' || categoriesInUse.includes(cat));
+            categoriesInUse.forEach(cat => {
+                if (!sortedCats.includes(cat)) sortedCats.push(cat);
+            });
 
-            let html = `<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1 flex-shrink-0">Tema:</span>`;
+            let html = `<span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1 flex-shrink-0">Nivå / Tema:</span>`;
 
-            availableCategories.forEach(cat => {
+            sortedCats.forEach(cat => {
                 const label = categoryLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
                 html += `
                     <button onclick="filterCategory('${cat}')" class="cat-btn px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition flex-shrink-0" data-cat="${cat}">
@@ -996,9 +639,8 @@
             bar.innerHTML = html;
         }
 
-        // Navigation between views
         function switchTab(tabName) {
-            ['flashcards', 'quiz', 'matching', 'worksheet'].forEach(tab => {
+            ['flashcards', 'matching', 'worksheet'].forEach(tab => {
                 const view = document.getElementById(`view-${tab}`);
                 const btn = document.getElementById(`tab-${tab}`);
                 if (tab === tabName) {
@@ -1011,7 +653,6 @@
             });
         }
 
-        // Category Filter
         function filterCategory(cat) {
             currentFilter = cat;
             document.querySelectorAll('.cat-btn').forEach(btn => {
@@ -1033,11 +674,10 @@
             renderWorksheet();
         }
 
-        // Flashcard Logic
         function updateFlashcard() {
             if (filteredVocab.length === 0) {
-                document.getElementById('card-term').innerText = "Ingen begreper valgt";
-                document.getElementById('card-definition').innerText = "Velg et annet tema eller legg til et begrep.";
+                document.getElementById('card-term').innerText = "Ingen ord valgt";
+                document.getElementById('card-definition').innerText = "Velg et annet tema eller legg til et nytt ord.";
                 document.getElementById('card-counter').innerText = "0 / 0";
                 return;
             }
@@ -1045,7 +685,6 @@
             const item = filteredVocab[currentCardIndex];
             const cardEl = document.getElementById('flashcard');
             
-            // Unflip first if needed
             if (isCardFlipped) {
                 cardEl.classList.remove('rotate-y-180');
                 isCardFlipped = false;
@@ -1062,14 +701,16 @@
                 const catLabel = categoryLabels[item.category] || item.category;
                 badge.innerText = catLabel;
 
-                if (item.category === 'idiomer') {
+                if (item.category === 'begynner') {
+                    badge.className = 'px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                } else if (item.category === 'hverdag_lett') {
+                    badge.className = 'px-3 py-1 bg-teal-100 text-teal-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                } else if (item.category === 'idiomer') {
                     badge.className = 'px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full uppercase tracking-wider';
                 } else if (item.category === 'fagspråk' || item.category === 'skole') {
                     badge.className = 'px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded-full uppercase tracking-wider';
-                } else if (item.category === 'samfunn') {
-                    badge.className = 'px-3 py-1 bg-sky-100 text-sky-800 text-xs font-semibold rounded-full uppercase tracking-wider';
                 } else {
-                    badge.className = 'px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                    badge.className = 'px-3 py-1 bg-sky-100 text-sky-800 text-xs font-semibold rounded-full uppercase tracking-wider';
                 }
             }, isCardFlipped ? 250 : 0);
         }
@@ -1117,72 +758,6 @@
             }
         }
 
-        // Quiz Logic
-        function initQuiz() {
-            const container = document.getElementById('quiz-container');
-            container.innerHTML = '';
-            quizScore = 0;
-            
-            const quizList = [...filteredVocab].sort(() => Math.random() - 0.5).slice(0, 10);
-            document.getElementById('quiz-score').innerText = `0 / ${quizList.length}`;
-
-            if (quizList.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-500 text-sm">Ingen spørsmål tilgjengelig for dette temaet.</p>`;
-                return;
-            }
-
-            quizList.forEach((item, index) => {
-                const options = generateQuizOptions(item);
-                const qCard = document.createElement('div');
-                qCard.className = "border border-slate-200 p-5 rounded-xl space-y-3 bg-slate-50/50";
-                
-                // Create sentence with smart blanking
-                let sentenceWithBlank = maskTermInSentence(item.term, item.example);
-
-                qCard.innerHTML = `
-                    <div class="flex items-start justify-between">
-                        <span class="text-xs font-bold text-slate-400">Spørsmål ${index + 1}</span>
-                        <span class="text-xs font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded">${categoryLabels[item.category] || item.category}</span>
-                    </div>
-                    <p class="text-sm font-semibold text-slate-800">Fyll inn det utelatte ordet/uttrykket:</p>
-                    <div class="bg-white p-3 rounded-lg border border-slate-200 text-sm italic text-slate-700">"${sentenceWithBlank}"</div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2" id="q-options-${index}">
-                        ${options.map(opt => `
-                            <button onclick="checkQuizAnswer(this, ${opt.id === item.id}, ${index}, ${quizList.length})" class="text-left p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs sm:text-sm font-medium transition">
-                                ${opt.term}
-                            </button>
-                        `).join('')}
-                    </div>
-                `;
-                container.appendChild(qCard);
-            });
-        }
-
-        function generateQuizOptions(correctItem) {
-            let opts = [correctItem];
-            let otherItems = vocabulary.filter(v => v.id !== correctItem.id);
-            otherItems.sort(() => Math.random() - 0.5);
-            for (let i = 0; i < Math.min(3, otherItems.length); i++) {
-                opts.push(otherItems[i]);
-            }
-            return opts.sort(() => Math.random() - 0.5);
-        }
-
-        function checkQuizAnswer(btn, isCorrect, qIndex, totalQuestions) {
-            const optionsGroup = document.getElementById(`q-options-${qIndex}`).querySelectorAll('button');
-            optionsGroup.forEach(b => b.disabled = true);
-
-            if (isCorrect) {
-                btn.className = "text-left p-3 rounded-lg border border-emerald-500 bg-emerald-100 text-emerald-900 font-bold text-xs sm:text-sm";
-                quizScore++;
-            } else {
-                btn.className = "text-left p-3 rounded-lg border border-red-500 bg-red-100 text-red-900 font-bold text-xs sm:text-sm";
-            }
-            document.getElementById('quiz-score').innerText = `${quizScore} / ${totalQuestions}`;
-        }
-
-        // Matching Game Logic
         let selectedTermBtn = null;
         let selectedDefBtn = null;
 
@@ -1197,7 +772,7 @@
             const terms = [...subset].sort(() => Math.random() - 0.5);
             const defs = [...subset].sort(() => Math.random() - 0.5);
 
-            let termsHtml = `<div class="space-y-3"><h3 class="text-xs font-bold text-slate-400 uppercase">Begrep</h3>`;
+            let termsHtml = `<div class="space-y-3"><h3 class="text-xs font-bold text-slate-400 uppercase">Begrep / Ord</h3>`;
             terms.forEach(item => {
                 termsHtml += `
                     <button onclick="selectMatchTerm(this, ${item.id})" class="term-match-btn w-full text-left p-4 bg-white border border-slate-200 hover:border-emerald-400 rounded-xl text-xs sm:text-sm font-bold text-slate-800 shadow-sm transition">
@@ -1241,13 +816,11 @@
         function checkMatchingPair() {
             if (selectedTermBtn && selectedDefBtn) {
                 if (selectedTermBtn.id === selectedDefBtn.id) {
-                    // Success Match
                     selectedTermBtn.btn.className = "w-full text-left p-4 bg-emerald-100 border border-emerald-400 text-emerald-800 rounded-xl text-xs sm:text-sm font-bold opacity-70 cursor-default";
                     selectedDefBtn.btn.className = "w-full text-left p-4 bg-emerald-100 border border-emerald-400 text-emerald-800 rounded-xl text-xs sm:text-sm opacity-70 cursor-default";
                     selectedTermBtn.btn.disabled = true;
                     selectedDefBtn.btn.disabled = true;
                 } else {
-                    // Wrong Match
                     const t = selectedTermBtn.btn;
                     const d = selectedDefBtn.btn;
                     t.classList.add('bg-red-100', 'border-red-400');
@@ -1262,14 +835,12 @@
             }
         }
 
-        // Worksheet Rendering
         function renderWorksheet() {
             const listToUse = filteredVocab.length >= 4 ? filteredVocab : vocabulary;
             const items = [...listToUse].sort(() => Math.random() - 0.5).slice(0, 6);
 
             document.getElementById('worksheet-subtitle').innerText = `Forsterket norskopplæring • Tema: ${categoryLabels[currentFilter] || currentFilter}`;
 
-            // Exercise 1: Matching
             const matchContainer = document.getElementById('worksheet-match-list');
             matchContainer.innerHTML = '';
             
@@ -1291,7 +862,6 @@
             matchColB += `</div>`;
             matchContainer.innerHTML = matchColA + matchColB;
 
-            // Exercise 2: Fill in blanks
             const wordBank = document.getElementById('worksheet-wordbank');
             wordBank.innerText = items.map(i => i.term).join(' • ');
 
@@ -1306,7 +876,6 @@
                 fillContainer.appendChild(li);
             });
 
-            // Fasit
             const fasitContent = document.getElementById('fasit-content');
             let fasitHtml = `<div><strong>Oppgave 1 Fasit:</strong></div><ul class="list-disc list-inside">`;
             items.forEach((item, idx) => {
@@ -1329,12 +898,12 @@
             }
         }
 
-        // Modal Controls
         function openAddWordModal() {
             document.getElementById('add-word-modal').classList.remove('hidden');
         }
 
         function closeAddWordModal() {
+            document.getElementById('add-word-modal').classList.hidden = true;
             document.getElementById('add-word-modal').classList.add('hidden');
             document.getElementById('add-word-form').reset();
         }
@@ -1344,8 +913,8 @@
             const term = document.getElementById('new-term').value.trim();
             const category = document.getElementById('new-cat').value;
             const definition = document.getElementById('new-def').value.trim();
-            const example = document.getElementById('new-ex').value.trim() || `Det er viktig å forstå hva "${term}" betyr.`;
-            const hint = document.getElementById('new-hint').value.trim() || 'Eget tilpasset ord';
+            const example = document.getElementById('new-ex').value.trim() || `Det er fint å lære ordet "${term}".`;
+            const hint = document.getElementById('new-hint').value.trim() || 'Eget ord';
 
             const newObj = {
                 id: Date.now(),
@@ -1361,13 +930,11 @@
 
             renderCategoryFilterButtons();
             filterCategory(currentFilter);
-            initQuiz();
             initMatchingGame();
             closeAddWordModal();
-            showToast(`"${term}" ble lagt til i databasen!`);
+            showToast(`"${term}" ble lagt til!`);
         }
 
-        // JSON EXPORT & IMPORT
         function exportVocabularyJSON() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(vocabulary, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -1392,7 +959,6 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     if (Array.isArray(importedData)) {
-                        // Merge and deduplicate
                         const beforeCount = vocabulary.length;
                         const merged = deduplicateVocabulary([...importedData, ...vocabulary]);
                         const addedCount = merged.length - beforeCount;
@@ -1400,23 +966,22 @@
                         vocabulary = merged;
                         renderCategoryFilterButtons();
                         filterCategory(currentFilter);
-                        initQuiz();
                         initMatchingGame();
 
                         showToast(`Suksess! Importerte ${importedData.length} ord (${addedCount} nye unike).`);
                     } else {
-                        showToast("Feil ved import: JSON-filen må inneholde en liste/array.", false);
+                        showToast("Feil ved import: JSON-filen må være en liste.", false);
                     }
                 } catch (err) {
-                    showToast("Kunne ikke lese JSON-filen. Sjekk formatet.", false);
+                    showToast("Kunne ikke lese JSON-filen.", false);
                 }
             };
             reader.readAsText(file);
-            event.target.value = ''; // Reset input
+            event.target.value = '';
         }
     </script>
 
-    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+    <!-- TILBAKE-KNAPP -->
     <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
         <i class="fa-solid fa-arrow-left"></i>
         <span>Tilbake til Lærerverktøy</span>
