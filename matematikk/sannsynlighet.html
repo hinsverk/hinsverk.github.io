@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sannsynlighetslab - Utforsk & Eksperimenter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for datavisualisering -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        .die {
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        .rolling {
+            animation: rollDie 0.5s ease-in-out;
+        }
+        @keyframes rollDie {
+            0% { transform: rotate(0deg) scale(0.8); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .coin {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease-out;
+        }
+        .coin-flipping {
+            animation: flipCoin 0.8s ease-out forwards;
+        }
+        @keyframes flipCoin {
+            0% { transform: rotateY(0deg) translateY(0); }
+            50% { transform: rotateY(900deg) translateY(-60px); }
+            100% { transform: rotateY(1800deg) translateY(0); }
+        }
+
+        .marble {
+            box-shadow: inset -3px -3px 6px rgba(0,0,0,0.4), inset 3px 3px 6px rgba(255,255,255,0.6);
+            transition: all 0.3s ease;
+        }
+        .marble-draw {
+            animation: popMarble 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popMarble {
+            0% { transform: scale(0) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- App Header -->
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-xl backdrop-blur-md">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Sannsynlighetslab</h1>
+                    <p class="text-indigo-200 text-xs sm:text-sm">Interaktiv utforsking av moduser og store talls lov</p>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <nav class="flex bg-indigo-800/50 p-1 rounded-xl gap-1 border border-indigo-500/30 w-full sm:w-auto">
+                <button onclick="switchTab('dice')" id="tab-dice" class="tab-btn flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-indigo-700 shadow-sm">
+                    🎲 Terning
+                </button>
+                <button onclick="switchTab('coin')" id="tab-coin" class="tab-btn flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-indigo-100 hover:bg-white/10">
+                    🪙 Mynt
+                </button>
+                <button onclick="switchTab('box')" id="tab-box" class="tab-btn flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-indigo-100 hover:bg-white/10">
+                    🔮 Kuler i boks
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Controls & Interactive Area (7 Columns) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- MODE 1: DICE PANEL -->
+            <div id="panel-dice" class="mode-panel bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Modus 1: Terningkast</h2>
+                        <p class="text-sm text-slate-500">Kast manuelt for simulering eller test store talls lov</p>
+                    </div>
+                    <span class="bg-indigo-50 text-indigo-700 font-semibold text-xs px-3 py-1 rounded-full border border-indigo-100">1–5 Terninger</span>
+                </div>
+
+                <!-- Settings Controls -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Antall terninger</label>
+                        <select id="dice-count" onchange="resetDiceStats()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="1" selected>1 Terning (1–6)</option>
+                            <option value="2">2 Terninger (2–12)</option>
+                            <option value="3">3 Terninger (3–18)</option>
+                            <option value="4">4 Terninger (4–24)</option>
+                            <option value="5">5 Terninger (5–30)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Modus type</label>
+                        <div class="flex bg-slate-100 p-1 rounded-xl">
+                            <button onclick="setExecutionMode('dice', 'manual')" id="dice-mode-manual" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition">Visuelt kast</button>
+                            <button onclick="setExecutionMode('dice', 'auto')" id="dice-mode-auto" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 transition">Store talls lov</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Mode Controls -->
+                <div id="dice-manual-controls" class="space-y-6">
+                    <div class="flex justify-center items-center min-h-[160px] bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 gap-4 flex-wrap" id="dice-container">
+                        <!-- Dice elements will be rendered here dynamically -->
+                    </div>
+                    
+                    <button onclick="rollDiceManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-indigo-200 transition duration-150 flex items-center justify-center gap-2">
+                        <span>🎲 Kast terning</span>
+                    </button>
+                </div>
+
+                <!-- Auto Mode Controls (Store Talls Lov) -->
+                <div id="dice-auto-controls" class="space-y-4 hidden">
+                    <div class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4">
+                        <label class="block text-xs font-bold text-indigo-900 mb-2">Velg antall automatiske kast (Store tall)</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="dice-auto-count" value="1000" min="10" max="1000000" class="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-2 font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <button onclick="rollDiceAuto()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl shadow-md transition">Simuler</button>
+                        </div>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="quickAutoDice(100)" class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+100</button>
+                            <button onclick="quickAutoDice(1000)" class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+1 000</button>
+                            <button onclick="quickAutoDice(10000)" class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+10 000</button>
+                            <button onclick="quickAutoDice(100000)" class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+100 000</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE 2: COIN PANEL -->
+            <div id="panel-coin" class="mode-panel bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Modus 2: Mynt og Kron</h2>
+                        <p class="text-sm text-slate-500">Sannsynlighet for mynt (50%) eller kron (50%)</p>
+                    </div>
+                    <span class="bg-amber-50 text-amber-700 font-semibold text-xs px-3 py-1 rounded-full border border-amber-100">1–5 Mynter</span>
+                </div>
+
+                <!-- Settings Controls -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Antall mynter per kast</label>
+                        <select id="coin-count" onchange="resetCoinStats()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="1" selected>1 Mynt (Mynt/Kron)</option>
+                            <option value="2">2 Mynter (Antall Krongunstige)</option>
+                            <option value="3">3 Mynter</option>
+                            <option value="4">4 Mynter</option>
+                            <option value="5">5 Mynter</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Modus type</label>
+                        <div class="flex bg-slate-100 p-1 rounded-xl">
+                            <button onclick="setExecutionMode('coin', 'manual')" id="coin-mode-manual" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-amber-600 transition">Visuelt kast</button>
+                            <button onclick="setExecutionMode('coin', 'auto')" id="coin-mode-auto" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 transition">Store talls lov</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Coin Flip Controls -->
+                <div id="coin-manual-controls" class="space-y-6">
+                    <div class="flex justify-center items-center min-h-[160px] bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 gap-6 flex-wrap" id="coin-container">
+                        <!-- Coins rendered dynamically -->
+                    </div>
+
+                    <button onclick="flipCoinManual()" class="w-full bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-amber-200 transition duration-150 flex items-center justify-center gap-2">
+                        <span>🪙 Kast mynt</span>
+                    </button>
+                </div>
+
+                <!-- Auto Coin Controls -->
+                <div id="coin-auto-controls" class="space-y-4 hidden">
+                    <div class="bg-amber-50/60 border border-amber-100 rounded-xl p-4">
+                        <label class="block text-xs font-bold text-amber-900 mb-2">Velg antall automatiske kast</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="coin-auto-count" value="1000" min="10" max="1000000" class="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-2 font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <button onclick="flipCoinAuto()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-2 rounded-xl shadow-md transition">Simuler</button>
+                        </div>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="quickAutoCoin(100)" class="bg-white border border-amber-200 text-amber-800 hover:bg-amber-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+100</button>
+                            <button onclick="quickAutoCoin(1000)" class="bg-white border border-amber-200 text-amber-800 hover:bg-amber-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+1 000</button>
+                            <button onclick="quickAutoCoin(10000)" class="bg-white border border-amber-200 text-amber-800 hover:bg-amber-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+10 000</button>
+                            <button onclick="quickAutoCoin(100000)" class="bg-white border border-amber-200 text-amber-800 hover:bg-amber-50 text-xs font-bold px-3 py-1.5 rounded-lg transition">+100 000</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE 3: MARBLE BOX PANEL -->
+            <div id="panel-box" class="mode-panel bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Modus 3: Trekke kuler fra boks</h2>
+                        <p class="text-sm text-slate-500">Kulekonfigurasjon og sannsynlighet med/uten tilbakelegging</p>
+                    </div>
+                    <span class="bg-emerald-50 text-emerald-700 font-semibold text-xs px-3 py-1 rounded-full border border-emerald-100">Urnemodell</span>
+                </div>
+
+                <!-- Box Setup Controls -->
+                <div class="space-y-4 mb-6">
+
+                    <!-- High-visibility Replacement Selector -->
+                    <div class="bg-emerald-50/80 border-2 border-emerald-300 p-4 rounded-xl shadow-xs">
+                        <label class="block text-xs font-black uppercase tracking-wider text-emerald-950 mb-2 flex items-center justify-between">
+                            <span>🔄 Velg uttrekksmetode:</span>
+                            <span class="text-[11px] font-semibold text-emerald-800 normal-case">Viktig for sannsynlighetsberegning</span>
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <button type="button" onclick="setReplacementMode(true)" id="btn-replacement-yes" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2.5 border-2 shadow-sm bg-emerald-600 text-white border-emerald-600 cursor-pointer">
+                                <span class="text-lg">🔄</span>
+                                <span class="text-left leading-tight">
+                                    <strong class="block text-sm font-extrabold">Med tilbakelegging</strong>
+                                    <span class="text-[10px] font-medium opacity-90 block">Kulene legges tilbake etter hvert trekk</span>
+                                </span>
+                            </button>
+                            <button type="button" onclick="setReplacementMode(false)" id="btn-replacement-no" class="py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2.5 border-2 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer">
+                                <span class="text-lg">🚫</span>
+                                <span class="text-left leading-tight">
+                                    <strong class="block text-sm font-extrabold">Uten tilbakelegging</strong>
+                                    <span class="text-[10px] font-medium text-slate-500 block">Kulene tas ut av boksen for godt</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-rose-600 mb-1">🔴 Røde kuler</label>
+                            <input type="number" id="count-red" value="4" min="0" max="50" onchange="setupMarbleBox()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-center font-bold text-slate-800">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-600 mb-1">🔵 Blå kuler</label>
+                            <input type="number" id="count-blue" value="4" min="0" max="50" onchange="setupMarbleBox()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-center font-bold text-slate-800">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-emerald-600 mb-1">🟢 Grønne kuler</label>
+                            <input type="number" id="count-green" value="2" min="0" max="50" onchange="setupMarbleBox()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-center font-bold text-slate-800">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-amber-500 mb-1">🟡 Gule kuler</label>
+                            <input type="number" id="count-yellow" value="0" min="0" max="50" onchange="setupMarbleBox()" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-center font-bold text-slate-800">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button onclick="setupMarbleBox()" class="text-xs font-bold text-slate-500 hover:text-slate-800 underline flex items-center gap-1">
+                            <span>🔁 Nullstill kulene i boksen</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Visual Box Stage & Draw Buttons -->
+                <div class="space-y-4">
+                    <div class="relative bg-slate-100 border-2 border-slate-300 rounded-2xl p-4 min-h-[180px] flex flex-col justify-between">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex justify-between">
+                            <span>Boksinnhold (<span id="box-total-count">10</span> kuler igjen)</span>
+                            <span id="replacement-status-badge" class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">Med tilbakelegging</span>
+                        </div>
+                        
+                        <!-- Visual Marbles inside Jar -->
+                        <div id="jar-marbles-container" class="flex flex-wrap gap-2.5 justify-center items-center py-4 max-h-[140px] overflow-y-auto">
+                            <!-- Rendered dynamically -->
+                        </div>
+
+                        <!-- Tray for Drawn Marble -->
+                        <div class="border-t border-slate-200 pt-3 flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-500">Siste uttrekk:</span>
+                            <div id="drawn-marble-display" class="flex items-center gap-2 font-bold text-sm text-slate-700 min-h-[32px]">
+                                <span class="text-slate-400 italic font-normal text-xs">Ingen trukket enda</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button onclick="drawMarbleManual()" id="btn-draw-single" class="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2">
+                            <span>🔮 Trekk 1 kule</span>
+                        </button>
+                        <button onclick="drawMarbleAutoPrompt()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                            <span>⚡ Simuler flere trekk</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Results & Statistics Dashboard (5 Columns) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+
+            <!-- Dynamic Chart Card -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 text-base">Frekvensfordeling</h3>
+                    <span id="total-trials-badge" class="text-xs font-extrabold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full">Totalt kast: 0</span>
+                </div>
+                <div class="relative w-full h-[220px]">
+                    <canvas id="resultsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Frequency & Probability Table -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-slate-800 text-base">Sannsynlighetstabell</h3>
+                        <button onclick="clearCurrentStats()" class="text-xs text-rose-600 hover:text-rose-800 font-bold transition">Nullstill data</button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-slate-400 uppercase tracking-wider">
+                                    <th class="pb-2 font-bold">Utfall</th>
+                                    <th class="pb-2 text-right font-bold">Antall ($f$)</th>
+                                    <th class="pb-2 text-right font-bold">Relativ ($f/n$)</th>
+                                    <th class="pb-2 text-right font-bold">Teoretisk ($P$)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stats-table-body" class="divide-y divide-slate-100 font-semibold text-slate-700">
+                                <!-- Dynamically populated rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Export / Copy Tools for Students -->
+                <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+                    <button onclick="copyTableToClipboard()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 001 2h2a2 2 0 001-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                        <span>Kopier data til Regneark</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Modal Notification System (Replaces alert()) -->
+    <div id="custom-toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 z-50 flex items-center gap-2">
+        <span id="toast-message">Melding sendt</span>
+    </div>
+
+    <script>
+        // Global State
+        let activeTab = 'dice'; // 'dice', 'coin', 'box'
+        let executionModes = { dice: 'manual', coin: 'manual' };
+        
+        // Mode 1: Dice State
+        let diceData = {
+            totalRolls: 0,
+            counts: {} // Key: Sum or Face value
+        };
+
+        // Mode 2: Coin State
+        let coinData = {
+            totalFlips: 0,
+            counts: {} // Key: Number of heads (Kron)
+        };
+
+        // Mode 3: Marble Box State
+        let boxConfig = {
+            red: 4,
+            blue: 4,
+            green: 2,
+            yellow: 0
+        };
+        let boxWithReplacement = true;
+        let currentJar = [];
+        let boxHistory = [];
+        let boxCounts = { 'Rød': 0, 'Blå': 0, 'Grønn': 0, 'Gul': 0 };
+        let boxTotalDraws = 0;
+
+        // Chart Instance
+        let resultsChart = null;
+
+        // Initialize App on Page Load
+        window.onload = function() {
+            initChart();
+            renderDiceContainer();
+            renderCoinContainer();
+            setupMarbleBox();
+            updateAll();
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('custom-toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            
+            // Toggle Tab Buttons Styling
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 text-indigo-100 hover:bg-white/10';
+            });
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.className = 'tab-btn flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-indigo-700 shadow-sm';
+
+            // Show Active Panel
+            document.querySelectorAll('.mode-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+
+            // Update Chart & Table for Selected Tab
+            updateAll();
+        }
+
+        function setExecutionMode(mode, type) {
+            executionModes[mode] = type;
+            const manualBtn = document.getElementById(`${mode}-mode-manual`);
+            const autoBtn = document.getElementById(`${mode}-mode-auto`);
+            const manualControls = document.getElementById(`${mode}-manual-controls`);
+            const autoControls = document.getElementById(`${mode}-auto-controls`);
+
+            const activeColorClass = mode === 'dice' ? 'text-indigo-600' : 'text-amber-600';
+
+            if (type === 'manual') {
+                manualBtn.className = `flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm ${activeColorClass} transition`;
+                autoBtn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 transition';
+                manualControls.classList.remove('hidden');
+                autoControls.classList.add('hidden');
+            } else {
+                autoBtn.className = `flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm ${activeColorClass} transition`;
+                manualBtn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-600 transition';
+                manualControls.classList.add('hidden');
+                autoControls.classList.remove('hidden');
+            }
+        }
+
+        /* ==========================================================================
+           MODE 1: DICE LOGIC & RENDERERS
+           ========================================================================== */
+
+        function renderDiceContainer() {
+            const numDice = parseInt(document.getElementById('dice-count').value);
+            const container = document.getElementById('dice-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numDice; i++) {
+                const dieEl = document.createElement('div');
+                dieEl.id = `die-${i}`;
+                dieEl.className = 'die w-16 h-16 bg-white rounded-2xl border-2 border-slate-200 flex items-center justify-center text-2xl font-black text-indigo-700 select-none';
+                dieEl.innerHTML = renderDieFaceSVG(1);
+                container.appendChild(dieEl);
+            }
+        }
+
+        function renderDieFaceSVG(val) {
+            // Generates standard dice pips (1-6) using SVG grids
+            const dotPositions = {
+                1: [[50, 50]],
+                2: [[25, 25], [75, 75]],
+                3: [[25, 25], [50, 50], [75, 75]],
+                4: [[25, 25], [25, 75], [75, 25], [75, 75]],
+                5: [[25, 25], [25, 75], [50, 50], [75, 25], [75, 75]],
+                6: [[25, 25], [25, 50], [25, 75], [75, 25], [75, 50], [75, 75]]
+            };
+
+            const dots = dotPositions[val] || [];
+            let svgContent = dots.map(d => `<circle cx="${d[0]}" cy="${d[1]}" r="8" fill="#4338ca"/>`).join('');
+
+            return `<svg viewBox="0 0 100 100" class="w-12 h-12">${svgContent}</svg>`;
+        }
+
+        function rollDiceManual() {
+            const numDice = parseInt(document.getElementById('dice-count').value);
+            let sum = 0;
+
+            for (let i = 0; i < numDice; i++) {
+                const dieEl = document.getElementById(`die-${i}`);
+                if (dieEl) {
+                    dieEl.classList.add('rolling');
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    sum += roll;
+                    setTimeout(() => {
+                        dieEl.innerHTML = renderDieFaceSVG(roll);
+                        dieEl.classList.remove('rolling');
+                    }, 300);
+                }
+            }
+
+            setTimeout(() => {
+                recordDiceRoll(sum);
+            }, 300);
+        }
+
+        function rollDiceAuto() {
+            const count = parseInt(document.getElementById('dice-auto-count').value) || 100;
+            const numDice = parseInt(document.getElementById('dice-count').value);
+
+            for (let i = 0; i < count; i++) {
+                let sum = 0;
+                for (let d = 0; d < numDice; d++) {
+                    sum += Math.floor(Math.random() * 6) + 1;
+                }
+                recordDiceRoll(sum, false);
+            }
+            updateAll();
+            showToast(`Simulerte ${count.toLocaleString('no-NO')} kast!`);
+        }
+
+        function quickAutoDice(amount) {
+            document.getElementById('dice-auto-count').value = amount;
+            rollDiceAuto();
+        }
+
+        function recordDiceRoll(sum, triggerUpdate = true) {
+            diceData.totalRolls++;
+            diceData.counts[sum] = (diceData.counts[sum] || 0) + 1;
+            if (triggerUpdate) updateAll();
+        }
+
+        function resetDiceStats() {
+            diceData = { totalRolls: 0, counts: {} };
+            renderDiceContainer();
+            updateAll();
+        }
+
+        /* ==========================================================================
+           MODE 2: COIN LOGIC & RENDERERS
+           ========================================================================== */
+
+        function renderCoinContainer() {
+            const numCoins = parseInt(document.getElementById('coin-count').value);
+            const container = document.getElementById('coin-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numCoins; i++) {
+                const coin = document.createElement('div');
+                coin.id = `coin-${i}`;
+                coin.className = 'coin w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-amber-200 border-2 border-amber-500 shadow-md flex items-center justify-center font-extrabold text-amber-900 text-xs tracking-wider select-none';
+                coin.innerText = 'KRON';
+                container.appendChild(coin);
+            }
+        }
+
+        function flipCoinManual() {
+            const numCoins = parseInt(document.getElementById('coin-count').value);
+            let headsCount = 0; // Kron
+
+            for (let i = 0; i < numCoins; i++) {
+                const coinEl = document.getElementById(`coin-${i}`);
+                if (coinEl) {
+                    coinEl.classList.add('coin-flipping');
+                    const isKron = Math.random() < 0.5;
+                    if (isKron) headsCount++;
+
+                    setTimeout(() => {
+                        coinEl.innerText = isKron ? 'KRON' : 'MYNT';
+                        coinEl.className = isKron 
+                            ? 'coin w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-amber-200 border-2 border-amber-500 shadow-md flex items-center justify-center font-extrabold text-amber-900 text-xs tracking-wider select-none'
+                            : 'coin w-16 h-16 rounded-full bg-gradient-to-tr from-slate-300 to-slate-100 border-2 border-slate-400 shadow-md flex items-center justify-center font-extrabold text-slate-700 text-xs tracking-wider select-none';
+                        coinEl.classList.remove('coin-flipping');
+                    }, 400);
+                }
+            }
+
+            setTimeout(() => {
+                recordCoinFlip(headsCount);
+            }, 450);
+        }
+
+        function flipCoinAuto() {
+            const count = parseInt(document.getElementById('coin-auto-count').value) || 100;
+            const numCoins = parseInt(document.getElementById('coin-count').value);
+
+            for (let i = 0; i < count; i++) {
+                let headsCount = 0;
+                for (let c = 0; c < numCoins; c++) {
+                    if (Math.random() < 0.5) headsCount++;
+                }
+                recordCoinFlip(headsCount, false);
+            }
+            updateAll();
+            showToast(`Simulerte ${count.toLocaleString('no-NO')} myntkast!`);
+        }
+
+        function quickAutoCoin(amount) {
+            document.getElementById('coin-auto-count').value = amount;
+            flipCoinAuto();
+        }
+
+        function recordCoinFlip(headsCount, triggerUpdate = true) {
+            coinData.totalFlips++;
+            const numCoins = parseInt(document.getElementById('coin-count').value);
+            let outcomeKey = numCoins === 1 ? (headsCount === 1 ? 'Kron' : 'Mynt') : `${headsCount} Kron`;
+            coinData.counts[outcomeKey] = (coinData.counts[outcomeKey] || 0) + 1;
+            if (triggerUpdate) updateAll();
+        }
+
+        function resetCoinStats() {
+            coinData = { totalFlips: 0, counts: {} };
+            renderCoinContainer();
+            updateAll();
+        }
+
+        /* ==========================================================================
+           MODE 3: MARBLE BOX LOGIC & RENDERERS
+           ========================================================================== */
+
+        function setupMarbleBox() {
+            boxConfig.red = parseInt(document.getElementById('count-red').value) || 0;
+            boxConfig.blue = parseInt(document.getElementById('count-blue').value) || 0;
+            boxConfig.green = parseInt(document.getElementById('count-green').value) || 0;
+            boxConfig.yellow = parseInt(document.getElementById('count-yellow').value) || 0;
+
+            currentJar = [];
+            for (let i = 0; i < boxConfig.red; i++) currentJar.push('Rød');
+            for (let i = 0; i < boxConfig.blue; i++) currentJar.push('Blå');
+            for (let i = 0; i < boxConfig.green; i++) currentJar.push('Grønn');
+            for (let i = 0; i < boxConfig.yellow; i++) currentJar.push('Gul');
+
+            document.getElementById('box-total-count').innerText = currentJar.length;
+            renderJarMarbles();
+            document.getElementById('drawn-marble-display').innerHTML = '<span class="text-slate-400 italic font-normal text-xs">Ingen trukket enda</span>';
+            
+            // Enable draw button
+            document.getElementById('btn-draw-single').disabled = false;
+            document.getElementById('btn-draw-single').classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function renderJarMarbles() {
+            const container = document.getElementById('jar-marbles-container');
+            container.innerHTML = '';
+
+            const colorClasses = {
+                'Rød': 'bg-rose-500 border-rose-600',
+                'Blå': 'bg-blue-500 border-blue-600',
+                'Grønn': 'bg-emerald-500 border-emerald-600',
+                'Gul': 'bg-amber-400 border-amber-500'
+            };
+
+            currentJar.forEach((color, idx) => {
+                const marble = document.createElement('div');
+                marble.className = `marble w-6 h-6 rounded-full border ${colorClasses[color]} shadow-sm inline-block`;
+                container.appendChild(marble);
+            });
+        }
+
+        function setReplacementMode(withReplacement) {
+            boxWithReplacement = withReplacement;
+            const btnYes = document.getElementById('btn-replacement-yes');
+            const btnNo = document.getElementById('btn-replacement-no');
+            const badge = document.getElementById('replacement-status-badge');
+
+            if (withReplacement) {
+                btnYes.className = "py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2.5 border-2 shadow-sm bg-emerald-600 text-white border-emerald-600 cursor-pointer";
+                btnNo.className = "py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2.5 border-2 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer";
+                if (badge) {
+                    badge.className = "text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]";
+                    badge.innerText = "Med tilbakelegging";
+                }
+                showToast("Metode endret: Med tilbakelegging");
+            } else {
+                btnNo.className = "py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2.5 border-2 shadow-sm bg-amber-600 text-white border-amber-600 cursor-pointer";
+                btnYes.className = "py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2.5 border-2 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer";
+                if (badge) {
+                    badge.className = "text-amber-700 bg-amber-100 px-2 py-0.5 rounded text-[10px]";
+                    badge.innerText = "Uten tilbakelegging";
+                }
+                showToast("Metode endret: Uten tilbakelegging");
+            }
+            setupMarbleBox();
+        }
+
+        function drawMarbleManual() {
+            if (currentJar.length === 0) {
+                showToast("Boksen er tom! Nullstill for å fortsette.");
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * currentJar.length);
+            const drawnColor = currentJar[randomIndex];
+            const withReplacement = boxWithReplacement;
+
+            if (!withReplacement) {
+                currentJar.splice(randomIndex, 1);
+            }
+
+            // Record draw stats
+            boxTotalDraws++;
+            boxCounts[drawnColor] = (boxCounts[drawnColor] || 0) + 1;
+
+            // Render output visual
+            document.getElementById('box-total-count').innerText = currentJar.length;
+            renderJarMarbles();
+
+            const drawnBadge = document.getElementById('drawn-marble-display');
+            const colorBadges = {
+                'Rød': 'bg-rose-100 text-rose-700 border-rose-200',
+                'Blå': 'bg-blue-100 text-blue-700 border-blue-200',
+                'Grønn': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                'Gul': 'bg-amber-100 text-amber-800 border-amber-200'
+            };
+            drawnBadge.innerHTML = `<span class="px-3 py-1 rounded-full border ${colorBadges[drawnColor]} marble-draw flex items-center gap-1.5 font-bold">🔮 ${drawnColor} kule</span>`;
+
+            if (!withReplacement && currentJar.length === 0) {
+                document.getElementById('btn-draw-single').disabled = true;
+                document.getElementById('btn-draw-single').classList.add('opacity-50', 'cursor-not-allowed');
+                showToast("Siste kule i boksen ble trukket!");
+            }
+
+            updateAll();
+        }
+
+        function drawMarbleAutoPrompt() {
+            const withReplacement = boxWithReplacement;
+            
+            if (!withReplacement) {
+                // Auto draw till empty
+                const remaining = currentJar.length;
+                if (remaining === 0) {
+                    showToast("Boksen er allerede tom!");
+                    return;
+                }
+                for (let i = 0; i < remaining; i++) {
+                    drawMarbleManual();
+                }
+                showToast(`Trakk alle de siste ${remaining} kulene.`);
+            } else {
+                // Fast simulation (e.g. 1000 draws)
+                const count = 1000;
+                for (let i = 0; i < count; i++) {
+                    const randomIndex = Math.floor(Math.random() * currentJar.length);
+                    const drawnColor = currentJar[randomIndex];
+                    boxTotalDraws++;
+                    boxCounts[drawnColor] = (boxCounts[drawnColor] || 0) + 1;
+                }
+                updateAll();
+                showToast(`Simulerte ${count.toLocaleString('no-NO')} trekk med tilbakelegging!`);
+            }
+        }
+
+        function resetBoxStats() {
+            boxCounts = { 'Rød': 0, 'Blå': 0, 'Grønn': 0, 'Gul': 0 };
+            boxTotalDraws = 0;
+            setupMarbleBox();
+            updateAll();
+        }
+
+        /* ==========================================================================
+           STATISTICS & CHART VISUALIZATION ENGINE
+           ========================================================================== */
+
+        function initChart() {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            resultsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Observert frekvens',
+                        data: [],
+                        backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Antall: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAll() {
+            if (activeTab === 'dice') updateDiceUI();
+            else if (activeTab === 'coin') updateCoinUI();
+            else if (activeTab === 'box') updateBoxUI();
+        }
+
+        function updateDiceUI() {
+            const numDice = parseInt(document.getElementById('dice-count').value);
+            document.getElementById('total-trials-badge').innerText = `Totalt kast: ${diceData.totalRolls.toLocaleString('no-NO')}`;
+
+            // Generate possible outcomes
+            const minSum = numDice;
+            const maxSum = numDice * 6;
+            let labels = [];
+            let counts = [];
+            let theoreticalProbs = calculateDiceTheoretical(numDice);
+
+            for (let s = minSum; s <= maxSum; s++) {
+                labels.push(`${s}`);
+                counts.push(diceData.counts[s] || 0);
+            }
+
+            updateChart(labels, counts, 'rgba(99, 102, 241, 0.75)', 'rgba(99, 102, 241, 1)');
+            updateTable(labels, counts, diceData.totalRolls, theoreticalProbs);
+        }
+
+        function calculateDiceTheoretical(numDice) {
+            // Calculates theoretical probabilities for sum of N dice
+            let combinations = {};
+            
+            function rollHelper(diceLeft, currentSum) {
+                if (diceLeft === 0) {
+                    combinations[currentSum] = (combinations[currentSum] || 0) + 1;
+                    return;
+                }
+                for (let i = 1; i <= 6; i++) {
+                    rollHelper(diceLeft - 1, currentSum + i);
+                }
+            }
+
+            rollHelper(numDice, 0);
+            const totalCombos = Math.pow(6, numDice);
+            let probs = [];
+
+            for (let s = numDice; s <= numDice * 6; s++) {
+                probs.push((combinations[s] || 0) / totalCombos);
+            }
+            return probs;
+        }
+
+        function updateCoinUI() {
+            const numCoins = parseInt(document.getElementById('coin-count').value);
+            document.getElementById('total-trials-badge').innerText = `Totalt kast: ${coinData.totalFlips.toLocaleString('no-NO')}`;
+
+            let labels = [];
+            let counts = [];
+            let theoreticalProbs = [];
+
+            if (numCoins === 1) {
+                labels = ['Mynt', 'Kron'];
+                counts = [coinData.counts['Mynt'] || 0, coinData.counts['Kron'] || 0];
+                theoreticalProbs = [0.5, 0.5];
+            } else {
+                const totalCombos = Math.pow(2, numCoins);
+                for (let k = 0; k <= numCoins; k++) {
+                    labels.push(`${k} Kron`);
+                    counts.push(coinData.counts[`${k} Kron`] || 0);
+                    // Binomial coefficient nCr(numCoins, k)
+                    const nCr = combinationsCount(numCoins, k);
+                    theoreticalProbs.push(nCr / totalCombos);
+                }
+            }
+
+            updateChart(labels, counts, 'rgba(245, 158, 11, 0.75)', 'rgba(245, 158, 11, 1)');
+            updateTable(labels, counts, coinData.totalFlips, theoreticalProbs);
+        }
+
+        function combinationsCount(n, k) {
+            if (k < 0 || k > n) return 0;
+            if (k === 0 || k === n) return 1;
+            let c = 1;
+            for (let i = 1; i <= k; i++) c = c * (n - i + 1) / i;
+            return c;
+        }
+
+        function updateBoxUI() {
+            document.getElementById('total-trials-badge').innerText = `Totalt trekk: ${boxTotalDraws.toLocaleString('no-NO')}`;
+
+            let labels = ['Rød', 'Blå', 'Grønn', 'Gul'];
+            let counts = [
+                boxCounts['Rød'] || 0,
+                boxCounts['Blå'] || 0,
+                boxCounts['Grønn'] || 0,
+                boxCounts['Gul'] || 0
+            ];
+
+            const totalInBox = boxConfig.red + boxConfig.blue + boxConfig.green + boxConfig.yellow;
+            let theoreticalProbs = totalInBox > 0 ? [
+                boxConfig.red / totalInBox,
+                boxConfig.blue / totalInBox,
+                boxConfig.green / totalInBox,
+                boxConfig.yellow / totalInBox
+            ] : [0, 0, 0, 0];
+
+            updateChart(labels, counts, 'rgba(16, 185, 129, 0.75)', 'rgba(16, 185, 129, 1)');
+            updateTable(labels, counts, boxTotalDraws, theoreticalProbs);
+        }
+
+        function updateChart(labels, data, bgColor, borderColor) {
+            if (!resultsChart) return;
+            resultsChart.data.labels = labels;
+            resultsChart.data.datasets[0].data = data;
+            resultsChart.data.datasets[0].backgroundColor = bgColor;
+            resultsChart.data.datasets[0].borderColor = borderColor;
+            resultsChart.update();
+        }
+
+        function updateTable(labels, counts, total, theoreticalProbs) {
+            const tbody = document.getElementById('stats-table-body');
+            tbody.innerHTML = '';
+
+            labels.forEach((label, idx) => {
+                const count = counts[idx] || 0;
+                const relFreq = total > 0 ? (count / total) : 0;
+                const theoProb = theoreticalProbs[idx] || 0;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2.5 font-bold text-slate-800">${label}</td>
+                    <td class="py-2.5 text-right font-mono">${count.toLocaleString('no-NO')}</td>
+                    <td class="py-2.5 text-right font-mono text-indigo-600">${(relFreq * 100).toFixed(2)}%</td>
+                    <td class="py-2.5 text-right font-mono text-slate-400">${(theoProb * 100).toFixed(2)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearCurrentStats() {
+            if (activeTab === 'dice') resetDiceStats();
+            else if (activeTab === 'coin') resetCoinStats();
+            else if (activeTab === 'box') resetBoxStats();
+            showToast("Statistikk nullstilt");
+        }
+
+        function copyTableToClipboard() {
+            let text = "Utfall\tAntall (f)\tRelativ Frekvens (%)\tTeoretisk Sannsynlighet (%)\n";
+            const rows = document.querySelectorAll('#stats-table-body tr');
+            
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td');
+                if (cols.length >= 4) {
+                    text += `${cols[0].innerText}\t${cols[1].innerText}\t${cols[2].innerText}\t${cols[3].innerText}\n`;
+                }
+            });
+
+            // Clipboard copy fallbacks
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            showToast("Tabell kopiert til utklippstavlen! (Klar for Excel/Word)");
+        }
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
