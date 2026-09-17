@@ -370,9 +370,78 @@
     </div>
 
     <script>
+        // Helper function for regex escaping
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Smart masking function to reliably blank out words even when inflected or formatted differently
+        function maskTermInSentence(term, example) {
+            if (!term || !example) return example || '';
+
+            // 1. Try exact term match
+            let regexExact = new RegExp(escapeRegExp(term), 'gi');
+            if (regexExact.test(example)) {
+                return example.replace(regexExact, '________');
+            }
+
+            // Clean leading infinitives or articles ("å ", "en ", "et ", "ei ")
+            let cleanTerm = term.replace(/^(å|en|et|ei)\s+/i, '').trim();
+
+            // 2. Try clean term match
+            let regexClean = new RegExp(escapeRegExp(cleanTerm), 'gi');
+            if (regexClean.test(example)) {
+                return example.replace(regexClean, '________');
+            }
+
+            // 3. Multi-word phrase/idiom matching (e.g., "slå to fluer i én smekk", "tråkke i salaten")
+            let words = cleanTerm.split(/\s+/);
+            if (words.length > 1) {
+                let firstWordStem = words[0].replace(/(e|en|et|er|et|e)$/i, '');
+                for (let len = words.length - 1; len >= 1; len--) {
+                    let tail = words.slice(words.length - len).join(' ');
+                    if (tail.length >= 3) {
+                        // Look for verb stem + words in-between + tail (e.g., "slår jeg to fluer i én smekk")
+                        let patternWithInBetween = new RegExp('\\b' + escapeRegExp(firstWordStem) + '[a-zæøå]*(\\s+\\w+){0,3}\\s+' + escapeRegExp(tail), 'gi');
+                        if (patternWithInBetween.test(example)) {
+                            return example.replace(patternWithInBetween, '________');
+                        }
+                        
+                        // Look for tail phrase alone
+                        let regexTail = new RegExp(escapeRegExp(tail), 'gi');
+                        if (regexTail.test(example)) {
+                            return example.replace(regexTail, '________');
+                        }
+                    }
+                }
+            }
+
+            // 4. Single-word stem & inflection matching (e.g. "årsak" -> "årsaken", "bærekraftig" -> "bærekraftige")
+            let stem = cleanTerm.replace(/(e|en|et|er|es|ede|ete|ing|ig)?$/i, '');
+            if (stem.length >= 3) {
+                let inflectedRegex = new RegExp('\\b' + escapeRegExp(stem) + '[a-zæøå]*\\b', 'gi');
+                if (inflectedRegex.test(example)) {
+                    return example.replace(inflectedRegex, '________');
+                }
+            }
+
+            // 5. Fallback for custom words: find any significant word (>= 4 chars)
+            for (let w of words) {
+                let wClean = w.replace(/^[^\wæøå]+|[^\wæøå]+$/gi, '');
+                let wStem = wClean.replace(/(e|en|et|er|es|ede|ete|ing|ig)?$/i, '');
+                if (wStem.length >= 3) {
+                    let fallbackRegex = new RegExp('\\b' + escapeRegExp(wStem) + '[a-zæøå]*\\b', 'gi');
+                    if (fallbackRegex.test(example)) {
+                        return example.replace(fallbackRegex, '________');
+                    }
+                }
+            }
+
+            return example;
+        }
+
         // Expanded initial vocabulary merged and deduplicated
         const baseVocabulary = [
-            // Original starter set
             {
                 id: 1,
                 term: "Å slå to fluer i én smekk",
@@ -445,8 +514,6 @@
                 example: "Avisene ga motstridende opplysninger om hva som egentlig hadde skjedd.",
                 hint: "متناقض أو متعارض"
             },
-
-            // New JSON imported set (merged and deduplicated)
             {
                 id: 14,
                 term: "Å drøfte",
@@ -1069,8 +1136,8 @@
                 const qCard = document.createElement('div');
                 qCard.className = "border border-slate-200 p-5 rounded-xl space-y-3 bg-slate-50/50";
                 
-                // Create sentence with blank
-                let sentenceWithBlank = item.example.replace(new RegExp(escapeRegExp(item.term), 'gi'), '________');
+                // Create sentence with smart blanking
+                let sentenceWithBlank = maskTermInSentence(item.term, item.example);
 
                 qCard.innerHTML = `
                     <div class="flex items-start justify-between">
@@ -1090,10 +1157,6 @@
                 `;
                 container.appendChild(qCard);
             });
-        }
-
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
         function generateQuizOptions(correctItem) {
@@ -1236,7 +1299,7 @@
             fillContainer.innerHTML = '';
             
             items.forEach((item) => {
-                const sentence = item.example.replace(new RegExp(escapeRegExp(item.term), 'gi'), '_______________________');
+                const sentence = maskTermInSentence(item.term, item.example).replace(/________/g, '_______________________');
                 const li = document.createElement('li');
                 li.className = "py-1 text-slate-800";
                 li.innerHTML = `"${sentence}"`;
@@ -1352,10 +1415,11 @@
             event.target.value = ''; // Reset input
         }
     </script>
-  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
+
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+    <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Tilbake til Lærerverktøy</span>
+    </a>
 </body>
 </html>
