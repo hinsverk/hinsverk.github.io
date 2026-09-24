@@ -337,6 +337,36 @@
         <!-- TAB 3: JSON IMPORT / EXPORT                                              -->
         <!-- ========================================================================= -->
         <section id="view-data" class="hidden space-y-6">
+            <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-3xl p-6 shadow-sm space-y-4">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-brands fa-github text-indigo-600 text-xl"></i>
+                            <span>GitHub Gist Auto-Synkronisering</span>
+                        </h3>
+                        <p class="text-xs text-slate-600 mt-1 max-w-2xl">
+                            Koble appen til en GitHub Gist Raw JSON-fil. Appen vil automatisk hente og synkronisere de nyeste oppgavene ved hver oppstart.
+                        </p>
+                    </div>
+                    <span id="gist-status-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        <span id="gist-status-text">Ikke tilkoblet</span>
+                    </span>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">GitHub Gist Raw URL</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="url" id="gist-url-input" placeholder="https://gist.githubusercontent.com/hinsverk/07296a5481d7556177fbb617689de6d6/raw/752b8a7ffe0ec95be9afdec6d9c6abde730b3d5d/gistfile2.json" 
+                            class="flex-grow bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-red">
+                        <button onclick="saveAndSyncGist()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>Synkroniser fra Gist</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
                 <h2 class="text-xl font-bold text-slate-900 font-display mb-1" data-i18n="dataTitle">Eksporter & Importer Oppgaver</h2>
                 <p class="text-slate-500 text-sm mb-6" data-i18n="dataDesc">Lagre oppgavesett som JSON-fil for deling, eller lim inn eksisterende data.</p>
@@ -388,11 +418,9 @@
     </main>
 
     <script>
-        /* =========================================================================
-           GLOBAL STATE & TRANSLATIONS
-           ========================================================================= */
         let currentLang = 'no';
         let currentTab = 'practice';
+        let gistUrl = '';
         
         let tasks = [];
         let currentTaskIdx = 0;
@@ -920,11 +948,110 @@
         function clearAllTasks() {
             tasks = [];
             renderTaskListTable();
+            saveToLocalStorage();
             showToast("Alle oppgaver slettet");
+        }
+
+        async function fetchGistTasks(showNotification = true) {
+            const inputVal = document.getElementById('gist-url-input')?.value.trim();
+            const url = inputVal || gistUrl;
+
+            if (!url) {
+                if (showNotification) showToast("Vennligst oppgi en gyldig GitHub Gist Raw URL");
+                updateGistStatusUI('neutral', 'Ingen URL angitt');
+                return;
+            }
+
+            updateGistStatusUI('syncing', 'Synkroniserer...');
+
+            try {
+                const response = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now());
+                if (!response.ok) throw new Error('HTTP status ' + response.status);
+                const data = await response.json();
+
+                let loadedTasks = null;
+                if (Array.isArray(data)) {
+                    loadedTasks = data;
+                } else if (data && Array.isArray(data.tasks)) {
+                    loadedTasks = data.tasks;
+                }
+
+                if (loadedTasks && loadedTasks.length > 0) {
+                    tasks = loadedTasks;
+                    gistUrl = url;
+                    saveToLocalStorage();
+
+                    if (currentTab === 'practice') loadPracticeTask();
+                    if (currentTab === 'creator') updateCreatorView();
+                    if (currentTab === 'data') updateJSONTextarea();
+                    
+                    updateGistStatusUI('success', 'Synkronisert');
+                    if (showNotification) showToast("Vellykket synkronisert med GitHub Gist!");
+                } else {
+                    updateGistStatusUI('error', 'Ugyldig format');
+                    if (showNotification) showToast("Fant ingen gyldige oppgaver i Gist JSON.");
+                }
+            } catch (err) {
+                console.warn("Feil ved henting fra Gist:", err);
+                updateGistStatusUI('error', 'Kunne ikke kobles til');
+                if (showNotification) showToast("Feil ved synkronisering. Bruker lokal cache.");
+            }
+        }
+
+        function saveAndSyncGist() {
+            const urlInput = document.getElementById('gist-url-input');
+            if (urlInput) {
+                gistUrl = urlInput.value.trim();
+                saveToLocalStorage();
+            }
+            fetchGistTasks(true);
+        }
+
+        function updateGistStatusUI(status, text) {
+            const badge = document.getElementById('gist-status-badge');
+            const statusText = document.getElementById('gist-status-text');
+            if (!badge || !statusText) return;
+
+            statusText.textContent = text;
+
+            if (status === 'syncing') {
+                badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200";
+            } else if (status === 'success') {
+                badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200";
+            } else if (status === 'error') {
+                badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200";
+            } else {
+                badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200";
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('klokke_tasks', JSON.stringify(tasks));
+                if (gistUrl) localStorage.setItem('klokke_gist_url', gistUrl);
+            } catch (e) {
+                console.error("Feil ved lagring til localStorage", e);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const savedTasks = localStorage.getItem('klokke_tasks');
+                if (savedTasks) {
+                    tasks = JSON.parse(savedTasks);
+                }
+                const savedGist = localStorage.getItem('klokke_gist_url');
+                if (savedGist) {
+                    gistUrl = savedGist;
+                }
+            } catch (e) {
+                console.error("Feil ved lesing fra localStorage", e);
+            }
         }
 
         function generateStandardSet() {
             tasks = getDefaultTasks();
+            saveToLocalStorage();
             updateCreatorView();
             showToast("Standardsett generert!");
         }
@@ -999,6 +1126,7 @@
                 const parsed = JSON.parse(val);
                 if (Array.isArray(parsed)) {
                     tasks = parsed;
+                    saveToLocalStorage();
                     showToast("Oppgaver oppdatert!");
                 } else {
                     showToast("JSON må være en liste med oppgaver!");
@@ -1008,57 +1136,20 @@
             }
         }
 
-        function playAudioTone(isSuccess) {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+        window.onload = async function() {
+            loadFromLocalStorage();
 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                if (isSuccess) {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.3);
-                } else {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(220, ctx.currentTime);
-                    osc.frequency.setValueAtTime(180, ctx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.25);
-                }
-            } catch (e) {
-                // Audio fallback
-            }
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-message');
-            toastMsg.textContent = msg;
-
-            toast.classList.remove('hidden', 'translate-y-10', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-10', 'opacity-0');
-                setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 2500);
-        }
-
-        window.onload = function() {
             setupClockFace('practice-clock', 'clock-ticks', 'clock-numbers');
             setupClockFace('creator-clock', 'creator-clock-ticks', 'creator-clock-numbers');
 
-            tasks = getDefaultTasks();
+            const urlInput = document.getElementById('gist-url-input');
+            if (urlInput && gistUrl) {
+                urlInput.value = gistUrl;
+            }
+
+            if (tasks.length === 0) {
+                tasks = getDefaultTasks();
+            }
 
             enableClockInteractivity('practice-clock', 'practice-hour-group', 'practice-minute-group', (type, val) => {
                 if (type === 'minute') practiceClockState.minute = val;
@@ -1080,7 +1171,17 @@
 
             setLanguage('no');
             switchTab('practice');
+
+            // Automatisk synkronisering dersom Gist URL finnes
+            if (gistUrl) {
+                await fetchGistTasks(false);
+            }
         };
     </script>
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
 </body>
 </html>
