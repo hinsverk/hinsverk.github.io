@@ -96,6 +96,14 @@
 
     <header class="w-full glass-panel px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-2xl">
         <div class="flex items-center gap-3">
+            <!-- TILBAKE-KNAPP (Inne i menyen) -->
+            <a href="index.html" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 active:scale-95 text-white rounded-xl border border-white/20 shadow-lg backdrop-blur-md transition-all font-sans text-xs font-semibold cursor-pointer">
+                <svg class="w-4 h-4 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                <span>Tilbake til Lærerverktøy</span>
+            </a>
+
             <div class="p-2.5 bg-indigo-600/30 rounded-xl border border-indigo-500/40 text-indigo-400">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -206,7 +214,7 @@
                 </button>
             </div>
 
-            <!-- Team Grid Container (Responsive compact sizing) -->
+            <!-- Team Grid Container -->
             <div id="teamsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                 <!-- Dynamically populated via JS -->
             </div>
@@ -889,14 +897,6 @@
             updateTimerDisplay();
             renderTeams();
         };
-    </script
-      <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
-
-</body>
-</html>
+    </script>
 </body>
 </html>
