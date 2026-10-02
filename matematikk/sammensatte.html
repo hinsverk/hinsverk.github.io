@@ -6,6 +6,8 @@
   <title>SannsynlighetsStudio – Sammensatte Hendelser</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Inter Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,7 +46,7 @@
       transition: all 0.2s ease;
     }
     .tree-node:hover {
-      transform: scale(1.05);
+      transform: scale(1.04);
     }
     .line-path {
       transition: stroke 0.3s ease, stroke-width 0.3s ease;
@@ -70,35 +72,44 @@
 
   <!-- Top Navigation Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2.5 rounded-xl shadow-md">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-          </svg>
-        </div>
-        <div>
-          <h1 class="text-xl font-bold bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent">
-            SannsynlighetsStudio
-          </h1>
-          <p class="text-xs text-slate-500 font-medium">Interaktiv Læringsapp for Sammensatte Hendelser</p>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Left side: Back Button + Title -->
+      <div class="flex items-center space-x-3 overflow-hidden">
+        <a href="index.html" class="inline-flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl border border-slate-700 shadow-sm transition-all font-sans text-xs font-semibold cursor-pointer shrink-0">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span class="hidden sm:inline">Tilbake til Lærerverktøy</span>
+          <span class="sm:hidden">Tilbake</span>
+        </a>
+
+        <div class="h-6 w-px bg-slate-200 hidden sm:block shrink-0"></div>
+
+        <div class="flex items-center space-x-2.5 truncate">
+          <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2 rounded-xl shadow-md shrink-0 hidden md:block">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+          </div>
+          <div class="truncate">
+            <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent truncate">
+              SannsynlighetsStudio
+            </h1>
+            <p class="text-[10px] sm:text-xs text-slate-500 font-medium hidden lg:block">Interaktiv Læringsapp for Sammensatte Hendelser</p>
+          </div>
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <nav class="hidden md:flex space-x-1 bg-slate-100 p-1 rounded-xl text-sm font-medium">
-        <button id="tab-ai" onclick="switchTab('ai')" class="px-4 py-2 rounded-lg transition-colors bg-white text-blue-700 shadow-sm">
-          ✨ AI-Oppgavehjelper
-        </button>
-        <button id="tab-table" onclick="switchTab('table')" class="px-4 py-2 rounded-lg transition-colors text-slate-600 hover:text-slate-900">
+      <!-- Navigation Tabs (Desktop) -->
+      <nav class="hidden md:flex space-x-1 bg-slate-100 p-1 rounded-xl text-xs font-medium shrink-0">
+        <button id="tab-table" onclick="switchTab('table')" class="px-4 py-2 rounded-lg transition-colors bg-white text-blue-700 shadow-sm font-bold">
           📊 Krysstabell
         </button>
-        <button id="tab-tree" onclick="switchTab('tree')" class="px-4 py-2 rounded-lg transition-colors text-slate-600 hover:text-slate-900">
-          🌳 Valgtre (Sannsynlighetstre)
+        <button id="tab-tree" onclick="switchTab('tree')" class="px-4 py-2 rounded-lg transition-colors text-slate-600 hover:text-slate-900 font-medium">
+          🌳 Valgtre (Dynamisk)
         </button>
       </nav>
 
-      <div class="flex items-center space-x-2">
+      <div class="hidden lg:flex items-center space-x-2 shrink-0">
         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
           Matematikk 8-10 / VGS
         </span>
@@ -111,13 +122,10 @@
 
     <!-- Mobile Nav Bar -->
     <div class="flex md:hidden bg-slate-200 p-1 rounded-xl text-xs font-semibold">
-      <button id="mtab-ai" onclick="switchTab('ai')" class="flex-1 py-2 text-center rounded-lg bg-white text-blue-700 shadow-sm">
-        ✨ AI-Hjelp
-      </button>
-      <button id="mtab-table" onclick="switchTab('table')" class="flex-1 py-2 text-center rounded-lg text-slate-700">
+      <button id="mtab-table" onclick="switchTab('table')" class="flex-1 py-2 text-center rounded-lg bg-white text-blue-700 shadow-sm font-bold">
         📊 Tabell
       </button>
-      <button id="mtab-tree" onclick="switchTab('tree')" class="flex-1 py-2 text-center rounded-lg text-slate-700">
+      <button id="mtab-tree" onclick="switchTab('tree')" class="flex-1 py-2 text-center rounded-lg text-slate-700 font-medium">
         🌳 Valgtre
       </button>
     </div>
@@ -129,128 +137,46 @@
         <span class="text-xs text-slate-500">Klikk for å laste ferdig modell</span>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 text-xs">
-        <button onclick="loadPreset('dice_sum')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2">
+        <button onclick="loadPreset('marbles_3')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2 cursor-pointer">
+          <span class="text-lg">🔴🔵🟢</span>
+          <div>
+            <div class="font-semibold text-slate-800">3 Farger Kuler</div>
+            <div class="text-slate-500 text-[11px]">Rød, Blå, Grønn</div>
+          </div>
+        </button>
+        <button onclick="loadPreset('weather_3')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2 cursor-pointer">
+          <span class="text-lg">☀️☁️🌧️</span>
+          <div>
+            <div class="font-semibold text-slate-800">3 Værtyper</div>
+            <div class="text-slate-500 text-[11px]">Sol, Skyet, Regn</div>
+          </div>
+        </button>
+        <button onclick="loadPreset('dice_sum')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2 cursor-pointer">
           <span class="text-lg">🎲🎲</span>
           <div>
             <div class="font-semibold text-slate-800">To terninger</div>
             <div class="text-slate-500 text-[11px]">Sum, differanse</div>
           </div>
         </button>
-        <button onclick="loadPreset('coin_dice')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2">
+        <button onclick="loadPreset('coin_dice')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2 cursor-pointer">
           <span class="text-lg">🪙🎲</span>
           <div>
             <div class="font-semibold text-slate-800">Mynt & Terning</div>
             <div class="text-slate-500 text-[11px]">Kron/Mynt + 1-6</div>
           </div>
         </button>
-        <button onclick="loadPreset('marbles')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2">
-          <span class="text-lg">🔴🔵</span>
+        <button onclick="loadPreset('traffic')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2 cursor-pointer">
+          <span class="text-lg">🚦🚦</span>
           <div>
-            <div class="font-semibold text-slate-800">Kulepose</div>
-            <div class="text-slate-500 text-[11px]">Trekk 2 kuler</div>
-          </div>
-        </button>
-        <button onclick="loadPreset('coins_two')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2">
-          <span class="text-lg">🪙🪙</span>
-          <div>
-            <div class="font-semibold text-slate-800">To myntkast</div>
-            <div class="text-slate-500 text-[11px]">Kron / Mynt</div>
-          </div>
-        </button>
-        <button onclick="loadPreset('weather')" class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-left transition flex items-center space-x-2">
-          <span class="text-lg">🌧️☀️</span>
-          <div>
-            <div class="font-semibold text-slate-800">Værvarsel</div>
-            <div class="text-slate-500 text-[11px]">2 dager på rad</div>
+            <div class="font-semibold text-slate-800">Trafikklys</div>
+            <div class="text-slate-500 text-[11px]">Rødt, Gult, Grønt</div>
           </div>
         </button>
       </div>
     </section>
 
-    <!-- TAB 1: AI Oppgavehjelper -->
-    <div id="view-ai" class="space-y-6">
-      <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="max-w-3xl relative z-10">
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-200 border border-blue-400/30 mb-3">
-            ✨ AI-generert Tabell og Valgtre
-          </span>
-          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
-            Hva ønsker du å finne sannsynligheten for?
-          </h2>
-          <p class="text-blue-100 text-sm mb-6 leading-relaxed">
-            Skriv inn problemstillingen din med helt vanlig tekst. AI-en vil automatisk regne ut utfallsrommet, sette opp krysstabell, bygge valgtre og finne de gunstige utfallene!
-          </p>
-
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" id="ai-prompt-input" 
-              placeholder="f.eks: Jeg kaster to terninger. Hva er sannsynligheten for at summen er minst 9?" 
-              class="flex-1 px-4 py-3.5 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-inner"
-              onkeydown="if(event.key==='Enter') generateAIProblem()">
-            <button onclick="generateAIProblem()" id="ai-generate-btn" 
-              class="px-6 py-3.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center space-x-2">
-              <span>Bygg & Beregn</span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            </button>
-          </div>
-
-          <!-- Suggested Prompts -->
-          <div class="mt-4 flex flex-wrap gap-2 text-xs text-blue-200">
-            <span class="text-blue-300 font-semibold">Prøv disse:</span>
-            <button onclick="setPrompt('Hva er sannsynligheten for å få minst én 6-er når jeg kaster to terninger?')" class="hover:underline text-blue-100">"Minst én 6-er på to terninger"</button> •
-            <button onclick="setPrompt('En pose inneholder 3 røde kuler og 2 blå. Vi trekker to kuler uten tilbakelegging. Hva er sannsynligheten for to røde?')" class="hover:underline text-blue-100">"Kulepose uten tilbakelegging"</button> •
-            <button onclick="setPrompt('Vi kaster en mynt og en terning. Hva er sannsynligheten for Kron og et partall?')" class="hover:underline text-blue-100">"Mynt og terning: Kron + partall"</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div id="ai-loading" class="hidden bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center space-y-3">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
-        <p class="text-sm font-semibold text-slate-700">Analyserer sannsynlighetsproblemet og bygger modellen...</p>
-        <p class="text-xs text-slate-400">Beregner utfallsrom, sannsynlighetsbrøker og trestrukturer</p>
-      </div>
-
-      <!-- AI Result Summary Box -->
-      <div id="ai-result-card" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 hidden">
-        <div class="flex items-start justify-between border-b border-slate-100 pb-4">
-          <div>
-            <span id="ai-res-badge" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800">
-              Beregning fullført
-            </span>
-            <h3 id="ai-res-title" class="text-lg font-bold text-slate-900 mt-1">--</h3>
-            <p id="ai-res-desc" class="text-xs text-slate-500 mt-0.5">--</p>
-          </div>
-          <div class="text-right bg-blue-50 p-3 rounded-xl border border-blue-100">
-            <div class="text-xs text-blue-600 font-medium">Svar / Sannsynlighet</div>
-            <div id="ai-res-prob-main" class="text-2xl font-extrabold text-blue-700">--</div>
-            <div id="ai-res-prob-sub" class="text-xs text-slate-500">--</div>
-          </div>
-        </div>
-
-        <div class="bg-slate-50 rounded-xl p-4 text-xs text-slate-700 space-y-2 border border-slate-200">
-          <div class="font-bold text-slate-800 flex items-center space-y-1">
-            <svg class="w-4 h-4 text-blue-600 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Forklaring & Matematisk Fremgangsmåte:
-          </div>
-          <p id="ai-res-explanation" class="leading-relaxed">--</p>
-        </div>
-
-        <div class="flex flex-wrap gap-3 pt-2">
-          <button onclick="switchTab('table')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
-            <span>Vis i Krysstabell</span>
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-          </button>
-          <button onclick="switchTab('tree')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
-            <span>Vis i Valgtre</span>
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: Krysstabell / Utfallsrom -->
-    <div id="view-table" class="space-y-6 hidden">
+    <!-- TAB 1: Krysstabell / Utfallsrom -->
+    <div id="view-table" class="space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <!-- Left: Controls & Stats -->
@@ -263,23 +189,23 @@
             <!-- Event 1 Inputs -->
             <div class="space-y-2 text-xs">
               <label class="font-semibold text-slate-700 block">Hendelse A (Rader / Horisontal):</label>
-              <input type="text" id="eventA-name" value="Terning 1" class="w-full px-3 py-2 border rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input type="text" id="eventA-name" value="Terning 1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <label class="font-semibold text-slate-500 block">Utfall (kommaseparert):</label>
-              <input type="text" id="eventA-outcomes" value="1, 2, 3, 4, 5, 6" onchange="updateTableFromControls()" class="w-full px-3 py-2 border rounded-lg text-xs font-mono bg-slate-50">
+              <input type="text" id="eventA-outcomes" value="1, 2, 3, 4, 5, 6" onchange="updateTableFromControls()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono bg-slate-50">
             </div>
 
             <!-- Event 2 Inputs -->
             <div class="space-y-2 text-xs">
               <label class="font-semibold text-slate-700 block">Hendelse B (Kolonner / Vertikal):</label>
-              <input type="text" id="eventB-name" value="Terning 2" class="w-full px-3 py-2 border rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input type="text" id="eventB-name" value="Terning 2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <label class="font-semibold text-slate-500 block">Utfall (kommaseparert):</label>
-              <input type="text" id="eventB-outcomes" value="1, 2, 3, 4, 5, 6" onchange="updateTableFromControls()" class="w-full px-3 py-2 border rounded-lg text-xs font-mono bg-slate-50">
+              <input type="text" id="eventB-outcomes" value="1, 2, 3, 4, 5, 6" onchange="updateTableFromControls()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono bg-slate-50">
             </div>
 
             <!-- Mode Selector for Cell Values -->
-            <div class="space-y-2 text-xs pt-2 border-t">
+            <div class="space-y-2 text-xs pt-2 border-t border-slate-200">
               <label class="font-semibold text-slate-700 block">Vis i ruten:</label>
-              <select id="cell-op" onchange="updateTableFromControls()" class="w-full px-3 py-2 border rounded-lg text-xs bg-white font-medium">
+              <select id="cell-op" onchange="updateTableFromControls()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white font-medium">
                 <option value="sum">Sum (A + B)</option>
                 <option value="product">Produkt (A × B)</option>
                 <option value="diff">Differanse (|A - B|)</option>
@@ -288,7 +214,7 @@
               </select>
             </div>
 
-            <button onclick="updateTableFromControls()" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-lg text-xs transition">
+            <button onclick="updateTableFromControls()" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-lg text-xs transition cursor-pointer">
               Oppdater Krysstabell
             </button>
           </div>
@@ -298,52 +224,71 @@
             <h3 class="font-bold text-slate-900 text-sm">🔍 Hurtigmerking / Filtre</h3>
             <p class="text-xs text-slate-500">Merker automatisk ruter som oppfyller kravet:</p>
             <div class="grid grid-cols-2 gap-2 text-xs">
-              <button onclick="filterTable('sum_gt', 7)" class="p-2 border rounded-lg hover:bg-blue-50 text-slate-700 text-left">Sum &gt; 7</button>
-              <button onclick="filterTable('sum_gte', 10)" class="p-2 border rounded-lg hover:bg-blue-50 text-slate-700 text-left">Sum ≥ 10</button>
-              <button onclick="filterTable('even', 0)" class="p-2 border rounded-lg hover:bg-blue-50 text-slate-700 text-left">Partall (Sum)</button>
-              <button onclick="filterTable('equal', 0)" class="p-2 border rounded-lg hover:bg-blue-50 text-slate-700 text-left">Like verdier (A=B)</button>
-              <button onclick="filterTable('contains', '6')" class="p-2 border rounded-lg hover:bg-blue-50 text-slate-700 text-left">Minst én 6-er</button>
-              <button onclick="clearTableSelection()" class="p-2 border border-red-200 bg-red-50 text-red-700 rounded-lg font-semibold text-left">Tøm markering</button>
+              <button onclick="filterTable('sum_gt', 7)" class="p-2 border border-slate-200 rounded-lg hover:bg-blue-50 text-slate-700 text-left transition cursor-pointer">Sum &gt; 7</button>
+              <button onclick="filterTable('sum_gte', 10)" class="p-2 border border-slate-200 rounded-lg hover:bg-blue-50 text-slate-700 text-left transition cursor-pointer">Sum ≥ 10</button>
+              <button onclick="filterTable('even', 0)" class="p-2 border border-slate-200 rounded-lg hover:bg-blue-50 text-slate-700 text-left transition cursor-pointer">Partall (Sum)</button>
+              <button onclick="filterTable('equal', 0)" class="p-2 border border-slate-200 rounded-lg hover:bg-blue-50 text-slate-700 text-left transition cursor-pointer">Like verdier (A=B)</button>
+              <button onclick="filterTable('contains', '6')" class="p-2 border border-slate-200 rounded-lg hover:bg-blue-50 text-slate-700 text-left transition cursor-pointer">Minst én 6-er</button>
+              <button onclick="clearTableSelection()" class="p-2 border border-red-200 bg-red-50 text-red-700 rounded-lg font-semibold text-left transition cursor-pointer">Tøm markering</button>
+            </div>
+
+            <!-- Custom Filter Inputs -->
+            <div class="pt-3 border-t border-slate-200 space-y-2">
+              <label class="font-semibold text-slate-700 block text-xs">✏️ Egendefinert sjekk:</label>
+              <div class="flex space-x-2">
+                <select id="custom-filter-op" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <option value="sum_eq">Sum er lik (=)</option>
+                  <option value="sum_gt">Sum større enn (&gt;)</option>
+                  <option value="sum_lt">Sum mindre enn (&lt;)</option>
+                  <option value="sum_gte">Sum minst (≥)</option>
+                  <option value="sum_lte">Sum høyst (≤)</option>
+                  <option value="prod_eq">Produkt er lik (=)</option>
+                  <option value="contains">Inneholder utfall</option>
+                  <option value="cell_eq">Ruteverdi er lik</option>
+                </select>
+                <input type="text" id="custom-filter-val" placeholder="f.eks. 8" class="w-1/2 px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none" onkeydown="if(event.key==='Enter') applyCustomFilter()">
+              </div>
+              <button onclick="applyCustomFilter()" class="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-filter text-[10px]"></i> Bruk eget filter
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Right: The Interactive Grid Table -->
+        <!-- Right: Matrix Table & Calculated Stats -->
         <div class="lg:col-span-2 space-y-6">
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="font-bold text-slate-900 text-base">Krysstabell over Utfallsrommet</h3>
-                <p class="text-xs text-slate-500">Klikk på enkeltruter i tabellen for å velge dine gunstige utfall manuelt.</p>
-              </div>
-              <span id="selected-count-badge" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
-                0 / 36 ruter valgt
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <h3 class="font-bold text-slate-900 text-sm">📊 Krysstabell / Utfallsrom</h3>
+              <span id="selected-count-badge" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-bold text-xs">
+                0 / 0 ruter valgt
               </span>
             </div>
 
-            <!-- Table Container -->
-            <div class="overflow-x-auto pb-2">
-              <table id="matrix-table" class="min-w-full text-center text-xs font-medium border-collapse">
-                <!-- Dynamically generated -->
+            <!-- Table visual container -->
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table id="matrix-table" class="w-full text-center text-sm border-collapse">
+                <!-- Dynamically filled table -->
               </table>
             </div>
 
-            <!-- Probability Stats Panel -->
-            <div class="bg-gradient-to-r from-slate-900 to-blue-950 text-white rounded-xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <div class="text-slate-400 text-[11px] font-semibold uppercase">Brøk P(A)</div>
-                <div id="stat-fraction" class="text-2xl font-black text-blue-400 mt-1">0 / 36</div>
-                <div id="stat-simplified" class="text-xs text-slate-300">Forkortet: 0</div>
+            <!-- Calculated Stats Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                <div class="text-[10px] uppercase font-bold text-slate-400">Brøk</div>
+                <div id="stat-fraction" class="text-base font-bold text-slate-800 font-mono">0 / 0</div>
               </div>
-              <div>
-                <div class="text-slate-400 text-[11px] font-semibold uppercase">Desimaltall</div>
-                <div id="stat-decimal" class="text-2xl font-black text-emerald-400 mt-1">0,000</div>
-                <div class="text-xs text-slate-300">Avrundet til 3 desimaler</div>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                <div class="text-[10px] uppercase font-bold text-slate-400">Forenklet</div>
+                <div id="stat-simplified" class="text-xs font-semibold text-blue-700 font-mono mt-1">Forkortet: 0</div>
               </div>
-              <div>
-                <div class="text-slate-400 text-[11px] font-semibold uppercase">Prosent</div>
-                <div id="stat-percent" class="text-2xl font-black text-yellow-400 mt-1">0 %</div>
-                <div class="text-xs text-slate-300">Sannsynlighet</div>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                <div class="text-[10px] uppercase font-bold text-slate-400">Desimaltall</div>
+                <div id="stat-decimal" class="text-base font-bold text-slate-800 font-mono">0,000</div>
+              </div>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                <div class="text-[10px] uppercase font-bold text-slate-400">Prosent</div>
+                <div id="stat-percent" class="text-base font-bold text-emerald-600 font-mono">0,0 %</div>
               </div>
             </div>
           </div>
@@ -352,53 +297,85 @@
       </div>
     </div>
 
-    <!-- TAB 3: Valgtre / Sannsynlighetstre -->
+    <!-- TAB 2: Valgtre / Sannsynlighetstre -->
     <div id="view-tree" class="space-y-6 hidden">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-        
-        <!-- Header Controls for Tree -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-200">
           <div>
-            <h3 class="font-bold text-slate-900 text-lg">Sannsynlighetstre (Valgtre)</h3>
-            <p class="text-xs text-slate-500">Visualisering av flertrinnsforsøk med gren-sannsynligheter</p>
+            <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+              <span>🌳 Valgtre (Sannsynlighetstre)</span>
+              <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700">Dynamiske valg</span>
+            </h3>
+            <p class="text-xs text-slate-500">Legg til så mange valg/utfall du vil per trinn, og velg om forsøket er med eller uten tilbakelegging.</p>
           </div>
-
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl text-xs">
-              <button id="tree-mode-with" onclick="setTreeReplacement(true)" class="px-3 py-1.5 rounded-lg bg-white text-blue-700 font-bold shadow-sm">
-                Med tilbakelegging
-              </button>
-              <button id="tree-mode-without" onclick="setTreeReplacement(false)" class="px-3 py-1.5 rounded-lg text-slate-600 font-medium">
-                Uten tilbakelegging
-              </button>
-            </div>
+          
+          <!-- Mode Switcher -->
+          <div class="bg-slate-100 p-1 rounded-xl text-xs font-medium flex space-x-1">
+            <button id="tree-mode-without" onclick="setTreeReplacement(false)" class="px-3 py-1.5 rounded-lg bg-white text-blue-700 font-bold shadow-sm cursor-pointer">
+              Uten tilbakelegging
+            </button>
+            <button id="tree-mode-with" onclick="setTreeReplacement(true)" class="px-3 py-1.5 rounded-lg text-slate-600 font-medium cursor-pointer">
+              Med tilbakelegging
+            </button>
           </div>
         </div>
 
-        <!-- Interactive Setup Panel for Tree -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl text-xs border border-slate-200">
+        <!-- Dynamic Controls Header & Title Editors -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl text-xs border border-slate-200">
           <div>
             <label class="font-bold text-slate-700 block mb-1">Trinn 1 Tittel:</label>
-            <input type="text" id="tree-stage1-title" value="Første trekk / kast" class="w-full p-2 border rounded-lg bg-white font-medium" onchange="renderTree()">
+            <input type="text" id="tree-stage1-title" value="Første trekk / kast" class="w-full p-2 border border-slate-300 rounded-lg bg-white font-medium" oninput="renderTree()">
           </div>
           <div>
             <label class="font-bold text-slate-700 block mb-1">Trinn 2 Tittel:</label>
-            <input type="text" id="tree-stage2-title" value="Andre trekk / kast" class="w-full p-2 border rounded-lg bg-white font-medium" onchange="renderTree()">
+            <input type="text" id="tree-stage2-title" value="Andre trekk / kast" class="w-full p-2 border border-slate-300 rounded-lg bg-white font-medium" oninput="renderTree()">
           </div>
-          <div>
-            <label class="font-bold text-slate-700 block mb-1">Objekter / Antall i posen:</label>
-            <div class="flex space-x-2">
-              <input type="text" id="tree-item-a" value="Rød: 3" class="w-1/2 p-2 border rounded-lg bg-white font-medium" placeholder="F.eks Rød: 3" onchange="renderTree()">
-              <input type="text" id="tree-item-b" value="Blå: 2" class="w-1/2 p-2 border rounded-lg bg-white font-medium" placeholder="F.eks Blå: 2" onchange="renderTree()">
-            </div>
+        </div>
+
+        <!-- Dynamic Outcome Items Editor -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-blue-600"></i>
+              <span>Utfall / Valgmuligheter (Gjelder begge trinn)</span>
+            </h4>
+            <button onclick="addTreeOutcome()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-plus"></i> Legg til valg
+            </button>
+          </div>
+
+          <p class="text-[11px] text-slate-500">
+            Angi navn, antall (vekt) og farge for hver mulighet. Eksempel: Ved kulepose angir du antall kuler av hver farge.
+          </p>
+
+          <!-- List of dynamic outcomes -->
+          <div id="tree-outcomes-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            <!-- Dynamic outcome cards generated by JavaScript -->
           </div>
         </div>
 
         <!-- SVG Tree Visualizer Container -->
-        <div class="bg-slate-900 rounded-2xl p-6 overflow-x-auto min-h-[420px] flex items-center justify-center relative shadow-inner">
-          <svg id="tree-svg" class="w-full min-w-[700px] h-[400px]" viewBox="0 0 800 400">
+        <div class="bg-slate-900 rounded-2xl p-6 overflow-x-auto min-h-[440px] flex flex-col items-center justify-center relative shadow-inner">
+          <svg id="tree-svg" class="w-full min-w-[750px]" style="height: 480px;" viewBox="0 0 850 480">
             <!-- Dynamically rendered SVG tree branches and nodes -->
           </svg>
+        </div>
+
+        <!-- Detailed Breakdown of Leaf Outcomes -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-route text-emerald-600"></i>
+              <span>Fullstendig stioversikt (Utfallsrom)</span>
+            </h4>
+            <span id="tree-total-paths-badge" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[11px]">
+              0 stier
+            </span>
+          </div>
+
+          <div id="tree-paths-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 text-xs">
+            <!-- Path cards dynamically rendered -->
+          </div>
         </div>
 
         <!-- Multi-path calculation breakdown -->
@@ -419,9 +396,9 @@
               <svg class="w-4 h-4 mr-1 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
               Addisjonsregelen (Mellom stier):
             </div>
-            <p class="text-slate-600">Dersom det er flere stier som gir det du ser etter (f.eks "én av hver farge"), legger du sammen sannsynlighetene for disse stiene.</p>
+            <p class="text-slate-600">Dersom det er flere stier som gi samme hendelse (f.eks "minst én rød"), legger du sammen sannsynlighetene for disse stiene.</p>
             <div class="font-mono bg-white p-2.5 rounded-lg border text-emerald-900 font-semibold text-[11px]">
-              P(Minst én rød) = P(Rød, Rød) + P(Rød, Blå) + P(Blå, Rød)
+              P(Total) = P(Sti 1) + P(Sti 2) + ... + P(Sti N)
             </div>
           </div>
         </div>
@@ -435,250 +412,65 @@
   <script>
     // App State
     let currentState = {
-      activeTab: 'ai',
+      activeTab: 'table',
       treeWithReplacement: false,
       eventA: { name: 'Terning 1', outcomes: ['1', '2', '3', '4', '5', '6'] },
       eventB: { name: 'Terning 2', outcomes: ['1', '2', '3', '4', '5', '6'] },
       cellOperation: 'sum',
       selectedCells: new Set(), // Set of "row-col" strings
+      
+      // Dynamic Valgtre Options
       treeData: {
         stage1Title: "Første trekk",
         stage2Title: "Andre trekk",
-        itemA: { name: "Rød", count: 3 },
-        itemB: { name: "Blå", count: 2 }
+        items: [
+          { id: 1, name: "Rød", count: 3, color: "#ef4444" },
+          { id: 2, name: "Blå", count: 2, color: "#3b82f6" },
+          { id: 3, name: "Grønn", count: 2, color: "#10b981" }
+        ]
       }
     };
+
+    // Color palette preset helper for newly added tree items
+    const colorPalette = [
+      "#ef4444", "#3b82f6", "#10b981", "#f59e0b", 
+      "#8b5cf6", "#ec4899", "#14b8a6", "#6366f1"
+    ];
 
     // Tab Switching
     function switchTab(tabId) {
       currentState.activeTab = tabId;
       
-      // Views
-      ['ai', 'table', 'tree'].forEach(t => {
+      ['table', 'tree'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`tab-${t}`);
         const mbtn = document.getElementById(`mtab-${t}`);
         
-        if (t === tabId) {
-          view.classList.remove('hidden');
-          if (btn) {
-            btn.className = "px-4 py-2 rounded-lg transition-colors bg-white text-blue-700 shadow-sm font-bold";
+        if (view) {
+          if (t === tabId) {
+            view.classList.remove('hidden');
+          } else {
+            view.classList.add('hidden');
           }
-          if (mbtn) {
-            mbtn.className = "flex-1 py-2 text-center rounded-lg bg-white text-blue-700 shadow-sm font-bold";
-          }
-        } else {
-          view.classList.add('hidden');
-          if (btn) {
-            btn.className = "px-4 py-2 rounded-lg transition-colors text-slate-600 hover:text-slate-900 font-medium";
-          }
-          if (mbtn) {
-            mbtn.className = "flex-1 py-2 text-center rounded-lg text-slate-700 font-medium";
-          }
+        }
+
+        if (btn) {
+          btn.className = (t === tabId)
+            ? "px-4 py-2 rounded-lg transition-colors bg-white text-blue-700 shadow-sm font-bold"
+            : "px-4 py-2 rounded-lg transition-colors text-slate-600 hover:text-slate-900 font-medium";
+        }
+        if (mbtn) {
+          mbtn.className = (t === tabId)
+            ? "flex-1 py-2 text-center rounded-lg bg-white text-blue-700 shadow-sm font-bold"
+            : "flex-1 py-2 text-center rounded-lg text-slate-700 font-medium";
         }
       });
 
       if (tabId === 'table') {
         renderTable();
       } else if (tabId === 'tree') {
+        renderTreeOutcomesEditor();
         renderTree();
-      }
-    }
-
-    function setPrompt(text) {
-      document.getElementById('ai-prompt-input').value = text;
-      generateAIProblem();
-    }
-
-    // AI Generation Logic using Gemini API
-    async function generateAIProblem() {
-      const promptInput = document.getElementById('ai-prompt-input').value.trim();
-      if (!promptInput) return;
-
-      const loadingEl = document.getElementById('ai-loading');
-      const resultCard = document.getElementById('ai-result-card');
-      const generateBtn = document.getElementById('ai-generate-btn');
-
-      loadingEl.classList.remove('hidden');
-      resultCard.classList.add('hidden');
-      generateBtn.disabled = true;
-
-      const systemPrompt = `Du er en verdensklasse pedagogisk matematikk-assistent spesialisert på sannsynlighet og sammensatte hendelser for norske elever. 
-Analyser brukerens problemstilling om sannsynlighet og returner et strukturert JSON-objekt som spesifiserer utfallsrom, krysstabell, valgtre-verdier og de eksakte resultatene.
-Svarene MÅ være på lettfattelig norsk med klare matematiske forklaringer.`;
-
-      const userQuery = `Analyser følgende sannsynlighetsproblem: "${promptInput}".
-Sett opp:
-1. Hendelse A og B med deres navn og utfallsverdier.
-2. Hva slags relasjon/operasjon ruten i en krysstabell bør ha ("sum", "product", "combine", "diff", eller "match").
-3. Hvilke celler som oppfyller vilkåret.
-4. Valgtre-parametre hvis dette er et flertrinnsforsøk (navn på gjenstander/utfall og om det er med/uten tilbakelegging).
-5. Den eksakte sannsynligheten uttrykt som teller, nevner og forklaring.`;
-
-      const payload = {
-        contents: [{ parts: [{ text: userQuery }] }],
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              title: { type: "STRING" },
-              description: { type: "STRING" },
-              eventA: {
-                type: "OBJECT",
-                properties: {
-                  name: { type: "STRING" },
-                  outcomes: { type: "ARRAY", items: { type: "STRING" } }
-                },
-                required: ["name", "outcomes"]
-              },
-              eventB: {
-                type: "OBJECT",
-                properties: {
-                  name: { type: "STRING" },
-                  outcomes: { type: "ARRAY", items: { type: "STRING" } }
-                },
-                required: ["name", "outcomes"]
-              },
-              operation: { type: "STRING" },
-              favorableCondition: { type: "STRING" },
-              treeSetup: {
-                type: "OBJECT",
-                properties: {
-                  stage1Title: { type: "STRING" },
-                  stage2Title: { type: "STRING" },
-                  itemAName: { type: "STRING" },
-                  itemACount: { type: "NUMBER" },
-                  itemBName: { type: "STRING" },
-                  itemBCount: { type: "NUMBER" },
-                  withReplacement: { type: "BOOLEAN" }
-                }
-              },
-              resultNumerator: { type: "NUMBER" },
-              resultDenominator: { type: "NUMBER" },
-              explanation: { type: "STRING" }
-            },
-            required: ["title", "description", "eventA", "eventB", "operation", "resultNumerator", "resultDenominator", "explanation"]
-          }
-        }
-      };
-
-      try {
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-        
-        let response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          throw new Error(`API response HTTP error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (!jsonText) throw new Error("Tom respons fra AI-modellen");
-
-        const parsed = JSON.parse(jsonText);
-        applyAISolution(parsed);
-
-      } catch (err) {
-        console.warn("API call error or fallback needed:", err);
-        // Fallback local solver if offline or API limit reached
-        applyLocalFallback(promptInput);
-      } finally {
-        loadingEl.classList.add('hidden');
-        resultCard.classList.remove('hidden');
-        generateBtn.disabled = false;
-      }
-    }
-
-    function applyAISolution(data) {
-      document.getElementById('ai-res-title').innerText = data.title || "Sannsynlighetsberegning";
-      document.getElementById('ai-res-desc').innerText = data.description || "";
-      
-      const num = data.resultNumerator;
-      const den = data.resultDenominator;
-      const pct = den > 0 ? ((num / den) * 100).toFixed(1) : "0";
-      
-      document.getElementById('ai-res-prob-main').innerText = `${num} / ${den}`;
-      document.getElementById('ai-res-prob-sub').innerText = `= ${pct}% (${(num/den).toFixed(3)})`;
-      document.getElementById('ai-res-explanation').innerText = data.explanation;
-
-      // Update State
-      if (data.eventA && data.eventA.outcomes) {
-        currentState.eventA = data.eventA;
-        document.getElementById('eventA-name').value = data.eventA.name;
-        document.getElementById('eventA-outcomes').value = data.eventA.outcomes.join(', ');
-      }
-      if (data.eventB && data.eventB.outcomes) {
-        currentState.eventB = data.eventB;
-        document.getElementById('eventB-name').value = data.eventB.name;
-        document.getElementById('eventB-outcomes').value = data.eventB.outcomes.join(', ');
-      }
-      if (data.operation) {
-        currentState.cellOperation = data.operation;
-        document.getElementById('cell-op').value = data.operation;
-      }
-
-      // Configure tree if present
-      if (data.treeSetup) {
-        currentState.treeData.stage1Title = data.treeSetup.stage1Title || "Trinn 1";
-        currentState.treeData.stage2Title = data.treeSetup.stage2Title || "Trinn 2";
-        currentState.treeData.itemA = { name: data.treeSetup.itemAName || "Rød", count: data.treeSetup.itemACount || 3 };
-        currentState.treeData.itemB = { name: data.treeSetup.itemBName || "Blå", count: data.treeSetup.itemBCount || 2 };
-        currentState.treeWithReplacement = !!data.treeSetup.withReplacement;
-
-        document.getElementById('tree-stage1-title').value = currentState.treeData.stage1Title;
-        document.getElementById('tree-stage2-title').value = currentState.treeData.stage2Title;
-        document.getElementById('tree-item-a').value = `${currentState.treeData.itemA.name}: ${currentState.treeData.itemA.count}`;
-        document.getElementById('tree-item-b').value = `${currentState.treeData.itemB.name}: ${currentState.treeData.itemB.count}`;
-        setTreeReplacement(currentState.treeWithReplacement);
-      }
-
-      // Pre-select cells matching condition
-      renderTable();
-      if (data.favorableCondition) {
-        autoSelectCondition(data.favorableCondition);
-      }
-    }
-
-    // Local heuristic fallback solver for common probability questions
-    function applyLocalFallback(prompt) {
-      const p = prompt.toLowerCase();
-      let res = {
-        title: "Beregning av Sannsynlighet",
-        description: "Beregnet basert på standard utfallsrom for sammensatte hendelser.",
-        eventA: { name: "Terning 1", outcomes: ['1', '2', '3', '4', '5', '6'] },
-        eventB: { name: "Terning 2", outcomes: ['1', '2', '3', '4', '5', '6'] },
-        operation: "sum",
-        resultNumerator: 0,
-        resultDenominator: 36,
-        explanation: ""
-      };
-
-      if (p.includes("6") || p.includes("seks")) {
-        res.title = "Minst én 6-er på to terninger";
-        res.resultNumerator = 11;
-        res.explanation = "Det er 36 mulige utfall totalt når to terninger kastes. Utfallene som inneholder minst én 6-er er (6,1)..(6,6) samt (1,6)..(5,6), som utgjør totalt 11 gunstige utfall.";
-        applyAISolution(res);
-        filterTable('contains', '6');
-      } else if (p.includes("sum") || p.includes("9") || p.includes("minst")) {
-        res.title = "Sum av to terninger";
-        res.resultNumerator = 10;
-        res.explanation = "For to terninger er det 36 kombinasjoner. Vi legger sammen verdiene på de to terningene og teller opp de som oppfyller vilkåret.";
-        applyAISolution(res);
-        filterTable('sum_gt', 8);
-      } else {
-        res.title = "To terningskast";
-        res.resultNumerator = 18;
-        res.explanation = "Det sammensatte utfallsrommet består av alle mulige par av utfall fra Hendelse A og Hendelse B.";
-        applyAISolution(res);
-        filterTable('even', 0);
       }
     }
 
@@ -772,11 +564,68 @@ Sett opp:
       renderTable();
     }
 
+    function applyCustomFilter() {
+      const operator = document.getElementById('custom-filter-op').value;
+      const valInput = document.getElementById('custom-filter-val').value.trim();
+      if (!valInput) return;
+
+      const valNum = parseFloat(valInput.replace(',', '.'));
+      currentState.selectedCells.clear();
+
+      const rows = currentState.eventA.outcomes;
+      const cols = currentState.eventB.outcomes;
+
+      rows.forEach((rVal, rIdx) => {
+        cols.forEach((cVal, cIdx) => {
+          const numA = parseFloat(rVal);
+          const numB = parseFloat(cVal);
+          const sum = numA + numB;
+          const prod = numA * numB;
+          const cellId = `${rIdx}-${cIdx}`;
+          const cellVal = calculateCellValue(rVal, cVal, currentState.cellOperation);
+
+          let match = false;
+          switch (operator) {
+            case 'sum_eq':
+              match = !isNaN(sum) && sum === valNum;
+              break;
+            case 'sum_gt':
+              match = !isNaN(sum) && sum > valNum;
+              break;
+            case 'sum_lt':
+              match = !isNaN(sum) && sum < valNum;
+              break;
+            case 'sum_gte':
+              match = !isNaN(sum) && sum >= valNum;
+              break;
+            case 'sum_lte':
+              match = !isNaN(sum) && sum <= valNum;
+              break;
+            case 'prod_eq':
+              match = !isNaN(prod) && prod === valNum;
+              break;
+            case 'contains':
+              match = rVal.toString().toLowerCase() === valInput.toLowerCase() || 
+                      cVal.toString().toLowerCase() === valInput.toLowerCase();
+              break;
+            case 'cell_eq':
+              match = cellVal.toString().toLowerCase() === valInput.toLowerCase();
+              break;
+          }
+
+          if (match) {
+            currentState.selectedCells.add(cellId);
+          }
+        });
+      });
+
+      renderTable();
+    }
+
     function filterTable(type, param) {
       currentState.selectedCells.clear();
       const rows = currentState.eventA.outcomes;
       const cols = currentState.eventB.outcomes;
-      const op = currentState.cellOperation;
 
       rows.forEach((rVal, rIdx) => {
         cols.forEach((cVal, cIdx) => {
@@ -829,102 +678,113 @@ Sett opp:
       pctEl.innerText = `${(decimalVal * 100).toFixed(1).replace('.', ',')} %`;
     }
 
-    // Greatest Common Divisor helper
     function gcd(a, b) {
       return b === 0 ? a : gcd(b, a % b);
     }
 
-    // SVG Probability Tree Rendering
+    // Dynamic Valgtre Options Management
+    function renderTreeOutcomesEditor() {
+      const container = document.getElementById('tree-outcomes-container');
+      if (!container) return;
+
+      container.innerHTML = '';
+      
+      currentState.treeData.items.forEach((item, idx) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = "bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm flex items-center space-x-2 text-xs";
+        itemDiv.innerHTML = `
+          <input type="color" value="${item.color}" onchange="updateTreeOutcome(${item.id}, 'color', this.value)" class="w-6 h-6 rounded cursor-pointer border border-slate-300 p-0 shrink-0">
+          <input type="text" value="${item.name}" placeholder="Navn (f.eks Rød)" oninput="updateTreeOutcome(${item.id}, 'name', this.value)" class="w-full px-2 py-1 border border-slate-300 rounded font-semibold text-slate-800 text-xs">
+          <div class="flex items-center space-x-1 shrink-0">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Antall:</span>
+            <input type="number" min="0" value="${item.count}" oninput="updateTreeOutcome(${item.id}, 'count', parseInt(this.value)||0)" class="w-14 px-1.5 py-1 border border-slate-300 rounded font-mono text-center font-bold text-xs">
+          </div>
+          <button onclick="removeTreeOutcome(${item.id})" class="p-1 text-slate-400 hover:text-red-500 transition shrink-0" title="Fjern valg">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        `;
+        container.appendChild(itemDiv);
+      });
+    }
+
+    function addTreeOutcome() {
+      const nextId = Date.now();
+      const colorIndex = currentState.treeData.items.length % colorPalette.length;
+      currentState.treeData.items.push({
+        id: nextId,
+        name: `Valg ${currentState.treeData.items.length + 1}`,
+        count: 2,
+        color: colorPalette[colorIndex]
+      });
+      renderTreeOutcomesEditor();
+      renderTree();
+    }
+
+    function updateTreeOutcome(id, field, value) {
+      const item = currentState.treeData.items.find(i => i.id === id);
+      if (item) {
+        item[field] = value;
+        renderTree();
+      }
+    }
+
+    function removeTreeOutcome(id) {
+      if (currentState.treeData.items.length <= 1) {
+        alert("Valgtreet må ha minst én mulighet.");
+        return;
+      }
+      currentState.treeData.items = currentState.treeData.items.filter(i => i.id !== id);
+      renderTreeOutcomesEditor();
+      renderTree();
+    }
+
     function setTreeReplacement(val) {
       currentState.treeWithReplacement = val;
       const btnWith = document.getElementById('tree-mode-with');
       const btnWithout = document.getElementById('tree-mode-without');
 
       if (val) {
-        btnWith.className = "px-3 py-1.5 rounded-lg bg-white text-blue-700 font-bold shadow-sm";
-        btnWithout.className = "px-3 py-1.5 rounded-lg text-slate-600 font-medium";
+        btnWith.className = "px-3 py-1.5 rounded-lg bg-white text-blue-700 font-bold shadow-sm cursor-pointer";
+        btnWithout.className = "px-3 py-1.5 rounded-lg text-slate-600 font-medium cursor-pointer";
       } else {
-        btnWithout.className = "px-3 py-1.5 rounded-lg bg-white text-blue-700 font-bold shadow-sm";
-        btnWith.className = "px-3 py-1.5 rounded-lg text-slate-600 font-medium";
+        btnWithout.className = "px-3 py-1.5 rounded-lg bg-white text-blue-700 font-bold shadow-sm cursor-pointer";
+        btnWith.className = "px-3 py-1.5 rounded-lg text-slate-600 font-medium cursor-pointer";
       }
 
       renderTree();
     }
 
-    function parseItemString(str, defaultName, defaultCount) {
-      if (!str) return { name: defaultName, count: defaultCount };
-      const parts = str.split(':');
-      if (parts.length === 2) {
-        const name = parts[0].trim();
-        const cnt = parseInt(parts[1].trim(), 10);
-        return { name: name || defaultName, count: isNaN(cnt) ? defaultCount : cnt };
-      }
-      return { name: str.trim() || defaultName, count: defaultCount };
-    }
-
+    // Dynamic SVG Probability Tree Generator
     function renderTree() {
       const svg = document.getElementById('tree-svg');
+      const pathsContainer = document.getElementById('tree-paths-grid');
       if (!svg) return;
 
-      // Parse user inputs
-      const stage1Title = document.getElementById('tree-stage1-title').value || "Trinn 1";
-      const stage2Title = document.getElementById('tree-stage2-title').value || "Trinn 2";
-      
-      const itemA = parseItemString(document.getElementById('tree-item-a').value, "Rød", 3);
-      const itemB = parseItemString(document.getElementById('tree-item-b').value, "Blå", 2);
-
-      const totalInitial = itemA.count + itemB.count;
+      const stage1Title = document.getElementById('tree-stage1-title')?.value || "Trinn 1";
+      const stage2Title = document.getElementById('tree-stage2-title')?.value || "Trinn 2";
+      const items = currentState.treeData.items;
       const withRepl = currentState.treeWithReplacement;
 
-      svg.innerHTML = ''; // Clear SVG
+      // Calculate totals
+      const totalInitial = items.reduce((sum, item) => sum + Math.max(0, item.count), 0);
 
-      // Draw SVG Tree Layout
-      const width = 800;
-      const height = 400;
+      // Determine dimensions based on number of active outcomes
+      const activeItemsCount = items.length;
+      const leafCount = activeItemsCount * activeItemsCount;
 
-      // Stage 0 (Start node)
+      // Adjust SVG height dynamically based on leaf node count
+      const computedHeight = Math.max(480, leafCount * 38 + 100);
+      svg.setAttribute('style', `height: ${computedHeight}px;`);
+      svg.setAttribute('viewBox', `0 0 850 ${computedHeight}`);
+
+      const width = 850;
       const startX = 60;
-      const startY = height / 2;
+      const startY = computedHeight / 2;
+      const s1X = 290;
+      const s2X = 570;
+      const finalX = 720;
 
-      // Stage 1 coordinates
-      const s1X = 280;
-      const s1Y_A = 110;
-      const s1Y_B = 290;
-
-      // Stage 2 coordinates
-      const s2X = 560;
-      const s2Y_AA = 60;
-      const s2Y_AB = 160;
-      const s2Y_BA = 240;
-      const s2Y_BB = 340;
-
-      // Calculate Probabilities for Branches
-      const pA1 = totalInitial > 0 ? itemA.count / totalInitial : 0;
-      const pB1 = totalInitial > 0 ? itemB.count / totalInitial : 0;
-
-      // Stage 2 Probabilities
-      // Branch A taken (1 itemA removed if without replacement)
-      const tot2_afterA = withRepl ? totalInitial : Math.max(0, totalInitial - 1);
-      const itemA_afterA = withRepl ? itemA.count : Math.max(0, itemA.count - 1);
-      const itemB_afterA = itemB.count;
-
-      const pAA = tot2_afterA > 0 ? itemA_afterA / tot2_afterA : 0;
-      const pAB = tot2_afterA > 0 ? itemB_afterA / tot2_afterA : 0;
-
-      // Branch B taken (1 itemB removed if without replacement)
-      const tot2_afterB = withRepl ? totalInitial : Math.max(0, totalInitial - 1);
-      const itemA_afterB = itemA.count;
-      const itemB_afterB = withRepl ? itemB.count : Math.max(0, itemB.count - 1);
-
-      const pBA = tot2_afterB > 0 ? itemA_afterB / tot2_afterB : 0;
-      const pBB = tot2_afterB > 0 ? itemB_afterB / tot2_afterB : 0;
-
-      // Final Path probabilities
-      const pFinal_AA = pA1 * pAA;
-      const pFinal_AB = pA1 * pAB;
-      const pFinal_BA = pB1 * pBA;
-      const pFinal_BB = pB1 * pBB;
-
+      svg.innerHTML = '';
       let svgContent = `
         <defs>
           <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
@@ -933,85 +793,132 @@ Sett opp:
         </defs>
 
         <!-- Column Headers -->
-        <text x="${startX}" y="30" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">START</text>
-        <text x="${s1X}" y="30" fill="#38bdf8" font-size="13" font-weight="bold" text-anchor="middle">${stage1Title.toUpperCase()}</text>
-        <text x="${s2X}" y="30" fill="#818cf8" font-size="13" font-weight="bold" text-anchor="middle">${stage2Title.toUpperCase()}</text>
-        <text x="${s2X + 130}" y="30" fill="#34d399" font-size="13" font-weight="bold" text-anchor="middle">TOTAL P</text>
-
-        <!-- BRANCH LINES STAGE 1 -->
-        ${createSvgLine(startX, startY, s1X, s1Y_A, "#38bdf8", 3)}
-        ${createSvgLine(startX, startY, s1X, s1Y_B, "#38bdf8", 3)}
-
-        <!-- BRANCH LINES STAGE 2 -->
-        ${createSvgLine(s1X, s1Y_A, s2X, s2Y_AA, "#818cf8", 2)}
-        ${createSvgLine(s1X, s1Y_A, s2X, s2Y_AB, "#818cf8", 2)}
-        ${createSvgLine(s1X, s1Y_B, s2X, s2Y_BA, "#818cf8", 2)}
-        ${createSvgLine(s1X, s1Y_B, s2X, s2Y_BB, "#818cf8", 2)}
-
-        <!-- BRANCH PROBABILITY LABELS STAGE 1 -->
-        ${createProbLabel((startX + s1X)/2, (startY + s1Y_A)/2 - 10, `${itemA.count}/${totalInitial}`, pA1)}
-        ${createProbLabel((startX + s1X)/2, (startY + s1Y_B)/2 + 15, `${itemB.count}/${totalInitial}`, pB1)}
-
-        <!-- BRANCH PROBABILITY LABELS STAGE 2 -->
-        ${createProbLabel((s1X + s2X)/2, (s1Y_A + s2Y_AA)/2 - 10, `${withRepl ? itemA.count : itemA_afterA}/${tot2_afterA}`, pAA)}
-        ${createProbLabel((s1X + s2X)/2, (s1Y_A + s2Y_AB)/2 + 15, `${withRepl ? itemB.count : itemB_afterA}/${tot2_afterA}`, pAB)}
-        ${createProbLabel((s1X + s2X)/2, (s1Y_B + s2Y_BA)/2 - 10, `${withRepl ? itemA.count : itemA_afterB}/${tot2_afterB}`, pBA)}
-        ${createProbLabel((s1X + s2X)/2, (s1Y_B + s2Y_BB)/2 + 15, `${withRepl ? itemB.count : itemB_afterB}/${tot2_afterB}`, pBB)}
-
-        <!-- NODES -->
-        <!-- Start Node -->
-        <circle cx="${startX}" cy="${startY}" r="12" fill="#3b82f6" filter="url(#shadow)"/>
-
-        <!-- Stage 1 Nodes -->
-        ${createTreeNode(s1X, s1Y_A, itemA.name, "#0284c7")}
-        ${createTreeNode(s1X, s1Y_B, itemB.name, "#6366f1")}
-
-        <!-- Stage 2 Nodes -->
-        ${createTreeNode(s2X, s2Y_AA, `${itemA.name}, ${itemA.name}`, "#0284c7")}
-        ${createTreeNode(s2X, s2Y_AB, `${itemA.name}, ${itemB.name}`, "#0f766e")}
-        ${createTreeNode(s2X, s2Y_BA, `${itemB.name}, ${itemA.name}`, "#0f766e")}
-        ${createTreeNode(s2X, s2Y_BB, `${itemB.name}, ${itemB.name}`, "#6366f1")}
-
-        <!-- Final Outcome Probabilities -->
-        ${createFinalOutcome(s2X + 130, s2Y_AA, pFinal_AA)}
-        ${createFinalOutcome(s2X + 130, s2Y_AB, pFinal_AB)}
-        ${createFinalOutcome(s2X + 130, s2Y_BA, pFinal_BA)}
-        ${createFinalOutcome(s2X + 130, s2Y_BB, pFinal_BB)}
+        <text x="${startX}" y="35" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">START</text>
+        <text x="${s1X}" y="35" fill="#38bdf8" font-size="13" font-weight="bold" text-anchor="middle">${stage1Title.toUpperCase()}</text>
+        <text x="${s2X}" y="35" fill="#818cf8" font-size="13" font-weight="bold" text-anchor="middle">${stage2Title.toUpperCase()}</text>
+        <text x="${finalX}" y="35" fill="#34d399" font-size="13" font-weight="bold" text-anchor="middle">TOTAL P</text>
       `;
+
+      // Start Node
+      svgContent += `<circle cx="${startX}" cy="${startY}" r="12" fill="#3b82f6" filter="url(#shadow)"/>`;
+
+      const paddingY = 60;
+      const availableHeight = computedHeight - (paddingY * 2);
+
+      const pathCalculations = [];
+
+      // Loop through Stage 1 outcomes
+      items.forEach((item1, idx1) => {
+        // Position of Stage 1 node
+        const y1 = paddingY + (availableHeight / Math.max(1, activeItemsCount - 1 || 1)) * idx1;
+        
+        const count1 = Math.max(0, item1.count);
+        const prob1 = totalInitial > 0 ? count1 / totalInitial : 0;
+
+        // Draw branch from Start to Stage 1 Node
+        svgContent += createSvgLine(startX, startY, s1X, y1, item1.color, 3);
+        svgContent += createProbLabel((startX + s1X)/2, (startY + y1)/2 - 8, `${count1}/${totalInitial}`, prob1);
+
+        // Stage 1 Node
+        svgContent += createTreeNode(s1X, y1, item1.name, item1.color);
+
+        // Loop through Stage 2 outcomes
+        const totalAfterStage1 = withRepl ? totalInitial : Math.max(0, totalInitial - 1);
+
+        items.forEach((item2, idx2) => {
+          const globalLeafIndex = idx1 * activeItemsCount + idx2;
+          const y2 = paddingY + (availableHeight / Math.max(1, leafCount - 1 || 1)) * globalLeafIndex;
+
+          let count2 = Math.max(0, item2.count);
+          if (!withRepl && item1.id === item2.id) {
+            count2 = Math.max(0, count2 - 1);
+          }
+
+          const prob2 = totalAfterStage1 > 0 ? count2 / totalAfterStage1 : 0;
+          const totalProb = prob1 * prob2;
+
+          // Branch Stage 1 to Stage 2
+          const isPossible = prob1 > 0 && prob2 > 0;
+          const opacity = isPossible ? 1 : 0.2;
+
+          svgContent += createSvgLine(s1X, y1, s2X, y2, item2.color, 2, opacity);
+          svgContent += createProbLabel((s1X + s2X)/2, (y1 + y2)/2 - 6, `${count2}/${totalAfterStage1}`, prob2, opacity);
+
+          // Stage 2 Node
+          svgContent += createTreeNode(s2X, y2, `${item1.name}, ${item2.name}`, item2.color, opacity);
+
+          // Final Outcome
+          svgContent += createFinalOutcome(finalX, y2, totalProb, opacity);
+
+          // Store for summary cards
+          pathCalculations.push({
+            pathName: `${item1.name} → ${item2.name}`,
+            prob1,
+            prob2,
+            totalProb,
+            isPossible,
+            color1: item1.color,
+            color2: item2.color
+          });
+        });
+      });
 
       svg.innerHTML = svgContent;
+
+      // Render Path Summary Cards
+      if (pathsContainer) {
+        document.getElementById('tree-total-paths-badge').innerText = `${pathCalculations.filter(p => p.isPossible).length} mulige stier`;
+        pathsContainer.innerHTML = '';
+        
+        pathCalculations.forEach(p => {
+          const card = document.createElement('div');
+          const pct = (p.totalProb * 100).toFixed(1);
+          card.className = `p-2.5 rounded-xl border transition ${p.isPossible ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-100/50 border-slate-200 text-slate-400 opacity-50'}`;
+          card.innerHTML = `
+            <div class="flex items-center justify-between font-bold mb-1">
+              <span class="truncate">${p.pathName}</span>
+              <span class="font-mono text-xs ${p.isPossible ? 'text-emerald-600' : 'text-slate-400'}">${pct}%</span>
+            </div>
+            <div class="text-[10px] font-mono text-slate-500 flex items-center justify-between">
+              <span>P = ${p.prob1.toFixed(2)} × ${p.prob2.toFixed(2)}</span>
+              <span class="font-bold text-slate-700">${p.totalProb.toFixed(3)}</span>
+            </div>
+          `;
+          pathsContainer.appendChild(card);
+        });
+      }
     }
 
-    function createSvgLine(x1, y1, x2, y2, color, strokeWidth) {
-      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="0.8"/>`;
+    function createSvgLine(x1, y1, x2, y2, color, strokeWidth, opacity = 1) {
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="${opacity * 0.85}"/>`;
     }
 
-    function createProbLabel(x, y, fracText, probVal) {
-      const pct = (probVal * 100).toFixed(0);
+    function createProbLabel(x, y, fracText, probVal, opacity = 1) {
+      if (opacity < 0.3) return '';
       return `
-        <g transform="translate(${x}, ${y})">
-          <rect x="-24" y="-12" width="48" height="22" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1"/>
-          <text x="0" y="2" fill="#f8fafc" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">${fracText}</text>
+        <g transform="translate(${x}, ${y})" opacity="${opacity}">
+          <rect x="-24" y="-11" width="48" height="20" rx="5" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+          <text x="0" y="2" fill="#f8fafc" font-size="9.5" font-weight="bold" font-family="monospace" text-anchor="middle">${fracText}</text>
         </g>
       `;
     }
 
-    function createTreeNode(x, y, label, bgColor) {
+    function createTreeNode(x, y, label, bgColor, opacity = 1) {
       return `
-        <g class="tree-node" transform="translate(${x}, ${y})" filter="url(#shadow)">
-          <rect x="-55" y="-18" width="110" height="36" rx="10" fill="${bgColor}" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5"/>
-          <text x="0" y="4" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">${label}</text>
+        <g class="tree-node" transform="translate(${x}, ${y})" opacity="${opacity}" filter="url(#shadow)">
+          <rect x="-55" y="-16" width="110" height="32" rx="8" fill="${bgColor}" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5"/>
+          <text x="0" y="4" fill="#ffffff" font-size="10.5" font-weight="bold" text-anchor="middle">${label}</text>
         </g>
       `;
     }
 
-    function createFinalOutcome(x, y, probVal) {
+    function createFinalOutcome(x, y, probVal, opacity = 1) {
       const pct = (probVal * 100).toFixed(1);
       return `
-        <g transform="translate(${x}, ${y})">
-          <rect x="-40" y="-16" width="80" height="32" rx="8" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
-          <text x="0" y="-1" fill="#34d399" font-size="11" font-weight="extrabold" text-anchor="middle">${pct}%</text>
-          <text x="0" y="11" fill="#a7f3d0" font-size="9" text-anchor="middle">(${probVal.toFixed(3)})</text>
+        <g transform="translate(${x}, ${y})" opacity="${opacity}">
+          <rect x="-42" y="-15" width="84" height="30" rx="7" fill="${probVal > 0 ? '#064e3b' : '#1e293b'}" stroke="${probVal > 0 ? '#10b981' : '#475569'}" stroke-width="1"/>
+          <text x="0" y="-1" fill="${probVal > 0 ? '#34d399' : '#94a3b8'}" font-size="10.5" font-weight="extrabold" text-anchor="middle">${pct}%</text>
+          <text x="0" y="10" fill="${probVal > 0 ? '#a7f3d0' : '#64748b'}" font-size="8.5" text-anchor="middle">(${probVal.toFixed(3)})</text>
         </g>
       `;
     }
@@ -1019,6 +926,54 @@ Sett opp:
     // Preset Loaders
     function loadPreset(key) {
       switch (key) {
+        case 'marbles_3':
+          currentState.treeData = {
+            stage1Title: "Første kule",
+            stage2Title: "Andre kule",
+            items: [
+              { id: 101, name: "Rød", count: 4, color: "#ef4444" },
+              { id: 102, name: "Blå", count: 3, color: "#3b82f6" },
+              { id: 103, name: "Grønn", count: 2, color: "#10b981" }
+            ]
+          };
+          document.getElementById('tree-stage1-title').value = "Første kule";
+          document.getElementById('tree-stage2-title').value = "Andre kule";
+          setTreeReplacement(false);
+          switchTab('tree');
+          break;
+
+        case 'weather_3':
+          currentState.treeData = {
+            stage1Title: "Dag 1 (Lørdag)",
+            stage2Title: "Dag 2 (Søndag)",
+            items: [
+              { id: 201, name: "Sol", count: 5, color: "#f59e0b" },
+              { id: 202, name: "Skyet", count: 3, color: "#64748b" },
+              { id: 203, name: "Regn", count: 2, color: "#0284c7" }
+            ]
+          };
+          document.getElementById('tree-stage1-title').value = "Dag 1 (Lørdag)";
+          document.getElementById('tree-stage2-title').value = "Dag 2 (Søndag)";
+          setTreeReplacement(true);
+          switchTab('tree');
+          break;
+
+        case 'traffic':
+          currentState.treeData = {
+            stage1Title: "Første lys",
+            stage2Title: "Andre lys",
+            items: [
+              { id: 301, name: "Rødt", count: 5, color: "#ef4444" },
+              { id: 302, name: "Gult", count: 1, color: "#eab308" },
+              { id: 303, name: "Grønt", count: 4, color: "#10b981" }
+            ]
+          };
+          document.getElementById('tree-stage1-title').value = "Første lys";
+          document.getElementById('tree-stage2-title').value = "Andre lys";
+          setTreeReplacement(true);
+          switchTab('tree');
+          break;
+
         case 'dice_sum':
           currentState.eventA = { name: 'Terning 1', outcomes: ['1', '2', '3', '4', '5', '6'] };
           currentState.eventB = { name: 'Terning 2', outcomes: ['1', '2', '3', '4', '5', '6'] };
@@ -1044,62 +999,15 @@ Sett opp:
           switchTab('table');
           clearTableSelection();
           break;
-
-        case 'marbles':
-          currentState.treeData = {
-            stage1Title: "Første kule",
-            stage2Title: "Andre kule",
-            itemA: { name: "Rød", count: 3 },
-            itemB: { name: "Blå", count: 2 }
-          };
-          document.getElementById('tree-stage1-title').value = "Første kule";
-          document.getElementById('tree-stage2-title').value = "Andre kule";
-          document.getElementById('tree-item-a').value = "Rød: 3";
-          document.getElementById('tree-item-b').value = "Blå: 2";
-          setTreeReplacement(false);
-          switchTab('tree');
-          break;
-
-        case 'coins_two':
-          currentState.eventA = { name: 'Første kast', outcomes: ['Kron', 'Mynt'] };
-          currentState.eventB = { name: 'Andre kast', outcomes: ['Kron', 'Mynt'] };
-          currentState.cellOperation = 'combine';
-          document.getElementById('eventA-name').value = 'Første kast';
-          document.getElementById('eventA-outcomes').value = 'Kron, Mynt';
-          document.getElementById('eventB-name').value = 'Andre kast';
-          document.getElementById('eventB-outcomes').value = 'Kron, Mynt';
-          document.getElementById('cell-op').value = 'combine';
-          switchTab('table');
-          filterTable('contains', 'Kron');
-          break;
-
-        case 'weather':
-          currentState.treeData = {
-            stage1Title: "Dag 1 (Lørdag)",
-            stage2Title: "Dag 2 (Søndag)",
-            itemA: { name: "Sol", count: 7 },
-            itemB: { name: "Regn", count: 3 }
-          };
-          document.getElementById('tree-stage1-title').value = "Dag 1 (Lørdag)";
-          document.getElementById('tree-stage2-title').value = "Dag 2 (Søndag)";
-          document.getElementById('tree-item-a').value = "Sol: 7";
-          document.getElementById('tree-item-b').value = "Regn: 3";
-          setTreeReplacement(true);
-          switchTab('tree');
-          break;
       }
     }
 
     // Initial onload execution
     window.onload = function() {
       renderTable();
+      renderTreeOutcomesEditor();
       renderTree();
     };
   </script>
-  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
 </body>
 </html>
