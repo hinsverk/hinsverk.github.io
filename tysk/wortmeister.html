@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tysk Wort-Meister</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase App (the core Firebase SDK) -->
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
@@ -16,46 +17,56 @@
         // Sikker initialisering for Google Sites
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tysk-wort-meister';
 
-        // 1. Hent lokale rekorder umiddelbart (dette fungerer alltid)
+        // Standard rekorder (Easy, Medium, Hard, Tysk 8, Tysk 10)
         const getLocalScores = () => {
             try {
                 const stored = localStorage.getItem(`scores_${appId}`);
-                return stored ? JSON.parse(stored) : { easy: 0, medium: 0, hard: 0 };
+                return stored ? JSON.parse(stored) : { easy: 0, medium: 0, hard: 0, tysk8: 0, tysk10: 0 };
             } catch(e) {
-                return { easy: 0, medium: 0, hard: 0 };
+                return { easy: 0, medium: 0, hard: 0, tysk8: 0, tysk10: 0 };
             }
         };
 
         window.highscores = getLocalScores();
         window.user = null;
 
-        // 2. Funksjon for å tegne opp rekordene i grensesnittet
+        // Oppdater Rekord-grensesnitt
         window.updateHighscoreUI = () => {
             const list = document.getElementById('highscore-display');
             if (!list) return;
 
             list.innerHTML = `
                 <div class="mt-6 pt-6 border-t border-gray-100">
-                    <p class="text-[10px] text-gray-400 font-black uppercase mb-3 text-center">Dine Rekorder</p>
-                    <div class="flex justify-center gap-4">
-                        <div class="text-center bg-green-50 px-3 py-2 rounded-xl min-w-[70px] border border-green-100">
+                    <p class="text-[10px] text-gray-400 font-black uppercase mb-3 text-center tracking-wider">Dine Rekorder</p>
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <div class="text-center bg-green-50 px-2 py-2 rounded-xl border border-green-100">
                             <p class="text-[9px] text-green-600 font-bold uppercase">Enkel</p>
-                            <p class="text-lg font-black text-green-700">${window.highscores.easy || 0}</p>
+                            <p class="text-base font-black text-green-700">${window.highscores.easy || 0}</p>
                         </div>
-                        <div class="text-center bg-yellow-50 px-3 py-2 rounded-xl min-w-[70px] border border-yellow-100">
+                        <div class="text-center bg-yellow-50 px-2 py-2 rounded-xl border border-yellow-100">
                             <p class="text-[9px] text-yellow-600 font-bold uppercase">Middels</p>
-                            <p class="text-lg font-black text-yellow-700">${window.highscores.medium || 0}</p>
+                            <p class="text-base font-black text-yellow-700">${window.highscores.medium || 0}</p>
                         </div>
-                        <div class="text-center bg-red-50 px-3 py-2 rounded-xl min-w-[70px] border border-red-100">
+                        <div class="text-center bg-red-50 px-2 py-2 rounded-xl border border-red-100">
                             <p class="text-[9px] text-red-600 font-bold uppercase">Vanskelig</p>
-                            <p class="text-lg font-black text-red-700">${window.highscores.hard || 0}</p>
+                            <p class="text-base font-black text-red-700">${window.highscores.hard || 0}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="text-center bg-purple-50 px-2 py-2 rounded-xl border border-purple-100">
+                            <p class="text-[9px] text-purple-600 font-bold uppercase">Tysk 8.</p>
+                            <p class="text-base font-black text-purple-700">${window.highscores.tysk8 || 0}</p>
+                        </div>
+                        <div class="text-center bg-indigo-50 px-2 py-2 rounded-xl border border-indigo-100">
+                            <p class="text-[9px] text-indigo-600 font-bold uppercase">Tysk 10.</p>
+                            <p class="text-base font-black text-indigo-700">${window.highscores.tysk10 || 0}</p>
                         </div>
                     </div>
                 </div>
             `;
         };
 
-        // 3. Prøv å koble til Firebase (vil feile stille hvis vi er i Google Sites uten variabler)
+        // Kobling mot Firebase hvis miljøet har det tilgjengelig
         let db = null;
         let auth = null;
 
@@ -85,11 +96,12 @@
                         scoreDocRef.onSnapshot((docSnap) => {
                             if (docSnap.exists) {
                                 const cloudScores = docSnap.data();
-                                // Kombiner sky og lokale data
                                 window.highscores = {
-                                    easy: Math.max(window.highscores.easy, cloudScores.easy || 0),
-                                    medium: Math.max(window.highscores.medium, cloudScores.medium || 0),
-                                    hard: Math.max(window.highscores.hard, cloudScores.hard || 0)
+                                    easy: Math.max(window.highscores.easy || 0, cloudScores.easy || 0),
+                                    medium: Math.max(window.highscores.medium || 0, cloudScores.medium || 0),
+                                    hard: Math.max(window.highscores.hard || 0, cloudScores.hard || 0),
+                                    tysk8: Math.max(window.highscores.tysk8 || 0, cloudScores.tysk8 || 0),
+                                    tysk10: Math.max(window.highscores.tysk10 || 0, cloudScores.tysk10 || 0)
                                 };
                                 localStorage.setItem(`scores_${appId}`, JSON.stringify(window.highscores));
                             }
@@ -107,19 +119,15 @@
             console.warn("Kjører i lokal modus. Firebase er deaktivert.");
         }
 
-        // 4. Sikker lagrefunksjon
         window.saveHighScore = async (difficulty, score) => {
             if (score > (window.highscores[difficulty] || 0)) {
                 window.highscores[difficulty] = score;
-                
-                // Lagre lokalt (fungerer alltid)
                 try {
                     localStorage.setItem(`scores_${appId}`, JSON.stringify(window.highscores));
                 } catch(e) {}
                 
                 window.updateHighscoreUI();
                 
-                // Prøv å lagre til skyen hvis tilgjengelig
                 if (window.user && db) {
                     const scoreDocRef = db.doc(`artifacts/${appId}/users/${window.user.uid}/settings/scores`);
                     try {
@@ -131,6 +139,7 @@
             }
         };
     </script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
         
@@ -142,7 +151,7 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            overflow: hidden;
+            padding: 1rem;
         }
 
         #game-container {
@@ -150,18 +159,18 @@
             max-width: 500px;
             background: white;
             border-radius: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
             padding: 2rem;
             position: relative;
         }
 
         .word-letter {
             border-bottom: 3px solid #3b82f6;
-            min-width: 32px;
+            min-width: 28px;
             text-align: center;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 800;
-            margin: 0 4px;
+            margin: 0 3px;
             text-transform: uppercase;
             transition: all 0.2s;
         }
@@ -198,34 +207,80 @@
 <body>
 
     <div id="game-container">
+        
+        <!-- Knapper for innstillinger øverst til høyre -->
+        <div class="absolute top-4 right-4 flex gap-2 z-10">
+            <button onclick="openGistModal()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-200">
+                <i class="fa-brands fa-github text-sm"></i>
+                <span id="gist-btn-text">Gist Ordliste</span>
+            </button>
+        </div>
+
         <!-- Startskjerm -->
-        <div id="start-screen" class="flex flex-col items-center text-center">
-            <div class="mb-6 bg-blue-600 text-white p-4 rounded-3xl shadow-xl rotate-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-1.9M3 21v-4.1m0 4.1h4.1M19 3l-1.9 1.9M19 3v4.1m0-4.1h-4.1M3 3l1.9 1.9M3 3v4.1m0-4.1h4.1M19 21l-1.9-1.9M19 21v-4.1m0 4.1h-4.1M12 8l-4 4 4 4 4-4-4-4Z"/></svg>
+        <div id="start-screen" class="flex flex-col items-center text-center pt-2">
+            <div class="mb-4 bg-blue-600 text-white p-4 rounded-3xl shadow-xl rotate-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-1.9M3 21v-4.1m0 4.1h4.1M19 3l-1.9 1.9M19 3v4.1m0-4.1h-4.1M3 3l1.9 1.9M3 3v4.1m0-4.1h4.1M19 21l-1.9-1.9M19 21v-4.1m0 4.1h-4.1M12 8l-4 4 4 4 4-4-4-4Z"/></svg>
             </div>
-            <h1 class="text-4xl font-[900] text-gray-800 mb-2 tracking-tighter italic uppercase">Wort-Meister</h1>
-            <p class="text-gray-500 text-sm mb-10 font-semibold tracking-wide uppercase">Tysk ord-utfordring</p>
+            <h1 class="text-3xl font-[900] text-gray-800 mb-1 tracking-tighter italic uppercase">Wort-Meister</h1>
+            <p class="text-gray-500 text-xs mb-6 font-semibold tracking-wide uppercase">Tysk ord-utfordring</p>
+
+            <!-- Status for ordliste -->
+            <div id="gist-status-bar" class="w-full mb-5 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-left flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2 text-blue-800 font-semibold truncate">
+                    <span id="gist-status-dot" class="h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                    <span id="gist-status-text" class="truncate">Standard ordliste (Innebygd)</span>
+                </div>
+                <button onclick="fetchGistData(true)" class="text-blue-600 hover:text-blue-800 text-[11px] font-bold underline flex-shrink-0 ml-2">Oppdater</button>
+            </div>
             
-            <div class="space-y-3 w-full max-w-[280px]">
-                <button onclick="startGame('easy')" class="w-full bg-white border-2 border-green-500 text-green-700 font-black py-4 rounded-2xl shadow-sm hover:bg-green-50 active:scale-95 transition-all text-lg uppercase">Enkel</button>
-                <button onclick="startGame('medium')" class="w-full bg-white border-2 border-yellow-500 text-yellow-700 font-black py-4 rounded-2xl shadow-sm hover:bg-yellow-50 active:scale-95 transition-all text-lg uppercase">Middels</button>
-                <button onclick="startGame('hard')" class="w-full bg-white border-2 border-red-500 text-red-700 font-black py-4 rounded-2xl shadow-sm hover:bg-red-50 active:scale-95 transition-all text-lg uppercase">Vanskelig</button>
+            <div class="space-y-2.5 w-full max-w-[320px]">
+                <p class="text-[10px] text-gray-400 font-black uppercase text-center tracking-widest mb-1">Standard vanskegrad</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="startGame('easy')" class="bg-white border-2 border-green-500 text-green-700 font-black py-3 rounded-xl shadow-sm hover:bg-green-50 active:scale-95 transition-all text-sm uppercase">Enkel</button>
+                    <button onclick="startGame('medium')" class="bg-white border-2 border-yellow-500 text-yellow-700 font-black py-3 rounded-xl shadow-sm hover:bg-yellow-50 active:scale-95 transition-all text-sm uppercase">Middels</button>
+                    <button onclick="startGame('hard')" class="bg-white border-2 border-red-500 text-red-700 font-black py-3 rounded-xl shadow-sm hover:bg-red-50 active:scale-95 transition-all text-sm uppercase">Vanskelig</button>
+                </div>
+
+                <p class="text-[10px] text-gray-400 font-black uppercase text-center tracking-widest mt-4 mb-1">Tilpassede klassemoduser</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="prepareCustomMode('tysk8')" class="bg-purple-600 border-2 border-purple-600 text-white font-black py-3 rounded-xl shadow-md hover:bg-purple-700 active:scale-95 transition-all text-sm uppercase flex flex-col items-center justify-center">
+                        <span>Tysk 8.</span>
+                        <span class="text-[9px] font-normal opacity-90">Spesifikke tekster/gloser</span>
+                    </button>
+                    <button onclick="prepareCustomMode('tysk10')" class="bg-indigo-600 border-2 border-indigo-600 text-white font-black py-3 rounded-xl shadow-md hover:bg-indigo-700 active:scale-95 transition-all text-sm uppercase flex flex-col items-center justify-center">
+                        <span>Tysk 10.</span>
+                        <span class="text-[9px] font-normal opacity-90">Spesifikke tekster/gloser</span>
+                    </button>
+                </div>
             </div>
 
             <div id="highscore-display" class="w-full"></div>
         </div>
 
+        <div id="chapter-select-screen" class="hidden flex flex-col items-center text-center pt-2">
+            <h2 id="chapter-title" class="text-2xl font-black text-gray-800 mb-1 uppercase tracking-tight">Tysk 8. Klasse</h2>
+            <p class="text-gray-500 text-xs mb-6 font-semibold uppercase tracking-wider">Velg tekst eller kapittel du vil øve på</p>
+
+            <div id="chapter-buttons-container" class="space-y-2 w-full max-w-[320px] max-h-[260px] overflow-y-auto pr-1">
+                <!-- Dynamisk fylt inn av JS -->
+            </div>
+
+            <button onclick="resetGame()" class="mt-6 text-gray-500 font-bold text-sm hover:text-gray-700 uppercase tracking-wider">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Tilbake til meny
+            </button>
+        </div>
+
         <!-- Spillskjerm -->
         <div id="play-screen" class="hidden flex flex-col">
-            <div class="flex justify-between items-center mb-8 relative">
+            <div class="flex justify-between items-center mb-6 relative">
                 <div>
                     <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Poeng</p>
-                    <p id="score" class="text-4xl font-black text-blue-600">0</p>
+                    <p id="score" class="text-3xl font-black text-blue-600">0</p>
                 </div>
                 <div class="flex flex-col items-center relative">
-                    <div id="streak-container" class="h-8 mb-1 flex items-center justify-center"></div>
-                    <div id="timer" class="text-2xl font-black text-gray-700 bg-gray-100 px-6 py-1 rounded-full min-w-[80px] text-center">60</div>
-                    <div id="bonus-anchor" class="absolute top-10 w-full flex justify-center"></div>
+                    <div id="streak-container" class="h-6 mb-1 flex items-center justify-center"></div>
+                    <div id="timer" class="text-2xl font-black text-gray-700 bg-gray-100 px-5 py-0.5 rounded-full min-w-[70px] text-center">60</div>
+                    <div id="bonus-anchor" class="absolute top-8 w-full flex justify-center"></div>
                 </div>
                 <div class="text-right">
                     <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Skips</p>
@@ -233,33 +288,100 @@
                 </div>
             </div>
 
-            <div class="relative bg-blue-600 text-white rounded-[2rem] p-8 mb-10 text-center shadow-xl min-h-[160px] flex flex-col justify-center">
-                <p id="german-definition" class="text-2xl font-black leading-tight mb-4"></p>
-                <div class="mx-auto w-12 h-1 bg-white/20 rounded-full mb-4"></div>
-                <p id="norwegian-definition" class="text-sm font-semibold opacity-80 italic"></p>
+            <!-- Kapittel/Tekst merkelapp hvis tilgjengelig -->
+            <div id="text-badge-container" class="hidden mb-3 text-center">
+                <span id="text-badge" class="inline-block bg-purple-100 text-purple-800 border border-purple-200 text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                    Kapittel 1
+                </span>
             </div>
 
-            <div id="word-display" class="flex justify-center flex-wrap gap-y-4 mb-12 min-h-[50px]"></div>
+            <div class="relative bg-blue-600 text-white rounded-[2rem] p-6 mb-8 text-center shadow-xl min-h-[150px] flex flex-col justify-center">
+                <p id="german-definition" class="text-2xl font-black leading-tight mb-3"></p>
+                <div class="mx-auto w-12 h-1 bg-white/20 rounded-full mb-3"></div>
+                <p id="norwegian-definition" class="text-sm font-semibold opacity-90 italic"></p>
+            </div>
+
+            <div id="word-display" class="flex justify-center flex-wrap gap-y-3 mb-8 min-h-[45px]"></div>
 
             <input type="text" id="word-input" autocomplete="off" class="absolute opacity-0 pointer-events-none" inputmode="text">
             
-            <button id="skip-btn" onclick="skipWord()" class="w-full bg-gray-100 py-5 rounded-2xl font-black text-gray-600 hover:bg-gray-200 active:scale-95 transition-all uppercase tracking-widest">Hopp over (Esc)</button>
+            <button id="skip-btn" onclick="skipWord()" class="w-full bg-gray-100 py-4 rounded-2xl font-black text-gray-600 hover:bg-gray-200 active:scale-95 transition-all uppercase tracking-widest text-sm">Hopp over (Esc)</button>
         </div>
 
         <!-- Sluttskjerm -->
         <div id="end-screen" class="hidden flex flex-col items-center text-center">
             <h2 class="text-2xl font-black text-gray-800 mb-1 uppercase tracking-tight">Runden er over!</h2>
-            <p class="text-gray-400 text-sm mb-6 font-bold uppercase tracking-widest" id="end-difficulty-text"></p>
-            <div class="text-8xl font-[950] text-blue-600 mb-10 tracking-tighter" id="final-score">0</div>
+            <p class="text-gray-400 text-xs mb-6 font-bold uppercase tracking-widest" id="end-difficulty-text"></p>
+            <div class="text-7xl font-[950] text-blue-600 mb-8 tracking-tighter" id="final-score">0</div>
             <div class="space-y-3 w-full max-w-[280px]">
-                <button id="replay-btn" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all text-xl uppercase tracking-wide">Spill igjen</button>
-                <button onclick="resetGame()" class="w-full bg-gray-50 text-gray-500 font-black py-4 rounded-2xl hover:bg-gray-100 active:scale-95 transition-all uppercase">Hjem</button>
+                <button id="replay-btn" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all text-lg uppercase tracking-wide">Spill igjen</button>
+                <button onclick="resetGame()" class="w-full bg-gray-100 text-gray-600 font-black py-3 rounded-2xl hover:bg-gray-200 active:scale-95 transition-all uppercase text-sm">Hovedmeny</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gist-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black text-gray-800 uppercase tracking-tight flex items-center gap-2">
+                    <i class="fa-brands fa-github"></i>
+                    <span>GitHub Gist Ordlister</span>
+                </h3>
+                <button onclick="closeGistModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <p class="text-xs text-gray-600 mb-4 leading-relaxed">
+                Her kan du koble appen til din egen GitHub Gist. Endringer du gjør i Gist-en blir da oppdatert i appen automatisk!
+            </p>
+
+            <div class="mb-4">
+                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">GitHub Gist URL (Raw eller vanlig)</label>
+                <input type="url" id="gist-url-input" placeholder="https://gist.githubusercontent.com/hinsverk/47de3f16fb7e3cfaf79aca694673f5ff/raw/b75b39718d49b30548b93e9cdb8c3462003ffc87/wortmeister.json" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+            </div>
+
+            <div class="flex gap-2 mb-6">
+                <button onclick="saveAndFetchGist()" class="flex-1 bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all text-xs uppercase shadow-md">
+                    Lagre & Hent ordliste
+                </button>
+                <button onclick="resetGistToDefault()" class="bg-gray-100 text-gray-600 font-bold px-3 py-3 rounded-xl hover:bg-gray-200 transition-all text-xs uppercase" title="Tilbakestill til standard">
+                    Nullstill
+                </button>
+            </div>
+
+            <!-- Format-eksempel -->
+            <div class="border-t border-gray-100 pt-4">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Påkrevd JSON-struktur i Gist</p>
+                    <button onclick="copyJsonTemplate()" class="text-blue-600 hover:text-blue-800 text-[10px] font-bold uppercase underline">Kopier JSON-skal</button>
+                </div>
+                <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-[10px] font-mono overflow-x-auto leading-normal"><code>{
+  "easy": [ ... ],
+  "medium": [ ... ],
+  "hard": [ ... ],
+  "tysk8": [
+    {
+      "word": "SCHULE",
+      "de": "Ort zum Lernen.",
+      "no": "Sted for å lære.",
+      "text": "Kapittel 1: Skolen min"
+    }
+  ],
+  "tysk10": [
+    {
+      "word": "GESELLSCHAFT",
+      "de": "Alle Menschen zusammen.",
+      "no": "Samfunn.",
+      "text": "Tekst 2: Kultur"
+    }
+  ]
+}</code></pre>
             </div>
         </div>
     </div>
 
     <script>
-        const words = {
+        // Standard innebygde ordlister (fallback)
+        const defaultWords = {
             easy: [
                 { word: "APFEL", de: "Eine Frucht, die rot oder grün ist.", no: "En frukt som er rød eller grønn." },
                 { word: "HUND", de: "Das Tier ist der beste Freund des Menschen.", no: "Dette dyret er menneskets beste venn." },
@@ -267,156 +389,47 @@
                 { word: "SCHULE", de: "Der Ort, wo Kinder jeden Tag lernen.", no: "Stedet der barn lærer hver dag." },
                 { word: "WASSER", de: "Wir trinken das, wenn wir Durst haben.", no: "Dette drikker vi når vi er tørste." },
                 { word: "BROT", de: "Man isst es oft zum Frühstück mit Käse.", no: "Man spiser det ofte til frokost med ost." },
-                { word: "MUTTER", de: "Die Frau, die dich geboren hat.", no: "Kvinnen som fødte deg." },
                 { word: "HAUS", de: "Ein Gebäude, in dem eine Familie wohnt.", no: "En bygning der en familie bor." },
-                { word: "TISCH", de: "Ein Möbelstück, an dem man isst.", no: "Et møbel man sitter ved og spiser." },
-                { word: "STUHL", de: "Man sitzt darauf am Tisch.", no: "Man sitter på denne ved bordet." },
-                { word: "MILCH", de: "Ein weißes Getränk von der Kuh.", no: "En hvit drikk fra kua." },
                 { word: "KATZE", de: "Ein Haustier, das 'Miau' macht.", no: "Et husdyr som sier 'miau'." },
                 { word: "SONNE", de: "Sie scheint am Himmel und ist sehr heiß.", no: "Den skinner på himmelen og er veldig varm." },
-                { word: "GELD", de: "Man braucht es, um Dinge zu kaufen.", no: "Man trenger dette for å kjøpe ting." },
-                { word: "VATER", de: "Der Mann, der dein Elternteil ist.", no: "Mannen som er forelderen din." },
-                { word: "AUTO", de: "Ein Fahrzeug mit vier Rädern.", no: "Et kjøretøy med fire hjul." },
-                { word: "BALL", de: "Man spielt damit Fußball oder Tennis.", no: "Man spiller fotball eller tennis med denne." },
-                { word: "FISCH", de: "Dieses Tier lebt und schwimmt im Wasser.", no: "Dette dyret lever og svømmer i vannet." },
-                { word: "KIND", de: "Eine kleine Person, kein Erwachsener.", no: "En liten person, ikke en voksen." },
-                { word: "TASCHE", de: "Hier trägt man seine Schulsachen.", no: "Her bærer man skolesakene sine." },
-                { word: "KOPF", de: "Der oberste Teil des Körpers.", no: "Den øverste delen av kroppen." },
-                { word: "HAND", de: "Man benutzt sie zum Greifen und Schreiben.", no: "Man bruker den til å gripe og skrive." },
-                { word: "FUẞ", de: "Teil des Beins, auf dem man steht.", no: "Delen av beinet man står på." },
-                { word: "LAMPE", de: "Sie macht Licht im Zimmer.", no: "Den lager lys i rommet." },
-                { word: "UHR", de: "Sie zeigt uns die Zeit.", no: "Den viser oss tiden." },
-                { word: "BETT", de: "Hier schläft man in der Nacht.", no: "Her sover man om natten." },
-                { word: "TÜR", de: "Man öffnet sie, um in einen Raum zu gehen.", no: "Man åpner den for å gå inn i et rom." },
-                { word: "BAUM", de: "Eine große Pflanze im Wald mit Blättern.", no: "En stor plante i skogen med blader." },
-                { word: "BLUME", de: "Eine schöne Pflanze, oft bunt.", no: "En vakker plante, ofte fargerik." },
-                { word: "VOGEL", de: "Dieses Tier kann fliegen und singt.", no: "Dette dyret kan fly og synger." },
-                { word: "KÄSE", de: "Ein gelbes Lebensmittel aus Milch.", no: "En gul matvare laget av melk." },
-                { word: "EI", de: "Ein Huhn legt das jeden Tag.", no: "En høne legger dette hver dag." },
-                { word: "SAFT", de: "Ein Getränk aus Früchten.", no: "En drikk laget av frukt." },
-                { word: "TEE", de: "Ein heißes Getränk aus Blättern.", no: "En varm drikk laget av blader." },
-                { word: "SALZ", de: "Man gibt es ins Wasser beim Kochen.", no: "Man har det i vannet når man koker mat." },
-                { word: "REIS", de: "Kleine weiße Körner, die man isst.", no: "Små hvite korn man spiser." },
-                { word: "BANANE", de: "Eine lange, gelbe Frucht.", no: "En lang, gul frukt." },
-                { word: "WURST", de: "Ein Fleischprodukt, oft auf Brot.", no: "Et kjøttprodukt, ofte på brød." },
-                { word: "SUPPE", de: "Ein flüssiges Essen, das warm ist.", no: "Flytende mat som er varm." },
-                { word: "KUCHEN", de: "Ein süßes Gebäck zum Geburtstag.", no: "Bakverk som er søtt, ofte til bursdag." },
-                { word: "KEKS", de: "Ein kleines, hartes Gebäck.", no: "Et lite, hardt bakverk." },
-                { word: "ZUCKER", de: "Es macht Tee oder Kaffee süß.", no: "Det gjør te eller kaffe søt." },
-                { word: "REGEN", de: "Wasser, das aus den Wolken fällt.", no: "Vann som faller fra skyene." },
-                { word: "SCHNEE", de: "Weißes, kaltes Wasser im Winter.", no: "Hvitt, kaldt vann om vinteren." },
-                { word: "WIND", de: "Bewegte Luft draußen.", no: "Luft som beveger seg utendørs." },
-                { word: "MOND", de: "Er leuchtet nachts am Himmel.", no: "Den lyser om natten på himmelen." },
-                { word: "STERN", de: "Ein kleiner Lichtpunkt in der Nacht.", no: "Et lite lyspunkt om natten." },
-                { word: "BERG", de: "Ein sehr hoher Teil der Erde.", no: "En veldig høy del av jorda." },
-                { word: "SEE", de: "Ein großes Gewässer mit Süßwasser.", no: "En stor ansamling med ferskvann." },
-                { word: "MEER", de: "Viel Salzwasser zwischen Kontinenten.", no: "Mye saltvann mellom kontinenter." },
-                { word: "FLUSS", de: "Wasser, das durch das Land fließt.", no: "Vann som renner gjennom landet." },
-                { word: "WALD", de: "Viele Bäume an einem Ort.", no: "Mange trær på ett sted." },
-                { word: "WEG", de: "Hier kann man gehen oder fahren.", no: "Her kan man gå eller kjøre." },
-                { word: "STADT", de: "Ein Ort mit vielen Häusern und Läden.", no: "Et sted med mange hus og butikker." },
-                { word: "DORF", de: "Ein kleiner Ort mit wenigen Häusern.", no: "Et lite sted med få hus." },
-                { word: "STRASSE", de: "Hier fahren die Autos in der Stadt.", no: "Her kjører bilene i byen." },
-                { word: "NAME", de: "So nennt man eine Person.", no: "Dette kaller man en person." },
-                { word: "FREUND", de: "Eine Person, die man sehr mag.", no: "En person man liker veldig godt." },
-                { word: "SPIEL", de: "Etwas, das man zum Spaß macht.", no: "Noe man gjør for moro skyld." },
-                { word: "LIED", de: "Musik mit Text zum Mitsingen.", no: "Musikk med tekst man kan synge med på." },
-                { word: "BILD", de: "Man sieht es an der Wand oder im Buch.", no: "Man ser det på veggen eller i en bok." },
-                { word: "FARBE", de: "Blau, Rot und Gelb sind Beispiele.", no: "Blå, rød og gul er eksempler." },
-                { word: "NR.", de: "1, 2, 3 sind Zeichen dafür.", no: "1, 2, 3 er tegn for dette." },
-                { word: "TAG", de: "Die Zeit zwischen Morgen und Abend.", no: "Tiden mellom morgen og kveld." },
-                { word: "NACHT", no: "Wenn es dunkel ist und wir schlafen.", no: "Når det er mørkt og vi sover." },
-                { word: "JAHR", de: "Es hat 365 Tage oder 12 Monate.", no: "Det har 365 dager eller 12 måneder." },
-                { word: "WOCHE", de: "Sie besteht aus sieben Tagen.", no: "Den består av syv dager." },
-                { word: "MUND", de: "Teil des Gesichts zum Essen und Sprechen.", no: "Del av ansiktet til å spise og snakke med." },
-                { word: "NASE", de: "Man benutzt sie zum Riechen.", no: "Man bruker den til å lukte." },
-                { word: "AUGE", de: "Damit können wir alles sehen.", no: "Med disse kan vi se alt." },
-                { word: "OHR", de: "Man braucht es zum Hören.", no: "Man trenger det for å høre." },
-                { word: "HAAR", de: "Es wächst auf dem Kopf.", no: "Det vokser på hodet." },
-                { word: "BEIN", de: "Man benutzt es zum Laufen.", no: "Man bruker det til å gå." },
-                { word: "ARM", de: "Körperteil zwischen Hand und Schulter.", no: "Kroppsdel mellom hånd og skulder." },
-                { word: "HERZ", de: "Es pumpt Blut durch den Körper.", no: "Det pumper blod gjennom kroppen." },
-                { word: "KLEID", de: "Ein Kleidungsstück für Frauen.", no: "Et klesplagg for kvinner." },
-                { word: "HOSE", de: "Man trägt sie an den Beinen.", no: "Man har den på beina." },
-                { word: "HEMD", de: "Kleidung für den Oberkörper mit Knöpfen.", no: "Klær for overkroppen med knapper." },
-                { word: "JACKE", de: "Man zieht sie an, wenn es kalt ist.", no: "Man tar den på når det er kaldt." },
-                { word: "SCHUH", de: "Man trägt ihn an den Füßen draußen.", no: "Man har den på føttene utendørs." },
-                { word: "HUT", de: "Man trägt ihn auf dem Kopf.", no: "Man har den på hodet." },
-                { word: "BRIEF", de: "Eine Nachricht auf Papier in einem Umschlag.", no: "En melding på papir i en konvolutt." },
-                { word: "STIFT", de: "Man benutzt ihn zum Schreiben.", no: "Man bruker den til å skrive." },
-                { word: "BLATT", de: "Ein Teil vom Baum oder Papier.", no: "En del av et tre eller papir." },
-                { word: "FENSTER", de: "Teil der Wand aus Glas.", no: "Del av veggen laget av glass." },
-                { word: "KÜCHE", de: "Hier kocht man das Essen.", no: "Her lager man maten." },
-                { word: "BAD", de: "Hier wäscht man sich.", no: "Her vasker man seg." },
-                { word: "MAUS", de: "Ein kleines Tier oder Computerzubehör.", no: "Et lite dyr eller datatilbehør." },
-                { word: "PFERD", de: "Ein großes Tier, auf dem man reiten kann.", no: "Et stort dyr man kan ri på." },
-                { word: "KUH", de: "Ein Tier auf dem Bauernhof für Milch.", no: "Et dyr på gården som gir melk." },
-                { word: "SCHWEIN", de: "Ein rosa Tier auf dem Bauernhof.", no: "Et rosa dyr på gården." },
-                { word: "BUS", de: "Ein großes Auto für viele Personen.", no: "En stor bil for mange personer." },
-                { word: "ZUG", de: "Er fährt auf Schienen.", no: "Den kjører på skinner." },
-                { word: "BOOT", de: "Ein kleines Fahrzeug auf dem Wasser.", no: "Et lite kjøretøy på vannet." },
-                { word: "BROT", de: "Grundnahrungsmittel beim Bäcker.", no: "Basismatvare hos bakeren." },
-                { word: "WURST", de: "Belag für das Pausenbrot.", no: "Pålegg til matpakken." },
-                { word: "OBST", de: "Sammelname für Äpfel, Birnen usw.", no: "Samlenavn for epler, pærer osv." },
-                { word: "GEMÜSE", de: "Tomaten und Gurken sind Beispiele dafür.", no: "Tomater og agurker er eksempler på dette." },
-                { word: "GLAS", de: "Daraus trinkt man Wasser.", no: "Man drikker vann av dette." },
-                { word: "TELLER", de: "Darauf liegt das Essen beim Essen.", no: "Maten ligger på denne når man spiser." }
+                { word: "AUTO", de: "Ein Fahrzeug mit vier Rädern.", no: "Et kjøretøy med fire hjul." }
             ],
             medium: [
                 { word: "FAHRRAD", de: "Ein Fahrzeug mit zwei Rädern ohne motor.", no: "Et kjøretøy med to hjul uten motor." },
                 { word: "FRÜHSTÜCK", de: "Die erste Mahlzeit des Tages am Morgen.", no: "Dagens første måltid om morgenen." },
                 { word: "WETTER", de: "Es kann sonnig, regnerisch oder windig sein.", no: "Det kan være sol, regn eller vind." },
                 { word: "REISE", de: "Wenn man wegfährt, um Urlaub zu machen.", no: "Når man reiser bort for å ha ferie." },
-                { word: "KÜCHE", de: "Der Raum, in dem man das Essen kocht.", no: "Rommet der man lager mat." },
-                { word: "FENSTER", de: "Ein Teil der Wand, durch den man sieht.", no: "En del av veggen som man kan se gjennom." },
-                { word: "HERBST", de: "Die Jahreszeit, wenn die Blätter bunt werden.", no: "Årstiden når bladene blir fargerike." },
-                { word: "ZEITUNG", de: "Ein gedrucktes Medium mit Nachrichten.", no: "Et trykt medium med nyheter." },
-                { word: "BAHNHOF", de: "Der Ort, wo man in den Zug einsteigt.", no: "Stedet der man går på toget." },
-                { word: "FLUGZEUG", de: "Ein transportmittel in der Luft.", no: "Et transportmiddel i lufta." },
-                { word: "GARTEN", de: "Ein Platz draußen beim Haus mit Blumen.", no: "En plass ute ved huset med blomster." },
-                { word: "KÜHLSCHRANK", de: "Hier hält man Essen und Getränke kalt.", no: "Her holder man mat og drikke kaldt." },
-                { word: "SPIELPLATZ", de: "Ein Ort draußen, wo Kinder spielen.", no: "Et sted utendørs der barn leker." },
-                { word: "WOCHENENDE", de: "Samstag und Sonntag zusammen.", no: "Lørdag og søndag til sammen." },
                 { word: "BLEISTIFT", de: "Etwas, womit man auf Papier schreibt.", no: "Noe man skriver med på papir." },
-                { word: "WÖRTERBUCH", de: "Ein Buch, in dem man Vokabeln findet.", no: "En bok der man finner gloser." },
-                { word: "EINKAUFEN", de: "Dinge im Supermarkt gegen Geld holen.", no: "Hente ting i supermarkedet mot penger." },
-                { word: "GESCHENK", de: "Etwas, das man zum Geburtstag bekommt.", no: "Noe man får til fødselsdagen sin." },
-                { word: "NACHBAR", de: "Die person, die nebenan wohnt.", no: "Personen som bor i nabohuset." },
-                { word: "REGENSCHIRM", de: "Schützt uns vor dem Wasser von oben.", no: "Beskytter oss mot vann fra oven." },
-                { word: "FERNSEHER", de: "Ein Gerät, auf dem man Filme schaut.", no: "Et apparat man ser filmer på." },
-                { word: "FLUGHAFEN", de: "Hier starten und landen Flugzeuge.", no: "Her starter og lander fly." },
-                { word: "ABENDESSEN", de: "Die Mahlzeit am Ende des Tages.", no: "Måltidet på slutten av dagen." },
-                { word: "HAUSAUFGABE", de: "Arbeit für die Schule, die man zu Hause macht.", no: "Arbeid for skolen som man gjør hjemme." }
+                { word: "WÖRTERBUCH", de: "Ein Buch, in dem man Vokabeln findet.", no: "En bok der man finner gloser." }
             ],
             hard: [
-                { word: "UMWELTSCHUTZ", de: "Aktionen, um die Natur sauber zu halten." },
-                { word: "ERFAHRUNG", de: "Wissen, das man durch das Leben bekommt." },
-                { word: "VORAUSSETZUNG", de: "Eine Bedingung, die zuerst erfüllt sein muss." },
-                { word: "UNTERSCHIED", de: "Das Merkmal, das zwei Dinge ungleich macht." },
-                { word: "NACHHALTIGKEIT", de: "Ressourcen so nutzen, dass sie lange halten." },
-                { word: "ENTSCHEIDUNG", de: "Wenn man zwischen Optionen wählen muss." },
-                { word: "GESELLSCHAFT", de: "Alle Menschen, die zusammen in einem Land leben." },
-                { word: "GELEGENHEIT", de: "Eine gute Chance, obituary tun." },
-                { word: "VERSCHIEDEN", de: "Ein Adjektiv for Dinge, die nicht gleich sind." },
-                { word: "VERANTWORTUNG", de: "Wenn man for seine Taten einstehen muss." },
-                { word: "ERKLÄRUNG", de: "Worte, die helfen, etwas zu verstehen." },
-                { word: "ZUKUNFT", de: "Die Zeit, die erst noch kommen wird." },
-                { word: "VERGANGENHEIT", de: "Die Zeit, die schon vorbei ist." },
-                { word: "BEZIEHUNG", de: "Die Verbindung zwischen zwei Menschen." },
-                { word: "WISSENSCHAFT", de: "Systematisches Studium der Natur und Welt." },
-                { word: "UNTERSTÜTZUNG", de: "Hilfe, die man jemandem gibt." },
-                { word: "ENTWICKLUNG", de: "Ein Prozess der Veränderung und Verbesserung." },
-                { word: "GERECHTIGKEIT", de: "Wenn alles fair og riktig abläuft." },
-                { word: "ERFOLGREICH", de: "Wenn man seine Ziele erreicht hat." },
-                { word: "HINDERNIS", de: "Etwas, das im Weg steht." },
-                { word: "BEDEUTUNG", de: "Was ein Wort oder eine Sache aussagt." },
-                { word: "FREIHEIT", de: "Das Recht, zu tun, was man möchte." },
-                { word: "SICHERHEIT", de: "Der Zustand, in dem man geschützt ist." },
-                { word: "MÖGLICHKEIT", de: "Etwas, das passieren könnte." }
+                { word: "UMWELTSCHUTZ", de: "Aktionen, um die Natur sauber zu halten.", no: "Miljøvern." },
+                { word: "ERFAHRUNG", de: "Wissen, das man durch das Leben bekommt.", no: "Erfaring." },
+                { word: "UNTERSCHIED", de: "Das Merkmal, das zwei Dinge ungleich macht.", no: "Forskjell." },
+                { word: "NACHHALTIGKEIT", de: "Ressourcen so nutzen, dass sie lange halten.", no: "Bærekraft." }
+            ],
+            tysk8: [
+                { word: "KLASSE", de: "Eine Gruppe von Schülern in der Schule.", no: "Klasse på skolen.", text: "Kapittel 1: Mein Alltag" },
+                { word: "LEHRER", de: "Eine Person, die etwas unterrichtet.", no: "En person som underviser.", text: "Kapittel 1: Mein Alltag" },
+                { word: "HAUSAUFGABE", de: "Schularbeit, die man zu Hause macht.", no: "Lekser man gjør hjemme.", text: "Kapittel 1: Mein Alltag" },
+                { word: "FAMILIE", de: "Eltern, Kinder und Verwandte.", no: "Foreldre, barn og slektninger.", text: "Kapittel 2: Meine Familie" },
+                { word: "BRUDER", de: "Ein männliches Geschwisterteil.", no: "En bror.", text: "Kapittel 2: Meine Familie" },
+                { word: "SCHWESTER", de: "Ein weibliches Geschwisterteil.", no: "En søster.", text: "Kapittel 2: Meine Familie" }
+            ],
+            tysk10: [
+                { word: "ZUKUNFT", de: "Die Zeit, die erst noch kommen wird.", no: "Fremtiden.", text: "Tekst 1: Unsere Zukunft" },
+                { word: "BERUF", de: "Die Arbeit, die man täglich macht.", no: "Yrke / jobb.", text: "Tekst 1: Unsere Zukunft" },
+                { word: "KULTUR", de: "Traditionen, Kunst und Geschichte eines Landes.", no: "Kultur og tradisjoner.", text: "Tekst 2: Deutschland heute" },
+                { word: "HOFFNUNG", de: "Der Wunsch, dass etwas Gutes passiert.", no: "Håp.", text: "Tekst 1: Unsere Zukunft" },
+                { word: "GESELLSCHAFT", de: "Alle Menschen in einem Land zusammen.", no: "Samfunn.", text: "Tekst 2: Deutschland heute" }
             ]
         };
 
+        // Aktive ordlister (startes med fallback)
+        let activeWords = JSON.parse(JSON.stringify(defaultWords));
+        
         let currentDifficulty = 'easy';
+        let currentChapterFilter = 'all';
         let currentWordIndex = 0;
         let score = 0;
         let streak = 0;
@@ -428,13 +441,202 @@
         let isRevealing = false;
 
         const startScreen = document.getElementById('start-screen');
+        const chapterSelectScreen = document.getElementById('chapter-select-screen');
         const playScreen = document.getElementById('play-screen');
         const endScreen = document.getElementById('end-screen');
         const wordInput = document.getElementById('word-input');
 
-        function startGame(difficulty) {
+        function getRawGistUrl(url) {
+            if (!url) return '';
+            let cleaned = url.trim();
+            // Hvis brukeren limer inn en vanlig Gist URL
+            if (cleaned.includes('gist.github.com') && !cleaned.includes('raw')) {
+                cleaned = cleaned.replace(/\/$/, '');
+                const parts = cleaned.split('/');
+                const id = parts[parts.length - 1];
+                const user = parts[parts.length - 2];
+                if (id && user) {
+                    return `https://gist.githubusercontent.com/${user}/${id}/raw`;
+                }
+            }
+            return cleaned;
+        }
+
+        async function fetchGistData(showAlert = false) {
+            const savedUrl = localStorage.getItem(`gist_url_${appId}`);
+            const statusDot = document.getElementById('gist-status-dot');
+            const statusText = document.getElementById('gist-status-text');
+
+            if (!savedUrl) {
+                activeWords = JSON.parse(JSON.stringify(defaultWords));
+                statusDot.className = "h-2.5 w-2.5 rounded-full bg-slate-400 flex-shrink-0";
+                statusText.innerText = "Standard ordliste (Innebygd)";
+                return;
+            }
+
+            const rawUrl = getRawGistUrl(savedUrl);
+
+            try {
+                statusText.innerText = "Laster ordliste fra Gist...";
+                statusDot.className = "h-2.5 w-2.5 rounded-full bg-yellow-400 animate-pulse flex-shrink-0";
+
+                const response = await fetch(rawUrl, { cache: 'no-cache' });
+                if (!response.ok) throw new Error("Kunne ikke hente Gist-fil");
+
+                const json = await response.json();
+                
+                // Valider at JSON har påkrevde felter
+                if (json && (json.easy || json.tysk8 || json.tysk10)) {
+                    activeWords = { ...defaultWords, ...json };
+                    statusDot.className = "h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0";
+                    statusText.innerText = "Ordliste hentet fra GitHub Gist!";
+                    if (showAlert) {
+                        alert("Vellykket! Ordlisten ble oppdatert fra GitHub Gist.");
+                    }
+                } else {
+                    throw new Error("Ugyldig JSON-struktur");
+                }
+            } catch (err) {
+                console.error("Gist fetch error:", err);
+                activeWords = JSON.parse(JSON.stringify(defaultWords));
+                statusDot.className = "h-2.5 w-2.5 rounded-full bg-red-500 flex-shrink-0";
+                statusText.innerText = "Feil ved henting av Gist. Bruker standard.";
+                if (showAlert) {
+                    alert("Kunne ikke laste ordlisten fra Gist-en. Sjekk at URL-en er riktig og at JSON-en er gyldig.");
+                }
+            }
+        }
+
+        function openGistModal() {
+            const savedUrl = localStorage.getItem(`gist_url_${appId}`) || '';
+            document.getElementById('gist-url-input').value = savedUrl;
+            document.getElementById('gist-modal').classList.remove('hidden');
+        }
+
+        function closeGistModal() {
+            document.getElementById('gist-modal').classList.add('hidden');
+        }
+
+        async function saveAndFetchGist() {
+            const inputVal = document.getElementById('gist-url-input').value.trim();
+            if (inputVal) {
+                localStorage.setItem(`gist_url_${appId}`, inputVal);
+            } else {
+                localStorage.removeItem(`gist_url_${appId}`);
+            }
+            closeGistModal();
+            await fetchGistData(true);
+        }
+
+        function resetGistToDefault() {
+            localStorage.removeItem(`gist_url_${appId}`);
+            document.getElementById('gist-url-input').value = '';
+            closeGistModal();
+            fetchGistData(true);
+        }
+
+        function copyJsonTemplate() {
+            const template = JSON.stringify({
+                easy: [
+                    { word: "APFEL", de: "Eine Frucht", no: "Eple" }
+                ],
+                medium: [
+                    { word: "FAHRRAD", de: "Fahrzeug mit zwei Rädern", no: "Sykkel" }
+                ],
+                hard: [
+                    { word: "ERFAHRUNG", de: "Wissen aus dem Leben", no: "Erfaring" }
+                ],
+                tysk8: [
+                    { word: "SCHULE", de: "Ort zum Lernen", no: "Skole", text: "Kapittel 1: Min Skole" },
+                    { word: "KLASSE", de: "Gruppe von Schülern", no: "Klasse", text: "Kapittel 1: Min Skole" }
+                ],
+                tysk10: [
+                    { word: "ZUKUNFT", de: "Zeit die kommt", no: "Fremtid", text: "Tekst 1: Fremtiden" }
+                ]
+            }, null, 2);
+
+            try {
+                document.execCommand('copy');
+                // Alternativ kopi
+                const el = document.createElement('textarea');
+                el.value = template;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alert("JSON-skal kopiert til utklippstavlen!");
+            } catch(e) {
+                alert("Kunne ikke kopiere automatisk. Marker og kopier koden i eksempelet over.");
+            }
+        }
+
+        function prepareCustomMode(modeKey) {
+            currentDifficulty = modeKey;
+            const modeWords = activeWords[modeKey] || [];
+
+            if (modeWords.length === 0) {
+                alert(`Ingen gloser er lagt inn for ${modeKey === 'tysk8' ? 'Tysk 8.' : 'Tysk 10.'} ennå.`);
+                return;
+            }
+
+            // Samle alle unike tekst/kapittel-kategorier
+            const chapters = new Set();
+            modeWords.forEach(w => {
+                if (w.text) chapters.add(w.text);
+                else if (w.chapter) chapters.add(w.chapter);
+            });
+
+            const chapterList = Array.from(chapters);
+
+            // Hvis det ikke er spesifiserte kapitler, start spillet direkte med alle ord
+            if (chapterList.length <= 1) {
+                startGame(modeKey, 'all');
+                return;
+            }
+
+            // Vis kapittelutvalg
+            startScreen.classList.add('hidden');
+            chapterSelectScreen.classList.remove('hidden');
+            document.getElementById('chapter-title').innerText = modeKey === 'tysk8' ? 'Tysk 8. Klasse' : 'Tysk 10. Klasse';
+
+            const container = document.getElementById('chapter-buttons-container');
+            container.innerHTML = `
+                <button onclick="startGame('${modeKey}', 'all')" class="w-full bg-white border-2 border-purple-500 text-purple-700 font-black py-3 px-4 rounded-xl shadow-sm hover:bg-purple-50 transition-all text-left flex justify-between items-center text-sm">
+                    <span>Alle tekster / kapitler</span>
+                    <span class="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-bold">${modeWords.length} gloser</span>
+                </button>
+            `;
+
+            chapterList.forEach(chap => {
+                const count = modeWords.filter(w => (w.text === chap || w.chapter === chap)).length;
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-white border border-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl shadow-sm hover:border-purple-500 hover:text-purple-700 hover:bg-purple-50 transition-all text-left flex justify-between items-center text-sm";
+                btn.onclick = () => startGame(modeKey, chap);
+                btn.innerHTML = `
+                    <span class="truncate pr-2">${chap}</span>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">${count} gloser</span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function startGame(difficulty, chapterFilter = 'all') {
             currentDifficulty = difficulty;
-            gameWords = [...words[difficulty]].sort(() => Math.random() - 0.5);
+            currentChapterFilter = chapterFilter;
+
+            let sourceList = activeWords[difficulty] || defaultWords[difficulty] || [];
+            
+            // Filtrer etter kapittel dersom valgt
+            if (chapterFilter !== 'all') {
+                sourceList = sourceList.filter(w => (w.text === chapterFilter || w.chapter === chapterFilter));
+            }
+
+            if (sourceList.length === 0) {
+                alert("Fant ingen ord i valgte kategori.");
+                return;
+            }
+
+            gameWords = [...sourceList].sort(() => Math.random() - 0.5);
             currentWordIndex = 0;
             score = 0;
             streak = 0;
@@ -443,6 +645,7 @@
             isRevealing = false;
             
             startScreen.classList.add('hidden');
+            chapterSelectScreen.classList.add('hidden');
             endScreen.classList.add('hidden');
             playScreen.classList.remove('hidden');
             
@@ -474,13 +677,31 @@
         }
 
         function nextWord() {
+            let sourceList = activeWords[currentDifficulty] || defaultWords[currentDifficulty] || [];
+            if (currentChapterFilter !== 'all') {
+                sourceList = sourceList.filter(w => (w.text === currentChapterFilter || w.chapter === currentChapterFilter));
+            }
+
             if (currentWordIndex >= gameWords.length) {
-                gameWords = [...words[currentDifficulty]].sort(() => Math.random() - 0.5);
+                gameWords = [...sourceList].sort(() => Math.random() - 0.5);
                 currentWordIndex = 0;
             }
+            
             const wordData = gameWords[currentWordIndex];
             document.getElementById('german-definition').innerText = wordData.de;
             document.getElementById('norwegian-definition').innerText = wordData.no || "";
+            
+            // Kapittel/tekst badge
+            const badgeContainer = document.getElementById('text-badge-container');
+            const badge = document.getElementById('text-badge');
+            const textName = wordData.text || wordData.chapter;
+            if (textName) {
+                badge.innerText = textName;
+                badgeContainer.classList.remove('hidden');
+            } else {
+                badgeContainer.classList.add('hidden');
+            }
+
             currentGuess = wordData.word[0];
             wordInput.value = "";
             isRevealing = false;
@@ -517,7 +738,6 @@
                 streak++;
                 score += (10 + Math.min(streak, 10));
                 
-                // Tidsbonus: +2 sekunder for riktig svar
                 timeLeft = Math.min(timeLeft + 2, 60);
                 document.getElementById('timer').innerText = timeLeft;
                 showTimeBonus(2);
@@ -541,11 +761,8 @@
             }
         });
 
-        // Håndter tastatur-snarveier
         window.addEventListener('keydown', (e) => {
             if (playScreen.classList.contains('hidden')) return;
-            
-            // Bare Esc hopper over ord nå
             if (e.key === "Escape") {
                 skipWord();
             }
@@ -573,7 +790,7 @@
         function updateStreakUI() {
             const container = document.getElementById('streak-container');
             if (streak >= 2) {
-                container.innerHTML = `<span class="streak-badge bg-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-full italic uppercase shadow-lg shadow-orange-200 tracking-tighter">Combo x${streak}</span>`;
+                container.innerHTML = `<span class="streak-badge bg-orange-500 text-white text-[10px] font-black px-3 py-0.5 rounded-full italic uppercase shadow-md shadow-orange-200 tracking-tighter">Combo x${streak}</span>`;
             } else {
                 container.innerHTML = "";
             }
@@ -594,39 +811,52 @@
             playScreen.classList.add('hidden');
             endScreen.classList.remove('hidden');
             document.getElementById('final-score').innerText = score;
-            const diffNames = { easy: "Enkel modus", medium: "Middels modus", hard: "Vanskelig modus" };
-            document.getElementById('end-difficulty-text').innerText = diffNames[currentDifficulty];
+            
+            const diffNames = { 
+                easy: "Enkel modus", 
+                medium: "Middels modus", 
+                hard: "Vanskelig modus",
+                tysk8: "Tysk 8. klasse",
+                tysk10: "Tysk 10. klasse"
+            };
+            
+            document.getElementById('end-difficulty-text').innerText = diffNames[currentDifficulty] || "Fullført";
             
             window.saveHighScore(currentDifficulty, score);
             
-            document.getElementById('replay-btn').onclick = () => startGame(currentDifficulty);
+            document.getElementById('replay-btn').onclick = () => startGame(currentDifficulty, currentChapterFilter);
         }
 
         function resetGame() {
             clearInterval(timerInterval);
             startScreen.classList.remove('hidden');
+            chapterSelectScreen.classList.add('hidden');
             playScreen.classList.add('hidden');
             endScreen.classList.add('hidden');
             window.updateHighscoreUI();
         }
 
-        document.body.addEventListener('click', () => {
+        document.body.addEventListener('click', (e) => {
+            // Unngå re-fokus dersom bruker klikker i modaler eller innmat
+            if (e.target.closest('#gist-modal')) return;
             if(!playScreen.classList.contains('hidden')) wordInput.focus();
         });
 
-        // Forsikre oss om at UI oppdateres så fort siden er lastet
+        // Hent Gist ved oppstart
         window.addEventListener('DOMContentLoaded', () => {
             window.updateHighscoreUI();
+            fetchGistData();
         });
 
         window.onload = () => {
             window.updateHighscoreUI();
         };
     </script>
-  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
+
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+    <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Tilbake til Lærerverktøy</span>
+    </a>
 </body>
 </html>
