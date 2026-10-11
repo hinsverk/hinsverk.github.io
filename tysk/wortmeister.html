@@ -14,6 +14,9 @@
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
 
     <script>
+        // Standard Gist URL som laster automatisk for alle brukere
+        const DEFAULT_GIST_URL = "https://gist.githubusercontent.com/hinsverk/47de3f16fb7e3cfaf79aca694673f5ff/raw/b75b39718d49b30548b93e9cdb8c3462003ffc87/wortmeister.json";
+
         // Sikker initialisering for Google Sites
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tysk-wort-meister';
 
@@ -228,7 +231,7 @@
             <div id="gist-status-bar" class="w-full mb-5 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-left flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2 text-blue-800 font-semibold truncate">
                     <span id="gist-status-dot" class="h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                    <span id="gist-status-text" class="truncate">Standard ordliste (Innebygd)</span>
+                    <span id="gist-status-text" class="truncate">Sjekker ordliste...</span>
                 </div>
                 <button onclick="fetchGistData(true)" class="text-blue-600 hover:text-blue-800 text-[11px] font-bold underline flex-shrink-0 ml-2">Oppdater</button>
             </div>
@@ -331,12 +334,12 @@
             </div>
             
             <p class="text-xs text-gray-600 mb-4 leading-relaxed">
-                Her kan du koble appen til din egen GitHub Gist. Endringer du gjør i Gist-en blir da oppdatert i appen automatisk!
+                Appen henter automatisk fra din GitHub Gist. Endrer du på Gist-en på GitHub, vil oppdateringene vises her!
             </p>
 
             <div class="mb-4">
-                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">GitHub Gist URL (Raw eller vanlig)</label>
-                <input type="url" id="gist-url-input" placeholder="https://gist.githubusercontent.com/hinsverk/47de3f16fb7e3cfaf79aca694673f5ff/raw/b75b39718d49b30548b93e9cdb8c3462003ffc87/wortmeister.json" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">GitHub Gist URL (Overstyr standard)</label>
+                <input type="url" id="gist-url-input" placeholder="Lim inn for å bruke en annen Gist..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
             </div>
 
             <div class="flex gap-2 mb-6">
@@ -366,14 +369,7 @@
       "text": "Kapittel 1: Skolen min"
     }
   ],
-  "tysk10": [
-    {
-      "word": "GESELLSCHAFT",
-      "de": "Alle Menschen zusammen.",
-      "no": "Samfunn.",
-      "text": "Tekst 2: Kultur"
-    }
-  ]
+  "tysk10": [ ... ]
 }</code></pre>
             </div>
         </div>
@@ -395,7 +391,7 @@
                 { word: "AUTO", de: "Ein Fahrzeug mit vier Rädern.", no: "Et kjøretøy med fire hjul." }
             ],
             medium: [
-                { word: "FAHRRAD", de: "Ein Fahrzeug mit zwei Rädern ohne motor.", no: "Et kjøretøy med to hjul uten motor." },
+                { word: "FAHRRAD", de: "Ein Fahrzeug mit zwei Rädern ohne Motor.", no: "Et kjøretøy med to hjul uten motor." },
                 { word: "FRÜHSTÜCK", de: "Die erste Mahlzeit des Tages am Morgen.", no: "Dagens første måltid om morgenen." },
                 { word: "WETTER", de: "Es kann sonnig, regnerisch oder windig sein.", no: "Det kan være sol, regn eller vind." },
                 { word: "REISE", de: "Wenn man wegfährt, um Urlaub zu machen.", no: "Når man reiser bort for å ha ferie." },
@@ -412,16 +408,12 @@
                 { word: "KLASSE", de: "Eine Gruppe von Schülern in der Schule.", no: "Klasse på skolen.", text: "Kapittel 1: Mein Alltag" },
                 { word: "LEHRER", de: "Eine Person, die etwas unterrichtet.", no: "En person som underviser.", text: "Kapittel 1: Mein Alltag" },
                 { word: "HAUSAUFGABE", de: "Schularbeit, die man zu Hause macht.", no: "Lekser man gjør hjemme.", text: "Kapittel 1: Mein Alltag" },
-                { word: "FAMILIE", de: "Eltern, Kinder und Verwandte.", no: "Foreldre, barn og slektninger.", text: "Kapittel 2: Meine Familie" },
-                { word: "BRUDER", de: "Ein männliches Geschwisterteil.", no: "En bror.", text: "Kapittel 2: Meine Familie" },
-                { word: "SCHWESTER", de: "Ein weibliches Geschwisterteil.", no: "En søster.", text: "Kapittel 2: Meine Familie" }
+                { word: "FAMILIE", de: "Eltern, Kinder und Verwandte.", no: "Foreldre, barn og slektninger.", text: "Kapittel 2: Meine Familie" }
             ],
             tysk10: [
                 { word: "ZUKUNFT", de: "Die Zeit, die erst noch kommen wird.", no: "Fremtiden.", text: "Tekst 1: Unsere Zukunft" },
                 { word: "BERUF", de: "Die Arbeit, die man täglich macht.", no: "Yrke / jobb.", text: "Tekst 1: Unsere Zukunft" },
-                { word: "KULTUR", de: "Traditionen, Kunst und Geschichte eines Landes.", no: "Kultur og tradisjoner.", text: "Tekst 2: Deutschland heute" },
-                { word: "HOFFNUNG", de: "Der Wunsch, dass etwas Gutes passiert.", no: "Håp.", text: "Tekst 1: Unsere Zukunft" },
-                { word: "GESELLSCHAFT", de: "Alle Menschen in einem Land zusammen.", no: "Samfunn.", text: "Tekst 2: Deutschland heute" }
+                { word: "KULTUR", de: "Traditionen, Kunst und Geschichte eines Landes.", no: "Kultur og tradisjoner.", text: "Tekst 2: Deutschland heute" }
             ]
         };
 
@@ -449,7 +441,6 @@
         function getRawGistUrl(url) {
             if (!url) return '';
             let cleaned = url.trim();
-            // Hvis brukeren limer inn en vanlig Gist URL
             if (cleaned.includes('gist.github.com') && !cleaned.includes('raw')) {
                 cleaned = cleaned.replace(/\/$/, '');
                 const parts = cleaned.split('/');
@@ -462,17 +453,20 @@
             return cleaned;
         }
 
+        function cleanAndParseJSON(text) {
+            // Fjern eventuelle JS-variabeldeklarasjoner i starten
+            let cleaned = text.replace(/^\s*(?:const|let|var)\s+\w+\s*=\s*/i, '');
+            // Fjern semikolon på slutten
+            cleaned = cleaned.trim().replace(/;\s*$/, '');
+            // Fjern trailing commas før ] eller }
+            cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
+            return JSON.parse(cleaned);
+        }
+
         async function fetchGistData(showAlert = false) {
-            const savedUrl = localStorage.getItem(`gist_url_${appId}`);
+            const savedUrl = localStorage.getItem(`gist_url_${appId}`) || DEFAULT_GIST_URL;
             const statusDot = document.getElementById('gist-status-dot');
             const statusText = document.getElementById('gist-status-text');
-
-            if (!savedUrl) {
-                activeWords = JSON.parse(JSON.stringify(defaultWords));
-                statusDot.className = "h-2.5 w-2.5 rounded-full bg-slate-400 flex-shrink-0";
-                statusText.innerText = "Standard ordliste (Innebygd)";
-                return;
-            }
 
             const rawUrl = getRawGistUrl(savedUrl);
 
@@ -483,9 +477,9 @@
                 const response = await fetch(rawUrl, { cache: 'no-cache' });
                 if (!response.ok) throw new Error("Kunne ikke hente Gist-fil");
 
-                const json = await response.json();
+                const rawText = await response.text();
+                const json = cleanAndParseJSON(rawText);
                 
-                // Valider at JSON har påkrevde felter
                 if (json && (json.easy || json.tysk8 || json.tysk10)) {
                     activeWords = { ...defaultWords, ...json };
                     statusDot.className = "h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0";
@@ -547,8 +541,7 @@
                     { word: "ERFAHRUNG", de: "Wissen aus dem Leben", no: "Erfaring" }
                 ],
                 tysk8: [
-                    { word: "SCHULE", de: "Ort zum Lernen", no: "Skole", text: "Kapittel 1: Min Skole" },
-                    { word: "KLASSE", de: "Gruppe von Schülern", no: "Klasse", text: "Kapittel 1: Min Skole" }
+                    { word: "SCHULE", de: "Ort zum Lernen", no: "Skole", text: "Kapittel 1: Min Skole" }
                 ],
                 tysk10: [
                     { word: "ZUKUNFT", de: "Zeit die kommt", no: "Fremtid", text: "Tekst 1: Fremtiden" }
@@ -556,8 +549,6 @@
             }, null, 2);
 
             try {
-                document.execCommand('copy');
-                // Alternativ kopi
                 const el = document.createElement('textarea');
                 el.value = template;
                 document.body.appendChild(el);
@@ -566,7 +557,7 @@
                 document.body.removeChild(el);
                 alert("JSON-skal kopiert til utklippstavlen!");
             } catch(e) {
-                alert("Kunne ikke kopiere automatisk. Marker og kopier koden i eksempelet over.");
+                alert("Kunne ikke kopiere automatisk.");
             }
         }
 
@@ -579,7 +570,6 @@
                 return;
             }
 
-            // Samle alle unike tekst/kapittel-kategorier
             const chapters = new Set();
             modeWords.forEach(w => {
                 if (w.text) chapters.add(w.text);
@@ -588,13 +578,11 @@
 
             const chapterList = Array.from(chapters);
 
-            // Hvis det ikke er spesifiserte kapitler, start spillet direkte med alle ord
             if (chapterList.length <= 1) {
                 startGame(modeKey, 'all');
                 return;
             }
 
-            // Vis kapittelutvalg
             startScreen.classList.add('hidden');
             chapterSelectScreen.classList.remove('hidden');
             document.getElementById('chapter-title').innerText = modeKey === 'tysk8' ? 'Tysk 8. Klasse' : 'Tysk 10. Klasse';
@@ -626,7 +614,6 @@
 
             let sourceList = activeWords[difficulty] || defaultWords[difficulty] || [];
             
-            // Filtrer etter kapittel dersom valgt
             if (chapterFilter !== 'all') {
                 sourceList = sourceList.filter(w => (w.text === chapterFilter || w.chapter === chapterFilter));
             }
@@ -691,7 +678,6 @@
             document.getElementById('german-definition').innerText = wordData.de;
             document.getElementById('norwegian-definition').innerText = wordData.no || "";
             
-            // Kapittel/tekst badge
             const badgeContainer = document.getElementById('text-badge-container');
             const badge = document.getElementById('text-badge');
             const textName = wordData.text || wordData.chapter;
@@ -837,12 +823,10 @@
         }
 
         document.body.addEventListener('click', (e) => {
-            // Unngå re-fokus dersom bruker klikker i modaler eller innmat
             if (e.target.closest('#gist-modal')) return;
             if(!playScreen.classList.contains('hidden')) wordInput.focus();
         });
 
-        // Hent Gist ved oppstart
         window.addEventListener('DOMContentLoaded', () => {
             window.updateHighscoreUI();
             fetchGistData();
@@ -853,7 +837,7 @@
         };
     </script>
 
-    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+    <!-- TILBAKE-KNAPP -->
     <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
         <i class="fa-solid fa-arrow-left"></i>
         <span>Tilbake til Lærerverktøy</span>
