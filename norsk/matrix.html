@@ -80,43 +80,51 @@
             appId: "1:613491554297:web:ee9b629fbcf306aeaeaf28"
         };
 
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxizUHlznWobXctoxE-UHXw63s0IBWHymy3eYOcVCM49eoil0XzTLPJB5xiPquhyvBy/exec";
+        // GitHub Base-URL for JSON-filer uten låst commit-hash for alltid å hente NYESTE versjon
+        const GITHUB_JSON_BASE_URL = "https://gist.githubusercontent.com/hinsverk/4d3974a3f872a300d212b9ff275efc21/raw/matrix.json";
 
         const LOCAL_FALLBACKS = {
             NORSK1: {
-                name: "Basic Protocol (Backup-liste)",
+                name: "Oversettelse fra bokmål til nynorsk (Backup)",
                 words: [
+                    { q: "hun", a: "ho" },
                     { q: "Katt", a: "Cat" },
                     { q: "Hund", a: "Dog" },
-                    { q: "Hus", a: "House" },
-                    { q: "Bok", a: "Book" },
-                    { q: "Bord", a: "Table" },
-                    { q: "Eple", a: "Apple" },
-                    { q: "Venn", a: "Friend" },
-                    { q: "Skole", a: "School" },
-                    { q: "Vann", a: "Water" },
-                    { q: "Brød", a: "Bread" }
+                    { q: "Hus", a: "House" }
                 ]
             },
             NORSK2: {
-                name: "Advanced Protocol (Backup-liste)",
+                name: "Synonymer på bokmål (Backup)",
                 words: [
+                    { q: "Glad", a: "Lykkelig" },
                     { q: "Beslutning", a: "Decision" },
-                    { q: "Utvikling", a: "Development" },
-                    { q: "Erfaring", a: "Experience" },
-                    { q: "Kunnskap", a: "Knowledge" },
-                    { q: "Mulighet", a: "Opportunity" },
-                    { q: "Suksess", a: "Success" },
-                    { q: "Samfunn", a: "Society" },
-                    { q: "Forståelse", a: "Understanding" },
-                    { q: "Fremtid", a: "Future" },
-                    { q: "Utfordring", a: "Challenge" }
+                    { q: "Erfaring", a: "Experience" }
                 ]
             }
         };
 
-        const START_HP = 150; // Økt start-HP for lengre kamper
-        const DAMAGE_PER_HIT = 10; // Redusert skade per treff/feil for bedre balanse
+        // Hjelpefunksjon for å normalisere ulike nøkkelnavn i JSON (f.eks. bokmaal/nynorsk, ord/synonym, q/a)
+        const normalizeGloseItem = (item) => {
+            if (!item) return { q: "", a: "" };
+            if (item.q !== undefined && item.a !== undefined) {
+                return { q: String(item.q), a: String(item.a) };
+            }
+            if (item.bokmaal !== undefined && item.nynorsk !== undefined) {
+                return { q: String(item.bokmaal), a: String(item.nynorsk) };
+            }
+            if (item.ord !== undefined && item.synonym !== undefined) {
+                return { q: String(item.ord), a: String(item.synonym) };
+            }
+            // Generell fallback hvis fremtidige lister har andre nøkkelnavn
+            const keys = Object.keys(item);
+            if (keys.length >= 2) {
+                return { q: String(item[keys[0]]), a: String(item[keys[1]]) };
+            }
+            return { q: String(item.q || item.ord || item.bokmaal || ""), a: String(item.a || item.synonym || item.nynorsk || "") };
+        };
+
+        const START_HP = 150;
+        const DAMAGE_PER_HIT = 10;
 
         const App = () => {
             const [view, setView] = useState('landing');
@@ -156,6 +164,7 @@
             ]);
             
             const [authToken, setAuthToken] = useState("");
+            const [githubStatus, setGithubStatus] = useState({ state: "loading", msg: "Sjekker GitHub..." });
             const logEndRef = useRef(null);
 
             const addLog = (msg) => {
@@ -163,111 +172,37 @@
                 setLogs(prev => [...prev.slice(-25), `[${time}] ${msg}`]);
             };
 
-            useEffect(() => {
-                if (scrollContainerRef.current) {
-                    scrollContainerRef.current.scrollTop = 0;
-                }
-            }, [view]);
-
-            useEffect(() => {
-                const canvas = document.getElementById('matrix-rain');
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                
-                const resizeCanvas = () => {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                };
-                
-                resizeCanvas();
-                window.addEventListener('resize', resizeCanvas);
-                
-                const katakana = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                const alphabet = katakana.split("");
-                
-                const fontSize = 14;
-                let columns = canvas.width / fontSize;
-                
-                let rainDrops = [];
-                for (let x = 0; x < columns; x++) {
-                    rainDrops[x] = Math.random() * -100;
-                }
-                
-                const draw = () => {
-                    ctx.fillStyle = 'rgba(0, 8, 0, 0.08)'; 
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
-                    ctx.fillStyle = 'rgba(0, 255, 65, 0.35)'; 
-                    ctx.font = fontSize + 'px monospace';
-                    
-                    for (let i = 0; i < rainDrops.length; i++) {
-                        const text = alphabet[Math.floor(Math.random() * alphabet.length)];
-                        ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
-                        
-                        if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                            rainDrops[i] = 0;
-                        }
-                        rainDrops[i]++;
-                    }
-                };
-                
-                const interval = setInterval(draw, 33);
-                
-                return () => {
-                    clearInterval(interval);
-                    window.removeEventListener('resize', resizeCanvas);
-                };
-            }, []);
-
-            useEffect(() => {
-                if (logEndRef.current) logEndRef.current.scrollIntoView({ behavior: 'smooth' });
-            }, [logs]);
-
-            useEffect(() => {
-                sessionStorage.setItem('glose_name', playerName);
-            }, [playerName]);
-
-            useEffect(() => {
-                const initSecureRESTAuth = async () => {
-                    try {
-                        addLog("Configuring DB transport rules...");
-                        addLog("HTTPS Long-Polling protocol FORCED.");
-                        
-                        const signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`;
-                        const res = await fetch(signUpUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ returnSecureToken: true })
-                        });
-                        
-                        if (res.ok) {
-                            const data = await res.json();
-                            setAuthToken(data.idToken);
-                            addLog("Network ONLINE (Encrypted Bridge Active)");
-                        }
-                    } catch (e) {
-                        addLog(`REST Auth Bypass active: ${e.message}`);
-                    }
-                };
-                initSecureRESTAuth();
-            }, []);
-
-            useEffect(() => {
-                const loadListTitles = async () => {
-                    const codes = ["NORSK1", "NORSK2"];
-                    for (const code of codes) {
-                        try {
-                            const data = await fetchWords(code, false); 
-                            if (data && data.name) {
-                                setAvailableLists(prev => prev.map(item => 
-                                    item.code === code ? { ...item, name: data.name } : item
-                                ));
+            const loadAvailableCategories = async () => {
+                setGithubStatus({ state: "loading", msg: "Kobler til GitHub..." });
+                try {
+                    const res = await fetch(`${GITHUB_JSON_BASE_URL}?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.kategorier && Array.isArray(data.kategorier)) {
+                            const list = data.kategorier.map(cat => ({
+                                code: cat.id,
+                                name: cat.navn || cat.id
+                            }));
+                            if (list.length > 0) {
+                                setAvailableLists(list);
+                                setGithubStatus({ state: "ok", msg: `🟢 GitHub Tilkoblet: ${list.length} kategorier funnet!` });
+                                addLog(`Dynamisk hentet ${list.length} kategorier fra GitHub JSON.`);
                             }
-                        } catch (e) {}
+                        } else {
+                            setGithubStatus({ state: "warning", msg: "⚠️ Svar mottatt, men ingen 'kategorier'-liste funnet." });
+                        }
+                    } else {
+                        setGithubStatus({ state: "error", msg: `🔴 Kunne ikke koble til GitHub (Status: ${res.status})` });
                     }
-                };
-                if (authToken) { loadListTitles(); }
-            }, [authToken]);
+                } catch (e) {
+                    setGithubStatus({ state: "error", msg: `🔴 GitHub-feil: ${e.message}` });
+                    addLog("Kunne ikke laste dynamisk kategoriliste.");
+                }
+            };
+
+            useEffect(() => {
+                loadAvailableCategories();
+            }, []);
 
             useEffect(() => {
                 if (!isMultiplayer || !gamePin) return;
@@ -323,21 +258,17 @@
                 };
             }, [isMultiplayer, gamePin, isHost, view, authToken, gameMode, playerId]);
 
-            // KAMPSTATUS-SJEKK (OPPDATERT FOR A UNNGA SOLO-FEIL OG GI RIKTIG VINDER)
             useEffect(() => {
                 if (view === 'game') {
                     if (!isMultiplayer) {
-                        // Solo-modus: Sjekker kun at din egen HP ikke har nådd 0
                         if (playerHP <= 0) {
                             setTimeout(() => setView('result'), 800);
                         }
                     } else if (gameMode === 'duel') {
-                        // Flerspiller 1v1
                         if (playerHP <= 0 || opponentHP <= 0) {
                             setTimeout(() => setView('result'), 800);
                         }
                     } else if (gameMode === 'royale') {
-                        // Battle Royale
                         const activePlayers = playersInRoom.filter(p => p.hp > 0);
                         if (playersInRoom.length > 1 && activePlayers.length <= 1) {
                             setTimeout(() => setView('result'), 800);
@@ -377,50 +308,49 @@
                         }
                     } catch (e) {}
                 } else {
-                    addLog(`BYPASSING CACHE: Requesting fresh assets for [${cleanCode}] from Sheets...`);
+                    addLog(`BYPASSING CACHE: Requesting fresh JSON assets for [${cleanCode}] from GitHub...`);
                 }
 
                 try {
-                    const response = await fetch(`${SCRIPT_URL}?action=getList&code=${encodeURIComponent(cleanCode)}`);
+                    const response = await fetch(`${GITHUB_JSON_BASE_URL}?t=${Date.now()}`);
                     if (response.ok) {
                         const data = await response.json();
-                        if (data && data.words) {
-                            addLog("Fresh assets pulled from Google Sheets API.");
-                            cacheListToFirebase(cleanCode, data);
-                            return data;
+                        
+                        // Håndterer struktur med "kategorier"-array
+                        if (data.kategorier && Array.isArray(data.kategorier)) {
+                            const category = data.kategorier.find(cat => cat.id && cat.id.toUpperCase() === cleanCode);
+                            if (category && category.ord) {
+                                const formatted = {
+                                    name: category.navn || category.id,
+                                    words: category.ord.map(normalizeGloseItem)
+                                };
+                                addLog(`Kategori '${cleanCode}' hentet fra GitHub.`);
+                                cacheListToFirebase(cleanCode, formatted);
+                                return formatted;
+                            }
+                        }
+
+                        // Fallback for flat/direkte struktur
+                        if (data[cleanCode] && data[cleanCode].words) {
+                            const formatted = {
+                                name: data[cleanCode].name || cleanCode,
+                                words: data[cleanCode].words.map(normalizeGloseItem)
+                            };
+                            addLog(`Hentet [${cleanCode}] fra GitHub.`);
+                            cacheListToFirebase(cleanCode, formatted);
+                            return formatted;
                         }
                     }
-                } catch (err) {}
+                } catch (err) {
+                    addLog(`GitHub fetch error: ${err.message}`);
+                }
 
-                return new Promise((resolve, reject) => {
-                    const callbackName = 'cb_' + Math.random().toString(36).substr(2, 9);
-                    const script = document.createElement('script');
-                    
-                    const timeout = setTimeout(() => {
-                        script.remove();
-                        window[callbackName] = () => { delete window[callbackName]; };
-                        if (LOCAL_FALLBACKS[cleanCode]) {
-                            addLog("Sheets timed out. Using emergency local fallback.");
-                            resolve(LOCAL_FALLBACKS[cleanCode]);
-                        } else { reject(new Error("Timeout")); }
-                    }, 6000);
+                if (LOCAL_FALLBACKS[cleanCode]) {
+                    addLog("GitHub JSON fetch failed. Using emergency local fallback.");
+                    return LOCAL_FALLBACKS[cleanCode];
+                }
 
-                    window[callbackName] = (data) => { 
-                        clearTimeout(timeout);
-                        script.remove();
-                        delete window[callbackName];
-                        if (data && data.words) {
-                            addLog("Fresh assets pulled via JSONP.");
-                            cacheListToFirebase(cleanCode, data);
-                            resolve(data);
-                        } else {
-                            resolve(LOCAL_FALLBACKS[cleanCode] || reject(new Error("Data error")));
-                        }
-                    };
-
-                    script.src = `${SCRIPT_URL}?action=getList&code=${encodeURIComponent(cleanCode)}&callback=${callbackName}`;
-                    document.body.appendChild(script);
-                });
+                throw new Error("Kunne ikke laste ordliste.");
             };
 
             const forceRefreshCurrentList = async () => {
@@ -434,10 +364,10 @@
                             item.code === listCode ? { ...item, name: freshData.name || item.name } : item
                         ));
                         addLog(`SUCCESS: Cache cleared & updated for ${listCode}!`);
-                        alert(`Liste '${listCode}' ble oppdatert med nye ord fra regnearket ditt!`);
+                        alert(`Liste '${listCode}' ble oppdatert med nye ord fra GitHub!`);
                     }
                 } catch (e) {
-                    setError("Kunne ikke synkronisere med Sheets. Sjekk koden.");
+                    setError("Kunne ikke synkronisere med GitHub. Sjekk koden eller URL.");
                 } finally {
                     setIsRefreshing(false);
                 }
@@ -561,7 +491,7 @@
                 if (isCorrect) {
                     setGameState(p => ({ ...p, feedback: "✓ DATA MATCHED" }));
                     
-                    const newMyHP = Math.min(START_HP * 1.5, playerHP + 5); // Får litt bonus HP ved riktig svar
+                    const newMyHP = Math.min(START_HP * 1.5, playerHP + 5);
                     setPlayerHP(newMyHP);
 
                     if (isMultiplayer) {
@@ -635,12 +565,29 @@
                         {view === 'landing' && (
                             <div className="bg-black/85 p-6 sm:p-8 matrix-border text-center space-y-6">
                                 <h1 className="text-3xl font-bold text-white tracking-tighter">NEURAL_DECODER v2.5</h1>
+                                
+                                {/* VISUELL STATUS-INDIKATOR FOR GITHUB */}
+                                <div className={`text-xs p-2.5 border rounded font-mono flex justify-between items-center ${
+                                    githubStatus.state === 'ok' ? 'bg-green-950/40 border-green-500/50 text-green-400' :
+                                    githubStatus.state === 'loading' ? 'bg-yellow-950/40 border-yellow-500/50 text-yellow-400 animate-pulse' :
+                                    'bg-red-950/40 border-red-500/50 text-red-400'
+                                }`}>
+                                    <span>{githubStatus.msg}</span>
+                                    <button 
+                                        onClick={loadAvailableCategories}
+                                        title="Sjekk GitHub på nytt"
+                                        className="ml-2 px-2 py-0.5 border border-current text-[10px] hover:bg-white/10 uppercase transition-all"
+                                    >
+                                        ⟳ Sjekk på nytt
+                                    </button>
+                                </div>
+
                                 <input className="w-full p-3 text-center" placeholder="ID" value={playerName} onChange={e => setPlayerName(e.target.value)} />
                                 <div className="grid grid-cols-1 gap-4">
                                     
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
                                         <div className="flex flex-col space-y-1">
-                                            <span className="text-[10px] text-green-500/60 uppercase tracking-widest font-mono">Ordliste:</span>
+                                            <span className="text-[10px] text-green-500/60 uppercase tracking-widest font-mono">Ordliste ({availableLists.length}):</span>
                                             <select className="p-3 w-full" value={listCode} onChange={e => setListCode(e.target.value)}>
                                                 {availableLists.map(list => (
                                                     <option key={list.code} value={list.code}>{list.name}</option>
@@ -657,14 +604,14 @@
                                     </div>
 
                                     <div className="flex justify-between items-center text-xs border border-green-950/60 bg-green-950/10 p-2.5 rounded font-mono">
-                                        <span className="text-[10px] text-green-500/40 uppercase tracking-wider">Tilkobling: REST-Proxy</span>
+                                        <span className="text-[10px] text-green-500/40 uppercase tracking-wider">Kilde: GitHub JSON</span>
                                         <button 
                                             onClick={forceRefreshCurrentList}
                                             disabled={isRefreshing}
-                                            title="Hent endringer direkte fra Google Sheets"
+                                            title="Hent endringer direkte fra GitHub"
                                             className="py-1 px-3 border border-yellow-600/80 text-yellow-500 hover:bg-yellow-600 hover:text-black font-bold text-[10px] uppercase transition-all duration-200"
                                         >
-                                            {isRefreshing ? "SYNCING..." : "⟳ Oppdater fra Sheets"}
+                                            {isRefreshing ? "SYNCING..." : "⟳ Oppdater fra GitHub"}
                                         </button>
                                     </div>
 
@@ -686,6 +633,24 @@
                                                 <p className="text-red-500 text-[10px] uppercase font-bold animate-pulse">{error}</p>
                                             </div>
                                     )}
+
+                                    {/* TERMINAL LOGG-SKUFF TOGGLE */}
+                                    <div className="text-left pt-2 border-t border-green-950">
+                                        <button 
+                                            onClick={() => setShowConsole(!showConsole)} 
+                                            className="text-[10px] text-green-600 hover:text-green-400 font-mono flex items-center gap-1"
+                                        >
+                                            <span>{showConsole ? '▼ Skjul' : '▲ Vis'} systemkonsoll ({logs.length} logg-oppføringer)</span>
+                                        </button>
+                                        {showConsole && (
+                                            <div className="mt-2 p-2 bg-black border border-green-900 font-mono text-[10px] h-32 overflow-y-auto text-green-400/80 space-y-1">
+                                                {logs.map((log, idx) => (
+                                                    <div key={idx}>{log}</div>
+                                                ))}
+                                                <div ref={logEndRef} />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -724,6 +689,17 @@
 
                         {view === 'game' && gameState.currentGlose && (
                             <div className="space-y-4">
+                                {/* TILBAKE / AVBRYT KNAPP I SPILLMODUS */}
+                                <div className="flex justify-between items-center px-1">
+                                    <button 
+                                        onClick={exitGame} 
+                                        className="text-[10px] text-green-500/70 hover:text-green-300 border border-green-900/60 px-2.5 py-1 bg-black/60 hover:bg-green-950/40 transition-all font-mono uppercase rounded flex items-center gap-1"
+                                    >
+                                        <span>←</span> Avbryt spill
+                                    </button>
+                                    <span className="text-[10px] opacity-40 uppercase font-mono">{listTitle}</span>
+                                </div>
+
                                 {isMultiplayer ? (
                                     gameMode === 'duel' ? (
                                         <div className="flex justify-between items-center bg-black/80 p-4 matrix-border">
@@ -837,10 +813,10 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render((<App />));
     </script>
-    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
+
+    <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Tilbake til Lærerverktøy</span>
+    </a>
 </body>
 </html>
