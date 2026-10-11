@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hot Seat - Tysk med Redigering</title>
+    <title>Hot Seat - Tysk med GitHub Gist Integration</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         
@@ -131,6 +132,26 @@
         <!-- ========================================== -->
         <div id="edit-view" class="hidden space-y-6 text-left">
             
+            <!-- GitHub Gist Integrasjonspanel -->
+            <div class="bg-purple-50 p-4 rounded-2xl border border-purple-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-brands fa-github text-base"></i> GitHub Gist Integrasjon
+                    </h3>
+                    <span id="gist-status-badge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-200 text-purple-800">
+                        Ikke tilkoblet
+                    </span>
+                </div>
+                <p class="text-xs text-purple-700 leading-relaxed">
+                    Kildekoden er klargjort for automatisk innlasting fra GitHub Gist.
+                </p>
+                <div class="flex gap-2">
+                    <button onclick="manualSyncGist()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm">
+                        <i class="fa-solid fa-rotate"></i> Synkroniser fra Gist nå
+                    </button>
+                </div>
+            </div>
+
             <!-- Verktøylinje: Importer / Eksporter & Nullstill -->
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -215,7 +236,15 @@
     </div>
 
     <script>
-        // Standard ordliste hvis ingen finnes i localStorage
+        // =========================================================================
+        // 🔗 GITHUB GIST KONFIGURASJON
+        // Lim inn din GitHub Gist URL eller ID mellom anførselstegnene nedenfor.
+        // Eksempel URL: "https://gist.github.com/brukernavn/123456789abcdef"
+        // Eksempel ID:  "123456789abcdef"
+        // =========================================================================
+        const GITHUB_GIST_URL_OR_ID = "https://gist.githubusercontent.com/hinsverk/a1f60c7b0913ec2eb9c8b5643c0ecc33/raw/4241784ae87830f12efea2628f554b6bdf8d9afe/hotseat.json";
+
+        // Standard ordliste hvis ingen finnes i localStorage eller Gist
         const defaultWordDatabase = [
             { de: "Apfel", no: "Eple" }, { de: "Schule", no: "Skole" }, { de: "Hund", no: "Hund" },
             { de: "Katze", no: "Katt" }, { de: "Haus", no: "Hus" }, { de: "Fahrrad", no: "Sykkel" },
@@ -301,17 +330,140 @@
             }
         }
 
-        function initData() {
-            // Last inn ordliste fra localStorage eller bruk standard
-            const savedDb = localStorage.getItem('hotseat_custom_db');
-            if (savedDb) {
-                try {
-                    wordDatabase = JSON.parse(savedDb);
-                } catch (e) {
+        // Hjelpefunksjon for å hente Gist ID fra URL eller streng
+        function parseGistId(input) {
+            if (!input) return null;
+            const str = input.trim();
+            if (/^[a-f0-9]+$/i.test(str)) return str;
+            const match = str.match(/gist\.github\.com\/(?:[^\/]+\/)?([a-f0-9]+)/i);
+            if (match && match[1]) return match[1];
+            const rawMatch = str.match(/gist\.githubusercontent\.com\/[^\/]+\/([a-f0-9]+)/i);
+            if (rawMatch && rawMatch[1]) return rawMatch[1];
+            return null;
+        }
+
+        // Automatisk fetching fra GitHub Gist
+        async function loadDataFromGist(silent = false) {
+            const gistId = parseGistId(GITHUB_GIST_URL_OR_ID);
+            const badge = document.getElementById('gist-status-badge');
+            
+            if (!gistId) {
+                if (badge) {
+                    badge.innerText = "Ingen Gist URL satt";
+                    badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700";
+                }
+                return false;
+            }
+
+            if (badge) {
+                badge.innerText = "Laster fra Gist...";
+                badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800";
+            }
+
+            try {
+                const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Klarte ikke hente Gist. Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                let jsonContent = null;
+                let foundFilename = "";
+
+                // Søk etter den første .json filen i Gist
+                for (const filename in data.files) {
+                    if (filename.toLowerCase().endsWith('.json') || data.files[filename].type === 'application/json') {
+                        jsonContent = data.files[filename].content;
+                        foundFilename = filename;
+                        break;
+                    }
+                }
+
+                // Hvis ingen spesifikk .json ble funnet, sjekk den første filen
+                if (!jsonContent && data.files) {
+                    const firstFileKey = Object.keys(data.files)[0];
+                    if (firstFileKey) {
+                        jsonContent = data.files[firstFileKey].content;
+                        foundFilename = firstFileKey;
+                    }
+                }
+
+                if (!jsonContent) {
+                    throw new Error("Ingen filer funnet i Gist.");
+                }
+
+                const parsedData = JSON.parse(jsonContent);
+                let wordList = Array.isArray(parsedData) ? parsedData : (parsedData.words || parsedData.ord);
+
+                if (!Array.isArray(wordList)) {
+                    throw new Error("JSON-strukturen må være et array eller ha en 'words'-nøkkel med ord.");
+                }
+
+                const validList = wordList.filter(item => item && typeof item.de === 'string' && typeof item.no === 'string');
+
+                if (validList.length === 0) {
+                    throw new Error("Ingen gyldige ordpar med 'de' og 'no' ble funnet i filen.");
+                }
+
+                wordDatabase = validList;
+                saveWordDatabase();
+                
+                if (badge) {
+                    badge.innerText = `Aktiv Gist: ${foundFilename}`;
+                    badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800";
+                }
+
+                document.getElementById('info-status').innerText = `Hentet ${validList.length} ord fra Gist`;
+
+                if (!silent) {
+                    showModal("Gist Lastet Inn!", `Hentet ${validList.length} ord fra filen "${foundFilename}" i din GitHub Gist.`, "info");
+                }
+                return true;
+
+            } catch (err) {
+                console.warn("Gist innlasting feilet:", err);
+                if (badge) {
+                    badge.innerText = "Gist feilet";
+                    badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800";
+                }
+                if (!silent) {
+                    showModal("Feil ved henting fra Gist", err.message, "info");
+                }
+                return false;
+            }
+        }
+
+        async function manualSyncGist() {
+            if (!GITHUB_GIST_URL_OR_ID.trim()) {
+                showModal("Gist-adresse mangler", "Du må legge inn din GitHub Gist URL eller ID i variabelen GITHUB_GIST_URL_OR_ID i kildekoden først.", "info");
+                return;
+            }
+            await loadDataFromGist(false);
+            renderWordList();
+        }
+
+        async function initData() {
+            // Sjekk først om Gist er konfigurert og forsøk å hente fra den
+            let loadedFromGist = false;
+            if (GITHUB_GIST_URL_OR_ID.trim()) {
+                loadedFromGist = await loadDataFromGist(true);
+            }
+
+            // Hvis Gist ikke var satt opp eller feilet, last inn fra LocalStorage / Standard
+            if (!loadedFromGist) {
+                const savedDb = localStorage.getItem('hotseat_custom_db');
+                if (savedDb) {
+                    try {
+                        wordDatabase = JSON.parse(savedDb);
+                    } catch (e) {
+                        wordDatabase = [...defaultWordDatabase];
+                    }
+                } else {
                     wordDatabase = [...defaultWordDatabase];
                 }
-            } else {
-                wordDatabase = [...defaultWordDatabase];
             }
 
             // Last inn brukte ord
@@ -407,7 +559,7 @@
             }
 
             if (wordDatabase.length === 0) {
-                showModal("Tom ordliste", "Legg til noen ord i redigeringsmodusen først!", "info");
+                showModal("Tom ordliste", "Legg til noen ord i redigeringsmodusen eller koble til en GitHub Gist først!", "info");
                 return;
             }
 
@@ -510,7 +662,6 @@
 
             if (!deVal || !noVal) return;
 
-            // Sjekk for duplikat
             const exists = wordDatabase.some(w => w.de.toLowerCase() === deVal.toLowerCase());
             if (exists) {
                 showModal("Ord finnes allerede", `Det tyske ordet "${deVal}" ligger allerede i ordlisten.`, "info");
@@ -532,7 +683,6 @@
             const removedWord = wordDatabase[index];
             wordDatabase.splice(index, 1);
             
-            // Slett også fra brukte ord hvis det var der
             usedWords = usedWords.filter(w => w !== removedWord.de);
             
             saveWordDatabase();
@@ -580,14 +730,12 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
-                    // Støtt enten array direkte [{de:..., no:...}] eller objekt med words nøkkel {words: [...]}
-                    let list = Array.isArray(importedData) ? importedData : importedData.words;
+                    let list = Array.isArray(importedData) ? importedData : (importedData.words || importedData.ord);
 
                     if (!Array.isArray(list)) {
                         throw new Error("Ugyldig JSON-format. Må være en matrise (array) med ord-objekter.");
                     }
 
-                    // Valider at elementene har 'de' og 'no' felt
                     const validList = list.filter(item => item && typeof item.de === 'string' && typeof item.no === 'string');
 
                     if (validList.length === 0) {
@@ -611,7 +759,6 @@
                 } catch (err) {
                     showModal("Klarte ikke lese filen", "Sjekk at JSON-filen er gyldig formatert. Feilmelding: " + err.message, "info");
                 }
-                // Nullstill input slik at samme fil kan velges på nytt om ønskelig
                 event.target.value = '';
             };
             reader.readAsText(file);
@@ -648,23 +795,21 @@
             modal.classList.remove('hidden');
         }
 
-        // Hjelpefunksjon for å unngå XSS
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.innerText = text;
             return div.innerHTML;
         }
 
-        // Initialiser appen ved oppstart
         window.onload = function() {
             initData();
         };
     </script>
 
-  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
+    <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+    <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Tilbake til Lærerverktøy</span>
+    </a>
 </body>
 </html>
