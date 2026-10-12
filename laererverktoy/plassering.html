@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klasseroms-organisator Med Føringer</title>
+    <!-- Tailwind CSS for modern layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --desk-bg: #ffffff;
+            --desk-border: #cbd5e1;
+            --desk-grouped-border: #6366f1;
+            --highlight: #fef08a;
+        }
+
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: #f1f5f9; 
+            color: #1e293b;
+        }
+
+        /* Canvas workspace */
+        #classroom-container {
+            position: relative;
+            background-color: #e2e8f0;
+            background-image: 
+                radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            overflow: auto;
+            min-height: 600px;
+            user-select: none;
+        }
+
+        /* SVG layer for desk connection lines */
+        #connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Desk styles */
+        .desk {
+            width: 120px;
+            height: 70px;
+            background: #ffffff;
+            border: 2px solid #94a3b8;
+            position: absolute;
+            cursor: move;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            user-select: none;
+            z-index: 10;
+            transition: box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
+        }
+
+        .desk:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.12);
+            border-color: #64748b;
+        }
+
+        .desk.grouped {
+            border: 2px solid #6366f1;
+            background-color: #f5f3ff;
+        }
+
+        .desk.selected-for-link {
+            border: 2px dashed #f59e0b !important;
+            background-color: #fef3c7 !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .desk.pop {
+            background-color: #fef08a !important;
+            transform: scale(1.1);
+            z-index: 50;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .desk .delete-hint {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 12px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 20;
+        }
+
+        .desk:hover .delete-hint { display: flex; }
+
+        .desk .group-badge {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #6366f1;
+            color: white;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 9px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 15;
+        }
+
+        /* Hide teacher controls in student mode */
+        body.student-mode .teacher-only {
+            display: none !important;
+        }
+
+        body.student-mode #classroom-container {
+            background-color: #f8fafc;
+            background-image: none;
+        }
+
+        body.student-mode .desk {
+            border-color: #cbd5e1 !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: default;
+        }
+
+        body.student-mode .delete-hint,
+        body.student-mode .group-badge,
+        body.student-mode #connections-svg {
+            display: none !important;
+        }
+
+        .student-name {
+            padding: 2px 6px;
+            word-break: break-word;
+            cursor: text;
+            width: 92%;
+            outline: none;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+
+        .student-name:focus {
+            background: #f1f5f9;
+        }
+
+        /* Scrollbar aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- TOP HEADER / TOOLBAR -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm z-30 flex-shrink-0 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-sm">
+                <i class="fa-solid fa-chair text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-slate-800 text-lg leading-tight">Klasseroms-organisator</h1>
+                <p class="text-xs text-slate-500 font-medium teacher-only">Plasser elever, sett føringer og koble pulter</p>
+                <p class="text-xs text-emerald-600 font-medium hidden student-view-indicator">Elevvisning aktiv (Føringer er skjult)</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Student view mode toggle button -->
+            <button id="toggleStudentViewBtn" class="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition border border-slate-300">
+                <i class="fa-solid fa-eye" id="viewIcon"></i>
+                <span id="viewBtnText">Vis elevvisning</span>
+            </button>
+
+            <button id="clearNamesBtn" class="teacher-only flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold text-xs rounded-lg transition border border-rose-200">
+                <i class="fa-solid fa-eraser"></i> Tøm navn
+            </button>
+
+            <button id="resetAllBtn" class="teacher-only flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-semibold text-xs rounded-lg transition border border-slate-200">
+                <i class="fa-solid fa-trash-can"></i> Nullstill alt
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WRAPPER -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- LEFT SIDEBAR: TEACHER CONTROLS -->
+        <aside id="teacherSidebar" class="teacher-only w-80 lg:w-96 bg-white border-r border-slate-200 flex flex-col h-full overflow-y-auto flex-shrink-0 shadow-sm z-20">
+            
+            <!-- TABS -->
+            <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-bold text-slate-600">
+                <button id="tabBtnElever" class="tab-btn flex-1 py-3 border-b-2 border-indigo-600 text-indigo-600 bg-white flex items-center justify-center gap-2" onclick="switchTab('elever')">
+                    <i class="fa-solid fa-users"></i> Elever
+                </button>
+                <button id="tabBtnRegler" class="tab-btn flex-1 py-3 border-b-2 border-transparent hover:text-slate-900 flex items-center justify-center gap-2" onclick="switchTab('regler')">
+                    <i class="fa-solid fa-shield-halved"></i> Føringer <span id="ruleBadgeCount" class="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button id="tabBtnPulter" class="tab-btn flex-1 py-3 border-b-2 border-transparent hover:text-slate-900 flex items-center justify-center gap-2" onclick="switchTab('pulter')">
+                    <i class="fa-solid fa-cubes"></i> Gruppering
+                </button>
+            </div>
+
+            <!-- TAB CONTENT 1: ELEVER OG PLASSERING -->
+            <div id="tabContentElever" class="p-4 space-y-4 flex-1 flex flex-col">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="font-semibold text-xs text-slate-700 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-ol text-indigo-500"></i> Elevliste (én per linje):
+                        </label>
+                        <span id="studentCountLabel" class="text-[11px] font-semibold text-slate-400">0 elever</span>
+                    </div>
+                    <textarea id="nameList" class="w-full h-36 p-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none font-mono" placeholder="Ola Nordmann&#10;Kari Nordmann&#10;Per Hansen..."></textarea>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btnAll" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-shuffle"></i> Plasser alle
+                        </button>
+                        <button id="btnOne" class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-lg transition border border-indigo-200 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-play"></i> En og en
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between px-1 py-1 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600">
+                        <label class="cursor-pointer flex items-center gap-2 select-none font-medium">
+                            <input type="checkbox" id="soundEnabled" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                            🔊 Lyd under plassering
+                        </label>
+                        <label class="cursor-pointer flex items-center gap-2 select-none font-medium">
+                            <input type="checkbox" id="snapToGridToggle" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                            📐 Fest til rutenett
+                        </label>
+                    </div>
+                </div>
+
+                <hr class="border-slate-200 my-2">
+
+                <!-- GRID GENERATION -->
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+                    <h3 class="font-semibold text-xs text-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-border-all text-slate-500"></i> Oppsett av pulter
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="text-slate-500 block mb-1">Antall pulter:</label>
+                            <input type="number" id="totalDesks" value="24" min="1" class="w-full p-1.5 border border-slate-300 rounded focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="text-slate-500 block mb-1">Pulter per rad:</label>
+                            <input type="number" id="desksPerRow" value="6" min="1" class="w-full p-1.5 border border-slate-300 rounded focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="generateGrid()" class="py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-table-cells"></i> Nytt rutenett
+                        </button>
+                        <button onclick="addDesk()" class="py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-semibold text-xs rounded transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-plus"></i> +1 Pult
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 2: FØRINGER OG REGLER -->
+            <div id="tabContentRegler" class="p-4 space-y-4 flex-1 flex flex-col hidden">
+                <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs text-indigo-900 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-shield text-indigo-600"></i> Hemmelige føringer
+                    </div>
+                    <p class="text-indigo-700 leading-relaxed">
+                        Føringer du legger til her blir fulgt når du plasserer elever. Føringene vises <strong>aldri</strong> i elevvisningen.
+                    </p>
+                </div>
+
+                <!-- ADD RULE FORM -->
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+                    <h4 class="font-semibold text-xs text-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus-circle text-indigo-600"></i> Legg til ny føring
+                    </h4>
+
+                    <div class="space-y-2 text-xs">
+                        <div>
+                            <label class="text-slate-500 block mb-1">Elev 1:</label>
+                            <select id="ruleStudentA" class="w-full p-1.5 border border-slate-300 rounded bg-white font-medium">
+                                <option value="">Velg elev...</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-slate-500 block mb-1">Føringstype:</label>
+                            <select id="ruleType" class="w-full p-1.5 border border-slate-300 rounded bg-white font-medium">
+                                <option value="NEVER_TOGETHER">⛔ Kan ALDRI sitte sammen</option>
+                                <option value="MUST_TOGETHER">🤝 MÅ alltid sitte sammen</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-slate-500 block mb-1">Elev 2:</label>
+                            <select id="ruleStudentB" class="w-full p-1.5 border border-slate-300 rounded bg-white font-medium">
+                                <option value="">Velg elev...</option>
+                            </select>
+                        </div>
+
+                        <button id="addRuleBtn" class="w-full mt-2 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded text-xs transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-check"></i> Lagre føring
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ACTIVE RULES LIST -->
+                <div class="flex-1 flex flex-col">
+                    <h4 class="font-semibold text-xs text-slate-700 mb-2 flex items-center justify-between">
+                        <span>Aktivt føringssett:</span>
+                        <span id="rulesCountBadge" class="text-slate-400 font-normal">0 regler</span>
+                    </h4>
+                    
+                    <div id="rulesList" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        <!-- Rules populated dynamically -->
+                        <p class="text-xs text-slate-400 italic text-center py-4 bg-slate-50 rounded border border-dashed border-slate-200">
+                            Ingen føringer lagt til enda.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 3: PULTER OG GRUPPERING -->
+            <div id="tabContentPulter" class="p-4 space-y-4 flex-1 flex flex-col hidden">
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-link text-amber-600"></i> Lås og koble sammen pulter
+                    </div>
+                    <p class="text-amber-800 leading-relaxed">
+                        Når du kobler sammen to eller flere pulter, blir de automatisk snorrette og låses sammen. Når du flytter på én pult, blir hele gruppen med!
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+                    <h4 class="font-semibold text-xs text-slate-700">Modus for kobling</h4>
+                    
+                    <button id="toggleLinkModeBtn" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-lg transition flex items-center justify-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-link"></i> <span id="linkBtnText">Start samkobling (Klikk pulter)</span>
+                    </button>
+                    <p id="linkStatusText" class="text-[11px] text-slate-500 text-center hidden">
+                        Klikk på 2 eller flere pulter for å låse dem sammen.
+                    </p>
+
+                    <button id="alignGroupsBtn" class="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-lg transition border border-indigo-200 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Rett inn sammensatte pulter
+                    </button>
+
+                    <button id="unlinkAllBtn" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-unlink"></i> Fjern alle grupperinger
+                    </button>
+                </div>
+
+                <div class="text-xs text-slate-500 space-y-2 bg-white p-3 rounded border border-slate-200">
+                    <p class="font-semibold text-slate-700">💡 Tips for layout:</p>
+                    <ul class="list-disc pl-4 space-y-1">
+                        <li>Dra og slipp pultene der du ønsker dem i klasserommet.</li>
+                        <li>Du kan dobbeltklikke på navnet på en pult for å skrive direkte eller fastlåse en elev.</li>
+                        <li>Bruk "Fest til rutenett" i Elever-fane for ryddig justering.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- CENTER WORKSPACE / CLASSROOM CANVAS -->
+        <main class="flex-1 flex flex-col relative h-full overflow-hidden bg-slate-200">
+            
+            <!-- CLASSROOM CANVAS -->
+            <div id="classroom-container" class="flex-1">
+                <!-- SVG element for linking lines -->
+                <svg id="connections-svg"></svg>
+                <div id="classroom" class="w-full h-full relative"></div>
+            </div>
+
+            <!-- FLOATING HELP BANNER (STUDENT VIEW MODE) -->
+            <div id="studentViewBanner" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-3 z-40 backdrop-blur-sm">
+                <span>🎓 Elevvisning aktiv</span>
+                <button onclick="toggleStudentView()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-2.5 py-1 rounded-full text-[11px]">
+                    Avslutt elevvisning
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL COMPONENT -->
+    <div id="customModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-100 p-6 max-w-sm w-full mx-4 text-center space-y-4">
+            <div id="modalIconContainer" class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <p id="modalMessage" class="text-sm font-semibold text-slate-800 leading-relaxed"></p>
+            <div class="flex justify-center gap-2 pt-2">
+                <button id="modalOk" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition shadow-sm">
+                    OK
+                </button>
+                <button id="modalCancel" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg transition">
+                    Avbryt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* STORAGE KEYS */
+        const STORAGE_KEY_NAMES = 'classroom_student_names_v4';
+        const STORAGE_KEY_DESKS = 'classroom_desk_layout_v4';
+        const STORAGE_KEY_RULES = 'classroom_rules_v4';
+
+        /* STATE VARIABLES */
+        const classroom = document.getElementById('classroom');
+        const classroomContainer = document.getElementById('classroom-container');
+        const nameArea = document.getElementById('nameList');
+        const soundToggle = document.getElementById('soundEnabled');
+        const snapToggle = document.getElementById('snapToGridToggle');
+        const svgConnections = document.getElementById('connections-svg');
+
+        let rules = []; // Array of { id, studentA, studentB, type }
+        let isDistributing = false;
+        let isLinkMode = false;
+        let selectedDesksForLink = [];
+        let isStudentMode = false;
+        let audioCtx = null;
+
+        /* MODAL UTILITIES */
+        function showAlert(msg, icon = 'fa-circle-info') {
+            document.getElementById('modalMessage').innerText = msg;
+            document.getElementById('modalCancel').style.display = 'none';
+            document.getElementById('modalIconContainer').innerHTML = `<i class="fa-solid ${icon}"></i>`;
+            document.getElementById('customModal').style.display = 'flex';
+            document.getElementById('modalOk').onclick = () => {
+                document.getElementById('customModal').style.display = 'none';
+            };
+        }
+
+        function showConfirm(msg, onConfirm) {
+            document.getElementById('modalMessage').innerText = msg;
+            document.getElementById('modalCancel').style.display = 'inline-block';
+            document.getElementById('modalIconContainer').innerHTML = `<i class="fa-solid fa-circle-question text-amber-500"></i>`;
+            document.getElementById('customModal').style.display = 'flex';
+            document.getElementById('modalOk').onclick = () => {
+                document.getElementById('customModal').style.display = 'none';
+                onConfirm();
+            };
+            document.getElementById('modalCancel').onclick = () => {
+                document.getElementById('customModal').style.display = 'none';
+            };
+        }
+
+        /* SOUND UTILITY */
+        function playSuccessSound() {
+            if (!soundToggle.checked) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+                oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.1); 
+                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.35);
+            } catch (e) {
+                console.error("Audio error", e);
+            }
+        }
+
+        /* TAB SWITCHING */
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'text-indigo-600', 'bg-white');
+                btn.classList.add('border-transparent');
+            });
+            document.getElementById('tabContentElever').classList.add('hidden');
+            document.getElementById('tabContentRegler').classList.add('hidden');
+            document.getElementById('tabContentPulter').classList.add('hidden');
+
+            if (tab === 'elever') {
+                document.getElementById('tabBtnElever').classList.add('border-indigo-600', 'text-indigo-600', 'bg-white');
+                document.getElementById('tabContentElever').classList.remove('hidden');
+            } else if (tab === 'regler') {
+                document.getElementById('tabBtnRegler').classList.add('border-indigo-600', 'text-indigo-600', 'bg-white');
+                document.getElementById('tabContentRegler').classList.remove('hidden');
+                updateRuleStudentDropdowns();
+            } else if (tab === 'pulter') {
+                document.getElementById('tabBtnPulter').classList.add('border-indigo-600', 'text-indigo-600', 'bg-white');
+                document.getElementById('tabContentPulter').classList.remove('hidden');
+            }
+        }
+
+        /* INITIALIZATION */
+        window.onload = () => {
+            // Load saved student names
+            nameArea.value = localStorage.getItem(STORAGE_KEY_NAMES) || "";
+            updateStudentCountLabel();
+
+            // Load saved rules
+            const savedRules = localStorage.getItem(STORAGE_KEY_RULES);
+            if (savedRules) {
+                try { rules = JSON.parse(savedRules); } catch(e) { rules = []; }
+            }
+            renderRulesList();
+
+            // Load saved desk layout
+            const savedData = localStorage.getItem(STORAGE_KEY_DESKS);
+            if (savedData) {
+                try {
+                    const savedDesks = JSON.parse(savedData);
+                    savedDesks.forEach(data => createDeskElement(data.x, data.y, data.name, data.lockedName, data.groupId, data.id));
+                } catch(e) {
+                    console.error("Kunne ikke laste lagret layout", e);
+                }
+            } else {
+                executeGenerateGrid(24, 6);
+            }
+
+            drawGroupConnectionLines();
+        };
+
+        nameArea.addEventListener('input', () => {
+            localStorage.setItem(STORAGE_KEY_NAMES, nameArea.value);
+            updateStudentCountLabel();
+            updateRuleStudentDropdowns();
+        });
+
+        function updateStudentCountLabel() {
+            const list = getStudentList();
+            document.getElementById('studentCountLabel').innerText = `${list.length} elever`;
+        }
+
+        function getStudentList() {
+            return nameArea.value.split('\n').map(n => n.trim()).filter(n => n !== "");
+        }
+
+        function saveLayout() {
+            const desks = Array.from(document.querySelectorAll('.desk'));
+            const layout = desks.map(d => ({
+                id: d.id,
+                x: d.style.left,
+                y: d.style.top,
+                name: d.querySelector('.student-name').innerText,
+                lockedName: d.dataset.lockedName || "",
+                groupId: d.dataset.groupId || ""
+            }));
+            localStorage.setItem(STORAGE_KEY_DESKS, JSON.stringify(layout));
+            drawGroupConnectionLines();
+        }
+
+        function generateGrid() {
+            const total = parseInt(document.getElementById('totalDesks').value);
+            const perRow = parseInt(document.getElementById('desksPerRow').value);
+            if (isNaN(total) || isNaN(perRow)) return;
+            
+            if (classroom.children.length > 0) {
+                showConfirm("Dette vil erstatte pultene med et nytt oppsett. Er du sikker?", () => {
+                    executeGenerateGrid(total, perRow);
+                });
+                return;
+            }
+            
+            executeGenerateGrid(total, perRow);
+        }
+
+        function executeGenerateGrid(total, perRow) {
+            classroom.innerHTML = "";
+            const padding = 30;
+            const spacingX = 140;
+            const spacingY = 95;
+            for (let i = 0; i < total; i++) {
+                const row = Math.floor(i / perRow);
+                const col = i % perRow;
+                createDeskElement((padding + col * spacingX) + "px", (padding + row * spacingY) + "px", '...');
+            }
+            saveLayout();
+        }
+
+        function addDesk() {
+            createDeskElement("30px", "30px", "...");
+            saveLayout();
+        }
+
+        function createDeskElement(x, y, displayName, lockedName = "", groupId = "", customId = null) {
+            const desk = document.createElement('div');
+            desk.className = 'desk';
+            desk.id = customId || ('desk_' + Math.random().toString(36).substring(2, 9));
+            desk.style.left = x;
+            desk.style.top = y;
+            desk.dataset.lockedName = lockedName;
+            desk.dataset.groupId = groupId;
+
+            if (groupId) {
+                desk.classList.add('grouped');
+            }
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'student-name';
+            nameSpan.contentEditable = !isStudentMode;
+            nameSpan.innerText = displayName || "...";
+            
+            nameSpan.onfocus = () => {
+                if (desk.dataset.lockedName) {
+                    nameSpan.innerText = desk.dataset.lockedName;
+                } else if (nameSpan.innerText === '...') {
+                    nameSpan.innerText = '';
+                }
+            };
+
+            nameSpan.onblur = () => {
+                const val = nameSpan.innerText.trim();
+                if (val !== "" && val !== "...") {
+                    desk.dataset.lockedName = val;
+                    nameSpan.innerText = val;
+                } else {
+                    desk.dataset.lockedName = "";
+                    nameSpan.innerText = '...';
+                }
+                saveLayout();
+            };
+
+            const delBtn = document.createElement('div');
+            delBtn.className = 'delete-hint';
+            delBtn.innerHTML = '×';
+            delBtn.title = "Slett pult";
+            delBtn.onclick = (e) => { 
+                e.stopPropagation(); 
+                desk.remove(); 
+                saveLayout(); 
+            };
+
+            desk.appendChild(nameSpan);
+            desk.appendChild(delBtn);
+
+            // Group Badge indicator
+            updateDeskGroupBadge(desk);
+
+            makeDraggable(desk);
+            
+            // Link selection handler
+            desk.addEventListener('click', (e) => {
+                if (!isLinkMode) return;
+                e.stopPropagation();
+                toggleDeskSelectionForLink(desk);
+            });
+
+            classroom.appendChild(desk);
+        }
+
+        function updateDeskGroupBadge(desk) {
+            let badge = desk.querySelector('.group-badge');
+            if (desk.dataset.groupId) {
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.className = 'group-badge';
+                    desk.appendChild(badge);
+                }
+                badge.innerHTML = `<i class="fa-solid fa-link text-[8px]"></i> Låst`;
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+
+        function makeDraggable(el) {
+            let startX = 0, startY = 0;
+            let groupDesksInfo = [];
+
+            el.onmousedown = (e) => {
+                if (isStudentMode || isLinkMode) return;
+                if (e.target.className.includes('delete-hint') || e.target.className.includes('student-name')) return;
+                
+                e.preventDefault();
+                startX = e.clientX;
+                startY = e.clientY;
+
+                // Identify if this desk belongs to a locked group
+                const groupId = el.dataset.groupId;
+                if (groupId) {
+                    const allInGroup = Array.from(document.querySelectorAll(`.desk[data-group-id="${groupId}"]`));
+                    groupDesksInfo = allInGroup.map(d => ({
+                        element: d,
+                        startLeft: parseInt(d.style.left) || 0,
+                        startTop: parseInt(d.style.top) || 0
+                    }));
+                } else {
+                    groupDesksInfo = [{
+                        element: el,
+                        startLeft: parseInt(el.style.left) || 0,
+                        startTop: parseInt(el.style.top) || 0
+                    }];
+                }
+
+                document.onmousemove = (e) => {
+                    e.preventDefault();
+                    let dx = e.clientX - startX;
+                    let dy = e.clientY - startY;
+
+                    groupDesksInfo.forEach(info => {
+                        let newLeft = Math.max(0, info.startLeft + dx);
+                        let newTop = Math.max(0, info.startTop + dy);
+
+                        if (snapToggle.checked) {
+                            newLeft = Math.round(newLeft / 15) * 15;
+                            newTop = Math.round(newTop / 15) * 15;
+                        }
+
+                        info.element.style.left = newLeft + "px";
+                        info.element.style.top = newTop + "px";
+                    });
+
+                    drawGroupConnectionLines();
+                };
+
+                document.onmouseup = () => { 
+                    document.onmouseup = null; 
+                    document.onmousemove = null; 
+                    saveLayout(); 
+                };
+            };
+        }
+
+        /* DRAW VISUAL CONNECTION LINES FOR DESK GROUPS */
+        function drawGroupConnectionLines() {
+            svgConnections.innerHTML = '';
+            const groups = {};
+
+            // Collect desks by group
+            document.querySelectorAll('.desk').forEach(desk => {
+                const gId = desk.dataset.groupId;
+                if (gId) {
+                    if (!groups[gId]) groups[gId] = [];
+                    groups[gId].push(desk);
+                }
+            });
+
+            // Draw lines between desks in same group
+            Object.values(groups).forEach(deskArray => {
+                for (let i = 0; i < deskArray.length; i++) {
+                    for (let j = i + 1; j < deskArray.length; j++) {
+                        const d1 = deskArray[i];
+                        const d2 = deskArray[j];
+
+                        const x1 = d1.offsetLeft + d1.offsetWidth / 2;
+                        const y1 = d1.offsetTop + d1.offsetHeight / 2;
+                        const x2 = d2.offsetLeft + d2.offsetWidth / 2;
+                        const y2 = d2.offsetTop + d2.offsetHeight / 2;
+
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', x1);
+                        line.setAttribute('y1', y1);
+                        line.setAttribute('x2', x2);
+                        line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', '#818cf8');
+                        line.setAttribute('stroke-width', '3');
+                        line.setAttribute('stroke-dasharray', '4');
+                        svgConnections.appendChild(line);
+                    }
+                }
+            });
+        }
+
+        document.getElementById('toggleLinkModeBtn').addEventListener('click', toggleLinkMode);
+        document.getElementById('unlinkAllBtn').addEventListener('click', unlinkAllDesks);
+        document.getElementById('alignGroupsBtn').addEventListener('click', alignAllGroups);
+
+        /* AUTOMATISK PRESISE JUSTERING AV PULTER I GRUPPER */
+        function alignDeskGroupNeatly(deskArray) {
+            if (!deskArray || deskArray.length < 2) return;
+
+            const deskWidth = 120;
+            const deskHeight = 70;
+            const gap = 8; // Jevn avstand mellom pultene
+
+            let minX = Infinity;
+            let minY = Infinity;
+            let maxX = -Infinity;
+            let maxY = -Infinity;
+
+            deskArray.forEach(desk => {
+                const x = parseFloat(desk.style.left) || desk.offsetLeft || 0;
+                const y = parseFloat(desk.style.top) || desk.offsetTop || 0;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            });
+
+            // Fest startpunktet til rutenett
+            minX = Math.round(minX / 15) * 15;
+            minY = Math.round(minY / 15) * 15;
+
+            const count = deskArray.length;
+            const dxTotal = maxX - minX;
+            const dyTotal = maxY - minY;
+
+            // Bestem om gruppen bør være 1 rad eller rutenett (f.eks. 2x2 for 4 pulter)
+            let cols = count;
+            if (count === 4) {
+                cols = (dxTotal > dyTotal * 2.5) ? 4 : (dyTotal > dxTotal * 2.5) ? 1 : 2;
+            } else if (count === 6) {
+                cols = (dxTotal > dyTotal * 2) ? 6 : 3;
+            } else if (count > 3 && dxTotal < dyTotal) {
+                cols = Math.ceil(Math.sqrt(count));
+            } else if (count > 4) {
+                cols = Math.ceil(Math.sqrt(count));
+            }
+
+            // Sorter pultene etter deres nåværende relative posisjon
+            const sorted = [...deskArray].sort((a, b) => {
+                const ax = parseFloat(a.style.left) || 0;
+                const ay = parseFloat(a.style.top) || 0;
+                const bx = parseFloat(b.style.left) || 0;
+                const by = parseFloat(b.style.top) || 0;
+
+                const rowThreshold = deskHeight / 2;
+                if (Math.abs(ay - by) > rowThreshold) {
+                    return ay - by;
+                }
+                return ax - bx;
+            });
+
+            // Plasser pultene i perfekt justerte rader og kolonner
+            sorted.forEach((desk, idx) => {
+                const col = idx % cols;
+                const row = Math.floor(idx / cols);
+
+                const newX = minX + col * (deskWidth + gap);
+                const newY = minY + row * (deskHeight + gap);
+
+                desk.style.left = newX + 'px';
+                desk.style.top = newY + 'px';
+            });
+        }
+
+        function alignAllGroups() {
+            const groups = {};
+            document.querySelectorAll('.desk').forEach(desk => {
+                const gId = desk.dataset.groupId;
+                if (gId) {
+                    if (!groups[gId]) groups[gId] = [];
+                    groups[gId].push(desk);
+                }
+            });
+
+            Object.values(groups).forEach(deskArray => {
+                alignDeskGroupNeatly(deskArray);
+            });
+
+            drawGroupConnectionLines();
+            saveLayout();
+        }
+
+        function toggleLinkMode() {
+            isLinkMode = !isLinkMode;
+            const btn = document.getElementById('toggleLinkModeBtn');
+            const btnText = document.getElementById('linkBtnText');
+            const statusText = document.getElementById('linkStatusText');
+
+            if (isLinkMode) {
+                btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                btnText.innerText = "Fullfør kobling";
+                statusText.classList.remove('hidden');
+                selectedDesksForLink = [];
+            } else {
+                btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+                btnText.innerText = "Start samkobling (Klikk pulter)";
+                statusText.classList.add('hidden');
+
+                // Påfør gruppering og rett inn pultene perfekt
+                if (selectedDesksForLink.length >= 2) {
+                    const newGroupId = 'group_' + Math.random().toString(36).substring(2, 9);
+                    selectedDesksForLink.forEach(desk => {
+                        desk.dataset.groupId = newGroupId;
+                        desk.classList.add('grouped');
+                        updateDeskGroupBadge(desk);
+                    });
+
+                    // Rett inn pultene i gruppen snorrett
+                    alignDeskGroupNeatly(selectedDesksForLink);
+                    saveLayout();
+                }
+
+                // Fjern markeringer
+                document.querySelectorAll('.desk').forEach(d => d.classList.remove('selected-for-link'));
+                selectedDesksForLink = [];
+            }
+        }
+
+        function toggleDeskSelectionForLink(desk) {
+            const index = selectedDesksForLink.indexOf(desk);
+            if (index > -1) {
+                selectedDesksForLink.splice(index, 1);
+                desk.classList.remove('selected-for-link');
+            } else {
+                selectedDesksForLink.push(desk);
+                desk.classList.add('selected-for-link');
+            }
+        }
+
+        function unlinkAllDesks() {
+            showConfirm("Vil du fjerne alle pultgrupperinger?", () => {
+                document.querySelectorAll('.desk').forEach(desk => {
+                    desk.dataset.groupId = "";
+                    desk.classList.remove('grouped');
+                    updateDeskGroupBadge(desk);
+                });
+                saveLayout();
+            });
+        }
+
+        function updateRuleStudentDropdowns() {
+            const students = getStudentList();
+            const selA = document.getElementById('ruleStudentA');
+            const selB = document.getElementById('ruleStudentB');
+
+            const valA = selA.value;
+            const valB = selB.value;
+
+            selA.innerHTML = '<option value="">Velg elev...</option>';
+            selB.innerHTML = '<option value="">Velg elev...</option>';
+
+            students.forEach(s => {
+                selA.innerHTML += `<option value="${s}">${s}</option>`;
+                selB.innerHTML += `<option value="${s}">${s}</option>`;
+            });
+
+            selA.value = valA;
+            selB.value = valB;
+        }
+
+        document.getElementById('addRuleBtn').addEventListener('click', () => {
+            const studentA = document.getElementById('ruleStudentA').value;
+            const studentB = document.getElementById('ruleStudentB').value;
+            const type = document.getElementById('ruleType').value;
+
+            if (!studentA || !studentB) {
+                showAlert("Vennligst velg to elever for å opprette en føring.");
+                return;
+            }
+            if (studentA === studentB) {
+                showAlert("Du kan ikke velge samme elev to ganger.");
+                return;
+            }
+
+            // Check if rule already exists
+            const exists = rules.some(r => 
+                (r.studentA === studentA && r.studentB === studentB && r.type === type) ||
+                (r.studentA === studentB && r.studentB === studentA && r.type === type)
+            );
+
+            if (exists) {
+                showAlert("Denne føringen finnes allerede.");
+                return;
+            }
+
+            rules.push({
+                id: 'rule_' + Math.random().toString(36).substring(2, 9),
+                studentA,
+                studentB,
+                type
+            });
+
+            localStorage.setItem(STORAGE_KEY_RULES, JSON.stringify(rules));
+            renderRulesList();
+        });
+
+        function renderRulesList() {
+            const listContainer = document.getElementById('rulesList');
+            const badgeCount = document.getElementById('ruleBadgeCount');
+            const rulesCountBadge = document.getElementById('rulesCountBadge');
+
+            rulesCountBadge.innerText = `${rules.length} regler`;
+            if (rules.length > 0) {
+                badgeCount.innerText = rules.length;
+                badgeCount.classList.remove('hidden');
+            } else {
+                badgeCount.classList.add('hidden');
+            }
+
+            if (rules.length === 0) {
+                listContainer.innerHTML = `
+                    <p class="text-xs text-slate-400 italic text-center py-4 bg-slate-50 rounded border border-dashed border-slate-200">
+                        Ingen føringer lagt til enda.
+                    </p>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = rules.map(r => {
+                const isNever = r.type === 'NEVER_TOGETHER';
+                const badgeStyle = isNever ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                const icon = isNever ? 'fa-ban text-rose-500' : 'fa-handshake text-emerald-500';
+                const label = isNever ? 'Kan aldri sitte sammen' : 'Må sitte sammen';
+
+                return `
+                    <div class="p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm flex items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <i class="fa-solid ${icon}"></i>
+                            <div class="truncate">
+                                <span class="font-bold text-slate-800">${r.studentA}</span> 
+                                <span class="text-slate-400 font-normal">og</span> 
+                                <span class="font-bold text-slate-800">${r.studentB}</span>
+                                <div class="text-[10px] text-slate-500">${label}</div>
+                            </div>
+                        </div>
+                        <button onclick="removeRule('${r.id}')" class="text-slate-400 hover:text-rose-600 p-1 transition" title="Slett føring">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeRule(ruleId) {
+            rules = rules.filter(r => r.id !== ruleId);
+            localStorage.setItem(STORAGE_KEY_RULES, JSON.stringify(rules));
+            renderRulesList();
+        }
+
+        document.getElementById('btnAll').addEventListener('click', () => distributeNames(false));
+        document.getElementById('btnOne').addEventListener('click', () => distributeNames(true));
+
+        function getDeskCenter(desk) {
+            const x = parseFloat(desk.style.left) || desk.offsetLeft || 0;
+            const y = parseFloat(desk.style.top) || desk.offsetTop || 0;
+            const w = desk.offsetWidth || 120;
+            const h = desk.offsetHeight || 70;
+            return { x: x + w / 2, y: y + h / 2 };
+        }
+
+        function areDesksNeighbors(d1, d2) {
+            if (!d1 || !d2 || d1 === d2) return false;
+            // 1. Pulter i samme låste gruppe er definert som naboer
+            if (d1.dataset.groupId && d1.dataset.groupId === d2.dataset.groupId) {
+                return true;
+            }
+            // 2. Sjekk fysisk avstand mellom pultenes senterpunkt
+            const c1 = getDeskCenter(d1);
+            const c2 = getDeskCenter(d2);
+            const dist = Math.hypot(c1.x - c2.x, c1.y - c2.y);
+            return dist < 155;
+        }
+
+        function solvePlacement(allNames, desks) {
+            // Identifiser fastlåste/forhåndsplasserte elever
+            const assignedMap = new Map(); // studentName -> desk
+            const preassignedDesks = new Set();
+            const preassignedStudents = new Set();
+
+            desks.forEach(d => {
+                const lockedName = d.dataset.lockedName;
+                if (lockedName && allNames.includes(lockedName)) {
+                    assignedMap.set(lockedName, d);
+                    preassignedDesks.add(d);
+                    preassignedStudents.add(lockedName);
+                }
+            });
+
+            const unassignedStudents = allNames.filter(n => !preassignedStudents.has(n));
+            const availableDesks = desks.filter(d => !preassignedDesks.has(d));
+
+            // Finn elever som inngår i føringer/regler
+            const constrainedSet = new Set();
+            rules.forEach(r => {
+                if (unassignedStudents.includes(r.studentA)) constrainedSet.add(r.studentA);
+                if (unassignedStudents.includes(r.studentB)) constrainedSet.add(r.studentB);
+            });
+
+            const constrainedStudents = Array.from(constrainedSet);
+            const unconstrainedStudents = unassignedStudents.filter(s => !constrainedSet.has(s));
+
+            // Hjelpefunksjon for å telle regelbrudd i en plassering
+            function countRuleViolations(currentMap) {
+                let v = 0;
+                for (const rule of rules) {
+                    const deskA = currentMap.get(rule.studentA);
+                    const deskB = currentMap.get(rule.studentB);
+
+                    if (deskA && deskB) {
+                        const neighbors = areDesksNeighbors(deskA, deskB);
+
+                        if (rule.type === 'NEVER_TOGETHER' && neighbors) {
+                            v++;
+                        } else if (rule.type === 'MUST_TOGETHER' && !neighbors) {
+                            v++;
+                        }
+                    }
+                }
+                return v;
+            }
+
+            // Backtracking-løser for elever med føringer
+            let solutionFound = null;
+            const shuffledAvailableDesks = [...availableDesks].sort(() => Math.random() - 0.5);
+
+            function backtrack(studentIdx, currentMap, usedDeskSet) {
+                if (studentIdx === constrainedStudents.length) {
+                    if (countRuleViolations(currentMap) === 0) {
+                        solutionFound = new Map(currentMap);
+                        return true;
+                    }
+                    return false;
+                }
+
+                const student = constrainedStudents[studentIdx];
+                for (const desk of shuffledAvailableDesks) {
+                    if (usedDeskSet.has(desk)) continue;
+
+                    currentMap.set(student, desk);
+                    usedDeskSet.add(desk);
+
+                    // Beskjær søketreet om del-plasseringen allerede er gyldig
+                    if (countRuleViolations(currentMap) === 0) {
+                        if (backtrack(studentIdx + 1, currentMap, usedDeskSet)) {
+                            return true;
+                        }
+                    }
+
+                    currentMap.delete(student);
+                    usedDeskSet.delete(desk);
+                }
+                return false;
+            }
+
+            const initialMap = new Map(assignedMap);
+            const initialUsedDesks = new Set(preassignedDesks);
+
+            // Prøv smart backtracking først
+            const success = backtrack(0, initialMap, initialUsedDesks);
+
+            if (success && solutionFound) {
+                // Plasser uregulerte elever tilfeldig på de resterende pultene
+                const remainingDesks = availableDesks.filter(d => !Array.from(solutionFound.values()).includes(d));
+                const shuffledUnconstrained = [...unconstrainedStudents].sort(() => Math.random() - 0.5);
+                const shuffledRemainingDesks = [...remainingDesks].sort(() => Math.random() - 0.5);
+
+                shuffledUnconstrained.forEach((st, idx) => {
+                    solutionFound.set(st, shuffledRemainingDesks[idx]);
+                });
+
+                return solutionFound;
+            }
+
+            // Reserveløsning med Monte Carlo om det oppstår kompliserte overlappende regler
+            const MAX_TRIALS = 800;
+            let bestAssignment = null;
+            let lowestViolations = Infinity;
+
+            for (let trial = 0; trial < MAX_TRIALS; trial++) {
+                const currentAssignment = new Map(assignedMap);
+                const shuffledNames = [...unassignedStudents].sort(() => Math.random() - 0.5);
+                const shuffledDesks = [...availableDesks].sort(() => Math.random() - 0.5);
+
+                for (let i = 0; i < shuffledNames.length; i++) {
+                    currentAssignment.set(shuffledNames[i], shuffledDesks[i]);
+                }
+
+                const violations = countRuleViolations(currentAssignment);
+
+                if (violations === 0) {
+                    bestAssignment = currentAssignment;
+                    lowestViolations = 0;
+                    break;
+                }
+
+                if (violations < lowestViolations) {
+                    lowestViolations = violations;
+                    bestAssignment = currentAssignment;
+                }
+            }
+
+            if (rules.length > 0 && lowestViolations > 0) {
+                showAlert("Fant en plassering, men enkelte føringer kunne ikke oppfylles 100%. Sjekk om det er motstridende føringer.", "fa-triangle-exclamation text-amber-500");
+            }
+
+            return bestAssignment;
+        }
+
+        function distributeNames(animated) {
+            if (isDistributing) return;
+            const allNames = getStudentList();
+            let desks = Array.from(document.querySelectorAll('.desk'));
+            
+            if (allNames.length > desks.length) {
+                showAlert("Du har flere elever (" + allNames.length + ") enn pulter (" + desks.length + ")!");
+                return;
+            }
+
+            // Clear display text on all desks
+            desks.forEach(d => {
+                d.querySelector('.student-name').innerText = "...";
+                d.classList.remove('pop');
+            });
+
+            // Solve placement honoring constraints
+            const assignmentMap = solvePlacement(allNames, desks);
+
+            const actions = [];
+            assignmentMap.forEach((desk, name) => {
+                actions.push({ desk, name });
+            });
+
+            // Shuffle presentation order
+            actions.sort(() => Math.random() - 0.5);
+
+            if (animated) {
+                isDistributing = true;
+                let i = 0;
+                const interval = setInterval(() => {
+                    if (i < actions.length) {
+                        const act = actions[i];
+                        act.desk.querySelector('.student-name').innerText = act.name;
+                        act.desk.classList.add('pop');
+                        playSuccessSound();
+                        setTimeout(() => act.desk.classList.remove('pop'), 400);
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                        isDistributing = false;
+                        saveLayout();
+                    }
+                }, 600);
+            } else {
+                actions.forEach(act => {
+                    act.desk.querySelector('.student-name').innerText = act.name;
+                });
+                saveLayout();
+            }
+        }
+
+        document.getElementById('clearNamesBtn').onclick = function() {
+            showConfirm("Vil du fjerne alle navn og tømme elevlisten? Pultene blir stående der de er.", () => {
+                nameArea.value = "";
+                localStorage.setItem(STORAGE_KEY_NAMES, "");
+                updateStudentCountLabel();
+                updateRuleStudentDropdowns();
+
+                const desks = document.querySelectorAll('.desk');
+                desks.forEach(desk => {
+                    desk.dataset.lockedName = "";
+                    const nameSpan = desk.querySelector('.student-name');
+                    if (nameSpan) nameSpan.innerText = "...";
+                });
+
+                saveLayout();
+            });
+        };
+
+        document.getElementById('resetAllBtn').onclick = function() {
+            showConfirm("Dette vil tilbakestille alle pulter, grupperinger og føringer. Er du sikker?", () => {
+                localStorage.removeItem(STORAGE_KEY_DESKS);
+                localStorage.removeItem(STORAGE_KEY_RULES);
+                rules = [];
+                renderRulesList();
+                executeGenerateGrid(24, 6);
+            });
+        };
+
+        /* STUDENT VIEW MODE TOGGLE */
+        document.getElementById('toggleStudentViewBtn').addEventListener('click', toggleStudentView);
+
+        function toggleStudentView() {
+            isStudentMode = !isStudentMode;
+            document.body.classList.toggle('student-mode', isStudentMode);
+            
+            const btnText = document.getElementById('viewBtnText');
+            const viewIcon = document.getElementById('viewIcon');
+            const banner = document.getElementById('studentViewBanner');
+
+            if (isStudentMode) {
+                btnText.innerText = "Lærermodus";
+                viewIcon.className = "fa-solid fa-lock";
+                banner.classList.remove('hidden');
+                
+                // Disable contenteditable in student mode
+                document.querySelectorAll('.student-name').forEach(el => el.contentEditable = "false");
+            } else {
+                btnText.innerText = "Vis elevvisning";
+                viewIcon.className = "fa-solid fa-eye";
+                banner.classList.add('hidden');
+
+                // Re-enable contenteditable
+                document.querySelectorAll('.student-name').forEach(el => el.contentEditable = "true");
+            }
+        }
+    </script>
+  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Tilbake til Lærerverktøy</span>
+</a>
+</body>
+</html>
