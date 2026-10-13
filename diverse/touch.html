@@ -58,18 +58,29 @@
 </head>
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
 
-    <!-- Navigation / Header -->
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        
+        <!-- Venstre side: Tilbakeknapp + Logo -->
+        <div class="flex items-center gap-3">
+            <!-- TILBAKEKNAPP -->
+            <a href="index.html" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-white/10 shadow transition-all font-sans text-xs font-semibold cursor-pointer">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span class="hidden sm:inline">Tilbake til Lærerverktøy</span>
+                <span class="sm:hidden">Tilbake</span>
+            </a>
+
+            <!-- LOGO / OVERSKRIFT -->
             <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('learn')">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
                     <i class="fa-solid font-bold fa-keyboard text-xl"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">TouchMester</h1>
-                    <p class="text-xs text-indigo-400 font-medium">Norsk Tastaturtrening</p>
+                    <p class="text-xs text-indigo-400 font-medium">Tastaturtrening</p>
                 </div>
             </div>
+        </div>
 
             <!-- Main Navigation Tabs -->
             <nav class="hidden md:flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
