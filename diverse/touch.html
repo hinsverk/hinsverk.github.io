@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="no" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TouchMester - Norsk Tastaturtrening</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti for rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono-code {
+            font-family: 'Fira Code', monospace;
+        }
+        
+        /* Custom key styling and animations */
+        .key-cap {
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+        }
+        .key-cap:active, .key-pressed {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+        }
+        .key-target {
+            animation: pulse-border 1.2s infinite alternate;
+        }
+        @keyframes pulse-border {
+            0% { transform: scale(1); ring-width: 2px; }
+            100% { transform: scale(1.05); ring-width: 4px; }
+        }
+
+        /* Finger indicator colors */
+        .finger-lp { border-top: 4px solid #ef4444; } /* Left Pinky - Red */
+        .finger-lr { border-top: 4px solid #f97316; } /* Left Ring - Orange */
+        .finger-lm { border-top: 4px solid #eab308; } /* Left Middle - Yellow */
+        .finger-li { border-top: 4px solid #22c55e; } /* Left Index - Green */
+        .finger-thumb { border-top: 4px solid #a855f7; } /* Thumbs - Purple */
+        .finger-ri { border-top: 4px solid #06b6d4; } /* Right Index - Cyan */
+        .finger-rm { border-top: 4px solid #3b82f6; } /* Right Middle - Blue */
+        .finger-rr { border-top: 4px solid #6366f1; } /* Right Ring - Indigo */
+        .finger-rp { border-top: 4px solid #ec4899; } /* Right Pinky - Pink */
+
+        /* Hide scrollbars for slick look */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Navigation / Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('learn')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid font-bold fa-keyboard text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">TouchMester</h1>
+                    <p class="text-xs text-indigo-400 font-medium">Norsk Tastaturtrening</p>
+                </div>
+            </div>
+
+            <!-- Main Navigation Tabs -->
+            <nav class="hidden md:flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
+                <button id="nav-learn" onclick="switchTab('learn')" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-indigo-600 text-white shadow">
+                    <i class="fa-solid fa-graduation-cap"></i> Læringssti
+                </button>
+                <button id="nav-speed" onclick="switchTab('speed')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-stopwatch text-amber-400"></i> Konkurranse
+                </button>
+                <button id="nav-custom" onclick="switchTab('custom')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-file-pen text-emerald-400"></i> Egentekst
+                </button>
+            </nav>
+
+            <!-- Audio & Settings Toggle -->
+            <div class="flex items-center space-x-3">
+                <button id="sound-btn" onclick="toggleSound()" title="Slå av/på lyd" class="p-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 transition">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+                <button id="blind-btn" onclick="toggleBlindMode()" title="Skjul tastatur på skjermen (Blind-modus)" class="p-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 transition">
+                    <i id="blind-icon" class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation bar -->
+        <div class="md:hidden flex border-t border-slate-800 bg-slate-900/90 justify-around p-2">
+            <button onclick="switchTab('learn')" class="flex-1 py-1.5 text-xs text-center text-indigo-400 font-semibold"><i class="fa-solid fa-graduation-cap block text-base mb-0.5"></i> Lære</button>
+            <button onclick="switchTab('speed')" class="flex-1 py-1.5 text-xs text-center text-slate-400 font-semibold"><i class="fa-solid fa-stopwatch block text-base mb-0.5"></i> Tidsskrift</button>
+            <button onclick="switchTab('custom')" class="flex-1 py-1.5 text-xs text-center text-slate-400 font-semibold"><i class="fa-solid fa-file-pen block text-base mb-0.5"></i> Egentekst</button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
+
+        <!-- TAB 1: LEARNING PATH (LÆRINGSTI) -->
+        <div id="tab-learn-view" class="space-y-6">
+            <!-- Level Selector Bar -->
+            <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 shadow-xl">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-indigo-400"></i> Velg Øvingsoppgave
+                    </h2>
+                    <span id="level-progress-badge" class="text-xs bg-indigo-500/20 text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-500/30">
+                        Nivå 1 av 8
+                    </span>
+                </div>
+                <div id="level-list" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    <!-- Levels dynamically rendered here -->
+                </div>
+            </div>
+
+            <!-- Practice Area -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+                <!-- Top HUD stats -->
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/80">
+                    <div class="flex items-center gap-6">
+                        <div>
+                            <span class="text-xs text-slate-500 font-medium block">NØYAKTIGHET</span>
+                            <span id="stat-accuracy" class="text-xl sm:text-2xl font-bold text-emerald-400">100%</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-500 font-medium block">HASTIGHET (WPM)</span>
+                            <span id="stat-wpm" class="text-xl sm:text-2xl font-bold text-indigo-400">0</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-500 font-medium block">FEIL</span>
+                            <span id="stat-errors" class="text-xl sm:text-2xl font-bold text-rose-400">0</span>
+                        </div>
+                    </div>
+                    <button onclick="resetCurrentLesson()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-rotate-right"></i> Start på nytt
+                    </button>
+                </div>
+
+                <!-- Active Target Text Prompt -->
+                <div class="relative bg-slate-950/80 rounded-2xl p-6 sm:p-8 border border-slate-800/80 mb-6 text-center shadow-inner min-h-[140px] flex items-center justify-center">
+                    <div id="text-display" class="font-mono-code text-2xl sm:text-3xl md:text-4xl tracking-wider leading-relaxed select-none break-all">
+                        <!-- Dynamic char prompts go here -->
+                    </div>
+                </div>
+
+                <!-- Helper tip banner -->
+                <div id="finger-hint-box" class="bg-indigo-950/40 border border-indigo-800/50 rounded-xl p-3 flex items-center justify-between text-xs sm:text-sm text-indigo-200">
+                    <div class="flex items-center gap-3">
+                        <span id="finger-badge" class="px-2.5 py-1 rounded-md font-bold bg-indigo-600 text-white shadow-sm">
+                            Pekefinger
+                        </span>
+                        <span id="finger-instruction">Bruk venstre pekefinger for å trykke på <strong>F</strong></span>
+                    </div>
+                    <span class="text-slate-400 hidden sm:inline">Husk: Hold blikket på skjermen!</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: SPEED COMPETITION (KONKURRANSEMODUL) -->
+        <div id="tab-speed-view" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left: Test Setup & Interactive Board -->
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-trophy text-amber-400"></i> Tidsjakt / Konkurranse
+                                </h2>
+                                <p class="text-xs text-slate-400">Skriv så mange ord du klarer før tiden renner ut!</p>
+                            </div>
+                            
+                            <!-- Timer Selector -->
+                            <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+                                <button onclick="setTimerDuration(30)" id="time-30" class="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-600 text-white">30s</button>
+                                <button onclick="setTimerDuration(60)" id="time-60" class="px-3 py-1 text-xs font-bold text-slate-400 hover:text-white">60s</button>
+                                <button onclick="setTimerDuration(120)" id="time-120" class="px-3 py-1 text-xs font-bold text-slate-400 hover:text-white">120s</button>
+                            </div>
+                        </div>
+
+                        <!-- Live Stats during Speed Test -->
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-center">
+                                <span class="text-xs text-slate-500 font-bold uppercase block mb-1">Tid Igjen</span>
+                                <span id="speed-time" class="text-3xl font-black text-amber-400">30</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-center">
+                                <span class="text-xs text-slate-500 font-bold uppercase block mb-1">Ord / Min (WPM)</span>
+                                <span id="speed-wpm" class="text-3xl font-black text-indigo-400">0</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-center">
+                                <span class="text-xs text-slate-500 font-bold uppercase block mb-1">Nøyaktighet</span>
+                                <span id="speed-acc" class="text-3xl font-black text-emerald-400">100%</span>
+                            </div>
+                        </div>
+
+                        <!-- Speed Text Prompt -->
+                        <div class="relative bg-slate-950 rounded-2xl p-6 border border-slate-800 mb-6 min-h-[160px] flex items-center justify-center">
+                            <div id="speed-text-display" class="font-mono-code text-xl sm:text-2xl leading-relaxed select-none">
+                                Trykk på "Start Test" for å begynne runden!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button id="start-speed-btn" onclick="startSpeedTest()" class="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-slate-950 font-extrabold text-base shadow-lg transition">
+                            <i class="fa-solid fa-play mr-2"></i> Start Konkurranse
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Local Leaderboard -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-medal text-amber-400"></i> Lokal Toppliste
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">Lagres på denne enheten. Utfordre klassekameratene dine!</p>
+                        
+                        <div id="leaderboard-list" class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                            <!-- High scores dynamically inserted here -->
+                        </div>
+                    </div>
+                    <button onclick="clearLeaderboard()" class="mt-4 text-xs text-slate-500 hover:text-rose-400 transition text-center w-full py-2">
+                        Nullstill toppliste
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: CUSTOM TEXT (EGENTEKST) -->
+        <div id="tab-custom-view" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+                <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-file-pen text-emerald-400"></i> Lim inn egen øvingstekst
+                </h2>
+                <p class="text-sm text-slate-400 mb-6">
+                    Her kan læreren eller eleven lime inn ukens gloser, fagtekster eller historier for å øve målrettet.
+                </p>
+
+                <textarea id="custom-text-input" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-mono-code focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-4 placeholder-slate-600" placeholder="Lim inn teksten din her (f.eks. engelske gloseord, samfunnsfag eller et avsnitt fra en bok)..."></textarea>
+
+                <button onclick="startCustomLesson()" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-circle-play"></i> Start øving på egentekst
+                </button>
+            </div>
+        </div>
+
+        <!-- VIRTUAL NORWEGIAN KEYBOARD DISPLAY -->
+        <div id="keyboard-container" class="mt-8 bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl transition-all duration-300">
+            <!-- Row 1: Numbers & Symbols -->
+            <div class="flex gap-1 sm:gap-1.5 justify-center mb-1.5 text-xs sm:text-sm font-semibold">
+                <div data-key="|" class="key-cap key-lp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">|</div>
+                <div data-key="1" class="key-cap key-lp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">1</div>
+                <div data-key="2" class="key-cap key-lr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">2</div>
+                <div data-key="3" class="key-cap key-lm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">3</div>
+                <div data-key="4" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">4</div>
+                <div data-key="5" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">5</div>
+                <div data-key="6" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">6</div>
+                <div data-key="7" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">7</div>
+                <div data-key="8" class="key-cap key-rm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">8</div>
+                <div data-key="9" class="key-cap key-rr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">9</div>
+                <div data-key="0" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">0</div>
+                <div data-key="+" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">+</div>
+                <div data-key="\" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">\</div>
+                <div data-key="Backspace" class="key-cap w-14 sm:w-20 h-10 sm:h-12 bg-slate-800/60 rounded-lg flex items-center justify-center text-slate-400 text-xs">Slett</div>
+            </div>
+
+            <!-- Row 2: QWERTY + Å -->
+            <div class="flex gap-1 sm:gap-1.5 justify-center mb-1.5 text-xs sm:text-sm font-semibold">
+                <div data-key="Tab" class="key-cap w-12 sm:w-16 h-10 sm:h-12 bg-slate-800/60 rounded-lg flex items-center justify-center text-slate-400 text-xs">Tab</div>
+                <div data-key="q" class="key-cap key-lp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">Q</div>
+                <div data-key="w" class="key-cap key-lr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">W</div>
+                <div data-key="e" class="key-cap key-lm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">E</div>
+                <div data-key="r" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">R</div>
+                <div data-key="t" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">T</div>
+                <div data-key="y" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">Y</div>
+                <div data-key="u" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">U</div>
+                <div data-key="i" class="key-cap key-rm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">I</div>
+                <div data-key="o" class="key-cap key-rr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">O</div>
+                <div data-key="p" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">P</div>
+                <div data-key="å" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">Å</div>
+                <div data-key="^" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">^</div>
+                <div data-key="Enter" class="key-cap w-10 sm:w-14 h-10 sm:h-12 bg-slate-800/60 rounded-lg flex items-center justify-center text-slate-400 text-xs">Enter</div>
+            </div>
+
+            <!-- Row 3: ASDFGHJKL Ø Æ (Home Row / Grunnstilling) -->
+            <div class="flex gap-1 sm:gap-1.5 justify-center mb-1.5 text-xs sm:text-sm font-semibold">
+                <div data-key="CapsLock" class="key-cap w-14 sm:w-20 h-10 sm:h-12 bg-slate-800/60 rounded-lg flex items-center justify-center text-slate-400 text-xs">Lås</div>
+                <div data-key="a" class="key-cap key-lp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">A</div>
+                <div data-key="s" class="key-cap key-lr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">S</div>
+                <div data-key="d" class="key-cap key-lm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">D</div>
+                <div data-key="f" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300 relative">
+                    F<span class="absolute bottom-1 w-1.5 h-1.5 bg-indigo-400 rounded-full"></span>
+                </div>
+                <div data-key="g" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">G</div>
+                <div data-key="h" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">H</div>
+                <div data-key="j" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300 relative">
+                    J<span class="absolute bottom-1 w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
+                </div>
+                <div data-key="k" class="key-cap key-rm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">K</div>
+                <div data-key="l" class="key-cap key-rr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">L</div>
+                <div data-key="ø" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">Ø</div>
+                <div data-key="æ" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">Æ</div>
+                <div data-key="'" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">'</div>
+            </div>
+
+            <!-- Row 4: ZXCVBNM -->
+            <div class="flex gap-1 sm:gap-1.5 justify-center mb-1.5 text-xs sm:text-sm font-semibold">
+                <div data-key="Shift" class="key-cap w-16 sm:w-24 h-10 sm:h-12 bg-slate-800/60 rounded-lg flex items-center justify-center text-slate-400 text-xs">Shift</div>
+                <div data-key="z" class="key-cap key-lp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">Z</div>
+                <div data-key="x" class="key-cap key-lr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">X</div>
+                <div data-key="c" class="key-cap key-lm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">C</div>
+                <div data-key="v" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">V</div>
+                <div data-key="b" class="key-cap key-li w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">B</div>
+                <div data-key="n" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">N</div>
+                <div data-key="m" class="key-cap key-ri w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">M</div>
+                <div data-key="," class="key-cap key-rm w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">,</div>
+                <div data-key="." class="key-cap key-rr w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">.</div>
+                <div data-key="-" class="key-cap key-rp w-8 sm:w-10 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300">-</div>
+                <div data-key="Shift" class="key-cap w-16 sm:w-24 h-10 sm:h-12 bg-slate-800/60 rounded-lg flex items-center justify-center text-slate-400 text-xs">Shift</div>
+            </div>
+
+            <!-- Row 5: Spacebar -->
+            <div class="flex gap-1 sm:gap-1.5 justify-center text-xs sm:text-sm font-semibold">
+                <div data-key=" " class="key-cap key-thumb w-64 sm:w-80 h-10 sm:h-12 bg-slate-800 rounded-lg flex items-center justify-center text-slate-400">Mellomrom</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal for Speed Test Result -->
+    <div id="result-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center space-y-6">
+            <div class="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto text-3xl">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div>
+                <h3 class="text-2xl font-black text-white">Fullført runden!</h3>
+                <p class="text-xs text-slate-400">Her er resultatene dine på tidstesten:</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                <div>
+                    <span class="text-xs text-slate-500 font-medium block">HASTIGHET</span>
+                    <span id="modal-wpm" class="text-2xl font-extrabold text-indigo-400">0 WPM</span>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 font-medium block">NØYAKTIGHET</span>
+                    <span id="modal-acc" class="text-2xl font-extrabold text-emerald-400">0%</span>
+                </div>
+            </div>
+
+            <div class="text-left space-y-2">
+                <label class="text-xs text-slate-400 font-bold block">Skriv inn ditt navn for topplisten:</label>
+                <input id="player-name-input" type="text" maxlength="15" placeholder="Ditt navn / Kallenavn" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="saveSpeedResult()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition">
+                    Lagre i topplisten
+                </button>
+                <button onclick="closeResultModal()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition">
+                    Lukk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Modern Web Audio Synthesizer for tactile feedback */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+        let blindMode = false;
+
+        function playKeySound(isError = false) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (isError) {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                } else {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.05);
+                }
+            } catch (e) {
+                // Ignore audio errors if context is blocked
+            }
+        }
+
+        /* Norwegian Key Finger Mapping */
+        const FINGER_MAP = {
+            'a': { name: 'Venstre Lillefinger', badge: 'finger-lp', finger: 'Venstre Lillefinger' },
+            'q': { name: 'Venstre Lillefinger', badge: 'finger-lp', finger: 'Venstre Lillefinger' },
+            'z': { name: 'Venstre Lillefinger', badge: 'finger-lp', finger: 'Venstre Lillefinger' },
+            '1': { name: 'Venstre Lillefinger', badge: 'finger-lp', finger: 'Venstre Lillefinger' },
+
+            's': { name: 'Venstre Ringfinger', badge: 'finger-lr', finger: 'Venstre Ringfinger' },
+            'w': { name: 'Venstre Ringfinger', badge: 'finger-lr', finger: 'Venstre Ringfinger' },
+            'x': { name: 'Venstre Ringfinger', badge: 'finger-lr', finger: 'Venstre Ringfinger' },
+            '2': { name: 'Venstre Ringfinger', badge: 'finger-lr', finger: 'Venstre Ringfinger' },
+
+            'd': { name: 'Venstre Langfinger', badge: 'finger-lm', finger: 'Venstre Langfinger' },
+            'e': { name: 'Venstre Langfinger', badge: 'finger-lm', finger: 'Venstre Langfinger' },
+            'c': { name: 'Venstre Langfinger', badge: 'finger-lm', finger: 'Venstre Langfinger' },
+            '3': { name: 'Venstre Langfinger', badge: 'finger-lm', finger: 'Venstre Langfinger' },
+
+            'f': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+            'r': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+            'v': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+            'g': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+            't': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+            'b': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+            '4': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+            '5': { name: 'Venstre Pekefinger', badge: 'finger-li', finger: 'Venstre Pekefinger' },
+
+            ' ': { name: 'Tommelfinger', badge: 'finger-thumb', finger: 'Valgfri Tommel' },
+
+            'j': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+            'u': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+            'm': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+            'h': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+            'y': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+            'n': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+            '6': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+            '7': { name: 'Høyre Pekefinger', badge: 'finger-ri', finger: 'Høyre Pekefinger' },
+
+            'k': { name: 'Høyre Langfinger', badge: 'finger-rm', finger: 'Høyre Langfinger' },
+            'i': { name: 'Høyre Langfinger', badge: 'finger-rm', finger: 'Høyre Langfinger' },
+            ',': { name: 'Høyre Langfinger', badge: 'finger-rm', finger: 'Høyre Langfinger' },
+            '8': { name: 'Høyre Langfinger', badge: 'finger-rm', finger: 'Høyre Langfinger' },
+
+            'l': { name: 'Høyre Ringfinger', badge: 'finger-rr', finger: 'Høyre Ringfinger' },
+            'o': { name: 'Høyre Ringfinger', badge: 'finger-rr', finger: 'Høyre Ringfinger' },
+            '.': { name: 'Høyre Ringfinger', badge: 'finger-rr', finger: 'Høyre Ringfinger' },
+            '9': { name: 'Høyre Ringfinger', badge: 'finger-rr', finger: 'Høyre Ringfinger' },
+
+            'ø': { name: 'Høyre Lillefinger', badge: 'finger-rp', finger: 'Høyre Lillefinger' },
+            'æ': { name: 'Høyre Lillefinger', badge: 'finger-rp', finger: 'Høyre Lillefinger' },
+            'å': { name: 'Høyre Lillefinger', badge: 'finger-rp', finger: 'Høyre Lillefinger' },
+            'p': { name: 'Høyre Lillefinger', badge: 'finger-rp', finger: 'Høyre Lillefinger' },
+            '-': { name: 'Høyre Lillefinger', badge: 'finger-rp', finger: 'Høyre Lillefinger' },
+            '0': { name: 'Høyre Lillefinger', badge: 'finger-rp', finger: 'Høyre Lillefinger' },
+        };
+
+        const LESSONS = [
+            {
+                id: 1,
+                title: "Nivå 1: Grunnstilling",
+                subtitle: "F, J, D, K, S, L, A, Ø og Mellomrom",
+                text: "ff jj dd kk ss ll aa øø fj dk sl aø ffjj ddkk ssll aaøø fff jjj ddd kkk sss lll aaa øøø fjask skal dadd kaff lakk øaks sladd fald dada"
+            },
+            {
+                id: 2,
+                title: "Nivå 2: Øverste Rad (Vinstre & Høyre)",
+                subtitle: "Legg til E, R, T, U, I, O, P, Å",
+                text: "ee rr tt uu ii oo pp åå er tu io på tre tur pil ost åre roter spise riste ute sur og de det er et for å til at på var varer"
+            },
+            {
+                id: 3,
+                title: "Nivå 3: Nederste Rad",
+                subtitle: "Legg til V, B, N, M, C, X, Z",
+                text: "vv bb nn mm cc xx zz ven bok mat navn vann bil bære mann sommer varme fin fint venn bilbane varme vest banan"
+            },
+            {
+                id: 4,
+                title: "Nivå 4: Store Bokstaver & Tegn",
+                subtitle: "Skift-tast, punktum, komma og spørretegn",
+                text: "Norge, Oslo, Bergen og Trondheim er flotte byer. Hva heter du? Jeg lærer touchmetoden nå. Det går kjempefint, eller hva?"
+            },
+            {
+                id: 5,
+                title: "Nivå 5: Vanlige norske ord",
+                subtitle: "Flyt og tempo på vanlige ord",
+                text: "ikke eller eller fordi hvordan hvorfor kommer gjennom samfunn skrive klasse elev ungdom lære tastatur framtid øve gjøre sammen bedre"
+            },
+            {
+                id: 6,
+                title: "Nivå 6: Ungdom og Digital Hverdag",
+                subtitle: "Setninger tilpasset ungdomstrinnet",
+                text: "Digital kompetanse er viktig for alle elever på ungdomstrinnet. Når du kan skrive uten å se på tastaturet, sparer du masse tid hver eneste dag."
+            },
+            {
+                id: 7,
+                title: "Nivå 7: Korte popfakta",
+                subtitle: "Gøyale fakta fra verden",
+                text: "Gjennomsnittlig skrivehastighet for en voksen er rundt firti ord i minuttet. Gamere og proffe skribenter kan ofte skrive over hundre ord i minuttet!"
+            },
+            {
+                id: 8,
+                title: "Nivå 8: Mesterprøven",
+                subtitle: "Fullstendig tekstmestring",
+                text: "Gratulerer! Du nærmer deg en ekte touchmester. Fortsett å holde blikket på skjermen og la fingrene finne veien automatisk. Øving gjør mester!"
+            }
+        ];
+
+        /* Speed Competition Phrases */
+        const SPEED_CORPUS = [
+            "en et å du han hun vi dere de var er har hadde skal vil kan må bli var",
+            "ungdomsskole tastatur øving læring nøyaktighet hastighet konkurranse utfordring",
+            "Norge har tusenvis av øyer og en lang kystlinje med dype fjorder og høye fjell.",
+            "Det er utrolig gøy å kjenne at skrivefarten øker for hver eneste økt du gjennomfører.",
+            "Touchmetoden betyr at du bruker ti fingre uten å se på tastaturet mens du skriver.",
+            "Sosiale medier og gaming krever god digital kompetanse og rask reaksjonsevne."
+        ];
+
+        /* State Variables */
+        let currentTab = 'learn'; // 'learn', 'speed', 'custom'
+        let currentLessonIndex = 0;
+        let targetText = "";
+        let currentCharIndex = 0;
+        let totalErrors = 0;
+        let totalTyped = 0;
+        let startTime = null;
+        let timerInterval = null;
+
+        /* Speed test state */
+        let speedTimerDuration = 30;
+        let speedTimeRemaining = 30;
+        let speedActive = false;
+
+        // Robust initialization that runs immediately if DOM is ready
+        function initApp() {
+            renderLevelList();
+            loadLesson(0);
+            renderLeaderboard();
+
+            // Key listener attached to window
+            window.removeEventListener('keydown', handleKeyDown);
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-learn-view').classList.add('hidden');
+            document.getElementById('tab-speed-view').classList.add('hidden');
+            document.getElementById('tab-custom-view').classList.add('hidden');
+
+            document.getElementById('nav-learn').className = "px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all flex items-center gap-2";
+            document.getElementById('nav-speed').className = "px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all flex items-center gap-2";
+            document.getElementById('nav-custom').className = "px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all flex items-center gap-2";
+
+            if (tab === 'learn') {
+                document.getElementById('tab-learn-view').classList.remove('hidden');
+                document.getElementById('nav-learn').className = "px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-indigo-600 text-white shadow";
+                loadLesson(currentLessonIndex);
+            } else if (tab === 'speed') {
+                document.getElementById('tab-speed-view').classList.remove('hidden');
+                document.getElementById('nav-speed').className = "px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-amber-500 text-slate-950 shadow";
+                resetSpeedTest();
+            } else if (tab === 'custom') {
+                document.getElementById('tab-custom-view').classList.remove('hidden');
+                document.getElementById('nav-custom').className = "px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-emerald-600 text-white shadow";
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high";
+            } else {
+                icon.className = "fa-solid fa-volume-xmark text-rose-400";
+            }
+        }
+
+        function toggleBlindMode() {
+            blindMode = !blindMode;
+            const icon = document.getElementById('blind-icon');
+            const keyboard = document.getElementById('keyboard-container');
+            if (blindMode) {
+                icon.className = "fa-solid fa-eye-slash text-amber-400";
+                keyboard.classList.add('opacity-10', 'blur-sm');
+            } else {
+                icon.className = "fa-solid fa-eye";
+                keyboard.classList.remove('opacity-10', 'blur-sm');
+            }
+        }
+
+        function renderLevelList() {
+            const container = document.getElementById('level-list');
+            container.innerHTML = LESSONS.map((lvl, idx) => `
+                <button onclick="loadLesson(${idx})" class="flex-shrink-0 px-4 py-2.5 rounded-xl border transition flex items-center gap-2 ${
+                    idx === currentLessonIndex 
+                    ? 'bg-indigo-600 text-white border-indigo-500 font-bold shadow-lg' 
+                    : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+                }">
+                    <span class="w-5 h-5 rounded-full ${idx === currentLessonIndex ? 'bg-white text-indigo-600' : 'bg-slate-700 text-slate-300'} text-xs font-black flex items-center justify-center">${lvl.id}</span>
+                    <span class="text-xs whitespace-nowrap">${lvl.title.split(':')[1] || lvl.title}</span>
+                </button>
+            `).join('');
+        }
+
+        function loadLesson(index) {
+            currentLessonIndex = index;
+            renderLevelList();
+            
+            document.getElementById('level-progress-badge').innerText = `Nivå ${index + 1} av ${LESSONS.length}`;
+            targetText = LESSONS[index].text;
+            resetLessonState();
+        }
+
+        function resetLessonState() {
+            currentCharIndex = 0;
+            totalErrors = 0;
+            totalTyped = 0;
+            startTime = null;
+            updateStatsUI();
+            renderTextDisplay();
+            updateKeyboardHighlight();
+        }
+
+        function resetCurrentLesson() {
+            resetLessonState();
+        }
+
+        function renderTextDisplay() {
+            const display = document.getElementById('text-display');
+            let html = "";
+            
+            for (let i = 0; i < targetText.length; i++) {
+                const char = targetText[i];
+                let displayChar = char === " " ? "&nbsp;" : char;
+
+                if (i < currentCharIndex) {
+                    html += `<span class="text-emerald-400 border-b-2 border-emerald-500/40">${displayChar}</span>`;
+                } else if (i === currentCharIndex) {
+                    html += `<span class="bg-indigo-500 text-white rounded px-0.5 animate-pulse font-bold border-b-2 border-white">${displayChar}</span>`;
+                } else {
+                    html += `<span class="text-slate-600">${displayChar}</span>`;
+                }
+            }
+            display.innerHTML = html;
+        }
+
+        function updateKeyboardHighlight() {
+            // Clear previous target highlights
+            document.querySelectorAll('.key-cap').forEach(el => {
+                el.classList.remove('ring-4', 'ring-indigo-400', 'bg-indigo-600', 'text-white', 'key-target');
+            });
+
+            if (currentCharIndex >= targetText.length) return;
+
+            const nextChar = targetText[currentCharIndex].toLowerCase();
+            const keyEl = document.querySelector(`.key-cap[data-key="${nextChar}"]`) || document.querySelector(`.key-cap[data-key="${targetText[currentCharIndex]}"]`);
+
+            if (keyEl) {
+                keyEl.classList.add('ring-4', 'ring-indigo-400', 'key-target');
+            }
+
+            // Finger guide instructions
+            const info = FINGER_MAP[nextChar] || { finger: 'Standard finger', badge: 'finger-thumb' };
+            const hintBox = document.getElementById('finger-badge');
+            const hintText = document.getElementById('finger-instruction');
+
+            if (hintBox && hintText) {
+                hintBox.className = `px-2.5 py-1 rounded-md font-bold text-white shadow-sm ${info.badge}`;
+                hintBox.innerText = info.finger;
+
+                const displayKey = nextChar === ' ' ? 'Mellomrom' : nextChar.toUpperCase();
+                hintText.innerHTML = `Bruk <strong>${info.finger}</strong> for å trykke på <strong class="text-indigo-300 font-mono-code">${displayKey}</strong>`;
+            }
+        }
+
+        function handleKeyDown(e) {
+            // Ignore key events if user is typing in text inputs or textareas
+            if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+            // Prevent page scrolling on spacebar during typing
+            if (e.key === " ") {
+                e.preventDefault();
+            }
+
+            // Ignore system/modifier keys
+            if (['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(e.key)) return;
+
+            // Visual feedback on physical press
+            const keyChar = e.key.toLowerCase();
+            const keyCap = document.querySelector(`.key-cap[data-key="${keyChar}"]`);
+            if (keyCap) {
+                keyCap.classList.add('key-pressed', 'bg-indigo-500', 'text-white');
+                setTimeout(() => {
+                    keyCap.classList.remove('key-pressed', 'bg-indigo-500', 'text-white');
+                }, 120);
+            }
+
+            if (currentTab === 'learn') {
+                processLearnKey(e.key);
+            } else if (currentTab === 'speed' && speedActive) {
+                processSpeedKey(e.key);
+            }
+        }
+
+        function processLearnKey(pressedKey) {
+            if (!startTime) startTime = new Date();
+
+            const requiredChar = targetText[currentCharIndex];
+            if (!requiredChar) return;
+
+            totalTyped++;
+
+            // Check correctness with forgiving case for basic levels if Caps Lock is active
+            let isCorrect = pressedKey === requiredChar;
+            if (!isCorrect && currentLessonIndex < 3 && pressedKey.toLowerCase() === requiredChar.toLowerCase()) {
+                isCorrect = true;
+            }
+
+            if (isCorrect) {
+                playKeySound(false);
+                currentCharIndex++;
+                
+                if (currentCharIndex >= targetText.length) {
+                    // Level complete!
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    setTimeout(() => {
+                        if (currentLessonIndex < LESSONS.length - 1) {
+                            loadLesson(currentLessonIndex + 1);
+                        } else {
+                            alert("Kjempebra jobba! Du har fullført alle nivåene!");
+                        }
+                    }, 500);
+                }
+            } else {
+                playKeySound(true);
+                totalErrors++;
+            }
+
+            updateStatsUI();
+            renderTextDisplay();
+            updateKeyboardHighlight();
+        }
+
+        function updateStatsUI() {
+            const accEl = document.getElementById('stat-accuracy');
+            const wpmEl = document.getElementById('stat-wpm');
+            const errEl = document.getElementById('stat-errors');
+
+            errEl.innerText = totalErrors;
+
+            const accuracy = totalTyped > 0 ? Math.max(0, Math.round(((totalTyped - totalErrors) / totalTyped) * 100)) : 100;
+            accEl.innerText = `${accuracy}%`;
+
+            if (startTime && currentCharIndex > 0) {
+                const elapsedMinutes = (new Date() - startTime) / 60000;
+                const wordsTyped = (currentCharIndex / 5);
+                const wpm = Math.round(wordsTyped / elapsedMinutes);
+                wpmEl.innerText = isFinite(wpm) ? wpm : 0;
+            } else {
+                wpmEl.innerText = 0;
+            }
+        }
+
+        function setTimerDuration(seconds) {
+            if (speedActive) return;
+            speedTimerDuration = seconds;
+            speedTimeRemaining = seconds;
+            document.getElementById('speed-time').innerText = seconds;
+
+            ['30', '60', '120'].forEach(s => {
+                const btn = document.getElementById(`time-${s}`);
+                if (parseInt(s) === seconds) {
+                    btn.className = "px-3 py-1 text-xs font-bold rounded-lg bg-indigo-600 text-white";
+                } else {
+                    btn.className = "px-3 py-1 text-xs font-bold text-slate-400 hover:text-white";
+                }
+            });
+        }
+
+        function resetSpeedTest() {
+            clearInterval(timerInterval);
+            speedActive = false;
+            speedTimeRemaining = speedTimerDuration;
+            currentCharIndex = 0;
+            totalErrors = 0;
+            totalTyped = 0;
+            
+            document.getElementById('speed-time').innerText = speedTimerDuration;
+            document.getElementById('speed-wpm').innerText = '0';
+            document.getElementById('speed-acc').innerText = '100%';
+            document.getElementById('start-speed-btn').innerHTML = '<i class="fa-solid fa-play mr-2"></i> Start Konkurranse';
+            
+            // Pick random speed text
+            targetText = SPEED_CORPUS[Math.floor(Math.random() * SPEED_CORPUS.length)];
+            renderSpeedTextDisplay();
+        }
+
+        function startSpeedTest() {
+            resetSpeedTest();
+            speedActive = true;
+            startTime = new Date();
+            
+            document.getElementById('start-speed-btn').innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Avbryt / Start På Nytt';
+
+            timerInterval = setInterval(() => {
+                speedTimeRemaining--;
+                document.getElementById('speed-time').innerText = speedTimeRemaining;
+
+                if (speedTimeRemaining <= 0) {
+                    endSpeedTest();
+                }
+            }, 1000);
+
+            updateKeyboardHighlight();
+        }
+
+        function processSpeedKey(pressedKey) {
+            const requiredChar = targetText[currentCharIndex];
+            totalTyped++;
+
+            if (pressedKey === requiredChar) {
+                playKeySound(false);
+                currentCharIndex++;
+                
+                if (currentCharIndex >= targetText.length) {
+                    // Loop or add new sentence
+                    targetText += " " + SPEED_CORPUS[Math.floor(Math.random() * SPEED_CORPUS.length)];
+                }
+            } else {
+                playKeySound(true);
+                totalErrors++;
+            }
+
+            // Real-time speed stats
+            const elapsedMinutes = (new Date() - startTime) / 60000;
+            const wordsTyped = (currentCharIndex / 5);
+            const wpm = Math.round(wordsTyped / elapsedMinutes);
+            const accuracy = Math.max(0, Math.round(((totalTyped - totalErrors) / totalTyped) * 100));
+
+            document.getElementById('speed-wpm').innerText = isFinite(wpm) ? wpm : 0;
+            document.getElementById('speed-acc').innerText = `${accuracy}%`;
+
+            renderSpeedTextDisplay();
+            updateKeyboardHighlight();
+        }
+
+        function renderSpeedTextDisplay() {
+            const display = document.getElementById('speed-text-display');
+            let html = "";
+            const windowSize = 45; // Display slice for focus
+            const startIdx = Math.max(0, currentCharIndex - 10);
+            const endIdx = Math.min(targetText.length, startIdx + windowSize);
+
+            for (let i = startIdx; i < endIdx; i++) {
+                const char = targetText[i];
+                let displayChar = char === " " ? "&nbsp;" : char;
+
+                if (i < currentCharIndex) {
+                    html += `<span class="text-emerald-400 opacity-60">${displayChar}</span>`;
+                } else if (i === currentCharIndex) {
+                    html += `<span class="bg-amber-400 text-slate-950 font-bold rounded px-0.5 animate-pulse">${displayChar}</span>`;
+                } else {
+                    html += `<span class="text-slate-400">${displayChar}</span>`;
+                }
+            }
+            display.innerHTML = html;
+        }
+
+        function endSpeedTest() {
+            clearInterval(timerInterval);
+            speedActive = false;
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+
+            const finalWpm = document.getElementById('speed-wpm').innerText;
+            const finalAcc = document.getElementById('speed-acc').innerText;
+
+            document.getElementById('modal-wpm').innerText = `${finalWpm} WPM`;
+            document.getElementById('modal-acc').innerText = finalAcc;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.add('hidden');
+            resetSpeedTest();
+        }
+
+        function saveSpeedResult() {
+            const nameInput = document.getElementById('player-name-input').value.trim() || 'Anonym';
+            const wpm = parseInt(document.getElementById('modal-wpm').innerText);
+            const acc = document.getElementById('modal-acc').innerText;
+
+            const scores = JSON.parse(localStorage.getItem('touchmester_scores') || '[]');
+            scores.push({
+                name: nameInput,
+                wpm: wpm,
+                acc: acc,
+                duration: `${speedTimerDuration}s`,
+                date: new Date().toLocaleDateString('no-NO')
+            });
+
+            scores.sort((a, b) => b.wpm - a.wpm);
+            localStorage.setItem('touchmester_scores', JSON.stringify(scores.slice(0, 10)));
+
+            renderLeaderboard();
+            closeResultModal();
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard-list');
+            const scores = JSON.parse(localStorage.getItem('touchmester_scores') || '[]');
+
+            if (scores.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 italic text-center py-4">Ingen resultater ennå. Bli den første!</p>';
+                return;
+            }
+
+            container.innerHTML = scores.map((s, idx) => `
+                <div class="flex items-center justify-between bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full ${idx === 0 ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'} flex items-center justify-center font-bold">${idx + 1}</span>
+                        <span class="font-bold text-slate-200">${escapeHtml(s.name)}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-indigo-400 font-extrabold">${s.wpm} WPM</span>
+                        <span class="text-slate-500 text-[10px]">${s.duration}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearLeaderboard() {
+            if (confirm("Vil du virkelig nullstille topplisten på denne maskinen?")) {
+                localStorage.removeItem('touchmester_scores');
+                renderLeaderboard();
+            }
+        }
+
+        function startCustomLesson() {
+            const text = document.getElementById('custom-text-input').value.trim();
+            if (!text) return;
+
+            targetText = text;
+            currentTab = 'learn';
+            switchTab('learn');
+            resetLessonState();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
