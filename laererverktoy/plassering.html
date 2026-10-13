@@ -743,7 +743,7 @@
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'student-name';
-            nameSpan.contentEditable = !isStudentMode;
+            nameSpan.contentEditable = !isStudentMode && !isLinkMode;
             nameSpan.innerText = displayName || "...";
             
             nameSpan.onfocus = () => {
@@ -960,24 +960,38 @@
                 btnText.innerText = "Fullfør kobling";
                 statusText.classList.remove('hidden');
                 selectedDesksForLink = [];
+                document.querySelectorAll('.student-name').forEach(n => n.contentEditable = false);
             } else {
                 btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
                 btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
                 btnText.innerText = "Start samkobling (Klikk pulter)";
-                statusText.add('hidden');
+                statusText.classList.add('hidden');
 
                 if (selectedDesksForLink.length >= 2) {
                     const newGroupId = 'group_' + Math.random().toString(36).substring(2, 9);
+
+                    // If a selected desk already belongs to a group, bring the whole old group along
+                    const members = new Set(selectedDesksForLink);
                     selectedDesksForLink.forEach(desk => {
+                        const oldId = desk.dataset.groupId;
+                        if (oldId) {
+                            document.querySelectorAll(`.desk[data-group-id="${oldId}"]`).forEach(d => members.add(d));
+                        }
+                    });
+                    const memberArray = Array.from(members);
+
+                    memberArray.forEach(desk => {
                         desk.dataset.groupId = newGroupId;
                         desk.classList.add('grouped');
                     });
 
-                    alignDeskGroupNeatly(selectedDesksForLink);
+                    alignDeskGroupNeatly(memberArray);
+                    drawGroupConnectionLines();
                     saveLayout();
                 }
 
                 document.querySelectorAll('.desk').forEach(d => d.classList.remove('selected-for-link'));
+                document.querySelectorAll('.student-name').forEach(n => n.contentEditable = !isStudentMode);
                 selectedDesksForLink = [];
             }
         }
@@ -999,6 +1013,7 @@
                     desk.dataset.groupId = "";
                     desk.classList.remove('grouped');
                 });
+                drawGroupConnectionLines();
                 saveLayout();
             });
         }
