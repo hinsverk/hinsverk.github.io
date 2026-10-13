@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TouchMester - Norsk Tastaturtrening</title>
+    <title>TouchMester - Tastaturtrening</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Canvas Confetti for rewards -->
@@ -123,7 +123,7 @@
             <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 shadow-xl">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-map-location-dot text-indigo-400"></i> Velg Øvingsoppgave
+                        <i class="fa-solid fa-map-location-dot text-indigo-400"></i> Velg øvingsoppgave
                     </h2>
                     <span id="level-progress-badge" class="text-xs bg-indigo-500/20 text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-500/30">
                         Nivå 1 av 8
@@ -202,7 +202,7 @@
                         <!-- Live Stats during Speed Test -->
                         <div class="grid grid-cols-3 gap-4 mb-6">
                             <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-center">
-                                <span class="text-xs text-slate-500 font-bold uppercase block mb-1">Tid Igjen</span>
+                                <span class="text-xs text-slate-500 font-bold uppercase block mb-1">Tid igjen</span>
                                 <span id="speed-time" class="text-3xl font-black text-amber-400">30</span>
                             </div>
                             <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-center">
@@ -225,7 +225,7 @@
 
                     <div class="flex gap-4">
                         <button id="start-speed-btn" onclick="startSpeedTest()" class="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-slate-950 font-extrabold text-base shadow-lg transition">
-                            <i class="fa-solid fa-play mr-2"></i> Start Konkurranse
+                            <i class="fa-solid fa-play mr-2"></i> Start konkurranse
                         </button>
                     </div>
                 </div>
@@ -234,7 +234,7 @@
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col justify-between">
                     <div>
                         <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-medal text-amber-400"></i> Lokal Toppliste
+                            <i class="fa-solid fa-medal text-amber-400"></i> Lokal toppliste
                         </h3>
                         <p class="text-xs text-slate-400 mb-4">Lagres på denne enheten. Utfordre klassekameratene dine!</p>
                         
@@ -491,19 +491,19 @@
             },
             {
                 id: 2,
-                title: "Nivå 2: Øverste Rad (Vinstre & Høyre)",
+                title: "Nivå 2: Øverste rad (venstre og høyre)",
                 subtitle: "Legg til E, R, T, U, I, O, P, Å",
                 text: "ee rr tt uu ii oo pp åå er tu io på tre tur pil ost åre roter spise riste ute sur og de det er et for å til at på var varer"
             },
             {
                 id: 3,
-                title: "Nivå 3: Nederste Rad",
+                title: "Nivå 3: Nederste rad",
                 subtitle: "Legg til V, B, N, M, C, X, Z",
                 text: "vv bb nn mm cc xx zz ven bok mat navn vann bil bære mann sommer varme fin fint venn bilbane varme vest banan"
             },
             {
                 id: 4,
-                title: "Nivå 4: Store Bokstaver & Tegn",
+                title: "Nivå 4: Store bokstaver og tegn",
                 subtitle: "Skift-tast, punktum, komma og spørretegn",
                 text: "Norge, Oslo, Bergen og Trondheim er flotte byer. Hva heter du? Jeg lærer touchmetoden nå. Det går kjempefint, eller hva?"
             },
@@ -515,7 +515,7 @@
             },
             {
                 id: 6,
-                title: "Nivå 6: Ungdom og Digital Hverdag",
+                title: "Nivå 6: Ungdom og digital hverdag",
                 subtitle: "Setninger tilpasset ungdomstrinnet",
                 text: "Digital kompetanse er viktig for alle elever på ungdomstrinnet. Når du kan skrive uten å se på tastaturet, sparer du masse tid hver eneste dag."
             },
@@ -523,7 +523,7 @@
                 id: 7,
                 title: "Nivå 7: Korte popfakta",
                 subtitle: "Gøyale fakta fra verden",
-                text: "Gjennomsnittlig skrivehastighet for en voksen er rundt firti ord i minuttet. Gamere og proffe skribenter kan ofte skrive over hundre ord i minuttet!"
+                text: "Gjennomsnittlig skrivehastighet for en voksen er rundt førti ord i minuttet. Gamere og proffe skribenter kan ofte skrive over hundre ord i minuttet!"
             },
             {
                 id: 8,
@@ -761,7 +761,7 @@
                         if (currentLessonIndex < LESSONS.length - 1) {
                             loadLesson(currentLessonIndex + 1);
                         } else {
-                            alert("Kjempebra jobba! Du har fullført alle nivåene!");
+                            alert("Kjempebra jobbet! Du har fullført alle nivåene!");
                         }
                     }, 500);
                 }
@@ -822,7 +822,7 @@
             document.getElementById('speed-time').innerText = speedTimerDuration;
             document.getElementById('speed-wpm').innerText = '0';
             document.getElementById('speed-acc').innerText = '100%';
-            document.getElementById('start-speed-btn').innerHTML = '<i class="fa-solid fa-play mr-2"></i> Start Konkurranse';
+            document.getElementById('start-speed-btn').innerHTML = '<i class="fa-solid fa-play mr-2"></i> Start konkurranse';
             
             // Pick random speed text
             targetText = SPEED_CORPUS[Math.floor(Math.random() * SPEED_CORPUS.length)];
@@ -834,7 +834,7 @@
             speedActive = true;
             startTime = new Date();
             
-            document.getElementById('start-speed-btn').innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Avbryt / Start På Nytt';
+            document.getElementById('start-speed-btn').innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Avbryt / Start på nytt';
 
             timerInterval = setInterval(() => {
                 speedTimeRemaining--;
