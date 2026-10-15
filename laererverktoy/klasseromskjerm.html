@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Klasseromskjerm</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
@@ -70,9 +70,12 @@
       color: #94a3b8;
       cursor: text;
     }
+  .widget [contenteditable]{user-select:text;-webkit-user-select:text}
+    [contenteditable] img{max-width:100%;height:auto;cursor:pointer;border-radius:6px}
+    [contenteditable] img.img-selected{outline:3px solid #0ea5e9;outline-offset:2px}
   </style>
 </head>
-<body id="main-body" class="h-screen w-screen overflow-hidden bg-slate-800 text-slate-800 relative bg-custom-cover" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop');">
+<body id="main-body" class="h-screen w-screen overflow-hidden bg-slate-800 text-slate-800 relative bg-custom-cover" style="background-color:#334155; background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop'), linear-gradient(135deg,#1e3a5f,#475569);">
 
   <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
 
@@ -136,6 +139,12 @@
     <button onclick="createWidget('tekstboks')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Tekstboks">
       <i class="fa-solid fa-note-sticky text-xl text-sky-500 group-hover:scale-110 transition-transform"></i>
       <span class="text-[10px] font-medium mt-1">Tekst</span>
+    </button>
+
+    <!-- Knapp for Bilde -->
+    <button onclick="createWidget('image')" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl hover:bg-white/60 active:scale-95 transition group" title="Bilde">
+      <i class="fa-solid fa-photo-film text-xl text-pink-500 group-hover:scale-110 transition-transform"></i>
+      <span class="text-[10px] font-medium mt-1">Bilde</span>
     </button>
 
     <div class="h-8 w-[1px] bg-slate-300 mx-1"></div>
@@ -364,6 +373,11 @@
         }
         widget.remove();
         activeWidgets.delete(id);
+        try {
+          localStorage.removeItem('klasserom_img_' + id);
+          localStorage.removeItem('tekstboksContent_' + id);
+          if (id === 'widget-tekstboks') localStorage.removeItem('tekstboksContent');
+        } catch (e) {}
         updateWelcomeMsg();
         saveLayoutState();
       }
@@ -420,8 +434,8 @@
       }
     }
 
-    function createWidget(type, savedConfig = null) {
-      const id = savedConfig ? savedConfig.id : (type === 'dagsplan' ? 'widget-dagsplan' : type === 'tekstboks' ? 'widget-tekstboks' : 'widget-' + Date.now());
+    function createWidget(type, savedConfig = null, opts = {}) {
+      const id = savedConfig ? savedConfig.id : (type === 'dagsplan' ? 'widget-dagsplan' : (type === 'tekstboks' || type === 'image') ? newWidgetId() : 'widget-' + Date.now());
       if (activeWidgets.has(id)) {
         const w = document.getElementById(id);
         if (w) w.style.zIndex = ++highestZIndex;
@@ -441,6 +455,7 @@
         case 'qr': initQRWidget(id, savedConfig); break;
         case 'dagsplan': initDagsplanWidget(id, savedConfig); break;
         case 'tekstboks': initTekstboksWidget(id, savedConfig); break;
+        case 'image': initImageWidget(id, savedConfig, opts); break;
       }
     }
 
@@ -525,6 +540,18 @@
               <button onclick="changeTextColor('${id}', '#16a34a')" class="w-4 h-4 rounded-full bg-green-600 border border-slate-300 hover:scale-110 transition" title="Grønn"></button>
               <input type="color" onchange="changeTextColor('${id}', this.value)" class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0" title="Velg farge">
             </div>
+
+            <div class="h-4 w-[1px] bg-slate-300 mx-0.5"></div>
+            <button onclick="insertImageInText('${id}')" class="px-1.5 h-6 rounded hover:bg-slate-200 flex items-center text-slate-700 transition" title="Sett inn bilde"><i class="fa-regular fa-image text-xs"></i></button>
+            <div id="${id}-imgtools" class="hidden items-center gap-0.5 pl-1.5 border-l border-slate-300">
+              <span class="text-[10px] text-slate-500 mr-0.5">Bilde:</span>
+              <button onclick="imgAct('${id}','minus')" class="w-6 h-6 rounded hover:bg-slate-200 text-slate-700" title="Mindre"><i class="fa-solid fa-minus text-[10px]"></i></button>
+              <button onclick="imgAct('${id}','plus')" class="w-6 h-6 rounded hover:bg-slate-200 text-slate-700" title="Større"><i class="fa-solid fa-plus text-[10px]"></i></button>
+              <button onclick="imgAct('${id}','left')" class="w-6 h-6 rounded hover:bg-slate-200 text-slate-700" title="Venstre, tekst ved siden av"><i class="fa-solid fa-align-left text-[10px]"></i></button>
+              <button onclick="imgAct('${id}','center')" class="w-6 h-6 rounded hover:bg-slate-200 text-slate-700" title="Midtstilt"><i class="fa-solid fa-align-center text-[10px]"></i></button>
+              <button onclick="imgAct('${id}','right')" class="w-6 h-6 rounded hover:bg-slate-200 text-slate-700" title="Høyre, tekst ved siden av"><i class="fa-solid fa-align-right text-[10px]"></i></button>
+              <button onclick="imgAct('${id}','del')" class="w-6 h-6 rounded hover:bg-red-100 text-red-600" title="Slett bilde"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
+            </div>
           </div>
 
           <!-- Redigerbart område -->
@@ -532,6 +559,7 @@
         </div>
       `;
       loadTekstboksContent(id);
+      setupTextImages(id);
     }
 
     function formatText(wId, command, value = null) {
@@ -1315,28 +1343,237 @@
       renderDagsplan();
     }
 
+    function newWidgetId() { return 'widget-' + Date.now() + '-' + Math.floor(Math.random() * 100000); }
+
+    function toast(msg) {
+      const t = document.createElement('div');
+      t.className = 'fixed top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-2xl';
+      t.style.zIndex = 99999;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 4000);
+    }
+
     function saveTekstboksContent(wId = 'widget-tekstboks') {
       const editor = document.getElementById(`${wId}-editor`) || document.getElementById('tekstboks-input');
-      if (editor) {
-        const content = editor.innerHTML || editor.value;
-        localStorage.setItem(`tekstboksContent_${wId}`, content);
-        localStorage.setItem('tekstboksContent', content);
-      }
+      if (!editor) return;
+      let content;
+      if (editor.isContentEditable) {
+        const c = editor.cloneNode(true);
+        c.querySelectorAll('img.img-selected').forEach(i => i.classList.remove('img-selected'));
+        content = c.innerHTML;
+      } else content = editor.value;
+      try { localStorage.setItem(`tekstboksContent_${wId}`, content); }
+      catch (e) { toast('Lagringsplassen er full – bildene blir ikke husket. Bruk færre eller mindre bilder.'); }
     }
 
     function loadTekstboksContent(wId = 'widget-tekstboks') {
-      const saved = localStorage.getItem(`tekstboksContent_${wId}`) || localStorage.getItem('tekstboksContent');
+      let saved = null;
+      try {
+        saved = localStorage.getItem(`tekstboksContent_${wId}`);
+        if (saved === null && wId === 'widget-tekstboks') saved = localStorage.getItem('tekstboksContent');
+      } catch (e) {}
       const editor = document.getElementById(`${wId}-editor`);
       const oldInput = document.getElementById('tekstboks-input');
-
       if (saved !== null) {
-        if (editor) {
-          editor.innerHTML = saved;
-        } else if (oldInput) {
-          oldInput.value = saved;
-        }
+        if (editor) editor.innerHTML = saved;
+        else if (oldInput && wId === 'widget-tekstboks') oldInput.value = saved;
       }
     }
+
+    // --- BILDER ---
+    function readImageFile(file, maxDim = 1200) {
+      return new Promise((res, rej) => {
+        if (!file || !file.type.startsWith('image/')) return rej();
+        const fr = new FileReader();
+        fr.onerror = rej;
+        fr.onload = () => {
+          const img = new Image();
+          img.onerror = rej;
+          img.onload = () => {
+            const sc = Math.min(1, maxDim / Math.max(img.width, img.height));
+            const w = Math.max(1, Math.round(img.width * sc)), h = Math.max(1, Math.round(img.height * sc));
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            const x = cv.getContext('2d');
+            const keepAlpha = file.type === 'image/png' || file.type === 'image/webp';
+            if (!keepAlpha) { x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); }
+            x.drawImage(img, 0, 0, w, h);
+            res(keepAlpha ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', 0.82));
+          };
+          img.src = fr.result;
+        };
+        fr.readAsDataURL(file);
+      });
+    }
+
+    function pickImageFile(cb) {
+      const i = document.createElement('input');
+      i.type = 'file'; i.accept = 'image/*';
+      i.onchange = () => { if (i.files[0]) cb(i.files[0]); };
+      i.click();
+    }
+
+    function setupTextImages(id) {
+      const ed = document.getElementById(`${id}-editor`);
+      if (!ed) return;
+      const remember = () => {
+        const sel = getSelection();
+        if (sel.rangeCount && ed.contains(sel.anchorNode)) ed._range = sel.getRangeAt(0).cloneRange();
+      };
+      ['keyup', 'mouseup', 'blur'].forEach(ev => ed.addEventListener(ev, remember));
+      ed.addEventListener('click', e => selectTextImage(id, e.target.tagName === 'IMG' ? e.target : null));
+      ed.addEventListener('paste', e => {
+        const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/'));
+        if (f) { e.preventDefault(); addImageFileToText(id, f); }
+      });
+      ed.addEventListener('dragover', e => {
+        if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault();
+      });
+      ed.addEventListener('drop', e => {
+        const f = [...(e.dataTransfer?.files || [])].find(f => f.type.startsWith('image/'));
+        if (!f) return;
+        e.preventDefault(); e.stopPropagation();
+        const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null;
+        if (r && ed.contains(r.startContainer)) ed._range = r;
+        addImageFileToText(id, f);
+      });
+    }
+
+    function selectTextImage(id, img) {
+      const ed = document.getElementById(`${id}-editor`), tools = document.getElementById(`${id}-imgtools`);
+      if (!ed || !tools) return;
+      ed.querySelectorAll('img.img-selected').forEach(i => i.classList.remove('img-selected'));
+      ed._img = img;
+      if (img) { img.classList.add('img-selected'); tools.classList.remove('hidden'); tools.classList.add('flex'); }
+      else { tools.classList.add('hidden'); tools.classList.remove('flex'); }
+    }
+
+    function insertImageInText(id) { pickImageFile(f => addImageFileToText(id, f)); }
+
+    function addImageFileToText(id, file) {
+      readImageFile(file, 1200).then(src => {
+        const ed = document.getElementById(`${id}-editor`);
+        if (!ed) return;
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = 'width:50%;display:block;margin:6px auto;';
+        ed.focus();
+        const sel = getSelection();
+        let r = ed._range;
+        if (!r || !ed.contains(r.startContainer)) { r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); }
+        sel.removeAllRanges(); sel.addRange(r);
+        r.deleteContents(); r.insertNode(img);
+        r.setStartAfter(img); r.collapse(true);
+        sel.removeAllRanges(); sel.addRange(r);
+        ed._range = r.cloneRange();
+        selectTextImage(id, img);
+        saveTekstboksContent(id);
+      }).catch(() => toast('Kunne ikke lese bildet.'));
+    }
+
+    function imgAct(id, act) {
+      const ed = document.getElementById(`${id}-editor`), img = ed && ed._img;
+      if (!img) return;
+      if (act === 'del') { img.remove(); selectTextImage(id, null); }
+      else if (act === 'plus' || act === 'minus') {
+        const steps = [10, 15, 25, 35, 50, 65, 80, 100];
+        const cur = parseFloat(img.style.width) || 50;
+        let i = steps.findIndex(v => v >= cur);
+        if (i < 0) i = steps.length - 1;
+        i = Math.max(0, Math.min(steps.length - 1, i + (act === 'plus' ? 1 : -1)));
+        img.style.width = steps[i] + '%';
+      } else {
+        const w = img.style.width || '50%';
+        const m = {
+          left: 'float:left;margin:4px 12px 6px 0;',
+          right: 'float:right;margin:4px 0 6px 12px;',
+          center: 'display:block;float:none;margin:6px auto;'
+        }[act];
+        img.style.cssText = 'width:' + w + ';' + m;
+      }
+      saveTekstboksContent(id);
+    }
+
+    function initImageWidget(id, savedConfig, opts = {}) {
+      const c = createWidgetFrame(id, 'Bilde', 'fa-solid fa-photo-film text-pink-500', 'image', savedConfig);
+      const el = document.getElementById(id);
+      if (!savedConfig && el) { el.style.width = '420px'; el.style.height = '340px'; }
+      c.classList.remove('p-4'); c.classList.add('p-2');
+      c.innerHTML = `<div class="relative flex-1 min-h-0 flex items-center justify-center"></div>`;
+      const box = c.firstElementChild;
+
+      const render = (src) => {
+        if (!src) {
+          box.innerHTML = `<div class="text-center text-slate-500 text-xs p-3 border-2 border-dashed border-slate-300 rounded-xl w-full h-full flex flex-col items-center justify-center gap-2">
+            <i class="fa-regular fa-image text-4xl text-slate-300"></i>
+            <p>Dra et bilde hit, eller lim inn med Ctrl+V</p>
+            <div class="flex gap-2">
+              <button data-a="file" class="px-3 py-1.5 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-semibold">Velg bilde</button>
+              <button data-a="url" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold">Fra nettadresse</button>
+            </div></div>`;
+        } else {
+          box.innerHTML = `<img class="w-full h-full object-contain rounded-lg pointer-events-none" draggable="false">
+            <div class="absolute top-1 right-1 flex gap-1">
+              <button data-a="file" class="w-7 h-7 rounded-lg bg-white/80 hover:bg-white shadow text-slate-700" title="Bytt bilde"><i class="fa-solid fa-arrow-up-from-bracket text-xs"></i></button>
+              <button data-a="clear" class="w-7 h-7 rounded-lg bg-white/80 hover:bg-red-50 shadow text-red-600" title="Fjern bilde"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            </div>`;
+          box.querySelector('img').src = src;
+        }
+      };
+
+      const setSrc = (src, fit) => {
+        render(src);
+        try {
+          if (src) localStorage.setItem('klasserom_img_' + id, src);
+          else localStorage.removeItem('klasserom_img_' + id);
+        } catch (e) { toast('Bildet er for stort til å lagres og forsvinner når siden lastes på nytt.'); }
+        if (src && fit) {
+          const im = box.querySelector('img');
+          im.onload = () => {
+            const a = im.naturalWidth / im.naturalHeight || 1;
+            const w = Math.min(460, window.innerWidth - 60);
+            el.style.width = w + 'px';
+            el.style.height = Math.min(window.innerHeight * 0.75, w / a + 64) + 'px';
+            saveLayoutState();
+          };
+        }
+      };
+
+      const fromFile = f => readImageFile(f, 1600).then(sv => setSrc(sv, true)).catch(() => toast('Kunne ikke lese bildet.'));
+
+      box.addEventListener('click', e => {
+        const a = e.target.closest('[data-a]')?.dataset.a;
+        if (a === 'file') pickImageFile(fromFile);
+        else if (a === 'url') { const u = prompt('Lim inn adressen til bildet:'); if (u && u.trim()) setSrc(u.trim(), true); }
+        else if (a === 'clear') setSrc(null);
+      });
+      el.addEventListener('dragover', e => e.preventDefault());
+      el.addEventListener('drop', e => {
+        const f = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'));
+        if (f) { e.preventDefault(); fromFile(f); }
+      });
+      el._setImageFile = fromFile;
+
+      let saved = null;
+      try { saved = localStorage.getItem('klasserom_img_' + id); } catch (e) {}
+      render(saved);
+      if (opts.file) fromFile(opts.file);
+      else if (!saved && !savedConfig) pickImageFile(fromFile);
+    }
+
+    // Lim inn bilde utenfor tekstfelt: fyll tomt bildeverktøy, ellers lag nytt
+    document.addEventListener('paste', e => {
+      const t = e.target;
+      if (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
+      const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/'));
+      if (!f) return;
+      e.preventDefault();
+      const empty = [...activeWidgets.values()]
+        .filter(w => w.dataset.type === 'image' && !w.querySelector('img'))
+        .sort((x, y) => y.style.zIndex - x.style.zIndex)[0];
+      if (empty) empty._setImageFile(f); else createWidget('image', null, { file: f });
+    });
 
     // --- OPPSTART ---
     window.addEventListener('DOMContentLoaded', () => {
