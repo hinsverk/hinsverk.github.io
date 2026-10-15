@@ -149,13 +149,13 @@
                             <!-- Clock Numbers -->
                             <g id="clock-numbers" font-family="Fredoka, sans-serif" font-size="20" font-weight="700" fill="#1e293b" text-anchor="middle" dominant-baseline="central"></g>
 
-                            <!-- Hour Hand Group (Points straight up at 0 deg) -->
+                            <!-- Hour Hand Group -->
                             <g id="practice-hour-group" class="hand-group">
                                 <line x1="150" y1="150" x2="150" y2="90" stroke="transparent" stroke-width="28" stroke-linecap="round" />
                                 <line x1="150" y1="150" x2="150" y2="90" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
                             </g>
 
-                            <!-- Minute Hand Group (Points straight up at 0 deg) -->
+                            <!-- Minute Hand Group -->
                             <g id="practice-minute-group" class="hand-group">
                                 <line x1="150" y1="150" x2="150" y2="55" stroke="transparent" stroke-width="24" stroke-linecap="round" />
                                 <line x1="150" y1="150" x2="150" y2="55" stroke="#e63946" stroke-width="5" stroke-linecap="round" />
@@ -186,7 +186,7 @@
                                 <input type="text" id="practice-user-input" autocomplete="off" placeholder="f.eks. halv åtte eller 07:30" 
                                     onkeydown="if(event.key==='Enter') checkAnswer()"
                                     class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3.5 text-base sm:text-lg font-bold text-slate-900 focus:outline-none focus:border-brand-red transition-all shadow-inner">
-                                <button onclick="checkAnswer()" class="absolute right-2 top-2 bottom-2 bg-brand-red text-white px-4 rounded-xl font-bold hover:bg-brand-redDark transition-all text-xs flex items-center gap-1">
+                                <button id="submit-answer-btn" onclick="checkAnswer()" class="absolute right-2 top-2 bottom-2 bg-brand-red text-white px-4 rounded-xl font-bold hover:bg-brand-redDark transition-all text-xs flex items-center gap-1">
                                     <span data-i18n="checkBtnShort">Svar</span>
                                 </button>
                             </div>
@@ -334,7 +334,7 @@
         </section>
 
         <!-- ========================================================================= -->
-        <!-- TAB 3: JSON IMPORT / EXPORT                                              -->
+        <!-- TAB 3: JSON IMPORT / EXPORT & GIST SYNCHRONIZATION                       -->
         <!-- ========================================================================= -->
         <section id="view-data" class="hidden space-y-6">
             <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-3xl p-6 shadow-sm space-y-4">
@@ -357,7 +357,7 @@
                 <div class="space-y-2">
                     <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">GitHub Gist Raw URL</label>
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="url" id="gist-url-input" placeholder="https://gist.githubusercontent.com/hinsverk/07296a5481d7556177fbb617689de6d6/raw/752b8a7ffe0ec95be9afdec6d9c6abde730b3d5d/gistfile2.json" 
+                        <input type="url" id="gist-url-input" placeholder="https://gist.githubusercontent.com/..." 
                             class="flex-grow bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-red">
                         <button onclick="saveAndSyncGist()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md">
                             <i class="fa-solid fa-rotate"></i>
@@ -418,15 +418,18 @@
     </main>
 
     <script>
+        const DEFAULT_GIST_URL = "https://gist.githubusercontent.com/hinsverk/07296a5481d7556177fbb617689de6d6/raw/752b8a7ffe0ec95be9afdec6d9c6abde730b3d5d/gistfile2.json";
+        
         let currentLang = 'no';
         let currentTab = 'practice';
-        let gistUrl = '';
+        let gistUrl = DEFAULT_GIST_URL;
         
         let tasks = [];
         let currentTaskIdx = 0;
         let score = 0;
         let practiceClockState = { hour: 10, minute: 10 };
         let creatorClockState = { hour: 10, minute: 10 };
+        let isProcessingAnswer = false; // Prevents skipping tasks due to rapid clicks
 
         const i18n = {
             no: {
@@ -528,7 +531,7 @@
         };
 
         /**
-         * Helper: Converts hour (0-23) and minute (0-59) to natural language time expression
+         * Converts hour (0-23) and minute (0-59) to natural language time expression
          */
         function timeToText(h, m, lang) {
             let hour12 = h % 12;
@@ -628,9 +631,6 @@
 
         let toastTimeout = null;
 
-        /**
-         * Displays toast notifications
-         */
         function showToast(message) {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-message');
@@ -666,6 +666,8 @@
         function setupClockFace(svgId, ticksId, numbersId) {
             const ticksGroup = document.getElementById(ticksId);
             const numbersGroup = document.getElementById(numbersId);
+            if (!ticksGroup || !numbersGroup) return;
+            
             ticksGroup.innerHTML = '';
             numbersGroup.innerHTML = '';
 
@@ -706,9 +708,6 @@
             }
         }
 
-        /**
-         * Update Clock visual hand positions centered strictly around (150, 150)
-         */
         function renderClockHands(hourGroupId, minuteGroupId, hour, minute) {
             const minuteAngle = (minute % 60) * 6; // 360 / 60
             const hourAngle = ((hour % 12) + (minute % 60) / 60) * 30; // 360 / 12
@@ -726,6 +725,7 @@
 
         function enableClockInteractivity(svgId, hourGroupId, minuteGroupId, onTimeChanged) {
             const svg = document.getElementById(svgId);
+            if (!svg) return;
             let activeHand = null;
 
             function getAngleFromEvent(e) {
@@ -840,7 +840,20 @@
             if (currentTab === 'creator') updateCreatorView();
         }
 
+        function setControlsDisabled(disabled) {
+            const checkBtn = document.getElementById('check-answer-btn');
+            const submitBtn = document.getElementById('submit-answer-btn');
+            const inputField = document.getElementById('practice-user-input');
+
+            if (checkBtn) checkBtn.disabled = disabled;
+            if (submitBtn) submitBtn.disabled = disabled;
+            if (inputField) inputField.disabled = disabled;
+        }
+
         function loadPracticeTask() {
+            isProcessingAnswer = false;
+            setControlsDisabled(false);
+
             if (tasks.length === 0) tasks = getDefaultTasks();
 
             if (currentTaskIdx >= tasks.length) {
@@ -904,7 +917,12 @@
         }
 
         function checkAnswer() {
+            // Anti-skip check: prevent executing multiple times simultaneously
+            if (isProcessingAnswer) return;
+
             const task = tasks[currentTaskIdx];
+            if (!task) return;
+
             const feedbackMsg = document.getElementById('feedback-message');
             let isCorrect = false;
 
@@ -948,6 +966,10 @@
             }
 
             if (isCorrect) {
+                // Lock interactions immediately so quick additional taps cannot trigger skipping
+                isProcessingAnswer = true;
+                setControlsDisabled(true);
+
                 playAudioTone(true);
                 score += 10;
                 document.getElementById('practice-score').textContent = score;
@@ -959,9 +981,18 @@
                     loadPracticeTask();
                 }, 1400);
             } else {
+                // Brief debounce on wrong answers to avoid spamming
+                isProcessingAnswer = true;
+                setControlsDisabled(true);
+
                 playAudioTone(false);
                 feedbackMsg.className = "text-sm font-bold text-red-500 flex items-center gap-1.5";
                 feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${i18n[currentLang].wrongMsg}`;
+
+                setTimeout(() => {
+                    isProcessingAnswer = false;
+                    setControlsDisabled(false);
+                }, 600);
             }
         }
 
@@ -1002,26 +1033,28 @@
             };
 
             tasks.push(newTask);
+            saveToLocalStorage();
             updateCreatorView();
             showToast("Oppgave lagt til!");
         }
 
         function deleteTask(id) {
             tasks = tasks.filter(t => t.id !== id);
+            saveToLocalStorage();
             renderTaskListTable();
             showToast("Oppgave slettet");
         }
 
         function clearAllTasks() {
             tasks = [];
-            renderTaskListTable();
             saveToLocalStorage();
+            renderTaskListTable();
             showToast("Alle oppgaver slettet");
         }
 
         async function fetchGistTasks(showNotification = true) {
             const inputVal = document.getElementById('gist-url-input')?.value.trim();
-            const url = inputVal || gistUrl;
+            const url = inputVal || gistUrl || DEFAULT_GIST_URL;
 
             if (!url) {
                 if (showNotification) showToast("Vennligst oppgi en gyldig GitHub Gist Raw URL");
@@ -1032,7 +1065,9 @@
             updateGistStatusUI('syncing', 'Synkroniserer...');
 
             try {
-                const response = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now());
+                // Append timestamp to bypass caching issue
+                const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                const response = await fetch(cacheBusterUrl);
                 if (!response.ok) throw new Error('HTTP status ' + response.status);
                 const data = await response.json();
 
@@ -1068,7 +1103,7 @@
         function saveAndSyncGist() {
             const urlInput = document.getElementById('gist-url-input');
             if (urlInput) {
-                gistUrl = urlInput.value.trim();
+                gistUrl = urlInput.value.trim() || DEFAULT_GIST_URL;
                 saveToLocalStorage();
             }
             fetchGistTasks(true);
@@ -1110,6 +1145,8 @@
                 const savedGist = localStorage.getItem('klokke_gist_url');
                 if (savedGist) {
                     gistUrl = savedGist;
+                } else {
+                    gistUrl = DEFAULT_GIST_URL;
                 }
             } catch (e) {
                 console.error("Feil ved lesing fra localStorage", e);
@@ -1175,6 +1212,7 @@
                     const imported = JSON.parse(e.target.result);
                     if (Array.isArray(imported)) {
                         tasks = imported;
+                        saveToLocalStorage();
                         updateJSONTextarea();
                         showToast("Oppgaver importert vellykket!");
                     } else {
@@ -1210,8 +1248,8 @@
             setupClockFace('creator-clock', 'creator-clock-ticks', 'creator-clock-numbers');
 
             const urlInput = document.getElementById('gist-url-input');
-            if (urlInput && gistUrl) {
-                urlInput.value = gistUrl;
+            if (urlInput) {
+                urlInput.value = gistUrl || DEFAULT_GIST_URL;
             }
 
             if (tasks.length === 0) {
@@ -1239,16 +1277,15 @@
             setLanguage('no');
             switchTab('practice');
 
-            // Automatisk synkronisering dersom Gist URL finnes
-            if (gistUrl) {
-                await fetchGistTasks(false);
-            }
+            // Automatisk innlesing av Gist-oppgaver ved oppstart
+            await fetchGistTasks(false);
         };
     </script>
+
     <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
+    <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Tilbake til Lærerverktøy</span>
+    </a>
 </body>
 </html>
