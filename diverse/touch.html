@@ -59,28 +59,26 @@
 <body class="h-full flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
 
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        
-        <!-- Venstre side: Tilbakeknapp + Logo -->
-        <div class="flex items-center gap-3">
-            <!-- TILBAKEKNAPP -->
-            <a href="index.html" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-white/10 shadow transition-all font-sans text-xs font-semibold cursor-pointer">
-                <i class="fa-solid fa-arrow-left"></i>
-                <span class="hidden sm:inline">Tilbake til Lærerverktøy</span>
-                <span class="sm:hidden">Tilbake</span>
-            </a>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- Venstre side: Tilbakeknapp + Logo -->
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-white/10 shadow transition-all font-sans text-xs font-semibold cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span class="hidden sm:inline">Tilbake til Lærerverktøy</span>
+                    <span class="sm:hidden">Tilbake</span>
+                </a>
 
-            <!-- LOGO / OVERSKRIFT -->
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('learn')">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-                    <i class="fa-solid font-bold fa-keyboard text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">TouchMester</h1>
-                    <p class="text-xs text-indigo-400 font-medium">Tastaturtrening</p>
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('learn')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                        <i class="fa-solid font-bold fa-keyboard text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">TouchMester</h1>
+                        <p class="text-xs text-indigo-400 font-medium">Gradvis Tastaturtrening</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
             <!-- Main Navigation Tabs -->
             <nav class="hidden md:flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
@@ -120,17 +118,32 @@
         <!-- TAB 1: LEARNING PATH (LÆRINGSTI) -->
         <div id="tab-learn-view" class="space-y-6">
             <!-- Level Selector Bar -->
-            <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 shadow-xl">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-map-location-dot text-indigo-400"></i> Velg øvingsoppgave
+            <div class="bg-slate-900/90 rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-indigo-400"></i> Velg Hovedkapittel
                     </h2>
-                    <span id="level-progress-badge" class="text-xs bg-indigo-500/20 text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-500/30">
-                        Nivå 1 av 8
+                    <span id="level-progress-badge" class="text-xs bg-indigo-500/20 text-indigo-300 font-semibold px-3 py-1 rounded-full border border-indigo-500/30">
+                        Nivå 1
                     </span>
                 </div>
+                
+                <!-- Main Level Selector Tabs -->
                 <div id="level-list" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    <!-- Levels dynamically rendered here -->
+                    <!-- Main level buttons dynamically loaded -->
+                </div>
+
+                <!-- Sub-Task Progression Pills (Scaffolding navigation) -->
+                <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold text-slate-400">Deloppgaver:</span>
+                        <div id="subtask-list" class="flex gap-1.5 flex-wrap">
+                            <!-- Subtask chips dynamically rendered here -->
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-400 font-medium italic" id="subtask-description">
+                        <!-- Subtask goal description -->
+                    </div>
                 </div>
             </div>
 
@@ -153,7 +166,7 @@
                         </div>
                     </div>
                     <button onclick="resetCurrentLesson()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-rotate-right"></i> Start på nytt
+                        <i class="fa-solid fa-rotate-right"></i> Start deloppgave på nytt
                     </button>
                 </div>
 
@@ -423,7 +436,7 @@
                     osc.stop(audioCtx.currentTime + 0.05);
                 }
             } catch (e) {
-                // Ignore audio errors if context is blocked
+                // Ignore audio errors
             }
         }
 
@@ -482,54 +495,164 @@
             '0': { name: 'Høyre Lillefinger', badge: 'finger-rp', finger: 'Høyre Lillefinger' },
         };
 
+        /* Scaffolding Curriculum structure: Each Main Level contains gradual subtasks */
         const LESSONS = [
             {
                 id: 1,
-                title: "Nivå 1: Grunnstilling",
-                subtitle: "F, J, D, K, S, L, A, Ø og Mellomrom",
-                text: "ff jj dd kk ss ll aa øø fj dk sl aø ffjj ddkk ssll aaøø fff jjj ddd kkk sss lll aaa øøø fjask skal dadd kaff lakk øaks sladd fald dada"
+                title: "Nivå 1: Grunnstillingen",
+                subtasks: [
+                    {
+                        code: "1.1",
+                        goal: "Lær ankerknappene F og J (pekefingre)",
+                        text: "ff jj ff jj f j f j fff jjj fj fj fj"
+                    },
+                    {
+                        code: "1.2",
+                        goal: "Legg til D og K (langfingre)",
+                        text: "dd kk dd kk f d j k ffdd jjkk fd jk fdk jkd"
+                    },
+                    {
+                        code: "1.3",
+                        goal: "Legg til S og L (ringfingre)",
+                        text: "ss ll ss ll s d f l k j fs dl fds jkl fdsl"
+                    },
+                    {
+                        code: "1.4",
+                        goal: "Legg til A og Ø (lillefingre) + Mellomrom",
+                        text: "aa øø a s d f j k l ø asdf jklø asdf jklø"
+                    },
+                    {
+                        code: "1.5",
+                        goal: "Repetisjon & Ekte Ord fra Grunnstillingen",
+                        text: "skal lakk kaff øaks fjask dada dadd fald sladd"
+                    }
+                ]
             },
             {
                 id: 2,
-                title: "Nivå 2: Øverste rad (venstre og høyre)",
-                subtitle: "Legg til E, R, T, U, I, O, P, Å",
-                text: "ee rr tt uu ii oo pp åå er tu io på tre tur pil ost åre roter spise riste ute sur og de det er et for å til at på var varer"
+                title: "Nivå 2: Øverste rad (E, R, U, I)",
+                subtasks: [
+                    {
+                        code: "2.1",
+                        goal: "Nye taster: E og R (behold F, D, S, A)",
+                        text: "ee rr de fr ed rf der fer red fader feire"
+                    },
+                    {
+                        code: "2.2",
+                        goal: "Nye taster: U og I (behold J, K, L, Ø)",
+                        text: "uu ii ju ki uj ik tur kur pil ski li kur"
+                    },
+                    {
+                        code: "2.3",
+                        goal: "Kombiner øverste rad med grunnstillingen",
+                        text: "de re tu io der feire riste fele ille like eik"
+                    },
+                    {
+                        code: "2.4",
+                        goal: "Flyt og setningsfragmenter",
+                        text: "et tre en tur du ser vi var de er for å til at"
+                    }
+                ]
             },
             {
                 id: 3,
-                title: "Nivå 3: Nederste rad",
-                subtitle: "Legg til V, B, N, M, C, X, Z",
-                text: "vv bb nn mm cc xx zz ven bok mat navn vann bil bære mann sommer varme fin fint venn bilbane varme vest banan"
+                title: "Nivå 3: Flere taster oppopp (T, O, P, Å, G, H)",
+                subtasks: [
+                    {
+                        code: "3.1",
+                        goal: "Nye taster: T og H (pekefingerstrekk)",
+                        text: "tt hh ft gh th ht tet hat har hatt her het"
+                    },
+                    {
+                        code: "3.2",
+                        goal: "Nye taster: O, P og Å",
+                        text: "oo pp åå po op på ost åre roter spise"
+                    },
+                    {
+                        code: "3.3",
+                        goal: "Bland alle lærte taster så langt",
+                        text: "på åre roter ost pil tur riste per passe stole"
+                    }
+                ]
             },
             {
                 id: 4,
-                title: "Nivå 4: Store bokstaver og tegn",
-                subtitle: "Skift-tast, punktum, komma og spørretegn",
-                text: "Norge, Oslo, Bergen og Trondheim er flotte byer. Hva heter du? Jeg lærer touchmetoden nå. Det går kjempefint, eller hva?"
+                title: "Nivå 4: Nederste rad (V, B, N, M)",
+                subtasks: [
+                    {
+                        code: "4.1",
+                        goal: "Nye taster: V og B (venstre pekefinger ned)",
+                        text: "vv bb fv fb vb bv ven bil bra bare var"
+                    },
+                    {
+                        code: "4.2",
+                        goal: "Nye taster: N og M (høyre pekefinger ned)",
+                        text: "nn mm jn jm nm mn mann navn sommer min"
+                    },
+                    {
+                        code: "4.3",
+                        goal: "Full integrasjon av nederste rad + tidligere ord",
+                        text: "vann bil bære mann sommer varme fin fint venn bilbane"
+                    }
+                ]
             },
             {
                 id: 5,
-                title: "Nivå 5: Vanlige norske ord",
-                subtitle: "Flyt og tempo på vanlige ord",
-                text: "ikke eller eller fordi hvordan hvorfor kommer gjennom samfunn skrive klasse elev ungdom lære tastatur framtid øve gjøre sammen bedre"
+                title: "Nivå 5: Sjeldne bokstaver (C, X, Z, Q, W)",
+                subtasks: [
+                    {
+                        code: "5.1",
+                        goal: "Sjeldne taster: C, X, Z",
+                        text: "cc xx zz taxi celius zone camping x-ray"
+                    },
+                    {
+                        code: "5.2",
+                        goal: "Sjeldne taster: Q og W",
+                        text: "qq ww web quiz watt quality wien querini"
+                    }
+                ]
             },
             {
                 id: 6,
-                title: "Nivå 6: Ungdom og digital hverdag",
-                subtitle: "Setninger tilpasset ungdomstrinnet",
-                text: "Digital kompetanse er viktig for alle elever på ungdomstrinnet. Når du kan skrive uten å se på tastaturet, sparer du masse tid hver eneste dag."
+                title: "Nivå 6: Tegn & Store Bokstaver",
+                subtasks: [
+                    {
+                        code: "6.1",
+                        goal: "Skift-tast for store bokstaver (A-Å)",
+                        text: "Norge Oslo Bergen Trondheim Ola Kari"
+                    },
+                    {
+                        code: "6.2",
+                        goal: "Punktum, komma og spørretegn",
+                        text: "Hva heter du? Jeg heter Ola, og bor i Norge."
+                    },
+                    {
+                        code: "6.3",
+                        goal: "Komplette setninger med tegnsetting",
+                        text: "Digital kompetanse er gøy! Har du lært alle knappene nå?"
+                    }
+                ]
             },
             {
                 id: 7,
-                title: "Nivå 7: Korte popfakta",
-                subtitle: "Gøyale fakta fra verden",
-                text: "Gjennomsnittlig skrivehastighet for en voksen er rundt førti ord i minuttet. Gamere og proffe skribenter kan ofte skrive over hundre ord i minuttet!"
-            },
-            {
-                id: 8,
-                title: "Nivå 8: Mesterprøven",
-                subtitle: "Fullstendig tekstmestring",
-                text: "Gratulerer! Du nærmer deg en ekte touchmester. Fortsett å holde blikket på skjermen og la fingrene finne veien automatisk. Øving gjør mester!"
+                title: "Nivå 7: Mestring og flyt",
+                subtasks: [
+                    {
+                        code: "7.1",
+                        goal: "Vanlige norske ord i sammenheng",
+                        text: "ikke eller fordi hvordan hvorfor kommer gjennom samfunn skrive"
+                    },
+                    {
+                        code: "7.2",
+                        goal: "Ungdom og skolehverdag",
+                        text: "Når du kan skrive uten å se på tastaturet, sparer du masse tid hver dag."
+                    },
+                    {
+                        code: "7.3",
+                        goal: "Full Mestertekst",
+                        text: "Gratulerer! Du er nå en ekte touchmester. Muskelminnet ditt styrer fingrene automatisk!"
+                    }
+                ]
             }
         ];
 
@@ -546,6 +669,7 @@
         /* State Variables */
         let currentTab = 'learn'; // 'learn', 'speed', 'custom'
         let currentLessonIndex = 0;
+        let currentSubtaskIndex = 0;
         let targetText = "";
         let currentCharIndex = 0;
         let totalErrors = 0;
@@ -558,13 +682,11 @@
         let speedTimeRemaining = 30;
         let speedActive = false;
 
-        // Robust initialization that runs immediately if DOM is ready
         function initApp() {
             renderLevelList();
-            loadLesson(0);
+            loadLesson(0, 0);
             renderLeaderboard();
 
-            // Key listener attached to window
             window.removeEventListener('keydown', handleKeyDown);
             window.addEventListener('keydown', handleKeyDown);
         }
@@ -588,7 +710,7 @@
             if (tab === 'learn') {
                 document.getElementById('tab-learn-view').classList.remove('hidden');
                 document.getElementById('nav-learn').className = "px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-indigo-600 text-white shadow";
-                loadLesson(currentLessonIndex);
+                loadLesson(currentLessonIndex, currentSubtaskIndex);
             } else if (tab === 'speed') {
                 document.getElementById('tab-speed-view').classList.remove('hidden');
                 document.getElementById('nav-speed').className = "px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-amber-500 text-slate-950 shadow";
@@ -625,7 +747,7 @@
         function renderLevelList() {
             const container = document.getElementById('level-list');
             container.innerHTML = LESSONS.map((lvl, idx) => `
-                <button onclick="loadLesson(${idx})" class="flex-shrink-0 px-4 py-2.5 rounded-xl border transition flex items-center gap-2 ${
+                <button onclick="loadLesson(${idx}, 0)" class="flex-shrink-0 px-4 py-2.5 rounded-xl border transition flex items-center gap-2 ${
                     idx === currentLessonIndex 
                     ? 'bg-indigo-600 text-white border-indigo-500 font-bold shadow-lg' 
                     : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
@@ -636,12 +758,38 @@
             `).join('');
         }
 
-        function loadLesson(index) {
-            currentLessonIndex = index;
-            renderLevelList();
+        function renderSubtasks() {
+            const container = document.getElementById('subtask-list');
+            const subtaskDesc = document.getElementById('subtask-description');
+            const currentLesson = LESSONS[currentLessonIndex];
+
+            container.innerHTML = currentLesson.subtasks.map((st, sIdx) => `
+                <button onclick="loadLesson(${currentLessonIndex}, ${sIdx})" class="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
+                    sIdx === currentSubtaskIndex
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                }">
+                    <span>${st.code}</span>
+                    ${sIdx === currentSubtaskIndex ? '<i class="fa-solid fa-circle-play text-[10px]"></i>' : ''}
+                </button>
+            `).join('');
+
+            const activeSubtask = currentLesson.subtasks[currentSubtaskIndex];
+            subtaskDesc.innerHTML = `<i class="fa-solid fa-bullseye text-emerald-400 mr-1"></i> <strong>Mål:</strong> ${activeSubtask.goal}`;
+        }
+
+        function loadLesson(lessonIdx, subtaskIdx = 0) {
+            currentLessonIndex = lessonIdx;
+            currentSubtaskIndex = subtaskIdx;
             
-            document.getElementById('level-progress-badge').innerText = `Nivå ${index + 1} av ${LESSONS.length}`;
-            targetText = LESSONS[index].text;
+            renderLevelList();
+            renderSubtasks();
+
+            const lesson = LESSONS[lessonIdx];
+            const subtask = lesson.subtasks[subtaskIdx];
+
+            document.getElementById('level-progress-badge').innerText = `Nivå ${lesson.id} - Oppgave ${subtask.code}`;
+            targetText = subtask.text;
             resetLessonState();
         }
 
@@ -679,7 +827,6 @@
         }
 
         function updateKeyboardHighlight() {
-            // Clear previous target highlights
             document.querySelectorAll('.key-cap').forEach(el => {
                 el.classList.remove('ring-4', 'ring-indigo-400', 'bg-indigo-600', 'text-white', 'key-target');
             });
@@ -693,7 +840,6 @@
                 keyEl.classList.add('ring-4', 'ring-indigo-400', 'key-target');
             }
 
-            // Finger guide instructions
             const info = FINGER_MAP[nextChar] || { finger: 'Standard finger', badge: 'finger-thumb' };
             const hintBox = document.getElementById('finger-badge');
             const hintText = document.getElementById('finger-instruction');
@@ -708,18 +854,14 @@
         }
 
         function handleKeyDown(e) {
-            // Ignore key events if user is typing in text inputs or textareas
             if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
-            // Prevent page scrolling on spacebar during typing
             if (e.key === " ") {
                 e.preventDefault();
             }
 
-            // Ignore system/modifier keys
             if (['Shift', 'Control', 'Alt', 'Meta', 'Tab', 'CapsLock', 'Escape'].includes(e.key)) return;
 
-            // Visual feedback on physical press
             const keyChar = e.key.toLowerCase();
             const keyCap = document.querySelector(`.key-cap[data-key="${keyChar}"]`);
             if (keyCap) {
@@ -744,7 +886,6 @@
 
             totalTyped++;
 
-            // Check correctness with forgiving case for basic levels if Caps Lock is active
             let isCorrect = pressedKey === requiredChar;
             if (!isCorrect && currentLessonIndex < 3 && pressedKey.toLowerCase() === requiredChar.toLowerCase()) {
                 isCorrect = true;
@@ -755,15 +896,20 @@
                 currentCharIndex++;
                 
                 if (currentCharIndex >= targetText.length) {
-                    // Level complete!
-                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+                    
                     setTimeout(() => {
-                        if (currentLessonIndex < LESSONS.length - 1) {
-                            loadLesson(currentLessonIndex + 1);
+                        const currentLesson = LESSONS[currentLessonIndex];
+                        if (currentSubtaskIndex < currentLesson.subtasks.length - 1) {
+                            // Go to next subtask in the same level
+                            loadLesson(currentLessonIndex, currentSubtaskIndex + 1);
+                        } else if (currentLessonIndex < LESSONS.length - 1) {
+                            // Go to next main level
+                            loadLesson(currentLessonIndex + 1, 0);
                         } else {
-                            alert("Kjempebra jobbet! Du har fullført alle nivåene!");
+                            alert("Kjempebra jobbet! Du har fullført hele læringsstien!");
                         }
-                    }, 500);
+                    }, 400);
                 }
             } else {
                 playKeySound(true);
@@ -824,7 +970,6 @@
             document.getElementById('speed-acc').innerText = '100%';
             document.getElementById('start-speed-btn').innerHTML = '<i class="fa-solid fa-play mr-2"></i> Start konkurranse';
             
-            // Pick random speed text
             targetText = SPEED_CORPUS[Math.floor(Math.random() * SPEED_CORPUS.length)];
             renderSpeedTextDisplay();
         }
@@ -857,7 +1002,6 @@
                 currentCharIndex++;
                 
                 if (currentCharIndex >= targetText.length) {
-                    // Loop or add new sentence
                     targetText += " " + SPEED_CORPUS[Math.floor(Math.random() * SPEED_CORPUS.length)];
                 }
             } else {
@@ -865,7 +1009,6 @@
                 totalErrors++;
             }
 
-            // Real-time speed stats
             const elapsedMinutes = (new Date() - startTime) / 60000;
             const wordsTyped = (currentCharIndex / 5);
             const wpm = Math.round(wordsTyped / elapsedMinutes);
@@ -881,7 +1024,7 @@
         function renderSpeedTextDisplay() {
             const display = document.getElementById('speed-text-display');
             let html = "";
-            const windowSize = 45; // Display slice for focus
+            const windowSize = 45;
             const startIdx = Math.max(0, currentCharIndex - 10);
             const endIdx = Math.min(targetText.length, startIdx + windowSize);
 
