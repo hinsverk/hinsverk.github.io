@@ -155,6 +155,7 @@
             min-height: 100vh;
             margin: 0;
             padding: 1rem;
+            padding-top: 4rem;
         }
 
         #game-container {
@@ -209,6 +210,11 @@
 </head>
 <body>
 
+    <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900/90 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Tilbake til Lærerverktøy</span>
+    </a>
+
     <div id="game-container">
         
         <!-- Knapper for innstillinger øverst til høyre -->
@@ -260,6 +266,7 @@
             <div id="highscore-display" class="w-full"></div>
         </div>
 
+        <!-- Kapittelvekging -->
         <div id="chapter-select-screen" class="hidden flex flex-col items-center text-center pt-2">
             <h2 id="chapter-title" class="text-2xl font-black text-gray-800 mb-1 uppercase tracking-tight">Tysk 8. Klasse</h2>
             <p class="text-gray-500 text-xs mb-6 font-semibold uppercase tracking-wider">Velg tekst eller kapittel du vil øve på</p>
@@ -275,6 +282,15 @@
 
         <!-- Spillskjerm -->
         <div id="play-screen" class="hidden flex flex-col">
+            <!-- Avbryt/Tilbake-knapp inne i spill-runden -->
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                <button onclick="resetGame()" class="text-xs font-bold text-gray-400 hover:text-gray-700 flex items-center gap-1 transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                    <span>Avbryt spill</span>
+                </button>
+                <span id="mode-indicator-badge" class="text-[10px] font-black uppercase bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full"></span>
+            </div>
+
             <div class="flex justify-between items-center mb-6 relative">
                 <div>
                     <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Poeng</p>
@@ -383,6 +399,7 @@
     </div>
 
     <script>
+        // Standard ordlister som fallback dersom Gist mangler nøkler
         const defaultWords = {
             easy: [
                 { word: "APFEL", de: "Eine Frucht, die rot oder grün ist.", no: "En frukt som er rød eller grønn." },
@@ -459,13 +476,14 @@
             return cleaned;
         }
 
+        // Robust rensefunksjon som sikrer at tysk10 og andre nøkler parsese riktig uavhengig av skrivemåte
         function cleanAndParseJSON(text) {
             if (!text) throw new Error("Tom tekst fra Gist.");
             
             // Fjern UTF-8 BOM tegn om det finnes
             let cleaned = text.replace(/^\uFEFF/, '');
             
-            // Fjern eventuelle JS-variabeldeklarasjoner i starten (f.eks. const wordlist = {...})
+            // Fjern eventuelle JS-variabeldeklarasjoner i starten
             cleaned = cleaned.replace(/^\s*(?:const|let|var)\s+\w+\s*=\s*/i, '');
             // Fjern semikolon på slutten
             cleaned = cleaned.trim().replace(/;\s*$/, '');
@@ -473,15 +491,14 @@
             cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
 
             const parsed = JSON.parse(cleaned);
-
-            // Normaliser nøklene slik at "Tysk10", "Tysk 10", "tysk_10" blir "tysk10"
             const normalized = {};
+
             for (let key in parsed) {
                 if (!Array.isArray(parsed[key])) continue;
                 
                 const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
                 
-                // Vask ordobjektene så alle har påkrevde felter med gyldige strenger
+                // Normaliser og rens hvert ordobjekt
                 const cleanedList = parsed[key].map(item => {
                     if (typeof item === 'string') {
                         return { word: item.toUpperCase().trim(), de: item, no: "", text: "" };
@@ -498,12 +515,18 @@
                         no: noVal,
                         text: textVal
                     };
-                }).filter(item => item.word.length > 0); // Fjern tomme innslag
+                }).filter(item => item.word.length > 0);
 
                 if (cleanKey === 'tysk8' || cleanKey === 'klasse8' || cleanKey === '8klasse') {
                     normalized['tysk8'] = cleanedList;
                 } else if (cleanKey === 'tysk10' || cleanKey === 'klasse10' || cleanKey === '10klasse') {
                     normalized['tysk10'] = cleanedList;
+                } else if (cleanKey === 'easy' || cleanKey === 'enkel') {
+                    normalized['easy'] = cleanedList;
+                } else if (cleanKey === 'medium' || cleanKey === 'middels') {
+                    normalized['medium'] = cleanedList;
+                } else if (cleanKey === 'hard' || cleanKey === 'vanskelig') {
+                    normalized['hard'] = cleanedList;
                 } else {
                     normalized[cleanKey] = cleanedList;
                 }
@@ -530,13 +553,13 @@
                 const json = cleanAndParseJSON(rawText);
                 
                 if (json && (json.easy || json.tysk8 || json.tysk10 || json.medium || json.hard)) {
-                    // Slå sammen med fallback for manglende kategorier
+                    // Fyll med standard som backup hvis enkeltkategorier mangler i JSON
                     activeWords = {
-                        easy: json.easy || defaultWords.easy,
-                        medium: json.medium || defaultWords.medium,
-                        hard: json.hard || defaultWords.hard,
-                        tysk8: json.tysk8 || defaultWords.tysk8,
-                        tysk10: json.tysk10 || defaultWords.tysk10
+                        easy: json.easy && json.easy.length > 0 ? json.easy : defaultWords.easy,
+                        medium: json.medium && json.medium.length > 0 ? json.medium : defaultWords.medium,
+                        hard: json.hard && json.hard.length > 0 ? json.hard : defaultWords.hard,
+                        tysk8: json.tysk8 && json.tysk8.length > 0 ? json.tysk8 : defaultWords.tysk8,
+                        tysk10: json.tysk10 && json.tysk10.length > 0 ? json.tysk10 : defaultWords.tysk10
                     };
 
                     statusDot.className = "h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0";
@@ -545,7 +568,7 @@
                         alert("Vellykket! Ordlisten ble oppdatert fra GitHub Gist.");
                     }
                 } else {
-                    throw new Error("Ugyldig JSON-struktur eller ingen kjente nøkler (easy, tysk8, tysk10).");
+                    throw new Error("Ugyldig JSON-struktur eller ingen kjente nøkler.");
                 }
             } catch (err) {
                 console.error("Gist fetch error:", err);
@@ -620,7 +643,7 @@
 
         function prepareCustomMode(modeKey) {
             currentDifficulty = modeKey;
-            const modeWords = activeWords[modeKey] || [];
+            const modeWords = activeWords[modeKey] || defaultWords[modeKey] || [];
 
             if (modeWords.length === 0) {
                 alert(`Ingen gloser er lagt inn for ${modeKey === 'tysk8' ? 'Tysk 8.' : 'Tysk 10.'} ennå.`);
@@ -688,6 +711,15 @@
             skipsLeft = 3;
             isRevealing = false;
             
+            const modeNames = {
+                easy: "Enkel",
+                medium: "Middels",
+                hard: "Vanskelig",
+                tysk8: "Tysk 8.",
+                tysk10: "Tysk 10."
+            };
+            document.getElementById('mode-indicator-badge').innerText = modeNames[difficulty] || difficulty;
+
             startScreen.classList.add('hidden');
             chapterSelectScreen.classList.add('hidden');
             endScreen.classList.add('hidden');
@@ -737,7 +769,6 @@
             
             const wordData = gameWords[currentWordIndex] || { word: "TEST", de: "Beskrivelse mangler", no: "" };
             
-            // Sikre at ordet er definert
             const word = (wordData.word || "ORD").toString().toUpperCase();
             const de = wordData.de || wordData.word || "";
             const no = wordData.no || "";
@@ -906,11 +937,5 @@
             window.updateHighscoreUI();
         };
     </script>
-
-    <!-- TILBAKE-KNAPP -->
-    <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-        <i class="fa-solid fa-arrow-left"></i>
-        <span>Tilbake til Lærerverktøy</span>
-    </a>
 </body>
 </html>
