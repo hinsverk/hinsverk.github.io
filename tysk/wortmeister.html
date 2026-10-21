@@ -646,18 +646,27 @@
             const modeWords = activeWords[modeKey] || defaultWords[modeKey] || [];
 
             if (modeWords.length === 0) {
-                alert(`Ingen gloser er lagt inn for ${modeKey === 'tysk8' ? 'Tysk 8.' : 'Tysk 10.'} ennå.`);
+                const displayName = modeKey === 'tysk8' ? 'Tysk 8.' : (modeKey === 'tysk10' ? 'Tysk 10.' : modeKey);
+                alert(`Ingen gloser er lagt inn for ${displayName} ennå.`);
                 return;
             }
 
             const chapters = new Set();
             modeWords.forEach(w => {
-                if (w.text) chapters.add(w.text);
-                else if (w.chapter) chapters.add(w.chapter);
+                const chap = w.text || w.chapter || w.tekst || w.kapittel;
+                if (chap) chapters.add(chap);
             });
 
             const chapterList = Array.from(chapters);
 
+            // Sett dynamisk tittel basert på valgt klasse
+            const titleMap = {
+                'tysk8': 'Tysk 8. Klasse',
+                'tysk10': 'Tysk 10. Klasse'
+            };
+            document.getElementById('chapter-title').innerText = titleMap[modeKey] || `${modeKey.toUpperCase()} Klasse`;
+
+            // Hvis det ikke er definert flere tekster/kapitler i dataene, start spillet direkte med alle gloser
             if (chapterList.length <= 1) {
                 startGame(modeKey, 'all');
                 return;
@@ -665,7 +674,6 @@
 
             startScreen.classList.add('hidden');
             chapterSelectScreen.classList.remove('hidden');
-            document.getElementById('chapter-title').innerText = modeKey === 'tysk8' ? 'Tysk 8. Klasse' : 'Tysk 10. Klasse';
 
             const container = document.getElementById('chapter-buttons-container');
             container.innerHTML = `
@@ -676,7 +684,7 @@
             `;
 
             chapterList.forEach(chap => {
-                const count = modeWords.filter(w => (w.text === chap || w.chapter === chap)).length;
+                const count = modeWords.filter(w => (w.text === chap || w.chapter === chap || w.tekst === chap || w.kapittel === chap)).length;
                 const btn = document.createElement('button');
                 btn.className = "w-full bg-white border border-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl shadow-sm hover:border-purple-500 hover:text-purple-700 hover:bg-purple-50 transition-all text-left flex justify-between items-center text-sm";
                 btn.onclick = () => startGame(modeKey, chap);
