@@ -15,7 +15,7 @@
 
     <script>
         // Standard Gist URL som laster automatisk for alle brukere
-        const DEFAULT_GIST_URL = "https://gist.githubusercontent.com/hinsverk/47de3f16fb7e3cfaf79aca694673f5ff/raw/wortmeister.json";
+        const DEFAULT_GIST_URL = "https://gist.githubusercontent.com/hinsverk/47de3f16fb7e3cfaf79aca694673f5ff/raw/a54a049f9508649398372c8482cf47716fe781cf/wortmeister.json";
 
         // Sikker initialisering for Google Sites
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tysk-wort-meister';
@@ -275,9 +275,6 @@
 
         <!-- Spillskjerm -->
         <div id="play-screen" class="hidden flex flex-col">
-            <button onclick="resetGame()" class="text-gray-400 hover:text-gray-600 font-bold text-xs uppercase tracking-wider flex items-center gap-1 transition-colors">
-    <i class="fa-solid fa-arrow-left"></i> Meny
-</button>
             <div class="flex justify-between items-center mb-6 relative">
                 <div>
                     <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Poeng</p>
@@ -326,6 +323,7 @@
         </div>
     </div>
 
+    <!-- Modal for Gist -->
     <div id="gist-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
@@ -354,7 +352,6 @@
                 </button>
             </div>
 
-            <!-- Format-eksempel -->
             <div class="border-t border-gray-100 pt-4">
                 <div class="flex justify-between items-center mb-2">
                     <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Påkrevd JSON-struktur i Gist</p>
@@ -372,14 +369,20 @@
       "text": "Kapittel 1: Skolen min"
     }
   ],
-  "tysk10": [ ... ]
+  "tysk10": [
+    {
+      "word": "ZUKUNFT",
+      "de": "Die Zeit, die kommt.",
+      "no": "Fremtid.",
+      "text": "Tekst 1: Fremtiden"
+    }
+  ]
 }</code></pre>
             </div>
         </div>
     </div>
 
     <script>
-        // Standard innebygde ordlister (fallback)
         const defaultWords = {
             easy: [
                 { word: "APFEL", de: "Eine Frucht, die rot oder grün ist.", no: "En frukt som er rød eller grønn." },
@@ -420,7 +423,7 @@
             ]
         };
 
-        // Aktive ordlister (startes med fallback)
+        // Aktive ordlister
         let activeWords = JSON.parse(JSON.stringify(defaultWords));
         
         let currentDifficulty = 'easy';
@@ -457,13 +460,56 @@
         }
 
         function cleanAndParseJSON(text) {
-            // Fjern eventuelle JS-variabeldeklarasjoner i starten
-            let cleaned = text.replace(/^\s*(?:const|let|var)\s+\w+\s*=\s*/i, '');
+            if (!text) throw new Error("Tom tekst fra Gist.");
+            
+            // Fjern UTF-8 BOM tegn om det finnes
+            let cleaned = text.replace(/^\uFEFF/, '');
+            
+            // Fjern eventuelle JS-variabeldeklarasjoner i starten (f.eks. const wordlist = {...})
+            cleaned = cleaned.replace(/^\s*(?:const|let|var)\s+\w+\s*=\s*/i, '');
             // Fjern semikolon på slutten
             cleaned = cleaned.trim().replace(/;\s*$/, '');
             // Fjern trailing commas før ] eller }
             cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
-            return JSON.parse(cleaned);
+
+            const parsed = JSON.parse(cleaned);
+
+            // Normaliser nøklene slik at "Tysk10", "Tysk 10", "tysk_10" blir "tysk10"
+            const normalized = {};
+            for (let key in parsed) {
+                if (!Array.isArray(parsed[key])) continue;
+                
+                const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                
+                // Vask ordobjektene så alle har påkrevde felter med gyldige strenger
+                const cleanedList = parsed[key].map(item => {
+                    if (typeof item === 'string') {
+                        return { word: item.toUpperCase().trim(), de: item, no: "", text: "" };
+                    }
+                    
+                    const wordVal = (item.word || item.ord || item.Wort || "").toString().trim().toUpperCase();
+                    const deVal = (item.de || item.deutsch || item.tysk || item.definition || wordVal).toString().trim();
+                    const noVal = (item.no || item.norsk || item.norwegian || "").toString().trim();
+                    const textVal = (item.text || item.chapter || item.tekst || item.kapittel || "").toString().trim();
+
+                    return {
+                        word: wordVal,
+                        de: deVal,
+                        no: noVal,
+                        text: textVal
+                    };
+                }).filter(item => item.word.length > 0); // Fjern tomme innslag
+
+                if (cleanKey === 'tysk8' || cleanKey === 'klasse8' || cleanKey === '8klasse') {
+                    normalized['tysk8'] = cleanedList;
+                } else if (cleanKey === 'tysk10' || cleanKey === 'klasse10' || cleanKey === '10klasse') {
+                    normalized['tysk10'] = cleanedList;
+                } else {
+                    normalized[cleanKey] = cleanedList;
+                }
+            }
+
+            return normalized;
         }
 
         async function fetchGistData(showAlert = false) {
@@ -483,15 +529,23 @@
                 const rawText = await response.text();
                 const json = cleanAndParseJSON(rawText);
                 
-                if (json && (json.easy || json.tysk8 || json.tysk10)) {
-                    activeWords = { ...defaultWords, ...json };
+                if (json && (json.easy || json.tysk8 || json.tysk10 || json.medium || json.hard)) {
+                    // Slå sammen med fallback for manglende kategorier
+                    activeWords = {
+                        easy: json.easy || defaultWords.easy,
+                        medium: json.medium || defaultWords.medium,
+                        hard: json.hard || defaultWords.hard,
+                        tysk8: json.tysk8 || defaultWords.tysk8,
+                        tysk10: json.tysk10 || defaultWords.tysk10
+                    };
+
                     statusDot.className = "h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0";
                     statusText.innerText = "Ordliste hentet fra GitHub Gist!";
                     if (showAlert) {
                         alert("Vellykket! Ordlisten ble oppdatert fra GitHub Gist.");
                     }
                 } else {
-                    throw new Error("Ugyldig JSON-struktur");
+                    throw new Error("Ugyldig JSON-struktur eller ingen kjente nøkler (easy, tysk8, tysk10).");
                 }
             } catch (err) {
                 console.error("Gist fetch error:", err);
@@ -499,7 +553,7 @@
                 statusDot.className = "h-2.5 w-2.5 rounded-full bg-red-500 flex-shrink-0";
                 statusText.innerText = "Feil ved henting av Gist. Bruker standard.";
                 if (showAlert) {
-                    alert("Kunne ikke laste ordlisten fra Gist-en. Sjekk at URL-en er riktig og at JSON-en er gyldig.");
+                    alert("Kunne ikke laste ordlisten fra Gist-en. Sjekk at URL-en er riktig og at JSON-en er gyldig formatted.");
                 }
             }
         }
@@ -672,14 +726,24 @@
                 sourceList = sourceList.filter(w => (w.text === currentChapterFilter || w.chapter === currentChapterFilter));
             }
 
+            if (sourceList.length === 0) {
+                sourceList = defaultWords[currentDifficulty] || defaultWords.easy;
+            }
+
             if (currentWordIndex >= gameWords.length) {
                 gameWords = [...sourceList].sort(() => Math.random() - 0.5);
                 currentWordIndex = 0;
             }
             
-            const wordData = gameWords[currentWordIndex];
-            document.getElementById('german-definition').innerText = wordData.de;
-            document.getElementById('norwegian-definition').innerText = wordData.no || "";
+            const wordData = gameWords[currentWordIndex] || { word: "TEST", de: "Beskrivelse mangler", no: "" };
+            
+            // Sikre at ordet er definert
+            const word = (wordData.word || "ORD").toString().toUpperCase();
+            const de = wordData.de || wordData.word || "";
+            const no = wordData.no || "";
+
+            document.getElementById('german-definition').innerText = de;
+            document.getElementById('norwegian-definition').innerText = no;
             
             const badgeContainer = document.getElementById('text-badge-container');
             const badge = document.getElementById('text-badge');
@@ -691,14 +755,15 @@
                 badgeContainer.classList.add('hidden');
             }
 
-            currentGuess = wordData.word[0];
+            currentGuess = word[0] || "";
             wordInput.value = "";
             isRevealing = false;
             renderWord();
         }
 
         function renderWord(revealed = false) {
-            const targetWord = gameWords[currentWordIndex].word;
+            const wordObj = gameWords[currentWordIndex] || { word: "ORD" };
+            const targetWord = (wordObj.word || "ORD").toUpperCase();
             const display = document.getElementById('word-display');
             display.innerHTML = "";
             for (let i = 0; i < targetWord.length; i++) {
@@ -717,7 +782,9 @@
 
         wordInput.addEventListener('input', (e) => {
             if (isRevealing) return;
-            const targetWord = gameWords[currentWordIndex].word;
+            const wordObj = gameWords[currentWordIndex] || { word: "ORD" };
+            const targetWord = (wordObj.word || "ORD").toUpperCase();
+            
             const rawVal = e.target.value.toUpperCase();
             currentGuess = targetWord[0] + rawVal.substring(0, targetWord.length - 1);
             renderWord();
