@@ -26,6 +26,12 @@
         .card-x:hover {
             transform: translateY(-2px);
         }
+
+        .card-inv-x {
+            background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+            box-shadow: 0 6px 0 #831843, 0 10px 15px rgba(0,0,0,0.3);
+            border: 1px solid #f472b6;
+        }
         
         .card-pos {
             background: linear-gradient(135deg, #10b981 0%, #047857 100%);
@@ -94,7 +100,7 @@
                 <span id="source-text">Laster oppgaver...</span>
             </div>
 
-            <!-- Nivå-visning (klikkbar for å velge nivå) -->
+            <!-- Nivå-visning -->
             <button onclick="openLevelSelectModal()" class="bg-slate-900/80 hover:bg-slate-900 px-4 py-1.5 rounded-2xl border border-slate-700 hover:border-purple-500/60 flex items-center gap-2 transition">
                 <i class="fa-solid font-game text-amber-400 text-xs">NIVÅ</i>
                 <span id="level-num" class="font-game text-lg text-amber-300">1</span>
@@ -155,12 +161,10 @@
 
                     <!-- VENSTRE SKÅL -->
                     <div id="left-pan" class="w-1/2 mr-2 sm:mr-4 flex flex-wrap gap-2 sm:gap-3 justify-center items-center min-h-[170px] p-4 rounded-2xl bg-slate-800/50 border-2 border-dashed border-purple-500/30 transition">
-                        <!-- Elementer genereres dynamisk -->
                     </div>
 
                     <!-- HØYRE SKÅL -->
                     <div id="right-pan" class="w-1/2 ml-2 sm:ml-4 flex flex-wrap gap-2 sm:gap-3 justify-center items-center min-h-[170px] p-4 rounded-2xl bg-slate-800/50 border-2 border-dashed border-purple-500/30 transition">
-                        <!-- Elementer genereres dynamisk -->
                     </div>
                 </div>
 
@@ -182,7 +186,7 @@
             </h3>
             
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-2.5">
-                <!-- Lineære operasjoner -->
+                <!-- Lineære og algebraiske operasjoner -->
                 <button onclick="applyOperation('add_1')" class="bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/50 hover:border-emerald-400 text-emerald-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
                     <span class="text-base">+1</span>
                     <span class="text-[9px] font-normal">Legg til 1</span>
@@ -193,9 +197,19 @@
                     <span class="text-[9px] font-normal">Trekk fra 1</span>
                 </button>
 
+                <button onclick="applyOperation('add_x')" class="bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/50 hover:border-purple-400 text-purple-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">+X</span>
+                    <span class="text-[9px] font-normal">Legg til X</span>
+                </button>
+
                 <button onclick="applyOperation('sub_x')" class="bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/50 hover:border-purple-400 text-purple-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
                     <span class="text-base">-X</span>
-                    <span class="text-[9px] font-normal">Fjern én X</span>
+                    <span class="text-[9px] font-normal">Trekk fra X</span>
+                </button>
+
+                <button onclick="applyOperation('mul_x')" class="bg-fuchsia-600/30 hover:bg-fuchsia-600/50 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
+                    <span class="text-base">• X</span>
+                    <span class="text-[9px] font-normal">Gange med X</span>
                 </button>
 
                 <button onclick="applyOperation('sub_x2')" class="bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/50 hover:border-amber-400 text-amber-200 p-2 rounded-xl font-game flex flex-col items-center justify-center transition active:scale-95">
@@ -229,7 +243,7 @@
                 </button>
             </div>
 
-            <!-- Egendefinert tall: dekker oppgaver som trenger andre tall enn knappene over -->
+            <!-- Egendefinert tall -->
             <div class="border-t border-slate-700 mt-3 pt-3">
                 <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 text-center mb-3">
                     Egendefinert tall (for andre oppgaver):
@@ -257,10 +271,11 @@
 
     </main>
 
-    <!-- Toast for tilbakemelding ved ugyldige operasjoner -->
+    <!-- Toast for tilbakemelding -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 border border-rose-500/60 text-rose-200 px-4 py-2 rounded-xl text-sm font-semibold shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50">
     </div>
 
+    <!-- Innstillinger Modual -->
     <div id="settings-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
         <div class="bg-slate-800 border-2 border-slate-700 p-6 rounded-3xl max-w-lg w-full text-left shadow-2xl animate-pop relative">
             <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
@@ -304,6 +319,7 @@
         </div>
     </div>
 
+    <!-- Nivåvelger Modal -->
     <div id="level-select-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
         <div class="bg-slate-800 border-2 border-slate-700 p-6 rounded-3xl max-w-2xl w-full text-left shadow-2xl animate-pop relative max-h-[85vh] flex flex-col">
             <button onclick="closeLevelSelectModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
@@ -321,11 +337,11 @@
             </div>
 
             <div id="level-select-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 overflow-y-auto pr-1">
-                <!-- Genereres dynamisk -->
             </div>
         </div>
     </div>
 
+    <!-- Seier Modal -->
     <div id="victory-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
         <div class="bg-slate-800 border-2 border-purple-500 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl animate-pop">
             <div class="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-400/40">
@@ -346,14 +362,7 @@
     </div>
 
     <script>
-        // =====================================================================
         // STANDARD GOOGLE SHEETS-LENKE
-        // Lim inn lenken til ditt offentlige Google Sheet mellom anførselstegnene
-        // nedenfor. Den vanlige "del"-lenken fungerer fint (f.eks.
-        // https://docs.google.com/spreadsheets/d/DIN_ID_HER/edit?usp=sharing) -
-        // koden gjør den automatisk om til en CSV-eksport-URL.
-        // La den stå tom ("") for å bruke de innebygde oppgavene som standard.
-        // =====================================================================
         const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1IOk8ovu7tCh8cMgpnnKdtv_uN5SUJtcbqflInuAArMA/edit?usp=sharing";
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -457,21 +466,21 @@
             },
             {
                 id: 701,
-                kategori: "Nivå 7: Andregradslikninger",
-                tittel: "Oppgave 7",
+                kategori: "Nivå 7: X i nevner",
+                tittel: "Oppgave 74",
+                left: { x2: 0, x: 1, inv_x: 1, pos: 0, neg: 0 },
+                right: { x2: 0, x: 0, inv_x: 0, pos: 2, neg: 0 },
+                solution: 1,
+                forklaring: "Gang begge sider med X (• X) for å fjerne brøken 1/x! Da får du x² + 1 = 2x."
+            },
+            {
+                id: 801,
+                kategori: "Nivå 8: Andregradslikninger",
+                tittel: "Oppgave 8",
                 left: { x2: 1, x: 0, x_denom: 1, pos: 2, neg: 0 },
                 right: { x2: 0, x: 0, x_denom: 1, pos: 11, neg: 0 },
                 solution: 3,
                 forklaring: "Trekk fra 2 på begge sider for å få X² = 9, ta deretter kvadratrot (√)!"
-            },
-            {
-                id: 801,
-                kategori: "Nivå 8: X² på begge sider",
-                tittel: "Oppgave 8",
-                left: { x2: 1, x: 3, x_denom: 1, pos: 0, neg: 0 },
-                right: { x2: 1, x: 0, x_denom: 1, pos: 12, neg: 0 },
-                solution: 4,
-                forklaring: "Fjern X² fra begge sider ved å trekke fra -X², del deretter på 3!"
             },
             {
                 id: 901,
@@ -481,22 +490,13 @@
                 right: { x2: 0, x: 0, x_denom: 1, pos: 2, neg: 0 },
                 solution: 4,
                 forklaring: "Gang begge sider med nevneren (x - 1) for å oppheve brøken! Da får du x + 2 = 2x - 2."
-            },
-            {
-                id: 1001,
-                kategori: "Nivå 10: Superavansert brøk",
-                tittel: "Oppgave 10",
-                left: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0, complex_frac: { num_x: 2, num_c: 4, den_x: 1, den_c: 1 } },
-                right: { x2: 0, x: 0, x_denom: 1, pos: 3, neg: 0 },
-                solution: 1,
-                forklaring: "Gang begge sider med nevneren (x + 1) for å løse opp brøken!"
             }
         ];
 
         let activeLevels = [...fallbackLevels];
         let currentLevelIdx = 0;
         let stateHistory = [];
-        let gameState = { left: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0 }, right: { x2: 0, x: 0, x_denom: 1, pos: 0, neg: 0 } };
+        let gameState = { left: { x2: 0, x: 0, inv_x: 0, x_denom: 1, pos: 0, neg: 0 }, right: { x2: 0, x: 0, inv_x: 0, x_denom: 1, pos: 0, neg: 0 } };
         let showFormalNotation = true;
         let googleSheetUrl = DEFAULT_SHEET_URL;
 
@@ -565,17 +565,30 @@
 
                 const leftX2 = parseInt(getCol('left_x2') || 0, 10);
                 const leftX = parseInt(getCol('left_x') || 0, 10);
-                const leftXDenom = parseInt(getCol('left_x_denom') || 1, 10);
+                const leftInvX = parseInt(getCol('left_inv_x') || 0, 10);
+                let leftXDenom = parseInt(getCol('left_x_denom') || 1, 10);
                 const leftPos = parseInt(getCol('left_pos') || 0, 10);
                 const leftNeg = parseInt(getCol('left_neg') || 0, 10);
 
                 const rightX2 = parseInt(getCol('right_x2') || 0, 10);
                 const rightX = parseInt(getCol('right_x') || 0, 10);
-                const rightXDenom = parseInt(getCol('right_x_denom') || 1, 10);
+                const rightInvX = parseInt(getCol('right_inv_x') || 0, 10);
+                let rightXDenom = parseInt(getCol('right_x_denom') || 1, 10);
                 const rightPos = parseInt(getCol('right_pos') || 0, 10);
                 const rightNeg = parseInt(getCol('right_neg') || 0, 10);
 
-                // Sjekk om venstre eller høyre side har en sammensatt brøk (variabel i nevner)
+                let parseInvLeft = leftInvX;
+                let parseInvRight = rightInvX;
+
+                if (getCol('left_x_denom') === 'x') {
+                    parseInvLeft = leftXDenom;
+                    leftXDenom = 1;
+                }
+                if (getCol('right_x_denom') === 'x') {
+                    parseInvRight = rightXDenom;
+                    rightXDenom = 1;
+                }
+
                 const hasValue = (v) => v !== null && v.trim() !== '';
 
                 const leftNumX = getCol('left_num_x');
@@ -612,8 +625,8 @@
                     id: parseInt(getCol('id') || (100 + i), 10),
                     kategori: getCol('kategori') || `Nivå ${i}`,
                     tittel: getCol('tittel') || `Oppgave ${i}`,
-                    left: { x2: leftX2, x: leftX, x_denom: leftXDenom || 1, pos: leftPos, neg: leftNeg, complex_frac: leftComplexFrac },
-                    right: { x2: rightX2, x: rightX, x_denom: rightXDenom || 1, pos: rightPos, neg: rightNeg, complex_frac: rightComplexFrac },
+                    left: { x2: leftX2, x: leftX, inv_x: parseInvLeft, x_denom: leftXDenom || 1, pos: leftPos, neg: leftNeg, complex_frac: leftComplexFrac },
+                    right: { x2: rightX2, x: rightX, inv_x: parseInvRight, x_denom: rightXDenom || 1, pos: rightPos, neg: rightNeg, complex_frac: rightComplexFrac },
                     solution: parseInt(getCol('solution') || 0, 10),
                     forklaring: getCol('forklaring') || ''
                 });
@@ -668,14 +681,11 @@
             checkWinCondition();
         }
 
-        // Terskel: over dette antallet vises brikkene samlet i én merket brikke i stedet for én per enhet
         const GROUP_THRESHOLD = 6;
 
         function renderSideItems(sideState, container) {
-            // Render X^2 brikker
             renderCountedCards(container, sideState.x2 || 0, 'X²', 'card-x2', 'fa-cubes-stacked');
 
-            // Render sammensatte brøkbrikker (f.eks. (x+2)/(x-1))
             if (sideState.complex_frac) {
                 const cf = sideState.complex_frac;
                 const numStr = formatBinomial(cf.num_x, cf.num_c);
@@ -684,19 +694,16 @@
                 container.appendChild(el);
             }
 
-            // Render X brikker
+            renderCountedCards(container, sideState.inv_x || 0, '1/X', 'card-inv-x', 'fa-puzzle-piece');
+
             const xLabel = sideState.x_denom > 1 ? `X/${sideState.x_denom}` : 'X';
             renderCountedCards(container, sideState.x, xLabel, 'card-x', 'fa-box-open');
 
-            // Render +1 brikker
             renderCountedCards(container, sideState.pos, '+1', 'card-pos', 'fa-plus');
 
-            // Render -1 brikker
             renderCountedCards(container, sideState.neg, '-1', 'card-neg', 'fa-minus');
         }
 
-        // Tegner enten N enkeltbrikker (lavt antall) eller én samlet brikke merket "×N" (høyt antall),
-        // slik at store tall ikke fyller skålen med et hav av små bokser.
         function renderCountedCards(container, count, unitLabel, bgClass, iconClass) {
             if (!count || count <= 0) return;
             if (count <= GROUP_THRESHOLD) {
@@ -760,6 +767,8 @@
                 multiplyBothSides(2);
             } else if (op === 'mul_3') {
                 multiplyBothSides(3);
+            } else if (op === 'mul_x') {
+                multiplyBothSidesByX();
             } else if (op === 'div_custom') {
                 divideBothSides(readCustomNumber());
             } else if (op === 'mul_custom') {
@@ -779,10 +788,16 @@
                 } else if (op === 'sub_1') {
                     gameState.left.neg += 1;
                     gameState.right.neg += 1;
+                } else if (op === 'add_x') {
+                    gameState.left.x += 1;
+                    gameState.right.x += 1;
                 } else if (op === 'sub_x') {
                     if (gameState.left.x > 0 && gameState.right.x > 0 && gameState.left.x_denom === gameState.right.x_denom) {
                         gameState.left.x -= 1;
                         gameState.right.x -= 1;
+                    } else if (gameState.left.x > 0 || gameState.right.x > 0) {
+                        gameState.left.x = Math.max(0, gameState.left.x - 1);
+                        gameState.right.x = Math.max(0, gameState.right.x - 1);
                     }
                 } else if (op === 'sub_x2') {
                     if ((gameState.left.x2 || 0) > 0 && (gameState.right.x2 || 0) > 0) {
@@ -790,7 +805,6 @@
                         gameState.right.x2 -= 1;
                     }
                 } else if (op === 'sqrt') {
-                    // Kvadratrot operasjon for x^2 = k
                     if (gameState.left.x2 === 1 && gameState.left.pos === 0 && gameState.left.neg === 0 && gameState.left.x === 0 &&
                         gameState.right.x2 === 0 && gameState.right.x === 0 && (gameState.right.pos - gameState.right.neg) > 0) {
                         const val = gameState.right.pos - gameState.right.neg;
@@ -812,7 +826,6 @@
             render();
         }
 
-        // Leser og validerer tallet fra det egendefinerte input-feltet
         function readCustomNumber() {
             const raw = document.getElementById('custom-num-input').value;
             const n = parseInt(raw, 10);
@@ -841,6 +854,33 @@
             multiplySide(gameState.right, n);
         }
 
+        function multiplyBothSidesByX() {
+            playSound('pop');
+            multiplySideByX(gameState.left);
+            multiplySideByX(gameState.right);
+        }
+
+        function multiplySideByX(side) {
+            if (side.x > 0) {
+                side.x2 = (side.x2 || 0) + side.x;
+                side.x = 0;
+            }
+            if (side.inv_x > 0) {
+                side.pos += side.inv_x;
+                side.inv_x = 0;
+            }
+            const netConst = side.pos - side.neg;
+            if (netConst !== 0) {
+                if (netConst > 0) {
+                    side.x += netConst;
+                    side.pos = 0;
+                } else {
+                    side.pos = 0;
+                    side.neg = 0;
+                }
+            }
+        }
+
         function multiplyBothSidesByBinomial(c) {
             playSound('pop');
             multiplySideByBinomial(gameState.left, 1, c);
@@ -848,7 +888,6 @@
         }
 
         function multiplySideByBinomial(side, bX, bC) {
-            // Hvis siden har en sammensatt brøk hvis nevner matcher (bX*x + bC), oppheves nevneren!
             if (side.complex_frac && side.complex_frac.den_x === bX && side.complex_frac.den_c === bC) {
                 const cf = side.complex_frac;
                 side.x += cf.num_x;
@@ -857,9 +896,8 @@
                 } else {
                     side.neg += Math.abs(cf.num_c);
                 }
-                side.complex_frac = null; // Brøken er opphevet!
+                side.complex_frac = null;
             } else {
-                // Multipliser henholdsvis verdiene på siden med (x + bC)
                 const currentPos = side.pos - side.neg;
                 if (currentPos !== 0) {
                     side.x += currentPos * bX;
@@ -873,6 +911,7 @@
 
         function multiplySide(side, factor) {
             if (side.x2) side.x2 *= factor;
+            if (side.inv_x) side.inv_x *= factor;
             side.pos *= factor;
             side.neg *= factor;
 
@@ -885,14 +924,15 @@
             }
         }
 
-        // Generalisert versjon av "del på N" - fungerer for et hvilket som helst positivt heltall
         function canDivideByN(side, n) {
             const x2Ok = !side.x2 || side.x2 % n === 0;
-            return x2Ok && side.x % n === 0 && side.pos % n === 0 && side.neg % n === 0;
+            const invXOk = !side.inv_x || side.inv_x % n === 0;
+            return x2Ok && invXOk && side.x % n === 0 && side.pos % n === 0 && side.neg % n === 0;
         }
 
         function divideSideByN(side, n) {
             if (side.x2) side.x2 /= n;
+            if (side.inv_x) side.inv_x /= n;
             side.x /= n;
             side.pos /= n;
             side.neg /= n;
@@ -911,10 +951,9 @@
             }, 1800);
         }
 
-        // ===================== ANGRE (UNDO) =====================
         function pushHistory() {
             stateHistory.push(JSON.parse(JSON.stringify(gameState)));
-            if (stateHistory.length > 50) stateHistory.shift(); // unngå ubegrenset vekst
+            if (stateHistory.length > 50) stateHistory.shift();
             updateUndoButtonState();
         }
 
@@ -937,7 +976,6 @@
             btn.classList.toggle('cursor-not-allowed', !hasHistory);
         }
 
-        // ===================== VELG NIVÅ =====================
         function openLevelSelectModal() {
             const grid = document.getElementById('level-select-grid');
             grid.innerHTML = '';
@@ -996,6 +1034,11 @@
                     parts.push(side.x === 1 ? 'x' : `${side.x}x`);
                 }
             }
+
+            if ((side.inv_x || 0) > 0) {
+                const num = side.inv_x === 1 ? '1' : `${side.inv_x}`;
+                parts.push(`<span class="inline-flex flex-col items-center align-middle mx-1 text-pink-300"><span class="border-b border-pink-300/60 px-1 leading-tight">${num}</span><span class="text-xs font-normal leading-tight">x</span></span>`);
+            }
             
             const netVal = side.pos - side.neg;
             if (netVal > 0) {
@@ -1020,11 +1063,11 @@
             const left = gameState.left;
             const right = gameState.right;
 
-            const leftIsolated = ((left.x2 || 0) === 0 && left.x === 1 && left.x_denom === 1 && left.pos === 0 && left.neg === 0 && !left.complex_frac);
-            const rightOnlyValue = ((right.x2 || 0) === 0 && right.x === 0 && !right.complex_frac);
+            const leftIsolated = ((left.x2 || 0) === 0 && (left.inv_x || 0) === 0 && left.x === 1 && left.x_denom === 1 && left.pos === 0 && left.neg === 0 && !left.complex_frac);
+            const rightOnlyValue = ((right.x2 || 0) === 0 && (right.inv_x || 0) === 0 && right.x === 0 && !right.complex_frac);
 
-            const rightIsolated = ((right.x2 || 0) === 0 && right.x === 1 && right.x_denom === 1 && right.pos === 0 && right.neg === 0 && !right.complex_frac);
-            const leftOnlyValue = ((left.x2 || 0) === 0 && left.x === 0 && !left.complex_frac);
+            const rightIsolated = ((right.x2 || 0) === 0 && (right.inv_x || 0) === 0 && right.x === 1 && right.x_denom === 1 && right.pos === 0 && right.neg === 0 && !right.complex_frac);
+            const leftOnlyValue = ((left.x2 || 0) === 0 && (left.inv_x || 0) === 0 && left.x === 0 && !left.complex_frac);
 
             if ((leftIsolated && rightOnlyValue) || (rightIsolated && leftOnlyValue)) {
                 const sol = leftIsolated ? (right.pos - right.neg) : (left.pos - left.neg);
@@ -1082,7 +1125,7 @@
         };
     </script>
 
-  <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
+  <!-- TILBAKE-KNAPP -->
 <a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
     <i class="fa-solid fa-arrow-left"></i>
     <span>Tilbake til Lærerverktøy</span>
