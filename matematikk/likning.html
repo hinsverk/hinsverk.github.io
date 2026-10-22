@@ -541,27 +541,7 @@
             }
         }
 
-        function parseCSVToLevels(csvText) {
-            const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-            if (lines.length < 2) return [];
-
-            const headerLine = lines[0];
-            const commaCount = (headerLine.match(/,/g) || []).length;
-            const semiCount = (headerLine.match(/;/g) || []).length;
-            const delimiter = semiCount > commaCount ? ';' : ',';
-
-            const headers = headerLine.split(delimiter).map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ''));
-            const levels = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const cols = lines[i].split(delimiter);
-                if (!cols || cols.length < 2) continue;
-
-                const cleanCols = cols.map(c => c.trim().replace(/^["']|["']$/g, ''));
-                const getCol = (name) => {
-                    const idx = headers.indexOf(name);
-                    return idx !== -1 && cleanCols[idx] !== undefined ? cleanCols[idx] : null;
-                };
+        
 
                 const leftX2 = parseInt(getCol('left_x2') || 0, 10);
                 const leftX = parseInt(getCol('left_x') || 0, 10);
@@ -605,34 +585,98 @@
                         den_c: parseInt(leftDenC || 0, 10)
                     };
                 }
+function parseCSVToLevels(csvText) {
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) return [];
 
-                const rightNumX = getCol('right_num_x');
-                const rightNumC = getCol('right_num_c');
-                const rightDenX = getCol('right_den_x');
-                const rightDenC = getCol('right_den_c');
+        const headerLine = lines[0];
+        const commaCount = (headerLine.match(/,/g) || []).length;
+        const semiCount = (headerLine.match(/;/g) || []).length;
+        const delimiter = semiCount > commaCount ? ';' : ',';
 
-                let rightComplexFrac = null;
-                if (hasValue(rightNumX) || hasValue(rightNumC)) {
-                    rightComplexFrac = {
-                        num_x: parseInt(rightNumX || 0, 10),
-                        num_c: parseInt(rightNumC || 0, 10),
-                        den_x: parseInt(rightDenX || 1, 10),
-                        den_c: parseInt(rightDenC || 0, 10)
-                    };
-                }
+        const headers = headerLine.split(delimiter).map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ''));
+        const levels = [];
 
-                levels.push({
-                    id: parseInt(getCol('id') || (100 + i), 10),
-                    kategori: getCol('kategori') || `Nivå ${i}`,
-                    tittel: getCol('tittel') || `Oppgave ${i}`,
-                    left: { x2: leftX2, x: leftX, inv_x: parseInvLeft, x_denom: leftXDenom || 1, pos: leftPos, neg: leftNeg, complex_frac: leftComplexFrac },
-                    right: { x2: rightX2, x: rightX, inv_x: parseInvRight, x_denom: rightXDenom || 1, pos: rightPos, neg: rightNeg, complex_frac: rightComplexFrac },
-                    solution: parseInt(getCol('solution') || 0, 10),
-                    forklaring: getCol('forklaring') || ''
-                });
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(delimiter);
+            if (!cols || cols.length < 2) continue;
+
+            const cleanCols = cols.map(c => c.trim().replace(/^["']|["']$/g, ''));
+            const getCol = (name) => {
+                const idx = headers.indexOf(name);
+                return idx !== -1 && cleanCols[idx] !== undefined ? cleanCols[idx] : null;
+            };
+
+            const leftX2 = parseInt(getCol('left_x2') || 0, 10);
+            const leftX = parseInt(getCol('left_x') || 0, 10);
+            const leftInvX = parseInt(getCol('left_inv_x') || 0, 10);
+            let leftXDenom = parseInt(getCol('left_x_denom') || 1, 10);
+            const leftPos = parseInt(getCol('left_pos') || 0, 10);
+            const leftNeg = parseInt(getCol('left_neg') || 0, 10);
+
+            const rightX2 = parseInt(getCol('right_x2') || 0, 10);
+            const rightX = parseInt(getCol('right_x') || 0, 10);
+            const rightInvX = parseInt(getCol('right_inv_x') || 0, 10);
+            let rightXDenom = parseInt(getCol('right_x_denom') || 1, 10);
+            const rightPos = parseInt(getCol('right_pos') || 0, 10);
+            const rightNeg = parseInt(getCol('right_neg') || 0, 10);
+
+            let parseInvLeft = leftInvX;
+            let parseInvRight = rightInvX;
+
+            if (getCol('left_x_denom') === 'x') {
+                parseInvLeft = leftXDenom;
+                leftXDenom = 1;
             }
-            return levels;
+            if (getCol('right_x_denom') === 'x') {
+                parseInvRight = rightXDenom;
+                rightXDenom = 1;
+            }
+
+            const hasValue = (v) => v !== null && v !== undefined && v.trim() !== '';
+
+            const leftNumX = getCol('left_num_x');
+            const leftNumC = getCol('left_num_c');
+            const leftDenX = getCol('left_den_x');
+            const leftDenC = getCol('left_den_c');
+
+            let leftComplexFrac = null;
+            if (hasValue(leftNumX) || hasValue(leftNumC) || hasValue(leftDenX) || hasValue(leftDenC)) {
+                leftComplexFrac = {
+                    num_x: parseInt(leftNumX || 0, 10),
+                    num_c: parseInt(leftNumC || 0, 10),
+                    den_x: parseInt(hasValue(leftDenX) ? leftDenX : 1, 10),
+                    den_c: parseInt(leftDenC || 0, 10)
+                };
+            }
+
+            const rightNumX = getCol('right_num_x');
+            const rightNumC = getCol('right_num_c');
+            const rightDenX = getCol('right_den_x');
+            const rightDenC = getCol('right_den_c');
+
+            let rightComplexFrac = null;
+            if (hasValue(rightNumX) || hasValue(rightNumC) || hasValue(rightDenX) || hasValue(rightDenC)) {
+                rightComplexFrac = {
+                    num_x: parseInt(rightNumX || 0, 10),
+                    num_c: parseInt(rightNumC || 0, 10),
+                    den_x: parseInt(hasValue(rightDenX) ? rightDenX : 1, 10),
+                    den_c: parseInt(rightDenC || 0, 10)
+                };
+            }
+
+            levels.push({
+                id: parseInt(getCol('id') || (100 + i), 10),
+                kategori: getCol('kategori') || `Nivå ${i}`,
+                tittel: getCol('tittel') || `Oppgave ${i}`,
+                left: { x2: leftX2, x: leftX, inv_x: parseInvLeft, x_denom: leftXDenom || 1, pos: leftPos, neg: leftNeg, complex_frac: leftComplexFrac },
+                right: { x2: rightX2, x: rightX, inv_x: parseInvRight, x_denom: rightXDenom || 1, pos: rightPos, neg: rightNeg, complex_frac: rightComplexFrac },
+                solution: parseInt(getCol('solution') || 0, 10),
+                forklaring: getCol('forklaring') || ''
+            });
         }
+        return levels;
+    }
 
         function useFallbackLevels() {
             activeLevels = [...fallbackLevels];
@@ -1051,13 +1095,22 @@
             return parts.join(' ');
         }
 
-        function formatBinomial(xCoef, constVal) {
-            let p = [];
-            if (xCoef > 0) p.push(xCoef === 1 ? 'x' : `${xCoef}x`);
-            if (constVal > 0) p.push(`+ ${constVal}`);
-            if (constVal < 0) p.push(`- ${Math.abs(constVal)}`);
-            return p.length > 0 ? p.join(' ') : '0';
+       function formatBinomial(xCoef, constVal) {
+        let p = [];
+        if (xCoef !== 0) {
+            if (xCoef === 1) p.push('x');
+            else if (xCoef === -1) p.push('-x');
+            else p.push(`${xCoef}x`);
         }
+        
+        if (constVal > 0) {
+            p.push(p.length > 0 ? `+ ${constVal}` : `${constVal}`);
+        } else if (constVal < 0) {
+            p.push(p.length > 0 ? `- ${Math.abs(constVal)}` : `-${Math.abs(constVal)}`);
+        }
+        
+        return p.length > 0 ? p.join(' ') : '0';
+    }
 
         function checkWinCondition() {
             const left = gameState.left;
