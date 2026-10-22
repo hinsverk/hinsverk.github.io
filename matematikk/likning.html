@@ -500,26 +500,48 @@
         let showFormalNotation = true;
         let googleSheetUrl = DEFAULT_SHEET_URL;
 
-        async function loadLevelsFromSheet() {
-            updateSourceBadge('loading', 'Sjekker Google Sheets...');
+       async function loadLevelsFromSheet() {
+        updateSourceBadge('loading', 'Sjekker Google Sheets...');
 
-            if (!googleSheetUrl) {
-                useFallbackLevels();
-                return;
+        if (!googleSheetUrl) {
+            useFallbackLevels();
+            return;
+        }
+
+        try {
+            let fetchUrl = googleSheetUrl.trim();
+            
+            // Hvis det er en vanlig editerings-lenke (ikke /pub?output=csv), gjør den om til CSV-export
+            if (fetchUrl.includes('/edit') || fetchUrl.includes('/sharing')) {
+                const match = fetchUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                const gidMatch = fetchUrl.match(/[?&#]gid=([0-9]+)/);
+                if (match && match[1]) {
+                    const sheetId = match[1];
+                    const gid = gidMatch ? gidMatch[1] : null;
+                    fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+                    if (gid) fetchUrl += `&gid=${gid}`;
+                }
             }
 
-            try {
-                let fetchUrl = googleSheetUrl.trim();
-                if (fetchUrl.includes('docs.google.com/spreadsheets')) {
-                    const match = fetchUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
-                    const gidMatch = fetchUrl.match(/[?&#]gid=([0-9]+)/);
-                    if (match && match[1]) {
-                        const sheetId = match[1];
-                        const gid = gidMatch ? gidMatch[1] : null;
-                        fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
-                    if (gid) fetchUrl += `&gid=${gid}`;
-                    }
-                }
+            const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error("Status " + response.status);
+
+            const csvText = await response.text();
+            const parsedLevels = parseCSVToLevels(csvText);
+
+            if (parsedLevels.length > 0) {
+                activeLevels = parsedLevels;
+                updateSourceBadge('sheets', `Google Sheets (${activeLevels.length} oppgaver)`);
+                loadLevel(0);
+            } else {
+                throw new Error("Ingen gyldige rader.");
+            }
+        } catch (err) {
+            updateSourceBadge('fallback', `Innebygd (Feil ved innlasting)`);
+            activeLevels = [...fallbackLevels];
+            loadLevel(0);
+        }
+    }
 
                 const response = await fetch(fetchUrl);
                 if (!response.ok) throw new Error("Status " + response.status);
