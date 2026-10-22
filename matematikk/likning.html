@@ -516,8 +516,8 @@
                     if (match && match[1]) {
                         const sheetId = match[1];
                         const gid = gidMatch ? gidMatch[1] : null;
-                        fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-                        if (gid) fetchUrl += `&gid=${gid}`;
+                        fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+                    if (gid) fetchUrl += `&gid=${gid}`;
                     }
                 }
 
