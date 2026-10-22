@@ -197,8 +197,8 @@
                             Endrer du oppgavene på Gist, oppdateres de automatisk for alle elever.
                         </p>
                     </div>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Tilkoblet Gist
+                    <span id="gistStatusBadge" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">
+                        <span id="gistStatusDot" class="w-2 h-2 rounded-full bg-slate-400"></span> <span id="gistStatusText">Ikke hentet ennå</span>
                     </span>
                 </div>
 
@@ -309,11 +309,19 @@
     <!-- MAIN JAVASCRIPT APPLICATION LOGIC -->
     <script>
         // ============================================================
-        // Application State & Default Data
+        // Konfigurasjon og tilstand
         // ============================================================
-        const GIST_URL = 'https://gist.githubusercontent.com/hinsverk/f56b30e0ce6aa8a3ee0bfc671e316651/raw/gistfile1.json';
+        // Gisten leses inn automatisk ved hver oppstart. Den andre adressen (uten filnavn)
+        // brukes som reserve hvis filnavnet i gisten er endret – da gir GitHub første filen.
+        const GIST_URLS = [
+            'https://gist.githubusercontent.com/hinsverk/f56b30e0ce6aa8a3ee0bfc671e316651/raw/gistfile1.json',
+            'https://gist.githubusercontent.com/hinsverk/f56b30e0ce6aa8a3ee0bfc671e316651/raw'
+        ];
+        const CACHE_KEY = 'grammatikk_categories';
+        const FETCH_TIMEOUT_MS = 8000;
 
-        let categories = [
+        // Brukes kun hvis verken Gist eller lokal cache er tilgjengelig
+        const DEFAULT_CATEGORIES = [
             {
                 id: 'substantiv',
                 title: 'Substantiv',
@@ -361,53 +369,126 @@
             }
         ];
 
+        let categories = [];
         let currentMode = 'student'; // 'student' | 'teacher'
-        let activeCategoryId = 'substantiv';
-        let activeSubcategoryId = 'ubestemt-bestemt';
+        let activeCategoryId = null;
+        let activeSubcategoryId = null;
         let currentPage = 1;
         const itemsPerPage = 10;
         let score = 0;
-        let userAnswersMap = {}; // exId -> { answer, isChecked, isCorrect }
+        let userAnswersMap = {}; // nøkkel (kategori|underkategori|oppgave-id) -> { answer, isChecked, isCorrect }
 
-        // Teacher state
-        let teacherCatId = 'substantiv';
-        let teacherSubcatId = 'ubestemt-bestemt';
+        // Lærerrom
+        let teacherCatId = null;
+        let teacherSubcatId = null;
 
         // ============================================================
-        // Application Initialization
+        // Hjelpefunksjoner
         // ============================================================
-        window.onload = async function() {
-            loadFromLocalStorage();
-            await fetchGistExercises();
-            renderApp();
-        };
+        function escapeHtml(v) {
+            return String(v ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
 
-        async function fetchGistExercises() {
-            if (!GIST_URL) return;
-            try {
-                const response = await fetch(GIST_URL + '?t=' + Date.now());
-                if (!response.ok) throw new Error('Status ' + response.status);
-                const data = await response.json();
-                
-                const loadedCats = Array.isArray(data) ? data : (data && data.categories);
-                if (Array.isArray(loadedCats) && loadedCats.length > 0) {
-                    categories = loadedCats;
-                    saveToLocalStorage();
-                    showToast('Vellykket synkronisert med GitHub Gist!', 'success');
+        // Trygg verdi å putte inn i et onclick="..."-attributt
+        function jsArg(v) {
+            return escapeHtml(JSON.stringify(v));
+        }
+
+        function slugify(s) {
+            return String(s || '').toLowerCase().normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        }
+
+        // Gir en id som ikke allerede er brukt (beholder originalverdien hvis den er ledig)
+        function uniqueId(value, used) {
+            let candidate = value, n = 2;
+            while (used.has(String(candidate))) candidate = `${value}-${n++}`;
+            used.add(String(candidate));
+            return candidate;
+        }
+
+        function exKey(cat, sub, ex) {
+            return `${cat.id}|${sub.id}|${ex.id}`;
+        }
+
+        function domId(key) {
+            return key.replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+
+        function countExercises(cats) {
+            return cats.reduce((n, c) => n + c.subcategories.reduce((m, s) => m + s.exercises.length, 0), 0);
+        }
+
+        // ============================================================
+        // Validering og normalisering av oppgavedata
+        // Appen tåler manglende felt, ekstra felt, doble id-er og nye kategorier.
+        // ============================================================
+        function normalizeData(raw) {
+            const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.categories) ? raw.categories : null);
+            if (!list) throw new Error('Fant ingen liste med kategorier i dataene');
+
+            let skipped = 0;
+            const usedCatIds = new Set();
+            const cats = [];
+
+            list.forEach((rawCat, ci) => {
+                if (!rawCat || typeof rawCat !== 'object') { skipped++; return; }
+                const cat = { ...rawCat };
+                cat.title = String(cat.title || cat.id || `Kategori ${ci + 1}`);
+                cat.id = uniqueId(String(cat.id || slugify(cat.title) || `kategori-${ci + 1}`), usedCatIds);
+
+                let subs = Array.isArray(cat.subcategories) ? cat.subcategories : [];
+                // Tillat også enklere format: kategori med oppgaver direkte
+                if (subs.length === 0 && Array.isArray(cat.exercises)) {
+                    subs = [{ id: 'alle', title: 'Alle oppgaver', exercises: cat.exercises }];
+                    delete cat.exercises;
                 }
-            } catch (err) {
-                console.warn('Kunne ikke hente fra GitHub Gist. Bruker lokal cache.', err);
-            }
+
+                const usedSubIds = new Set();
+                cat.subcategories = subs.filter(s => s && typeof s === 'object').map((rawSub, si) => {
+                    const sub = { ...rawSub };
+                    sub.title = String(sub.title || sub.id || `Del ${si + 1}`);
+                    sub.id = uniqueId(String(sub.id || slugify(sub.title) || `del-${si + 1}`), usedSubIds);
+
+                    const usedExIds = new Set();
+                    const rawExercises = Array.isArray(sub.exercises) ? sub.exercises : [];
+                    sub.exercises = [];
+                    rawExercises.forEach((rawEx, ei) => {
+                        const ok = rawEx && typeof rawEx === 'object'
+                            && rawEx.prompt != null && String(rawEx.prompt).trim() !== ''
+                            && rawEx.answer != null && String(rawEx.answer).trim() !== '';
+                        if (!ok) {
+                            skipped++;
+                            console.warn(`Hoppet over ugyldig oppgave nr. ${ei + 1} i "${cat.id}/${sub.id}" (mangler prompt eller answer)`, rawEx);
+                            return;
+                        }
+                        const ex = { ...rawEx };
+                        ex.prompt = String(ex.prompt);
+                        ex.answer = String(ex.answer);
+                        ex.altAnswers = Array.isArray(ex.altAnswers) ? ex.altAnswers.map(String) : [];
+                        if (Array.isArray(ex.options) && ex.options.length > 0) ex.options = ex.options.map(String);
+                        else delete ex.options;
+                        ex.id = uniqueId(ex.id != null ? ex.id : ei + 1, usedExIds);
+                        sub.exercises.push(ex);
+                    });
+                    return sub;
+                });
+
+                cats.push(cat);
+            });
+
+            if (cats.length === 0) throw new Error('Datafilen inneholder ingen kategorier');
+            return { cats, skipped };
         }
 
-        async function manualFetchGist() {
-            await fetchGistExercises();
-            renderApp();
-        }
-
+        // ============================================================
+        // Lagring (lokal cache) og innlasting fra Gist
+        // ============================================================
         function saveToLocalStorage() {
             try {
-                localStorage.setItem('grammatikk_categories', JSON.stringify(categories));
+                localStorage.setItem(CACHE_KEY, JSON.stringify(categories));
             } catch (e) {
                 console.error('Klarte ikke å lagre til localStorage', e);
             }
@@ -415,12 +496,136 @@
 
         function loadFromLocalStorage() {
             try {
-                const saved = localStorage.getItem('grammatikk_categories');
-                if (saved) {
-                    categories = JSON.parse(saved);
-                }
+                const saved = localStorage.getItem(CACHE_KEY);
+                if (!saved) return false;
+                categories = normalizeData(JSON.parse(saved)).cats;
+                return true;
             } catch (e) {
-                console.error('Klarte ikke å lese fra localStorage', e);
+                console.warn('Ugyldig lokal cache ble ignorert og slettet', e);
+                try { localStorage.removeItem(CACHE_KEY); } catch (_) {}
+                return false;
+            }
+        }
+
+        function setGistStatus(state, detail) {
+            const badge = document.getElementById('gistStatusBadge');
+            const dot = document.getElementById('gistStatusDot');
+            const text = document.getElementById('gistStatusText');
+            if (!badge || !dot || !text) return;
+            const base = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold border ';
+            if (state === 'ok') {
+                badge.className = base + 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+                text.innerText = 'Synkronisert med Gist';
+            } else if (state === 'error') {
+                badge.className = base + 'bg-rose-100 text-rose-800 border-rose-200';
+                dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                text.innerText = 'Gist feilet – bruker lagret versjon';
+            } else {
+                badge.className = base + 'bg-amber-100 text-amber-800 border-amber-200';
+                dot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+                text.innerText = 'Henter fra Gist …';
+            }
+            badge.title = detail || '';
+        }
+
+        async function fetchGistExercises() {
+            setGistStatus('loading');
+            let lastError = null;
+
+            for (const baseUrl of GIST_URLS) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+                try {
+                    const response = await fetch(`${baseUrl}?t=${Date.now()}`, { cache: 'no-store', signal: controller.signal });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const text = await response.text();
+
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        const err = new Error('Gisten inneholder ugyldig JSON (' + e.message + ')');
+                        err.fatal = true; // samme innhold på reserveadressen, så ikke prøv igjen
+                        throw err;
+                    }
+
+                    let result;
+                    try {
+                        result = normalizeData(data);
+                    } catch (e) {
+                        e.fatal = true;
+                        throw e;
+                    }
+
+                    categories = result.cats;
+                    saveToLocalStorage();
+                    const info = `${categories.length} kategorier, ${countExercises(categories)} oppgaver`
+                        + (result.skipped ? `, ${result.skipped} ugyldige hoppet over (se konsollen)` : '');
+                    setGistStatus('ok', info);
+                    showToast('Synkronisert med GitHub Gist: ' + info, result.skipped ? 'error' : 'success');
+                    return true;
+                } catch (err) {
+                    lastError = err.name === 'AbortError' ? new Error('Tidsavbrudd') : err;
+                    console.warn('Kunne ikke hente fra Gist:', baseUrl, err);
+                    if (err.fatal) break;
+                } finally {
+                    clearTimeout(timer);
+                }
+            }
+
+            const msg = lastError ? lastError.message : 'ukjent feil';
+            setGistStatus('error', msg);
+            showToast('Kunne ikke lese Gist: ' + msg + '. Bruker lagret versjon.', 'error');
+            return false;
+        }
+
+        async function manualFetchGist() {
+            await fetchGistExercises();
+            renderApp();
+        }
+
+        // ============================================================
+        // Oppstart
+        // ============================================================
+        window.onload = async function() {
+            // Vis noe med en gang (cache eller innebygde standardoppgaver) ...
+            if (!loadFromLocalStorage()) categories = normalizeData(DEFAULT_CATEGORIES).cats;
+            renderApp();
+            // ... og hent så ferskeste versjon fra Gist
+            await fetchGistExercises();
+            renderApp();
+        };
+
+        // ============================================================
+        // Valg av kategori/underkategori (tåler at dataene har endret seg)
+        // ============================================================
+        function ensureValidSelection() {
+            if (!categories.length) {
+                activeCategoryId = activeSubcategoryId = teacherCatId = teacherSubcatId = null;
+                return;
+            }
+
+            let cat = categories.find(c => c.id === activeCategoryId);
+            if (!cat) {
+                cat = categories[0];
+                activeCategoryId = cat.id;
+                activeSubcategoryId = null;
+                currentPage = 1;
+            }
+            if (!cat.subcategories.find(s => s.id === activeSubcategoryId)) {
+                activeSubcategoryId = cat.subcategories.length ? cat.subcategories[0].id : null;
+                currentPage = 1;
+            }
+
+            let tCat = categories.find(c => c.id === teacherCatId);
+            if (!tCat) {
+                tCat = categories[0];
+                teacherCatId = tCat.id;
+                teacherSubcatId = null;
+            }
+            if (!tCat.subcategories.find(s => s.id === teacherSubcatId)) {
+                teacherSubcatId = tCat.subcategories.length ? tCat.subcategories[0].id : null;
             }
         }
 
@@ -449,6 +654,7 @@
         }
 
         function renderApp() {
+            ensureValidSelection();
             renderTopicTabs();
             renderSubcategoryTabs();
             renderExercisePage();
@@ -456,12 +662,16 @@
         }
 
         function getActiveCategory() {
-            return categories.find(c => c.id === activeCategoryId) || categories[0];
+            return categories.find(c => c.id === activeCategoryId) || categories[0] || null;
         }
 
         function getActiveSubcategory() {
             const cat = getActiveCategory();
-            return (cat && cat.subcategories) ? (cat.subcategories.find(s => s.id === activeSubcategoryId) || cat.subcategories[0]) : null;
+            return (cat && cat.subcategories) ? (cat.subcategories.find(s => s.id === activeSubcategoryId) || cat.subcategories[0] || null) : null;
+        }
+
+        function getRuleText(cat, sub) {
+            return sub.rule || sub.ruleHint || cat.ruleHint || cat.rule || 'Svar på oppgavene nedenfor.';
         }
 
         function renderTopicTabs() {
@@ -470,9 +680,9 @@
                 const active = cat.id === activeCategoryId;
                 const activeClasses = active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 font-bold' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 font-semibold';
                 return `
-                    <button onclick="selectCategory('${cat.id}')" class="px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 whitespace-nowrap transition ${activeClasses}">
-                        <i class="fa-solid ${cat.icon || 'fa-bookmark'}"></i>
-                        <span>${cat.title}</span>
+                    <button onclick="selectCategory(${jsArg(cat.id)})" class="px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 whitespace-nowrap transition ${activeClasses}">
+                        <i class="fa-solid ${escapeHtml(cat.icon || 'fa-bookmark')}"></i>
+                        <span>${escapeHtml(cat.title)}</span>
                     </button>
                 `;
             }).join('');
@@ -480,8 +690,7 @@
 
         function selectCategory(catId) {
             activeCategoryId = catId;
-            const cat = getActiveCategory();
-            activeSubcategoryId = (cat.subcategories && cat.subcategories.length > 0) ? cat.subcategories[0].id : null;
+            activeSubcategoryId = null; // ensureValidSelection velger første underkategori
             currentPage = 1;
             renderApp();
         }
@@ -498,8 +707,8 @@
                 const active = sub.id === activeSubcategoryId;
                 const activeClasses = active ? 'bg-slate-900 text-white font-bold' : 'bg-slate-200/60 text-slate-700 hover:bg-slate-200 font-medium';
                 return `
-                    <button onclick="selectSubcategory('${sub.id}')" class="px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition ${activeClasses}">
-                        ${sub.title}
+                    <button onclick="selectSubcategory(${jsArg(sub.id)})" class="px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition ${activeClasses}">
+                        ${escapeHtml(sub.title)}
                     </button>
                 `;
             }).join('');
@@ -512,6 +721,7 @@
         }
 
         function renderExercisePage() {
+            const cat = getActiveCategory();
             const subcat = getActiveSubcategory();
             const quizTitle = document.getElementById('quizTitle');
             const quizSubcategoryBadge = document.getElementById('quizSubcategoryBadge');
@@ -522,13 +732,15 @@
             const currentPageNum = document.getElementById('currentPageNum');
             const pageButtonsContainer = document.getElementById('pageButtonsContainer');
 
-            if (!subcat || !subcat.exercises || subcat.exercises.length === 0) {
+            if (!cat || !subcat || !subcat.exercises || subcat.exercises.length === 0) {
                 quizTitle.innerText = "Ingen oppgaver tilgjengelig";
-                quizSubcategoryBadge.innerText = getActiveCategory() ? getActiveCategory().title : "";
-                ruleHintText.innerText = "Det er ikke lagt til noen oppgaver her ennå.";
+                quizSubcategoryBadge.innerText = cat ? cat.title : "";
+                ruleHintText.innerText = (cat && cat.ruleHint) ? cat.ruleHint : "Det er ikke lagt til noen oppgaver her ennå.";
                 exerciseListContainer.innerHTML = '<p class="text-center text-slate-400 py-8 text-sm">Bruk lærerrommet for å legge til nye oppgaver.</p>';
                 totalExCount.innerText = "0";
                 pageRangeVal.innerText = "0-0";
+                currentPageNum.innerText = "0 av 0";
+                pageButtonsContainer.innerHTML = '';
                 return;
             }
 
@@ -541,24 +753,28 @@
             const endIndex = Math.min(startIndex + itemsPerPage, total);
             const pageExercises = subcat.exercises.slice(startIndex, endIndex);
 
-            quizSubcategoryBadge.innerText = getActiveCategory().title;
+            quizSubcategoryBadge.innerText = cat.title;
             quizTitle.innerText = subcat.title;
-            ruleHintText.innerText = subcat.rule || "Svar på oppgavene nedenfor.";
+            ruleHintText.innerText = getRuleText(cat, subcat);
             totalExCount.innerText = total;
             pageRangeVal.innerText = `${startIndex + 1}-${endIndex}`;
             currentPageNum.innerText = `${currentPage} av ${maxPages}`;
 
-            // Render Page Number Tabs
+            // Sidetall
             pageButtonsContainer.innerHTML = Array.from({ length: maxPages }, (_, i) => i + 1).map(p => `
                 <button onclick="goToPage(${p})" class="px-2.5 py-1 text-xs rounded-lg font-bold transition ${p === currentPage ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
                     ${p}
                 </button>
             `).join('');
 
-            // Render up to 10 exercises on page
+            // Oppgaver på siden
             exerciseListContainer.innerHTML = pageExercises.map((ex, index) => {
                 const globalNum = startIndex + index + 1;
-                const savedState = userAnswersMap[ex.id] || { answer: '', isChecked: false, isCorrect: false };
+                const key = exKey(cat, subcat, ex);
+                const dom = domId(key);
+                const savedState = userAnswersMap[key] || { answer: '', isChecked: false, isCorrect: false };
+                const savedAnswer = savedState.answer || '';
+                const explanation = ex.hint || ex.explanation || '';
 
                 let feedbackMarkup = '';
                 if (savedState.isChecked) {
@@ -573,8 +789,8 @@
                             <div class="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-start gap-2">
                                 <i class="fa-solid fa-circle-xmark text-rose-600 text-base mt-0.5"></i>
                                 <div>
-                                    <span>Feil svar. Riktig var: <strong>"${ex.answer}"</strong>.</span>
-                                    ${ex.hint ? `<p class="text-[11px] text-rose-700 mt-0.5">${ex.hint}</p>` : ''}
+                                    <span>Feil svar. Riktig var: <strong>"${escapeHtml(ex.answer)}"</strong>.</span>
+                                    ${explanation ? `<p class="text-[11px] text-rose-700 mt-0.5">${escapeHtml(explanation)}</p>` : ''}
                                 </div>
                             </div>`;
                     }
@@ -585,20 +801,20 @@
                     inputArea = `
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             ${ex.options.map(opt => {
-                                const selected = savedState.answer === opt;
+                                const selected = savedAnswer === opt;
                                 const activeClass = selected ? 'border-indigo-600 bg-indigo-100 text-indigo-900 font-bold' : 'border-slate-200 hover:border-indigo-400 bg-white text-slate-700';
                                 return `
-                                    <button type="button" onclick="selectCardOption(${ex.id}, '${opt.replace(/'/g, "\\'")}')" class="ex-option-${ex.id} border-2 ${activeClass} p-2.5 rounded-xl text-xs font-semibold transition text-center">
-                                        ${opt}
+                                    <button type="button" data-ex="${dom}" data-key="${escapeHtml(key)}" data-value="${escapeHtml(opt)}" onclick="selectCardOption(this)" class="border-2 ${activeClass} p-2.5 rounded-xl text-xs font-semibold transition text-center">
+                                        ${escapeHtml(opt)}
                                     </button>
                                 `;
                             }).join('')}
                         </div>
-                        <input type="hidden" id="input_${ex.id}" value="${savedState.answer}">
+                        <input type="hidden" id="input_${dom}" value="${escapeHtml(savedAnswer)}">
                     `;
                 } else {
                     inputArea = `
-                        <input type="text" id="input_${ex.id}" value="${savedState.answer}" oninput="onTextInputChange(${ex.id}, this.value)" placeholder="Skriv svaret ditt..." class="w-full bg-slate-50 border-2 border-slate-200 focus:border-indigo-600 rounded-xl p-3 font-medium text-slate-800 text-xs focus:outline-none transition">
+                        <input type="text" id="input_${dom}" value="${escapeHtml(savedAnswer)}" oninput="onTextInputChange(${jsArg(key)}, this.value)" placeholder="Skriv svaret ditt..." class="w-full bg-slate-50 border-2 border-slate-200 focus:border-indigo-600 rounded-xl p-3 font-medium text-slate-800 text-xs focus:outline-none transition">
                     `;
                 }
 
@@ -610,47 +826,73 @@
                                     ${globalNum}
                                 </span>
                                 <h3 class="font-bold text-slate-800 text-sm md:text-base leading-snug">
-                                    ${ex.prompt}
+                                    ${escapeHtml(ex.prompt)}
                                 </h3>
                             </div>
-                            <button onclick="checkSingleAnswer(${ex.id})" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shrink-0 transition flex items-center gap-1.5 shadow">
+                            <button onclick="checkSingleAnswer(${jsArg(ex.id)})" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shrink-0 transition flex items-center gap-1.5 shadow">
                                 <i class="fa-solid fa-check"></i>
                                 <span>Sjekk</span>
                             </button>
                         </div>
 
                         ${inputArea}
-                        <div id="feedback_${ex.id}">${feedbackMarkup}</div>
+                        <div id="feedback_${dom}">${feedbackMarkup}</div>
                     </div>
                 `;
             }).join('');
         }
 
-        function selectCardOption(exId, value) {
-            document.querySelectorAll(`.ex-option-${exId}`).forEach(b => {
+        function selectCardOption(btn) {
+            const { ex, key, value } = btn.dataset;
+            document.querySelectorAll(`button[data-ex="${ex}"]`).forEach(b => {
                 b.classList.remove('border-indigo-600', 'bg-indigo-100', 'text-indigo-900', 'font-bold');
                 b.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
             });
-            event.currentTarget.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
-            event.currentTarget.classList.add('border-indigo-600', 'bg-indigo-100', 'text-indigo-900', 'font-bold');
+            btn.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+            btn.classList.add('border-indigo-600', 'bg-indigo-100', 'text-indigo-900', 'font-bold');
 
-            document.getElementById(`input_${exId}`).value = value;
-            if (!userAnswersMap[exId]) userAnswersMap[exId] = {};
-            userAnswersMap[exId].answer = value;
+            document.getElementById(`input_${ex}`).value = value;
+            if (!userAnswersMap[key]) userAnswersMap[key] = {};
+            userAnswersMap[key].answer = value;
         }
 
-        function onTextInputChange(exId, value) {
-            if (!userAnswersMap[exId]) userAnswersMap[exId] = {};
-            userAnswersMap[exId].answer = value.trim();
+        function onTextInputChange(key, value) {
+            if (!userAnswersMap[key]) userAnswersMap[key] = {};
+            userAnswersMap[key].answer = value.trim();
+        }
+
+        // Sammenligner svar uten hensyn til store/små bokstaver, tegnsetting, ekstra mellomrom,
+        // ß/ss og skilletegn som "kauft ... ein" / "kauft/ein"
+        function normalizeAnswer(s) {
+            return String(s ?? '').normalize('NFC').toLowerCase()
+                .replace(/ß/g, 'ss')
+                .replace(/\s*(?:\.{3}|…|\/)\s*/g, ' ')
+                .replace(/[.,!?;:"“”„«»'’‘()]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function isAnswerCorrect(ex, value) {
+            const given = normalizeAnswer(value);
+            return [ex.answer, ...(ex.altAnswers || [])].some(a => normalizeAnswer(a) === given);
+        }
+
+        function gradeExercise(cat, subcat, ex, val) {
+            const key = exKey(cat, subcat, ex);
+            const isCorrect = isAnswerCorrect(ex, val);
+            const prev = userAnswersMap[key];
+            if ((!prev || !prev.isCorrect) && isCorrect) score += 10;
+            userAnswersMap[key] = { answer: val, isChecked: true, isCorrect };
         }
 
         function checkSingleAnswer(exId) {
+            const cat = getActiveCategory();
             const subcat = getActiveSubcategory();
-            if (!subcat || !subcat.exercises) return;
+            if (!cat || !subcat || !subcat.exercises) return;
             const ex = subcat.exercises.find(e => e.id === exId);
             if (!ex) return;
 
-            const inputElem = document.getElementById(`input_${exId}`);
+            const inputElem = document.getElementById(`input_${domId(exKey(cat, subcat, ex))}`);
             const val = inputElem ? inputElem.value.trim() : '';
 
             if (!val) {
@@ -658,28 +900,15 @@
                 return;
             }
 
-            const isCorrect = val.toLowerCase() === ex.answer.toLowerCase();
-            const prev = userAnswersMap[exId];
-
-            if (!prev || !prev.isCorrect) {
-                if (isCorrect) {
-                    score += 10;
-                    document.getElementById('scoreVal').innerText = score;
-                }
-            }
-
-            userAnswersMap[exId] = {
-                answer: val,
-                isChecked: true,
-                isCorrect: isCorrect
-            };
-
+            gradeExercise(cat, subcat, ex, val);
+            document.getElementById('scoreVal').innerText = score;
             renderExercisePage();
         }
 
         function checkAllAnswers() {
+            const cat = getActiveCategory();
             const subcat = getActiveSubcategory();
-            if (!subcat || !subcat.exercises) return;
+            if (!cat || !subcat || !subcat.exercises) return;
 
             const total = subcat.exercises.length;
             const startIndex = (currentPage - 1) * itemsPerPage;
@@ -688,23 +917,10 @@
 
             let checkedCount = 0;
             pageExercises.forEach(ex => {
-                const inputElem = document.getElementById(`input_${ex.id}`);
+                const inputElem = document.getElementById(`input_${domId(exKey(cat, subcat, ex))}`);
                 const val = inputElem ? inputElem.value.trim() : '';
                 if (val) {
-                    const isCorrect = val.toLowerCase() === ex.answer.toLowerCase();
-                    const prev = userAnswersMap[ex.id];
-
-                    if (!prev || !prev.isCorrect) {
-                        if (isCorrect) {
-                            score += 10;
-                        }
-                    }
-
-                    userAnswersMap[ex.id] = {
-                        answer: val,
-                        isChecked: true,
-                        isCorrect: isCorrect
-                    };
+                    gradeExercise(cat, subcat, ex, val);
                     checkedCount++;
                 }
             });
@@ -737,17 +953,23 @@
         }
 
         // ============================================================
-        // Teacher Room Administration Logic
+        // Lærerrom
         // ============================================================
+        function getTeacherSub() {
+            const cat = categories.find(c => c.id === teacherCatId);
+            return cat ? (cat.subcategories || []).find(s => s.id === teacherSubcatId) || null : null;
+        }
+
         function renderTeacherRoom() {
+            ensureValidSelection();
             const catSelect = document.getElementById('teacherCategorySelect');
             const subcatSelect = document.getElementById('teacherSubcategorySelect');
 
-            catSelect.innerHTML = categories.map(c => `<option value="${c.id}" ${c.id === teacherCatId ? 'selected' : ''}>${c.title}</option>`).join('');
-            
-            const currentCat = categories.find(c => c.id === teacherCatId) || categories[0];
-            if (currentCat && currentCat.subcategories) {
-                subcatSelect.innerHTML = currentCat.subcategories.map(s => `<option value="${s.id}" ${s.id === teacherSubcatId ? 'selected' : ''}>${s.title}</option>`).join('');
+            catSelect.innerHTML = categories.map(c => `<option value="${escapeHtml(c.id)}" ${c.id === teacherCatId ? 'selected' : ''}>${escapeHtml(c.title)}</option>`).join('');
+
+            const currentCat = categories.find(c => c.id === teacherCatId);
+            if (currentCat && currentCat.subcategories.length > 0) {
+                subcatSelect.innerHTML = currentCat.subcategories.map(s => `<option value="${escapeHtml(s.id)}" ${s.id === teacherSubcatId ? 'selected' : ''}>${escapeHtml(s.title)}</option>`).join('');
             } else {
                 subcatSelect.innerHTML = '<option value="">Ingen underkategorier</option>';
             }
@@ -757,12 +979,7 @@
 
         function onTeacherCategoryChange(catId) {
             teacherCatId = catId;
-            const cat = categories.find(c => c.id === catId);
-            if (cat && cat.subcategories && cat.subcategories.length > 0) {
-                teacherSubcatId = cat.subcategories[0].id;
-            } else {
-                teacherSubcatId = null;
-            }
+            teacherSubcatId = null; // ensureValidSelection velger første underkategori
             renderTeacherRoom();
         }
 
@@ -773,8 +990,7 @@
 
         function renderTeacherExerciseTable() {
             const tbody = document.getElementById('teacherExerciseTableBody');
-            const cat = categories.find(c => c.id === teacherCatId);
-            const sub = cat ? (cat.subcategories || []).find(s => s.id === teacherSubcatId) : null;
+            const sub = getTeacherSub();
 
             if (!sub || !sub.exercises || sub.exercises.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">Ingen oppgaver funnet her.</td></tr>';
@@ -784,13 +1000,13 @@
             tbody.innerHTML = sub.exercises.map((ex, idx) => `
                 <tr class="hover:bg-slate-50/80">
                     <td class="p-3 font-bold text-slate-400">${idx + 1}</td>
-                    <td class="p-3 font-medium text-slate-800">${ex.prompt}</td>
-                    <td class="p-3 font-bold text-emerald-700">${ex.answer}</td>
+                    <td class="p-3 font-medium text-slate-800">${escapeHtml(ex.prompt)}</td>
+                    <td class="p-3 font-bold text-emerald-700">${escapeHtml(ex.answer)}</td>
                     <td class="p-3 text-right space-x-1">
-                        <button onclick="openExerciseModal(${ex.id})" class="text-indigo-600 hover:text-indigo-800 p-1.5 font-bold">
+                        <button onclick="openExerciseModal(${jsArg(ex.id)})" class="text-indigo-600 hover:text-indigo-800 p-1.5 font-bold">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button onclick="deleteExercise(${ex.id})" class="text-rose-600 hover:text-rose-800 p-1.5 font-bold">
+                        <button onclick="deleteExercise(${jsArg(ex.id)})" class="text-rose-600 hover:text-rose-800 p-1.5 font-bold">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>
@@ -818,8 +1034,7 @@
                 modalHint.value = "";
             } else {
                 modalTitle.innerText = "Rediger oppgave";
-                const cat = categories.find(c => c.id === teacherCatId);
-                const sub = cat ? cat.subcategories.find(s => s.id === teacherSubcatId) : null;
+                const sub = getTeacherSub();
                 const ex = sub ? sub.exercises.find(e => e.id === exId) : null;
 
                 if (ex) {
@@ -827,13 +1042,18 @@
                     modalPrompt.value = ex.prompt;
                     modalAnswer.value = ex.answer;
                     modalOptions.value = ex.options ? ex.options.join(', ') : '';
-                    modalHint.value = ex.hint || '';
+                    modalHint.value = ex.explanation || ex.hint || '';
                 }
             }
         }
 
         function closeExerciseModal() {
             document.getElementById('exerciseModal').classList.add('hidden');
+        }
+
+        function nextExerciseId(sub) {
+            const nums = sub.exercises.map(e => Number(e.id)).filter(n => Number.isFinite(n));
+            return (nums.length ? Math.max(...nums) : 0) + 1;
         }
 
         function saveExercise(event) {
@@ -846,49 +1066,43 @@
 
             const options = optionsRaw ? optionsRaw.split(',').map(s => s.trim()).filter(Boolean) : null;
 
-            const cat = categories.find(c => c.id === teacherCatId);
-            const sub = cat ? cat.subcategories.find(s => s.id === teacherSubcatId) : null;
-
+            const sub = getTeacherSub();
             if (!sub) return;
 
             if (exId === 'new') {
-                const newEx = {
-                    id: Date.now(),
-                    prompt,
-                    answer,
-                    options,
-                    hint
-                };
+                const newEx = { id: nextExerciseId(sub), prompt, answer, altAnswers: [], explanation: hint };
+                if (sub.baseType) newEx.type = sub.baseType;
+                if (options) newEx.options = options;
                 sub.exercises.push(newEx);
             } else {
-                const ex = sub.exercises.find(e => e.id == exId);
+                const ex = sub.exercises.find(e => String(e.id) === exId);
                 if (ex) {
                     ex.prompt = prompt;
                     ex.answer = answer;
-                    ex.options = options;
-                    ex.hint = hint;
+                    if (options) ex.options = options; else delete ex.options;
+                    ex.explanation = hint;
+                    delete ex.hint;
                 }
             }
 
             saveToLocalStorage();
             closeExerciseModal();
             renderApp();
-            showToast('Oppgave lagret lokalt!', 'success');
+            showToast('Oppgave lagret lokalt. Eksporter JSON og lim inn i Gisten for å gjøre det permanent.', 'success');
         }
 
         function deleteExercise(exId) {
-            const cat = categories.find(c => c.id === teacherCatId);
-            const sub = cat ? cat.subcategories.find(s => s.id === teacherSubcatId) : null;
+            const sub = getTeacherSub();
             if (!sub) return;
 
             sub.exercises = sub.exercises.filter(e => e.id !== exId);
             saveToLocalStorage();
             renderApp();
-            showToast('Oppgave slettet!', 'info');
+            showToast('Oppgave slettet lokalt. Eksporter JSON og lim inn i Gisten for å gjøre det permanent.', 'info');
         }
 
         // ============================================================
-        // JSON Import & Export Utilities
+        // JSON Import & Export
         // ============================================================
         function exportJson() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(categories, null, 2));
@@ -907,33 +1121,32 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (Array.isArray(importedData)) {
-                        categories = importedData;
-                        saveToLocalStorage();
-                        renderApp();
-                        showToast('Importerte JSON-oppgaver vellykket!', 'success');
-                    } else {
-                        showToast('Ugyldig JSON-format.', 'error');
-                    }
+                    const result = normalizeData(JSON.parse(e.target.result));
+                    categories = result.cats;
+                    saveToLocalStorage();
+                    renderApp();
+                    showToast('Importerte ' + countExercises(categories) + ' oppgaver'
+                        + (result.skipped ? ` (${result.skipped} ugyldige hoppet over)` : '') + '.', 'success');
                 } catch (err) {
-                    showToast('Feil ved lesing av JSON-fil.', 'error');
+                    showToast('Feil ved lesing av JSON-fil: ' + err.message, 'error');
                 }
+                event.target.value = '';
             };
             reader.readAsText(file);
         }
 
+        let toastTimer = null;
         function showToast(msg, type = 'info') {
             const toast = document.getElementById('toastMessage');
             const toastText = document.getElementById('toastText');
-            const toastIcon = document.getElementById('toastIcon');
 
             toastText.innerText = msg;
             toast.classList.remove('hidden');
 
-            setTimeout(() => {
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
                 toast.classList.add('hidden');
-            }, 3000);
+            }, type === 'error' ? 7000 : 3500);
         }
     </script>
     <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
