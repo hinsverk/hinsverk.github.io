@@ -602,7 +602,11 @@
             const levels = [];
 
             const toInt = (v, def) => {
-                const n = parseInt(String(v === null || v === undefined ? '' : v).trim(), 10);
+                // Google Sheets (norsk språk) kan eksportere minus som «−» (U+2212) eller «–»; gjør om til vanlig «-»
+                const cleaned = String(v === null || v === undefined ? '' : v)
+                    .replace(/[\u2212\u2012\u2013\u2014]/g, '-')
+                    .replace(/[\s\u00A0]/g, '');
+                const n = parseInt(cleaned, 10);
                 return Number.isNaN(n) ? def : n;
             };
             const hasValue = (v) => v !== null && v !== undefined && String(v).trim() !== '';
