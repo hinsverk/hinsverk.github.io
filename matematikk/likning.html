@@ -83,7 +83,11 @@
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between overflow-x-hidden">
 
     <header class="p-4 bg-slate-800/80 backdrop-blur border-b border-slate-700 flex flex-wrap justify-between items-center gap-3 z-10 shrink-0">
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="inline-flex items-center gap-2 px-3 py-2 bg-slate-900/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-600 transition text-xs font-semibold shrink-0">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Tilbake til Lærerverktøy</span>
+            </a>
             <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center font-game text-2xl shadow-lg">
                 X
             </div>
@@ -467,7 +471,7 @@
             {
                 id: 701,
                 kategori: "Nivå 7: X i nevner",
-                tittel: "Oppgave 74",
+                tittel: "Oppgave 7",
                 left: { x2: 0, x: 1, inv_x: 1, pos: 0, neg: 0 },
                 right: { x2: 0, x: 0, inv_x: 0, pos: 2, neg: 0 },
                 solution: 1,
@@ -500,53 +504,40 @@
         let showFormalNotation = true;
         let googleSheetUrl = DEFAULT_SHEET_URL;
 
-       async function loadLevelsFromSheet() {
-        updateSourceBadge('loading', 'Sjekker Google Sheets...');
+        async function loadLevelsFromSheet() {
+            updateSourceBadge('loading', 'Sjekker Google Sheets...');
 
-        if (!googleSheetUrl) {
-            useFallbackLevels();
-            return;
-        }
+            if (!googleSheetUrl) {
+                useFallbackLevels();
+                return;
+            }
 
-        try {
-            let fetchUrl = googleSheetUrl.trim();
-            
-            // Hvis det er en vanlig editerings-lenke (ikke /pub?output=csv), gjør den om til CSV-export
-            if (fetchUrl.includes('/edit') || fetchUrl.includes('/sharing')) {
-                const match = fetchUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
-                const gidMatch = fetchUrl.match(/[?&#]gid=([0-9]+)/);
-                if (match && match[1]) {
-                    const sheetId = match[1];
-                    const gid = gidMatch ? gidMatch[1] : null;
-                    fetchUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-                    if (gid) fetchUrl += `&gid=${gid}`;
+            try {
+                let fetchUrl = googleSheetUrl.trim();
+
+                // Vanlig delings-/redigeringslenke -> gjør om til CSV-eksport
+                if (fetchUrl.includes('/edit') || fetchUrl.includes('/sharing')) {
+                    const match = fetchUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                    const gidMatch = fetchUrl.match(/[?&#]gid=([0-9]+)/);
+                    if (match && match[1]) {
+                        fetchUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+                        if (gidMatch) fetchUrl += `&gid=${gidMatch[1]}`;
+                    }
                 }
-            }
 
-            const response = await fetch(fetchUrl);
-            if (!response.ok) throw new Error("Status " + response.status);
-
-            const csvText = await response.text();
-            const parsedLevels = parseCSVToLevels(csvText);
-
-            if (parsedLevels.length > 0) {
-                activeLevels = parsedLevels;
-                updateSourceBadge('sheets', `Google Sheets (${activeLevels.length} oppgaver)`);
-                loadLevel(0);
-            } else {
-                throw new Error("Ingen gyldige rader.");
-            }
-        } catch (err) {
-            updateSourceBadge('fallback', `Innebygd (Feil ved innlasting)`);
-            activeLevels = [...fallbackLevels];
-            loadLevel(0);
-        }
-    }
+                // Unngå at nettleseren viser gammel cachet versjon
+                fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
 
                 const response = await fetch(fetchUrl);
                 if (!response.ok) throw new Error("Status " + response.status);
 
                 const csvText = await response.text();
+
+                // Hvis Google svarer med en HTML-side (f.eks. ikke publisert), er dette ikke CSV
+                if (/^\s*<(!doctype|html)/i.test(csvText)) {
+                    throw new Error("Fikk HTML i stedet for CSV – er arket publisert som CSV?");
+                }
+
                 const parsedLevels = parseCSVToLevels(csvText);
 
                 if (parsedLevels.length > 0) {
@@ -557,148 +548,124 @@
                     throw new Error("Ingen gyldige rader.");
                 }
             } catch (err) {
+                console.error('Feil ved innlasting av Google Sheets:', err);
                 updateSourceBadge('fallback', `Innebygd (Feil ved innlasting)`);
+                showToast('Kunne ikke lese Google Sheets: ' + err.message);
                 activeLevels = [...fallbackLevels];
                 loadLevel(0);
             }
         }
 
-        
+        // Ekte CSV-parser: håndterer felter i anførselstegn (med komma/linjeskift inni)
+        function parseCSVRows(text, delimiter) {
+            const rows = [];
+            let row = [];
+            let field = '';
+            let inQuotes = false;
 
-                const leftX2 = parseInt(getCol('left_x2') || 0, 10);
-                const leftX = parseInt(getCol('left_x') || 0, 10);
-                const leftInvX = parseInt(getCol('left_inv_x') || 0, 10);
-                let leftXDenom = parseInt(getCol('left_x_denom') || 1, 10);
-                const leftPos = parseInt(getCol('left_pos') || 0, 10);
-                const leftNeg = parseInt(getCol('left_neg') || 0, 10);
-
-                const rightX2 = parseInt(getCol('right_x2') || 0, 10);
-                const rightX = parseInt(getCol('right_x') || 0, 10);
-                const rightInvX = parseInt(getCol('right_inv_x') || 0, 10);
-                let rightXDenom = parseInt(getCol('right_x_denom') || 1, 10);
-                const rightPos = parseInt(getCol('right_pos') || 0, 10);
-                const rightNeg = parseInt(getCol('right_neg') || 0, 10);
-
-                let parseInvLeft = leftInvX;
-                let parseInvRight = rightInvX;
-
-                if (getCol('left_x_denom') === 'x') {
-                    parseInvLeft = leftXDenom;
-                    leftXDenom = 1;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (text[i + 1] === '"') { field += '"'; i++; }
+                        else inQuotes = false;
+                    } else {
+                        field += ch;
+                    }
+                } else if (ch === '"') {
+                    inQuotes = true;
+                } else if (ch === delimiter) {
+                    row.push(field); field = '';
+                } else if (ch === '\n' || ch === '\r') {
+                    if (ch === '\r' && text[i + 1] === '\n') i++;
+                    row.push(field); field = '';
+                    rows.push(row); row = [];
+                } else {
+                    field += ch;
                 }
-                if (getCol('right_x_denom') === 'x') {
-                    parseInvRight = rightXDenom;
-                    rightXDenom = 1;
-                }
-
-                const hasValue = (v) => v !== null && v.trim() !== '';
-
-                const leftNumX = getCol('left_num_x');
-                const leftNumC = getCol('left_num_c');
-                const leftDenX = getCol('left_den_x');
-                const leftDenC = getCol('left_den_c');
-
-                let leftComplexFrac = null;
-                if (hasValue(leftNumX) || hasValue(leftNumC)) {
-                    leftComplexFrac = {
-                        num_x: parseInt(leftNumX || 0, 10),
-                        num_c: parseInt(leftNumC || 0, 10),
-                        den_x: parseInt(leftDenX || 1, 10),
-                        den_c: parseInt(leftDenC || 0, 10)
-                    };
-                }
-function parseCSVToLevels(csvText) {
-        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-        if (lines.length < 2) return [];
-
-        const headerLine = lines[0];
-        const commaCount = (headerLine.match(/,/g) || []).length;
-        const semiCount = (headerLine.match(/;/g) || []).length;
-        const delimiter = semiCount > commaCount ? ';' : ',';
-
-        const headers = headerLine.split(delimiter).map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ''));
-        const levels = [];
-
-        for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(delimiter);
-            if (!cols || cols.length < 2) continue;
-
-            const cleanCols = cols.map(c => c.trim().replace(/^["']|["']$/g, ''));
-            const getCol = (name) => {
-                const idx = headers.indexOf(name);
-                return idx !== -1 && cleanCols[idx] !== undefined ? cleanCols[idx] : null;
-            };
-
-            const leftX2 = parseInt(getCol('left_x2') || 0, 10);
-            const leftX = parseInt(getCol('left_x') || 0, 10);
-            const leftInvX = parseInt(getCol('left_inv_x') || 0, 10);
-            let leftXDenom = parseInt(getCol('left_x_denom') || 1, 10);
-            const leftPos = parseInt(getCol('left_pos') || 0, 10);
-            const leftNeg = parseInt(getCol('left_neg') || 0, 10);
-
-            const rightX2 = parseInt(getCol('right_x2') || 0, 10);
-            const rightX = parseInt(getCol('right_x') || 0, 10);
-            const rightInvX = parseInt(getCol('right_inv_x') || 0, 10);
-            let rightXDenom = parseInt(getCol('right_x_denom') || 1, 10);
-            const rightPos = parseInt(getCol('right_pos') || 0, 10);
-            const rightNeg = parseInt(getCol('right_neg') || 0, 10);
-
-            let parseInvLeft = leftInvX;
-            let parseInvRight = rightInvX;
-
-            if (getCol('left_x_denom') === 'x') {
-                parseInvLeft = leftXDenom;
-                leftXDenom = 1;
             }
-            if (getCol('right_x_denom') === 'x') {
-                parseInvRight = rightXDenom;
-                rightXDenom = 1;
-            }
-
-            const hasValue = (v) => v !== null && v !== undefined && v.trim() !== '';
-
-            const leftNumX = getCol('left_num_x');
-            const leftNumC = getCol('left_num_c');
-            const leftDenX = getCol('left_den_x');
-            const leftDenC = getCol('left_den_c');
-
-            let leftComplexFrac = null;
-            if (hasValue(leftNumX) || hasValue(leftNumC) || hasValue(leftDenX) || hasValue(leftDenC)) {
-                leftComplexFrac = {
-                    num_x: parseInt(leftNumX || 0, 10),
-                    num_c: parseInt(leftNumC || 0, 10),
-                    den_x: parseInt(hasValue(leftDenX) ? leftDenX : 1, 10),
-                    den_c: parseInt(leftDenC || 0, 10)
-                };
-            }
-
-            const rightNumX = getCol('right_num_x');
-            const rightNumC = getCol('right_num_c');
-            const rightDenX = getCol('right_den_x');
-            const rightDenC = getCol('right_den_c');
-
-            let rightComplexFrac = null;
-            if (hasValue(rightNumX) || hasValue(rightNumC) || hasValue(rightDenX) || hasValue(rightDenC)) {
-                rightComplexFrac = {
-                    num_x: parseInt(rightNumX || 0, 10),
-                    num_c: parseInt(rightNumC || 0, 10),
-                    den_x: parseInt(hasValue(rightDenX) ? rightDenX : 1, 10),
-                    den_c: parseInt(rightDenC || 0, 10)
-                };
-            }
-
-            levels.push({
-                id: parseInt(getCol('id') || (100 + i), 10),
-                kategori: getCol('kategori') || `Nivå ${i}`,
-                tittel: getCol('tittel') || `Oppgave ${i}`,
-                left: { x2: leftX2, x: leftX, inv_x: parseInvLeft, x_denom: leftXDenom || 1, pos: leftPos, neg: leftNeg, complex_frac: leftComplexFrac },
-                right: { x2: rightX2, x: rightX, inv_x: parseInvRight, x_denom: rightXDenom || 1, pos: rightPos, neg: rightNeg, complex_frac: rightComplexFrac },
-                solution: parseInt(getCol('solution') || 0, 10),
-                forklaring: getCol('forklaring') || ''
-            });
+            if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+            return rows.filter(r => r.some(c => c.trim() !== ''));
         }
-        return levels;
-    }
+
+        function parseCSVToLevels(csvText) {
+            csvText = csvText.replace(/^\uFEFF/, '');
+            const firstLine = csvText.split(/\r?\n/)[0] || '';
+            const commaCount = (firstLine.match(/,/g) || []).length;
+            const semiCount = (firstLine.match(/;/g) || []).length;
+            const delimiter = semiCount > commaCount ? ';' : ',';
+
+            const rows = parseCSVRows(csvText, delimiter);
+            if (rows.length < 2) return [];
+
+            const headers = rows[0].map(h => h.trim().toLowerCase());
+            const levels = [];
+
+            const toInt = (v, def) => {
+                const n = parseInt(String(v === null || v === undefined ? '' : v).trim(), 10);
+                return Number.isNaN(n) ? def : n;
+            };
+            const hasValue = (v) => v !== null && v !== undefined && String(v).trim() !== '';
+
+            for (let i = 1; i < rows.length; i++) {
+                const cols = rows[i].map(c => c.trim());
+                if (cols.length < 2) continue;
+
+                const getCol = (name) => {
+                    const idx = headers.indexOf(name);
+                    return idx !== -1 && cols[idx] !== undefined ? cols[idx] : null;
+                };
+
+                const buildSide = (p) => {
+                    const x = toInt(getCol(p + '_x'), 0);
+                    let xDenom = 1;
+                    let invX = toInt(getCol(p + '_inv_x'), 0);
+                    const denomRaw = getCol(p + '_x_denom');
+                    let xCount = x;
+
+                    if (hasValue(denomRaw) && denomRaw.trim().toLowerCase() === 'x') {
+                        // "x" i nevner-kolonnen = 1/x-ledd i stedet for vanlig x-ledd
+                        invX = Math.max(invX, x || 1);
+                        xCount = 0;
+                    } else {
+                        xDenom = Math.max(1, toInt(denomRaw, 1));
+                    }
+
+                    let complexFrac = null;
+                    const nx = getCol(p + '_num_x'), nc = getCol(p + '_num_c');
+                    const dx = getCol(p + '_den_x'), dc = getCol(p + '_den_c');
+                    if (hasValue(nx) || hasValue(nc) || hasValue(dx) || hasValue(dc)) {
+                        complexFrac = {
+                            num_x: toInt(nx, 0),
+                            num_c: toInt(nc, 0),
+                            den_x: toInt(dx, 1),
+                            den_c: toInt(dc, 0)
+                        };
+                    }
+
+                    return {
+                        x2: toInt(getCol(p + '_x2'), 0),
+                        x: xCount,
+                        inv_x: invX,
+                        x_denom: xDenom,
+                        pos: toInt(getCol(p + '_pos'), 0),
+                        neg: toInt(getCol(p + '_neg'), 0),
+                        complex_frac: complexFrac
+                    };
+                };
+
+                levels.push({
+                    id: toInt(getCol('id'), 100 + i),
+                    kategori: getCol('kategori') || `Nivå ${i}`,
+                    tittel: getCol('tittel') || `Oppgave ${i}`,
+                    left: buildSide('left'),
+                    right: buildSide('right'),
+                    solution: toInt(getCol('solution'), 0),
+                    forklaring: getCol('forklaring') || ''
+                });
+            }
+            return levels;
+        }
 
         function useFallbackLevels() {
             activeLevels = [...fallbackLevels];
@@ -727,6 +694,16 @@ function parseCSVToLevels(csvText) {
             document.getElementById('level-hint').innerText = level.forklaring || '';
 
             gameState = JSON.parse(JSON.stringify(level));
+            ['left', 'right'].forEach(side => {
+                const s = gameState[side];
+                s.x2 = s.x2 || 0;
+                s.x = s.x || 0;
+                s.inv_x = s.inv_x || 0;
+                s.x_denom = s.x_denom || 1;
+                s.pos = s.pos || 0;
+                s.neg = s.neg || 0;
+                if (!s.complex_frac) s.complex_frac = null;
+            });
             stateHistory = [];
             updateUndoButtonState();
             cleanOpposites('left');
@@ -1200,10 +1177,5 @@ function parseCSVToLevels(csvText) {
         };
     </script>
 
-  <!-- TILBAKE-KNAPP -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
-    <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
-</a>
 </body>
 </html>
