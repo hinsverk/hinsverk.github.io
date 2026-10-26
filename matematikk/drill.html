@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="no" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatteDrill & Matteordbok</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            accent: '#6366f1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-effect {
+            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-900 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Header / Bar -->
+    <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('drill')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-500/20">
+                    ∑
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        MatteDrill <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Ungdomstrinn</span>
+                    </h1>
+                </div>
+            </div>
+
+            <!-- User Gamification Stats -->
+            <div class="flex items-center space-x-4">
+                <!-- Gist Sync Status Indicator -->
+                <div id="gist-status" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs border border-slate-700" title="Status for oppgaver fra GitHub Gist">
+                    <i class="fa-solid fa-spinner animate-spin text-slate-400"></i>
+                    <span>Sjekker Gist...</span>
+                </div>
+
+                <!-- Streak Badge -->
+                <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold text-sm" title="Dagsrekke (Streaks)">
+                    <i class="fa-solid font-black fa-fire text-amber-500 animate-pulse"></i>
+                    <span id="streak-count">3</span> <span class="hidden sm:inline text-xs font-normal text-amber-300/80">dager</span>
+                </div>
+
+                <!-- XP Badge -->
+                <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold text-sm" title="Totale Erfaringspoeng">
+                    <i class="fa-solid fa-star text-indigo-400"></i>
+                    <span id="xp-count">240</span> <span class="text-xs text-indigo-400/70">XP</span>
+                </div>
+
+                <!-- Profile Badge -->
+                <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-medium hover:border-indigo-500 transition-colors cursor-pointer" onclick="switchTab('profile')">
+                    <i class="fa-solid fa-user text-sm"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="border-b border-slate-800 bg-slate-900/50">
+        <div class="max-w-6xl mx-auto px-4 flex space-x-2 sm:space-x-8">
+            <button id="nav-drill" onclick="switchTab('drill')" class="py-3 px-3 sm:px-1 border-b-2 border-indigo-500 text-indigo-400 font-medium text-sm flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-bullseye text-indigo-400"></i>
+                <span>Øving & Drill</span>
+            </button>
+            <button id="nav-dictionary" onclick="switchTab('dictionary')" class="py-3 px-3 sm:px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-book-bookmark text-sky-400"></i>
+                <span>Matteordbok</span>
+                <span class="text-[10px] bg-sky-500/20 text-sky-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Ny!</span>
+            </button>
+            <button id="nav-profile" onclick="switchTab('profile')" class="py-3 px-3 sm:px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-trophy text-amber-400"></i>
+                <span>Progresjon</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+        <!-- ================= TAB 1: ØVING OG DRILL ================= -->
+        <section id="tab-drill" class="space-y-6">
+            <!-- Welcome Banner -->
+            <div class="p-6 rounded-2xl glass-card relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                    <div class="space-y-2 max-w-2xl">
+                        <span class="text-xs uppercase tracking-wider font-bold text-indigo-400">Bite-sized økter</span>
+                        <h2 class="text-2xl font-extrabold text-white">Hva vil du mestre i dag?</h2>
+                        <p class="text-slate-400 text-sm">
+                            Ingen Game Over eller tidsfrister. Bruk den tiden du trenger, samle XP og slå opp vanskelige fagord direkte i oppgavene.
+                        </p>
+                    </div>
+                    <button onclick="reloadGistTasks()" class="self-start sm:self-center px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-2 transition-colors shadow-sm" title="Hent inn nyeste oppgaver fra GitHub Gist">
+                        <i class="fa-solid fa-arrows-rotate text-indigo-400"></i>
+                        <span>Oppdater fra Gist</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Categories Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="categories-container">
+                <!-- Dynamic categories injected here -->
+            </div>
+
+            <!-- Interactive Quiz Modal / View (Hidden by default) -->
+            <div id="quiz-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+                <div class="glass-card max-w-2xl w-full rounded-2xl border border-slate-700 p-6 space-y-6 relative shadow-2xl">
+                    <!-- Close button -->
+                    <button onclick="closeQuiz()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+
+                    <!-- Quiz Header -->
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <div class="flex items-center space-x-2">
+                            <span id="quiz-category-badge" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-semibold">Brøk & Desimal</span>
+                            <span class="text-slate-400 text-xs">Oppgave <span id="quiz-current-step">1</span> av <span id="quiz-total-steps">3</span></span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-indigo-400 text-sm font-semibold">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span id="quiz-xp-reward">+10 XP</span>
+                        </div>
+                    </div>
+
+                    <!-- Question Content -->
+                    <div class="space-y-4">
+                        <h3 id="quiz-question" class="text-xl font-bold text-white leading-snug">
+                            <!-- Question text -->
+                        </h3>
+
+                        <!-- Visual Helper Canvas / Container -->
+                        <div id="quiz-visual-aid" class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col items-center justify-center min-h-[140px]">
+                            <!-- Visual aid rendered dynamically -->
+                        </div>
+
+                        <!-- Answer Input Section -->
+                        <div id="quiz-input-container" class="space-y-3 pt-2">
+                            <!-- Injected dynamically based on type (multiple choice or text/number input) -->
+                        </div>
+                    </div>
+
+                    <!-- Hint / Inline Glossary Box -->
+                    <div id="quiz-hint-box" class="hidden p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-sm flex items-start space-x-3">
+                        <i class="fa-solid fa-lightbulb text-amber-400 text-base mt-0.5"></i>
+                        <div id="quiz-hint-text" class="flex-1">
+                            <!-- Hint content -->
+                        </div>
+                    </div>
+
+                    <!-- Feedback Alert Box -->
+                    <div id="quiz-feedback" class="hidden p-4 rounded-xl text-sm font-medium flex items-center space-x-3">
+                        <!-- Success/Error feedback -->
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+                        <button id="quiz-hint-btn" onclick="showQuizHint()" class="px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-medium flex items-center space-x-2 transition-colors">
+                            <i class="fa-regular fa-lightbulb text-amber-400"></i>
+                            <span>Trenger et hint</span>
+                        </button>
+
+                        <button id="quiz-action-btn" onclick="submitQuizAnswer()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2">
+                            <span>Sjekk svar</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= TAB 2: MATTEORDBOK (Nettordbok) ================= -->
+        <section id="tab-dictionary" class="space-y-6 hidden">
+            <!-- Glossary Header -->
+            <div class="p-6 rounded-2xl glass-card space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs uppercase tracking-wider font-bold text-sky-400">Fagbegrep uten murer</span>
+                            <i class="fa-solid fa-spell-check text-sky-400 text-xs"></i>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-white">Visuell Matteordbok</h2>
+                        <p class="text-slate-400 text-sm mt-1">
+                            Glem tørre, vanskelige leksikontekster. Her får du mattebegrep forklart med hverdagsord, eksempler og figurer.
+                        </p>
+                    </div>
+
+                    <!-- Filter Pills -->
+                    <div class="flex flex-wrap gap-1.5" id="dict-category-filters">
+                        <button onclick="filterDictionary('alle')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors" data-cat="alle">
+                            Alle begrep
+                        </button>
+                        <button onclick="filterDictionary('brøk')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="brøk">
+                            Brøk & Desimal
+                        </button>
+                        <button onclick="filterDictionary('prosent')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="prosent">
+                            Prosent & Vekst
+                        </button>
+                        <button onclick="filterDictionary('algebra')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="algebra">
+                            Algebra
+                        </button>
+                        <button onclick="filterDictionary('geometri')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="geometri">
+                            Geometri
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk på fagord (f.eks. 'nevner', 'fellesnevner', 'variabel', 'hypotenus')..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                </div>
+            </div>
+
+            <!-- Terms Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dictionary-grid">
+                <!-- Term Cards injected here dynamically -->
+            </div>
+
+            <!-- Term Detail Modal (With AI simplify feature) -->
+            <div id="dict-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+                <div class="glass-card max-w-2xl w-full rounded-2xl border border-slate-700 p-6 space-y-6 relative max-h-[90vh] overflow-y-auto">
+                    <button onclick="closeDictModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+
+                    <!-- Header -->
+                    <div class="space-y-1 pr-8">
+                        <span id="dict-modal-category" class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-xs font-semibold">Brøk</span>
+                        <h3 id="dict-modal-title" class="text-3xl font-extrabold text-white">
+                            <!-- Term Name -->
+                        </h3>
+                    </div>
+
+                    <!-- Enkel Forklaring (Main Definition) -->
+                    <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between text-sky-400 font-semibold text-xs tracking-wider uppercase">
+                            <span><i class="fa-solid fa-comment-dots mr-1.5"></i>Kort forklart</span>
+                            <!-- Audio Read Out Loud Button -->
+                            <button onclick="readTermAudio()" class="text-slate-400 hover:text-sky-300 text-xs flex items-center space-x-1 bg-slate-800 px-2 py-1 rounded-md border border-slate-700 transition-colors">
+                                <i class="fa-solid fa-volume-high text-sky-400"></i>
+                                <span>Les opp</span>
+                            </button>
+                        </div>
+                        <p id="dict-modal-definition" class="text-slate-200 text-base leading-relaxed">
+                            <!-- Definition -->
+                        </p>
+                    </div>
+
+                    <!-- Hverdagsanalogi / Eksempel -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                            <span>Hverdags-eksempel</span>
+                        </h4>
+                        <div id="dict-modal-analogy" class="p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl text-amber-200/90 text-sm leading-relaxed">
+                            <!-- Metaphor/Real life example -->
+                        </div>
+                    </div>
+
+                    <!-- Visuell Illustrasjon -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-image text-indigo-400"></i>
+                            <span>Visuell figur</span>
+                        </h4>
+                        <div id="dict-modal-visual" class="p-4 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-center min-h-[120px]">
+                            <!-- Dynamic Graphic/SVG -->
+                        </div>
+                    </div>
+
+                    <!-- Dynamic AI Explanation Drawer (Gemini Flash) -->
+                    <div class="border-t border-slate-800 pt-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
+                                <span class="text-sm font-semibold text-slate-200">Sitter du fortsatt fast?</span>
+                            </div>
+                            <button id="ai-explain-btn" onclick="askGeminiToSimplify()" class="px-3.5 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-semibold transition-all flex items-center space-x-1.5">
+                                <span>Spør AI-veileder</span>
+                                <i class="fa-solid fa-bolt text-[10px]"></i>
+                            </button>
+                        </div>
+
+                        <div id="ai-response-box" class="hidden p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-200 text-sm space-y-2">
+                            <div class="flex items-center space-x-2 text-indigo-400 text-xs font-bold uppercase">
+                                <i class="fa-solid fa-robot"></i>
+                                <span>Superenkel forklaring fra Gemini AI:</span>
+                            </div>
+                            <p id="ai-response-text" class="text-slate-200 text-sm leading-relaxed whitespace-pre-line">
+                                Genererer en ny vri...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= TAB 3: PROGRESJON & PROFIL ================= -->
+        <section id="tab-profile" class="space-y-6 hidden">
+            <!-- Stats overview -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="glass-card p-5 rounded-2xl flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-medium">Totalt opptjent</span>
+                        <h4 class="text-2xl font-black text-white" id="profile-xp">240 XP</h4>
+                    </div>
+                </div>
+
+                <div class="glass-card p-5 rounded-2xl flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-medium">Aktiv Streak</span>
+                        <h4 class="text-2xl font-black text-white" id="profile-streak">3 Dager</h4>
+                    </div>
+                </div>
+
+                <div class="glass-card p-5 rounded-2xl flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-medium">Mestrede temaer</span>
+                        <h4 class="text-2xl font-black text-white" id="profile-completed">2 av 4</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unlocks / Rewards Section -->
+            <div class="glass-card p-6 rounded-2xl space-y-4">
+                <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-lock-open text-amber-400"></i>
+                    <span>Belønninger og Opplåsinger</span>
+                </h3>
+                <p class="text-sm text-slate-400">
+                    Bruk din opptjente XP til å låse opp nøytrale fargetemaer for grensesnittet!
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                    <div class="p-4 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm text-white">Midnight Blue</h4>
+                            <span class="text-xs text-emerald-400 font-semibold">Aktiv nå</span>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-indigo-400"></i>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm text-white">Neon Cyberpunk</h4>
+                            <span class="text-xs text-slate-400">Krever 500 XP</span>
+                        </div>
+                        <i class="fa-solid fa-lock text-slate-500"></i>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm text-white">Matrix Emerald</h4>
+                            <span class="text-xs text-slate-400">Krever 1000 XP</span>
+                        </div>
+                        <i class="fa-solid fa-lock text-slate-500"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+        <p>Tilpasset Drille-app for Matematikk • Ungdomstrinn • Lokal lagring & Privacy-First</p>
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        /* ================= STATE & INITIAL DATA ================= */
+        const GIST_URL = "https://gist.githubusercontent.com/hinsverk/f5c167e086b825429868db99fb566f25/raw/mattedrill.json";
+
+        const state = {
+            xp: 240,
+            streak: 3,
+            completedCategories: ['broek_grunnleggende'],
+            activeTab: 'drill',
+            currentQuiz: null,
+            currentQuestionIndex: 0,
+            quizXpGained: 0,
+            activeDictTerm: null,
+            dictFilter: 'alle'
+        };
+
+        // Dictionary / Matteordbok Content
+        const dictionaryData = [
+            {
+                id: 'nevner',
+                term: 'Nevner',
+                category: 'brøk',
+                definition: 'Tallet som står UNDER brøkstreken. Det forteller hvor mange LIKE DELER det hele er delt inn i totalt.',
+                analogy: 'Hvis du skjærer en pizza i 8 like stykker, er 8 nevneren. Nevneren «nevner» navnet på brøkdelene (f.eks. åttedeler).',
+                visualSvg: `
+                    <svg width="220" height="110" viewBox="0 0 220 110" class="mx-auto">
+                        <text x="70" y="45" fill="#f8fafc" font-size="32" font-weight="bold">3</text>
+                        <line x1="40" y1="58" x2="110" y2="58" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+                        <text x="70" y="95" fill="#38bdf8" font-size="36" font-weight="black">4</text>
+                        <path d="M 120 85 L 170 85" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+                        <text x="125" y="75" fill="#38bdf8" font-size="12" font-weight="bold">← NEVNER (Nede)</text>
+                    </svg>
+                `
+            },
+            {
+                id: 'teller',
+                term: 'Teller',
+                category: 'brøk',
+                definition: 'Tallet som står OVER brøkstreken. Det «teller» hvor mange deler du har eller bruker.',
+                analogy: 'Hvis du spiser 3 pizzastykker av de 8, er 3 telleren din.',
+                visualSvg: `
+                    <svg width="220" height="110" viewBox="0 0 220 110" class="mx-auto">
+                        <text x="70" y="45" fill="#38bdf8" font-size="36" font-weight="black">3</text>
+                        <line x1="40" y1="58" x2="110" y2="58" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
+                        <text x="70" y="95" fill="#f8fafc" font-size="32" font-weight="bold">4</text>
+                        <text x="125" y="38" fill="#38bdf8" font-size="12" font-weight="bold">← TELLER (Topp)</text>
+                    </svg>
+                `
+            },
+            {
+                id: 'fellesnevner',
+                term: 'Fellesnevner',
+                category: 'brøk',
+                definition: 'Når to eller flere brøker har DET SAMME tallet under brøkstreken. Du må ha fellesnevner for å plusse eller minusere brøker!',
+                analogy: 'Tenk på det som å snakke samme språk. Du kan ikke enkelt legge sammen 2 epler og 3 appelsiner før du kaller alt for "frukt". Fellesnevner gjør at brøkene måler i samme størrelse.',
+                visualSvg: `
+                    <svg width="240" height="80" viewBox="0 0 240 80" class="mx-auto">
+                        <text x="30" y="50" fill="#f8fafc" font-size="24" font-weight="bold">1/<tspan fill="#38bdf8">6</tspan></text>
+                        <text x="90" y="50" fill="#f8fafc" font-size="24" font-weight="bold">+</text>
+                        <text x="120" y="50" fill="#f8fafc" font-size="24" font-weight="bold">3/<tspan fill="#38bdf8">6</tspan></text>
+                        <text x="180" y="50" fill="#f8fafc" font-size="24" font-weight="bold">=</text>
+                        <text x="210" y="50" fill="#38bdf8" font-size="24" font-weight="bold">4/6</text>
+                    </svg>
+                `
+            },
+            {
+                id: 'prosent',
+                term: 'Prosent (%)',
+                category: 'prosent',
+                definition: 'Betyr bokstavelig talt «for hver hundre» (per centum). Det er en måte å oppgi en del av 100 på.',
+                analogy: '50% betyr 50 ut av 100, som er akkurat det samme som halvparten (1/2).',
+                visualSvg: `
+                    <svg width="200" height="80" viewBox="0 0 200 80" class="mx-auto">
+                        <rect x="20" y="20" width="160" height="35" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                        <rect x="20" y="20" width="80" height="35" rx="8" fill="#6366f1"/>
+                        <text x="50" y="42" fill="#ffffff" font-size="12" font-weight="bold">50%</text>
+                        <text x="120" y="42" fill="#94a3b8" font-size="12" font-weight="bold">50%</text>
+                    </svg>
+                `
+            },
+            {
+                id: 'variabel',
+                term: 'Variabel (f.eks. x eller y)',
+                category: 'algebra',
+                definition: 'En bokstav i matematikken som står i stedet for et tall vi ennå ikke kjenner, eller som kan endre seg.',
+                analogy: 'Tenk på variabelen som en lukket kiste eller en hemmelig gjenstand. Ligningen er et hint om hva som må være oppi kisten.',
+                visualSvg: `
+                    <svg width="200" height="80" viewBox="0 0 200 80" class="mx-auto">
+                        <rect x="30" y="15" width="50" height="50" rx="10" fill="#4f46e5" />
+                        <text x="48" y="48" fill="#ffffff" font-size="28" font-weight="black">x</text>
+                        <text x="95" y="48" fill="#f8fafc" font-size="22" font-weight="bold">+ 5 = 12</text>
+                    </svg>
+                `
+            },
+            {
+                id: 'hypotenus',
+                term: 'Hypotenus',
+                category: 'geometri',
+                definition: 'Den lengste siden i en rettvinklet trekant (trekant med 90-graders hjørne). Den ligger alltid rett overfor den rette vinkelen.',
+                analogy: 'Den skrå «rutsjebanen» i trekanten.',
+                visualSvg: `
+                    <svg width="180" height="100" viewBox="0 0 180 100" class="mx-auto">
+                        <polygon points="30,80 140,80 30,20" fill="none" stroke="#64748b" stroke-width="3"/>
+                        <line x1="30" y1="20" x2="140" y2="80" stroke="#38bdf8" stroke-width="4"/>
+                        <text x="90" y="40" fill="#38bdf8" font-size="11" font-weight="bold">Hypotenus</text>
+                    </svg>
+                `
+            }
+        ];
+
+        // Reserve-oppgaver (Fallback dersom GitHub Gist er tom, offline eller feiler)
+        const fallbackCategories = [
+            {
+                id: 'broek_grunnleggende',
+                tittel: 'Brøk & Desimaltall',
+                beskrivelse: 'Mestrer du sammenhengen mellom 1/2, 0.5 og prosent?',
+                ikon: 'fa-chart-pie',
+                farge: 'from-sky-500 to-indigo-600',
+                paakrevd_xp: 0,
+                oppgaver: [
+                    {
+                        id: 'bd_01',
+                        type: 'flervalg',
+                        sporsmal: 'Hva er brøken <span class="text-sky-400 font-bold underline cursor-pointer" onclick="openDictTerm(\'teller\')">3/4</span> skrevet som desimaltall?',
+                        alternativer: ['0,25', '0,50', '0,75', '1,25'],
+                        fasit: '0,75',
+                        xp: 10,
+                        hint: 'Tenk på penger: Hva utgjør 3 av 4 ti-kroninger (3/4 av en femtilapp)?',
+                        forklaring: '3/4 betyr 3 del på 4, som blir 0,75.',
+                        visuelt: 'broeksirkel',
+                        visuelt_data: { teller: 3, nevner: 4 }
+                    },
+                    {
+                        id: 'bd_02',
+                        type: 'tall_input',
+                        sporsmal: 'Hva må står i teller for at brøken ?/10 skal være like mye som 0,6?',
+                        fasit: 6,
+                        xp: 15,
+                        hint: '0,6 betyr 6 tiendedeler.',
+                        forklaring: '6/10 er nøaktig det samme som 0,6.',
+                        visuelt: 'tallinje'
+                    }
+                ]
+            },
+            {
+                id: 'prosent_grunnleggende',
+                tittel: 'Prosent & Vekst',
+                beskrivelse: 'Finn rabatter og lær hvor mye prosent egentlig utgjør.',
+                ikon: 'fa-percent',
+                farge: 'from-indigo-500 to-purple-600',
+                paakrevd_xp: 0,
+                oppgaver: [
+                    {
+                        id: 'pr_01',
+                        type: 'flervalg',
+                        sporsmal: 'En jakke koster 1000 kr. Den er satt ned med 25%. Hvor mange kroner i rabatt får du?',
+                        alternativer: ['25 kr', '250 kr', '500 kr', '750 kr'],
+                        fasit: '250 kr',
+                        xp: 10,
+                        hint: '25% er det samme som én fjerdedel (1/4) av beløpet.',
+                        forklaring: '25% av 1000 kr = 1000 ÷ 4 = 250 kr.',
+                        visuelt: 'prosentbar'
+                    }
+                ]
+            },
+            {
+                id: 'algebra_grunnleggende',
+                tittel: 'Algebra & Ukjente',
+                beskrivelse: 'Knekk koden med bokstaver i matematikken!',
+                ikon: 'fa-square-root-variable',
+                farge: 'from-emerald-500 to-teal-700',
+                paakrevd_xp: 0,
+                oppgaver: [
+                    {
+                        id: 'alg_01',
+                        type: 'tall_input',
+                        sporsmal: 'Finn <span class="text-sky-400 font-bold underline cursor-pointer" onclick="openDictTerm(\'variabel\')">variabelen x</span> i ligningen: x + 7 = 15',
+                        fasit: 8,
+                        xp: 15,
+                        hint: 'Hvilket tall pluss 7 blir lik 15? Tenk (15 minus 7).',
+                        forklaring: 'Dersom x + 7 = 15, må x = 15 - 7 = 8.',
+                        visuelt: 'ligning'
+                    }
+                ]
+            }
+        ];
+
+        // Aktiv oppgavekatalog (Inneholder Gist-oppgaver når de er tilgjengelige)
+        let drillCategories = [...fallbackCategories];
+
+        /* ================= INITIALIZATION & GIST FETCH ================= */
+        window.onload = async function() {
+            await fetchGistTasks();
+            renderCategories();
+            renderDictionary();
+            updateStatsUI();
+        };
+
+        async function fetchGistTasks() {
+            const statusEl = document.getElementById('gist-status');
+            if (statusEl) {
+                statusEl.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-slate-400"></i><span>Sjekker Gist...</span>`;
+            }
+
+            try {
+                // Tving fersk utgave via cache-busting timestamp
+                const res = await fetch(`${GIST_URL}?t=${Date.now()}`);
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+
+                const data = await res.json();
+                
+                // Håndterer matrise [...], { emner: [...] } eller { categories: [...] }
+                let parsedCategories = null;
+                if (Array.isArray(data)) {
+                    parsedCategories = data;
+                } else if (data && Array.isArray(data.emner)) {
+                    parsedCategories = data.emner;
+                } else if (data && Array.isArray(data.categories)) {
+                    parsedCategories = data.categories;
+                }
+
+                if (parsedCategories && parsedCategories.length > 0) {
+                    const defaultGradients = [
+                        'from-sky-500 to-indigo-600',
+                        'from-indigo-500 to-purple-600',
+                        'from-emerald-500 to-teal-700',
+                        'from-amber-500 to-rose-600',
+                        'from-violet-500 to-fuchsia-600'
+                    ];
+
+                    // Standardiser farger og ikoner dersom de mangler i Gist
+                    drillCategories = parsedCategories.map((cat, idx) => ({
+                        ...cat,
+                        farge: cat.farge || defaultGradients[idx % defaultGradients.length],
+                        ikon: cat.ikon ? (cat.ikon.startsWith('fa-') ? cat.ikon : `fa-${cat.ikon}`) : 'fa-folder-open'
+                    }));
+
+                    if (statusEl) {
+                        statusEl.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium";
+                        statusEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-emerald-400"></i><span>Gist tilkoblet</span>`;
+                    }
+                    return true;
+                }
+            } catch (err) {
+                console.warn("Kunne ikke hente oppgaver fra GitHub Gist (bruker reserve-oppgaver):", err);
+            }
+
+            // Dersom Gist er tom eller ugyldig: bruk reserve-oppgaver
+            drillCategories = [...fallbackCategories];
+            if (statusEl) {
+                statusEl.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium";
+                statusEl.innerHTML = `<i class="fa-solid fa-hard-drive text-amber-400"></i><span>Lokal reserve-modus</span>`;
+            }
+            return false;
+        }
+
+        async function reloadGistTasks() {
+            const success = await fetchGistTasks();
+            renderCategories();
+            if (success) {
+                showFeedbackToast("Oppgaver ble oppdatert fra GitHub Gist!");
+            } else {
+                showFeedbackToast("Gist var tom eller utilgjengelig. Bruker reserve-oppgaver.");
+            }
+        }
+
+        /* ================= TAB NAVIGATION ================= */
+        function switchTab(tabName) {
+            state.activeTab = tabName;
+            
+            // Hide all tabs
+            document.getElementById('tab-drill').classList.add('hidden');
+            document.getElementById('tab-dictionary').classList.add('hidden');
+            document.getElementById('tab-profile').classList.add('hidden');
+
+            // Reset tab button styles
+            const navBtnIds = ['nav-drill', 'nav-dictionary', 'nav-profile'];
+            navBtnIds.forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = "py-3 px-3 sm:px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all";
+            });
+
+            // Show selected tab & set active button style
+            if(tabName === 'drill') {
+                document.getElementById('tab-drill').classList.remove('hidden');
+                document.getElementById('nav-drill').className = "py-3 px-3 sm:px-1 border-b-2 border-indigo-500 text-indigo-400 font-medium text-sm flex items-center space-x-2 transition-all";
+            } else if(tabName === 'dictionary') {
+                document.getElementById('tab-dictionary').classList.remove('hidden');
+                document.getElementById('nav-dictionary').className = "py-3 px-3 sm:px-1 border-b-2 border-sky-500 text-sky-400 font-medium text-sm flex items-center space-x-2 transition-all";
+            } else if(tabName === 'profile') {
+                document.getElementById('tab-profile').classList.remove('hidden');
+                document.getElementById('nav-profile').className = "py-3 px-3 sm:px-1 border-b-2 border-amber-500 text-amber-400 font-medium text-sm flex items-center space-x-2 transition-all";
+            }
+        }
+
+        /* ================= RENDER CATEGORIES (DRILL) ================= */
+        function renderCategories() {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = '';
+
+            drillCategories.forEach(cat => {
+                const card = document.createElement('div');
+                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition-all cursor-pointer flex flex-col justify-between group";
+                card.onclick = () => startQuiz(cat.id);
+
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr ${cat.farge} flex items-center justify-center text-white text-xl shadow-md group-hover:scale-105 transition-transform">
+                            <i class="fa-solid ${cat.ikon}"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white group-hover:text-indigo-300 transition-colors">${cat.tittel}</h3>
+                            <p class="text-xs text-slate-400 leading-relaxed mt-1">${cat.beskrivelse}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                        <span>${cat.oppgaver.length} interaktive oppgaver</span>
+                        <span class="text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform flex items-center space-x-1">
+                            <span>Start økt</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        /* ================= QUIZ ENGINE ================= */
+        function startQuiz(categoryId) {
+            const category = drillCategories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            state.currentQuiz = category;
+            state.currentQuestionIndex = 0;
+            state.quizXpGained = 0;
+
+            document.getElementById('quiz-category-badge').innerText = category.tittel;
+            document.getElementById('quiz-total-steps').innerText = category.oppgaver.length;
+            
+            document.getElementById('quiz-modal').classList.remove('hidden');
+            renderQuizQuestion();
+        }
+
+        function renderQuizQuestion() {
+            const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
+            document.getElementById('quiz-current-step').innerText = state.currentQuestionIndex + 1;
+            document.getElementById('quiz-xp-reward').innerText = `+${q.xp} XP`;
+            document.getElementById('quiz-question').innerHTML = q.sporsmal;
+
+            // Reset states
+            document.getElementById('quiz-hint-box').classList.add('hidden');
+            document.getElementById('quiz-feedback').classList.add('hidden');
+
+            // Render visual aid (støtter både visuelt og visuelt_verktoy)
+            const visualContainer = document.getElementById('quiz-visual-aid');
+            const visualType = q.visuelt || q.visuelt_verktoy;
+            const visualData = q.visuelt_data || q.verktoy_data;
+
+            if (visualType === 'broeksirkel') {
+                const teller = visualData?.teller || 3;
+                const nevner = visualData?.nevner || 4;
+                const percent = Math.round((teller / nevner) * 100);
+                visualContainer.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <svg width="100" height="100" viewBox="0 0 36 36" class="transform -rotate-90">
+                            <path class="text-slate-800" stroke-width="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="text-sky-500" stroke-dasharray="${percent}, 100" stroke-width="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="text-xs text-slate-400">
+                            <span class="text-sky-400 font-bold text-sm">${teller} av ${nevner} deler</span> er markert
+                        </div>
+                    </div>
+                `;
+            } else {
+                visualContainer.innerHTML = `<div class="text-slate-500 text-xs italic"><i class="fa-solid fa-shapes mr-1"></i>Visuell modell lastet inn</div>`;
+            }
+
+            // Render input area
+            const inputContainer = document.getElementById('quiz-input-container');
+            inputContainer.innerHTML = '';
+
+            if (q.type === 'flervalg') {
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-2 gap-3';
+                q.alternativer.forEach(alt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-alt-btn p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-indigo-500 text-slate-200 font-semibold text-sm transition-all text-center';
+                    btn.innerText = alt;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.quiz-alt-btn').forEach(b => b.classList.remove('border-indigo-500', 'bg-indigo-600/20'));
+                        btn.classList.add('border-indigo-500', 'bg-indigo-600/20');
+                        btn.dataset.selected = "true";
+                    };
+                    grid.appendChild(btn);
+                });
+                inputContainer.appendChild(grid);
+            } else if (q.type === 'tall_input') {
+                inputContainer.innerHTML = `
+                    <input type="number" id="quiz-number-answer" placeholder="Skriv inn tallet her..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-center font-bold text-lg text-white focus:outline-none focus:border-indigo-500">
+                `;
+            }
+        }
+
+        function showQuizHint() {
+            const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
+            const hintBox = document.getElementById('quiz-hint-box');
+            document.getElementById('quiz-hint-text').innerText = q.hint;
+            hintBox.classList.remove('hidden');
+        }
+
+        function submitQuizAnswer() {
+            const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
+            let userAnswer = null;
+
+            if (q.type === 'flervalg') {
+                const selectedBtn = document.querySelector('.quiz-alt-btn[data-selected="true"]');
+                if (selectedBtn) userAnswer = selectedBtn.innerText;
+            } else if (q.type === 'tall_input') {
+                const input = document.getElementById('quiz-number-answer');
+                if (input) userAnswer = parseFloat(input.value);
+            }
+
+            if (userAnswer === null || userAnswer === undefined || userAnswer === "") {
+                showFeedback("Vennligst velg eller skriv inn et svar først!", "warning");
+                return;
+            }
+
+            const isCorrect = (userAnswer == q.fasit);
+            const feedbackBox = document.getElementById('quiz-feedback');
+
+            if (isCorrect) {
+                state.xp += q.xp;
+                state.quizXpGained += q.xp;
+                updateStatsUI();
+
+                showFeedback(`Riktig! 🎉 ${q.forklaring}`, "success");
+                
+                setTimeout(() => {
+                    if (state.currentQuestionIndex + 1 < state.currentQuiz.oppgaver.length) {
+                        state.currentQuestionIndex++;
+                        renderQuizQuestion();
+                    } else {
+                        // Quiz completed
+                        closeQuiz();
+                        showFeedbackToast(`Fantastisk! Økten er fullført. Du tjente +${state.quizXpGained} XP!`);
+                    }
+                }, 2000);
+            } else {
+                showFeedback(`Ikke helt riktig ennå. Prøv en gang til eller trykk på hint!`, "error");
+            }
+        }
+
+        function showFeedback(msg, type) {
+            const box = document.getElementById('quiz-feedback');
+            box.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-300', 'bg-rose-500/20', 'text-rose-300', 'bg-amber-500/20', 'text-amber-300');
+            
+            if (type === 'success') {
+                box.classList.add('bg-emerald-500/20', 'text-emerald-300');
+                box.innerHTML = `<i class="fa-solid fa-circle-check text-lg"></i> <span>${msg}</span>`;
+            } else if (type === 'error') {
+                box.classList.add('bg-rose-500/20', 'text-rose-300');
+                box.innerHTML = `<i class="fa-solid fa-circle-xmark text-lg"></i> <span>${msg}</span>`;
+            } else {
+                box.classList.add('bg-amber-500/20', 'text-amber-300');
+                box.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-lg"></i> <span>${msg}</span>`;
+            }
+        }
+
+        function closeQuiz() {
+            document.getElementById('quiz-modal').classList.add('hidden');
+        }
+
+
+        /* ================= DICTIONARY / MATTEORDBOK ENGINE ================= */
+        function renderDictionary() {
+            const grid = document.getElementById('dictionary-grid');
+            grid.innerHTML = '';
+
+            const filtered = dictionaryData.filter(item => {
+                const matchesCat = (state.dictFilter === 'alle' || item.category === state.dictFilter);
+                return matchesCat;
+            });
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-sky-500/50 transition-all cursor-pointer space-y-3 group";
+                card.onclick = () => openDictModal(item.id);
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold uppercase tracking-wider">${item.category}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-500 group-hover:text-sky-400 transition-colors"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-xl text-white group-hover:text-sky-300 transition-colors">${item.term}</h3>
+                        <p class="text-slate-400 text-xs line-clamp-2 mt-1 leading-relaxed">${item.definition}</p>
+                    </div>
+                    <div class="pt-2 flex items-center space-x-1.5 text-xs text-sky-400 font-medium">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Les full forklaring & figurer</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterDictionary(cat) {
+            state.dictFilter = cat;
+            document.querySelectorAll('.dict-filter-btn').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors";
+                } else {
+                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
+                }
+            });
+            renderDictionary();
+        }
+
+        function searchDictionary() {
+            const query = document.getElementById('dict-search-input').value.toLowerCase();
+            const grid = document.getElementById('dictionary-grid');
+            grid.innerHTML = '';
+
+            const matches = dictionaryData.filter(item => 
+                item.term.toLowerCase().includes(query) || 
+                item.definition.toLowerCase().includes(query)
+            );
+
+            matches.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-sky-500/50 transition-all cursor-pointer space-y-3 group";
+                card.onclick = () => openDictModal(item.id);
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold uppercase tracking-wider">${item.category}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-500 group-hover:text-sky-400 transition-colors"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-xl text-white group-hover:text-sky-300 transition-colors">${item.term}</h3>
+                        <p class="text-slate-400 text-xs line-clamp-2 mt-1 leading-relaxed">${item.definition}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openDictModal(termId) {
+            const item = dictionaryData.find(d => d.id === termId);
+            if (!item) return;
+
+            state.activeDictTerm = item;
+
+            document.getElementById('dict-modal-category').innerText = item.category.toUpperCase();
+            document.getElementById('dict-modal-title').innerText = item.term;
+            document.getElementById('dict-modal-definition').innerText = item.definition;
+            document.getElementById('dict-modal-analogy').innerText = item.analogy;
+            document.getElementById('dict-modal-visual').innerHTML = item.visualSvg;
+
+            // Reset AI box
+            document.getElementById('ai-response-box').classList.add('hidden');
+
+            document.getElementById('dict-modal').classList.remove('hidden');
+        }
+
+        function openDictTerm(termId) {
+            switchTab('dictionary');
+            openDictModal(termId);
+        }
+
+        function closeDictModal() {
+            document.getElementById('dict-modal').classList.add('hidden');
+        }
+
+        /* ================= GEMINI AI INTEGRATION ================= */
+        async function askGeminiToSimplify() {
+            if (!state.activeDictTerm) return;
+
+            const btn = document.getElementById('ai-explain-btn');
+            const responseBox = document.getElementById('ai-response-box');
+            const responseText = document.getElementById('ai-response-text');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> <span>Tenker...</span>`;
+
+            const prompt = `Forklar mattebegrepet "${state.activeDictTerm.term}" på en superenkel, humoristisk og engasjerende måte for en 13-åring som sliter i matte. Bruk en ny og morsom sammenligning fra hverdagen. Maks 3 korte setninger.`;
+
+            try {
+                // Call Gemini 3 Flash API
+                const apiKey = ""; // Runtime automatically injected by Canvas if empty
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                const aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (aiResult) {
+                    responseText.innerText = aiResult;
+                    responseBox.classList.remove('hidden');
+                } else {
+                    responseText.innerText = "Kunne ikke hente AI-forklaring akkurat nå. Prøv igjen om et øyeblikk.";
+                    responseBox.classList.remove('hidden');
+                }
+            } catch (err) {
+                responseText.innerText = "Klarte ikke å koble til AI-veilederen. Sjekk internettforbindelsen din.";
+                responseBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Spør AI-veileder</span> <i class="fa-solid fa-bolt text-[10px]"></i>`;
+            }
+        }
+
+        /* Speech Synthesis / Lydopplesing */
+        function readTermAudio() {
+            if (!state.activeDictTerm) return;
+            const textToRead = `${state.activeDictTerm.term}. ${state.activeDictTerm.definition}`;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop ongoing speech
+                const utterance = new SpeechSynthesisUtterance(textToRead);
+                utterance.lang = 'nb-NO'; // Norwegian Bokmål
+                utterance.rate = 0.9; // Slightly slower for clarity
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("Nettleseren din støtter dessverre ikke direkte lydopplesing.");
+            }
+        }
+
+        /* UI Helpers */
+        function updateStatsUI() {
+            document.getElementById('xp-count').innerText = state.xp;
+            document.getElementById('streak-count').innerText = state.streak;
+            document.getElementById('profile-xp').innerText = `${state.xp} XP`;
+            document.getElementById('profile-streak').innerText = `${state.streak} Dager`;
+        }
+
+        function showFeedbackToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-6 right-6 z-50 glass-card bg-indigo-600/90 text-white px-5 py-3 rounded-xl shadow-2xl border border-indigo-400/30 flex items-center space-x-2 text-sm font-semibold animate-bounce";
+            toast.innerHTML = `<i class="fa-solid fa-trophy text-amber-300"></i> <span>${msg}</span>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
