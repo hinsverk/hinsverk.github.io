@@ -40,14 +40,31 @@
             background-color: #0f172a;
             color: #f8fafc;
             font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
         }
         .glass-card {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .glow-effect {
-            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+        /* Gamification XP float animation */
+        @keyframes xpFloat {
+            0% { opacity: 0; transform: translateY(0) scale(0.6); }
+            30% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+            70% { opacity: 1; transform: translateY(-40px) scale(1.1); }
+            100% { opacity: 0; transform: translateY(-65px) scale(0.9); }
+        }
+        .animate-xp-pop {
+            animation: xpFloat 1.2s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+        }
+        /* Pulse & Glow animations */
+        .flash-xp {
+            animation: flashGlow 0.6s ease-in-out;
+        }
+        @keyframes flashGlow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); background-color: rgba(245, 158, 11, 0.3); }
+            100% { transform: scale(1); }
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
@@ -67,6 +84,9 @@
 </head>
 <body class="min-h-screen flex flex-col bg-slate-900 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
 
+    <!-- Canvas for Confetti visual effects -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+
     <!-- Top Header / Bar -->
     <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -83,27 +103,35 @@
             </div>
 
             <!-- User Gamification Stats -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 sm:space-x-3">
                 <!-- Gist Sync Status Indicator -->
-                <div id="gist-status" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs border border-slate-700" title="Status for oppgaver fra GitHub Gist">
+                <div id="gist-status" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs border border-slate-700" title="Status for oppgaver fra GitHub Gist">
                     <i class="fa-solid fa-spinner animate-spin text-slate-400"></i>
                     <span>Sjekker Gist...</span>
                 </div>
 
+                <!-- Level Badge -->
+                <div id="level-badge-container" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 text-xs font-semibold transition-all" title="Ditt nåværende nivå">
+                    <span id="level-title-badge" class="text-indigo-400 font-bold">Nivå 1</span>
+                    <div class="w-12 h-2 bg-slate-700 rounded-full overflow-hidden hidden sm:block">
+                        <div id="header-level-bar" class="bg-indigo-500 h-full w-0 transition-all duration-500"></div>
+                    </div>
+                </div>
+
                 <!-- Streak Badge -->
-                <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold text-sm" title="Dagsrekke (Streaks)">
-                    <i class="fa-solid font-black fa-fire text-amber-500 animate-pulse"></i>
-                    <span id="streak-count">3</span> <span class="hidden sm:inline text-xs font-normal text-amber-300/80">dager</span>
+                <div id="streak-badge-container" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold text-xs sm:text-sm transition-all" title="Dagsrekke (streak)">
+                    <i class="fa-solid fa-fire text-amber-500"></i>
+                    <span id="streak-count">0</span> <span class="hidden sm:inline text-xs font-normal text-amber-300/80">dager</span>
                 </div>
 
                 <!-- XP Badge -->
-                <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold text-sm" title="Totale Erfaringspoeng">
-                    <i class="fa-solid fa-star text-indigo-400"></i>
-                    <span id="xp-count">240</span> <span class="text-xs text-indigo-400/70">XP</span>
+                <div id="xp-badge-container" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold text-xs sm:text-sm transition-all" title="Totale erfaringspoeng">
+                    <i class="fa-solid fa-star text-amber-400 animate-pulse"></i>
+                    <span id="xp-count">0</span> <span class="text-xs text-indigo-400/70">XP</span>
                 </div>
 
                 <!-- Profile Badge -->
-                <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-medium hover:border-indigo-500 transition-colors cursor-pointer" onclick="switchTab('profile')">
+                <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-medium hover:border-indigo-500 transition-colors cursor-pointer" onclick="switchTab('profile')" title="Se din progresjon">
                     <i class="fa-solid fa-user text-sm"></i>
                 </div>
             </div>
@@ -115,12 +143,11 @@
         <div class="max-w-6xl mx-auto px-4 flex space-x-2 sm:space-x-8">
             <button id="nav-drill" onclick="switchTab('drill')" class="py-3 px-3 sm:px-1 border-b-2 border-indigo-500 text-indigo-400 font-medium text-sm flex items-center space-x-2 transition-all">
                 <i class="fa-solid fa-bullseye text-indigo-400"></i>
-                <span>Øving & Drill</span>
+                <span>Øving og drill</span>
             </button>
             <button id="nav-dictionary" onclick="switchTab('dictionary')" class="py-3 px-3 sm:px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all">
                 <i class="fa-solid fa-book-bookmark text-sky-400"></i>
                 <span>Matteordbok</span>
-                <span class="text-[10px] bg-sky-500/20 text-sky-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Ny!</span>
             </button>
             <button id="nav-profile" onclick="switchTab('profile')" class="py-3 px-3 sm:px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all">
                 <i class="fa-solid fa-trophy text-amber-400"></i>
@@ -139,13 +166,13 @@
                 <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                     <div class="space-y-2 max-w-2xl">
-                        <span class="text-xs uppercase tracking-wider font-bold text-indigo-400">Bite-sized økter</span>
+                        <span class="text-xs uppercase tracking-wider font-bold text-indigo-400">Korte og effektive økter</span>
                         <h2 class="text-2xl font-extrabold text-white">Hva vil du mestre i dag?</h2>
                         <p class="text-slate-400 text-sm">
-                            Ingen Game Over eller tidsfrister. Bruk den tiden du trenger, samle XP og slå opp vanskelige fagord direkte i oppgavene.
+                            Bruk den tiden du trenger, samle XP og slå opp vanskelige fagord direkte i oppgavene. Trykk Enter for rask innlevering!
                         </p>
                     </div>
-                    <button onclick="reloadGistTasks()" class="self-start sm:self-center px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-2 transition-colors shadow-sm" title="Hent inn nyeste oppgaver fra GitHub Gist">
+                    <button onclick="reloadGistTasks()" class="self-start sm:self-center px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-2 transition-colors shadow-sm" title="Hent nyeste oppgaver fra GitHub Gist">
                         <i class="fa-solid fa-arrows-rotate text-indigo-400"></i>
                         <span>Oppdater fra Gist</span>
                     </button>
@@ -157,7 +184,7 @@
                 <!-- Dynamic categories injected here -->
             </div>
 
-            <!-- Interactive Quiz Modal / View (Hidden by default) -->
+            <!-- Interactive Quiz Modal / View -->
             <div id="quiz-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
                 <div class="glass-card max-w-2xl w-full rounded-2xl border border-slate-700 p-6 space-y-6 relative shadow-2xl">
                     <!-- Close button -->
@@ -168,12 +195,17 @@
                     <!-- Quiz Header -->
                     <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                         <div class="flex items-center space-x-2">
-                            <span id="quiz-category-badge" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-semibold">Brøk & Desimal</span>
+                            <span id="quiz-category-badge" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-semibold">Brøk og desimal</span>
                             <span class="text-slate-400 text-xs">Oppgave <span id="quiz-current-step">1</span> av <span id="quiz-total-steps">3</span></span>
                         </div>
-                        <div class="flex items-center space-x-1 text-indigo-400 text-sm font-semibold">
-                            <i class="fa-solid fa-bolt"></i>
-                            <span id="quiz-xp-reward">+10 XP</span>
+                        <div class="flex items-center space-x-2">
+                            <span id="quiz-streak-combo" class="hidden text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">
+                                🔥 2 på rad!
+                            </span>
+                            <div class="flex items-center space-x-1 text-indigo-400 text-sm font-semibold">
+                                <i class="fa-solid fa-bolt"></i>
+                                <span id="quiz-xp-reward">+10 XP</span>
+                            </div>
                         </div>
                     </div>
 
@@ -184,26 +216,26 @@
                         </h3>
 
                         <!-- Visual Helper Canvas / Container -->
-                        <div id="quiz-visual-aid" class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col items-center justify-center min-h-[140px]">
+                        <div id="quiz-visual-aid" class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col items-center justify-center min-h-[130px]">
                             <!-- Visual aid rendered dynamically -->
                         </div>
 
                         <!-- Answer Input Section -->
                         <div id="quiz-input-container" class="space-y-3 pt-2">
-                            <!-- Injected dynamically based on type (multiple choice or text/number input) -->
+                            <!-- Injected dynamically based on type -->
                         </div>
                     </div>
 
-                    <!-- Hint / Inline Glossary Box -->
+                    <!-- Hint Box -->
                     <div id="quiz-hint-box" class="hidden p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-sm flex items-start space-x-3">
                         <i class="fa-solid fa-lightbulb text-amber-400 text-base mt-0.5"></i>
-                        <div id="quiz-hint-text" class="flex-1">
+                        <div id="quiz-hint-text" class="flex-1 leading-relaxed">
                             <!-- Hint content -->
                         </div>
                     </div>
 
                     <!-- Feedback Alert Box -->
-                    <div id="quiz-feedback" class="hidden p-4 rounded-xl text-sm font-medium flex items-center space-x-3">
+                    <div id="quiz-feedback" class="hidden p-4 rounded-xl text-sm font-medium flex items-center space-x-3 transition-all">
                         <!-- Success/Error feedback -->
                     </div>
 
@@ -214,8 +246,8 @@
                             <span>Trenger et hint</span>
                         </button>
 
-                        <button id="quiz-action-btn" onclick="submitQuizAnswer()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2">
-                            <span>Sjekk svar</span>
+                        <button id="quiz-action-btn" onclick="submitQuizAnswer()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2 active:scale-95">
+                            <span>Sjekk svar (Enter)</span>
                             <i class="fa-solid fa-arrow-right text-xs"></i>
                         </button>
                     </div>
@@ -224,32 +256,32 @@
         </section>
 
 
-        <!-- ================= TAB 2: MATTEORDBOK (Nettordbok) ================= -->
+        <!-- ================= TAB 2: MATTEORDBOK ================= -->
         <section id="tab-dictionary" class="space-y-6 hidden">
             <!-- Glossary Header -->
             <div class="p-6 rounded-2xl glass-card space-y-4">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <div class="flex items-center space-x-2">
-                            <span class="text-xs uppercase tracking-wider font-bold text-sky-400">Fagbegrep uten murer</span>
+                            <span class="text-xs uppercase tracking-wider font-bold text-sky-400">Fagbegreper enkelt forklart</span>
                             <i class="fa-solid fa-spell-check text-sky-400 text-xs"></i>
                         </div>
-                        <h2 class="text-2xl font-extrabold text-white">Visuell Matteordbok</h2>
+                        <h2 class="text-2xl font-extrabold text-white">Visuell matteordbok</h2>
                         <p class="text-slate-400 text-sm mt-1">
-                            Glem tørre, vanskelige leksikontekster. Her får du mattebegrep forklart med hverdagsord, eksempler og figurer.
+                            Glem tørre leksikontekster. Her får du mattebegreper forklart med hverdagsord, eksempler og figurer.
                         </p>
                     </div>
 
                     <!-- Filter Pills -->
                     <div class="flex flex-wrap gap-1.5" id="dict-category-filters">
                         <button onclick="filterDictionary('alle')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors" data-cat="alle">
-                            Alle begrep
+                            Alle begreper
                         </button>
                         <button onclick="filterDictionary('brøk')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="brøk">
-                            Brøk & Desimal
+                            Brøk og desimal
                         </button>
                         <button onclick="filterDictionary('prosent')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="prosent">
-                            Prosent & Vekst
+                            Prosent og vekst
                         </button>
                         <button onclick="filterDictionary('algebra')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="algebra">
                             Algebra
@@ -263,7 +295,7 @@
                 <!-- Search Input -->
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk på fagord (f.eks. 'nevner', 'fellesnevner', 'variabel', 'hypotenus')..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk etter fagord (f.eks. «nevner», «fellesnevner», «variabel», «hypotenus»)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
                 </div>
             </div>
 
@@ -272,7 +304,7 @@
                 <!-- Term Cards injected here dynamically -->
             </div>
 
-            <!-- Term Detail Modal (With AI simplify feature) -->
+            <!-- Term Detail Modal -->
             <div id="dict-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
                 <div class="glass-card max-w-2xl w-full rounded-2xl border border-slate-700 p-6 space-y-6 relative max-h-[90vh] overflow-y-auto">
                     <button onclick="closeDictModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors">
@@ -281,18 +313,17 @@
 
                     <!-- Header -->
                     <div class="space-y-1 pr-8">
-                        <span id="dict-modal-category" class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-xs font-semibold">Brøk</span>
+                        <span id="dict-modal-category" class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-xs font-semibold">BRØK</span>
                         <h3 id="dict-modal-title" class="text-3xl font-extrabold text-white">
                             <!-- Term Name -->
                         </h3>
                     </div>
 
-                    <!-- Enkel Forklaring (Main Definition) -->
+                    <!-- Main Definition -->
                     <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between text-sky-400 font-semibold text-xs tracking-wider uppercase">
                             <span><i class="fa-solid fa-comment-dots mr-1.5"></i>Kort forklart</span>
-                            <!-- Audio Read Out Loud Button -->
-                            <button onclick="readTermAudio()" class="text-slate-400 hover:text-sky-300 text-xs flex items-center space-x-1 bg-slate-800 px-2 py-1 rounded-md border border-slate-700 transition-colors">
+                            <button onclick="readTermAudio()" class="text-slate-400 hover:text-sky-300 text-xs flex items-center space-x-1 bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700 transition-colors">
                                 <i class="fa-solid fa-volume-high text-sky-400"></i>
                                 <span>Les opp</span>
                             </button>
@@ -302,29 +333,29 @@
                         </p>
                     </div>
 
-                    <!-- Hverdagsanalogi / Eksempel -->
+                    <!-- Metaphor/Example -->
                     <div class="space-y-2">
                         <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400 flex items-center space-x-1.5">
                             <i class="fa-solid fa-lightbulb text-amber-400"></i>
-                            <span>Hverdags-eksempel</span>
+                            <span>Hverdagseksempel</span>
                         </h4>
                         <div id="dict-modal-analogy" class="p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl text-amber-200/90 text-sm leading-relaxed">
-                            <!-- Metaphor/Real life example -->
+                            <!-- Example -->
                         </div>
                     </div>
 
-                    <!-- Visuell Illustrasjon -->
+                    <!-- Visual Graphic -->
                     <div class="space-y-2">
                         <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400 flex items-center space-x-1.5">
                             <i class="fa-solid fa-image text-indigo-400"></i>
                             <span>Visuell figur</span>
                         </h4>
                         <div id="dict-modal-visual" class="p-4 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-center min-h-[120px]">
-                            <!-- Dynamic Graphic/SVG -->
+                            <!-- Dynamic SVG -->
                         </div>
                     </div>
 
-                    <!-- Dynamic AI Explanation Drawer (Gemini Flash) -->
+                    <!-- AI Assistant -->
                     <div class="border-t border-slate-800 pt-4 space-y-3">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
@@ -340,7 +371,7 @@
                         <div id="ai-response-box" class="hidden p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-200 text-sm space-y-2">
                             <div class="flex items-center space-x-2 text-indigo-400 text-xs font-bold uppercase">
                                 <i class="fa-solid fa-robot"></i>
-                                <span>Superenkel forklaring fra Gemini AI:</span>
+                                <span>Superenkel forklaring fra AI:</span>
                             </div>
                             <p id="ai-response-text" class="text-slate-200 text-sm leading-relaxed whitespace-pre-line">
                                 Genererer en ny vri...
@@ -354,7 +385,35 @@
 
         <!-- ================= TAB 3: PROGRESJON & PROFIL ================= -->
         <section id="tab-profile" class="space-y-6 hidden">
-            <!-- Stats overview -->
+
+            <!-- Level & Progress Overview Banner -->
+            <div class="p-6 rounded-2xl glass-card space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-indigo-500/20">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-indigo-400 font-bold uppercase tracking-wider">Din mektige status</span>
+                            <h3 class="text-2xl font-black text-white" id="profile-level-title">Nivå 1 • Matte-rekrutt</h3>
+                            <p class="text-xs text-slate-400 mt-1" id="profile-xp-next">Samle XP ved å løse drilleoppgaver for å gå opp i nivå.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- XP Bar -->
+                <div class="space-y-1.5 pt-2">
+                    <div class="flex justify-between text-xs font-semibold text-slate-400">
+                        <span>Fremgang til neste nivå</span>
+                        <span id="profile-xp-progress-text">0 / 50 XP</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                        <div id="profile-xp-bar" class="h-full bg-gradient-to-r from-indigo-500 to-amber-400 w-0 transition-all duration-700"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="glass-card p-5 rounded-2xl flex items-center space-x-4">
                     <div class="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl">
@@ -362,7 +421,7 @@
                     </div>
                     <div>
                         <span class="text-xs text-slate-400 font-medium">Totalt opptjent</span>
-                        <h4 class="text-2xl font-black text-white" id="profile-xp">240 XP</h4>
+                        <h4 class="text-2xl font-black text-white" id="profile-xp">0 XP</h4>
                     </div>
                 </div>
 
@@ -371,8 +430,8 @@
                         <i class="fa-solid fa-fire"></i>
                     </div>
                     <div>
-                        <span class="text-xs text-slate-400 font-medium">Aktiv Streak</span>
-                        <h4 class="text-2xl font-black text-white" id="profile-streak">3 Dager</h4>
+                        <span class="text-xs text-slate-400 font-medium">Aktiv streak</span>
+                        <h4 class="text-2xl font-black text-white" id="profile-streak">0 dager</h4>
                     </div>
                 </div>
 
@@ -381,45 +440,45 @@
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <div>
-                        <span class="text-xs text-slate-400 font-medium">Mestrede temaer</span>
-                        <h4 class="text-2xl font-black text-white" id="profile-completed">2 av 4</h4>
+                        <span class="text-xs text-slate-400 font-medium">Fullførte temaer</span>
+                        <h4 class="text-2xl font-black text-white" id="profile-completed">0 av 3</h4>
                     </div>
                 </div>
             </div>
 
-            <!-- Unlocks / Rewards Section -->
+            <!-- Rewards & Theme Unlocks -->
             <div class="glass-card p-6 rounded-2xl space-y-4">
                 <h3 class="text-lg font-bold text-white flex items-center space-x-2">
                     <i class="fa-solid fa-lock-open text-amber-400"></i>
-                    <span>Belønninger og Opplåsinger</span>
+                    <span>Belønninger og opplåsinger</span>
                 </h3>
                 <p class="text-sm text-slate-400">
-                    Bruk din opptjente XP til å låse opp nøytrale fargetemaer for grensesnittet!
+                    Bruk din opptjente XP til å låse opp stilige fargetemaer for appen!
                 </p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                     <div class="p-4 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-between">
                         <div>
-                            <h4 class="font-bold text-sm text-white">Midnight Blue</h4>
+                            <h4 class="font-bold text-sm text-white">Nattblå (Standard)</h4>
                             <span class="text-xs text-emerald-400 font-semibold">Aktiv nå</span>
                         </div>
                         <i class="fa-solid fa-circle-check text-indigo-400"></i>
                     </div>
 
-                    <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
+                    <div id="theme-cyber" class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
                         <div>
-                            <h4 class="font-bold text-sm text-white">Neon Cyberpunk</h4>
-                            <span class="text-xs text-slate-400">Krever 500 XP</span>
+                            <h4 class="font-bold text-sm text-white">Neon Cyber</h4>
+                            <span class="text-xs text-slate-400">Krever 100 XP</span>
                         </div>
-                        <i class="fa-solid fa-lock text-slate-500"></i>
+                        <i class="fa-solid fa-lock text-slate-500" id="theme-cyber-icon"></i>
                     </div>
 
-                    <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
+                    <div id="theme-matrix" class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
                         <div>
-                            <h4 class="font-bold text-sm text-white">Matrix Emerald</h4>
-                            <span class="text-xs text-slate-400">Krever 1000 XP</span>
+                            <h4 class="font-bold text-sm text-white">Matrise-grønn</h4>
+                            <span class="text-xs text-slate-400">Krever 250 XP</span>
                         </div>
-                        <i class="fa-solid fa-lock text-slate-500"></i>
+                        <i class="fa-solid fa-lock text-slate-500" id="theme-matrix-icon"></i>
                     </div>
                 </div>
             </div>
@@ -429,18 +488,20 @@
 
     <!-- Footer -->
     <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        <p>Tilpasset Drille-app for Matematikk • Ungdomstrinn • Lokal lagring & Privacy-First</p>
+        <p>Tilpasset drilleapp for matematikk • Ungdomstrinn • Ingen registrering kreves</p>
     </footer>
 
     <!-- Application Script -->
     <script>
-        /* ================= STATE & INITIAL DATA ================= */
+        /* ================= STATE & DATA ================= */
         const GIST_URL = "https://gist.githubusercontent.com/hinsverk/f5c167e086b825429868db99fb566f25/raw/mattedrill.json";
 
+        // Initial State - Starts at ZERO as requested
         const state = {
-            xp: 240,
-            streak: 3,
-            completedCategories: ['broek_grunnleggende'],
+            xp: 0,
+            streak: 0,
+            sessionCombo: 0,
+            completedCategories: [],
             activeTab: 'drill',
             currentQuiz: null,
             currentQuestionIndex: 0,
@@ -449,7 +510,16 @@
             dictFilter: 'alle'
         };
 
-        // Dictionary / Matteordbok Content
+        // Levels configuration
+        const LEVELS = [
+            { name: "Matte-rekrutt", minXp: 0, maxXp: 50 },
+            { name: "Tall-jeger", minXp: 50, maxXp: 120 },
+            { name: "Formel-mester", minXp: 120, maxXp: 250 },
+            { name: "Matte-trollmann", minXp: 250, maxXp: 500 },
+            { name: "Matematisk geni", minXp: 500, maxXp: 10000 }
+        ];
+
+        // Dictionary Content
         const dictionaryData = [
             {
                 id: 'nevner',
@@ -462,7 +532,6 @@
                         <text x="70" y="45" fill="#f8fafc" font-size="32" font-weight="bold">3</text>
                         <line x1="40" y1="58" x2="110" y2="58" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
                         <text x="70" y="95" fill="#38bdf8" font-size="36" font-weight="black">4</text>
-                        <path d="M 120 85 L 170 85" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
                         <text x="125" y="75" fill="#38bdf8" font-size="12" font-weight="bold">← NEVNER (Nede)</text>
                     </svg>
                 `
@@ -486,8 +555,8 @@
                 id: 'fellesnevner',
                 term: 'Fellesnevner',
                 category: 'brøk',
-                definition: 'Når to eller flere brøker har DET SAMME tallet under brøkstreken. Du må ha fellesnevner for å plusse eller minusere brøker!',
-                analogy: 'Tenk på det som å snakke samme språk. Du kan ikke enkelt legge sammen 2 epler og 3 appelsiner før du kaller alt for "frukt". Fellesnevner gjør at brøkene måler i samme størrelse.',
+                definition: 'Når to eller flere brøker har DET SAMME tallet under brøkstreken. Du må ha fellesnevner for å plusse eller minuse brøker!',
+                analogy: 'Tenk på det som å snakke samme språk. Du kan ikke enkelt legge sammen 2 epler og 3 appelsiner før du kaller alt for «frukt». Fellesnevner gjør at brøkene måler i samme størrelse.',
                 visualSvg: `
                     <svg width="240" height="80" viewBox="0 0 240 80" class="mx-auto">
                         <text x="30" y="50" fill="#f8fafc" font-size="24" font-weight="bold">1/<tspan fill="#38bdf8">6</tspan></text>
@@ -503,7 +572,7 @@
                 term: 'Prosent (%)',
                 category: 'prosent',
                 definition: 'Betyr bokstavelig talt «for hver hundre» (per centum). Det er en måte å oppgi en del av 100 på.',
-                analogy: '50% betyr 50 ut av 100, som er akkurat det samme som halvparten (1/2).',
+                analogy: '50 % betyr 50 ut av 100, som er akkurat det samme som halvparten (1/2).',
                 visualSvg: `
                     <svg width="200" height="80" viewBox="0 0 200 80" class="mx-auto">
                         <rect x="20" y="20" width="160" height="35" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
@@ -523,7 +592,7 @@
                     <svg width="200" height="80" viewBox="0 0 200 80" class="mx-auto">
                         <rect x="30" y="15" width="50" height="50" rx="10" fill="#4f46e5" />
                         <text x="48" y="48" fill="#ffffff" font-size="28" font-weight="black">x</text>
-                        <text x="95" y="48" fill="#f8fafc" font-size="22" font-weight="bold">+ 5 = 12</text>
+                        <text x="95" y="48" fill="#f8fafc" font-size="22" font-weight="bold">+ 7 = 15</text>
                     </svg>
                 `
             },
@@ -532,7 +601,7 @@
                 term: 'Hypotenus',
                 category: 'geometri',
                 definition: 'Den lengste siden i en rettvinklet trekant (trekant med 90-graders hjørne). Den ligger alltid rett overfor den rette vinkelen.',
-                analogy: 'Den skrå «rutsjebanen» i trekanten.',
+                analogy: 'Den skrå rutsjebanen i trekanten.',
                 visualSvg: `
                     <svg width="180" height="100" viewBox="0 0 180 100" class="mx-auto">
                         <polygon points="30,80 140,80 30,20" fill="none" stroke="#64748b" stroke-width="3"/>
@@ -543,15 +612,14 @@
             }
         ];
 
-        // Reserve-oppgaver (Fallback dersom GitHub Gist er tom, offline eller feiler)
+        // Fallback categories if GitHub Gist is unavailable
         const fallbackCategories = [
             {
                 id: 'broek_grunnleggende',
-                tittel: 'Brøk & Desimaltall',
-                beskrivelse: 'Mestrer du sammenhengen mellom 1/2, 0.5 og prosent?',
+                tittel: 'Brøk og desimaltall',
+                beskrivelse: 'Mestrer du sammenhengen mellom 1/2, 0,5 og prosent?',
                 ikon: 'fa-chart-pie',
                 farge: 'from-sky-500 to-indigo-600',
-                paakrevd_xp: 0,
                 oppgaver: [
                     {
                         id: 'bd_01',
@@ -568,43 +636,41 @@
                     {
                         id: 'bd_02',
                         type: 'tall_input',
-                        sporsmal: 'Hva må står i teller for at brøken ?/10 skal være like mye som 0,6?',
+                        sporsmal: 'Hva må stå i teller for at brøken ?/10 skal være like mye som 0,6?',
                         fasit: 6,
                         xp: 15,
                         hint: '0,6 betyr 6 tiendedeler.',
-                        forklaring: '6/10 er nøaktig det samme som 0,6.',
+                        forklaring: '6/10 er nøyaktig det samme som 0,6.',
                         visuelt: 'tallinje'
                     }
                 ]
             },
             {
                 id: 'prosent_grunnleggende',
-                tittel: 'Prosent & Vekst',
+                tittel: 'Prosent og vekst',
                 beskrivelse: 'Finn rabatter og lær hvor mye prosent egentlig utgjør.',
                 ikon: 'fa-percent',
                 farge: 'from-indigo-500 to-purple-600',
-                paakrevd_xp: 0,
                 oppgaver: [
                     {
                         id: 'pr_01',
                         type: 'flervalg',
-                        sporsmal: 'En jakke koster 1000 kr. Den er satt ned med 25%. Hvor mange kroner i rabatt får du?',
+                        sporsmal: 'En jakke koster 1000 kr. Den er satt ned med 25 %. Hvor mange kroner i rabatt får du?',
                         alternativer: ['25 kr', '250 kr', '500 kr', '750 kr'],
                         fasit: '250 kr',
                         xp: 10,
-                        hint: '25% er det samme som én fjerdedel (1/4) av beløpet.',
-                        forklaring: '25% av 1000 kr = 1000 ÷ 4 = 250 kr.',
+                        hint: '25 % er det samme som én fjerdedel (1/4) av beløpet.',
+                        forklaring: '25 % av 1000 kr = 1000 ÷ 4 = 250 kr.',
                         visuelt: 'prosentbar'
                     }
                 ]
             },
             {
                 id: 'algebra_grunnleggende',
-                tittel: 'Algebra & Ukjente',
+                tittel: 'Algebra og ukjente',
                 beskrivelse: 'Knekk koden med bokstaver i matematikken!',
                 ikon: 'fa-square-root-variable',
                 farge: 'from-emerald-500 to-teal-700',
-                paakrevd_xp: 0,
                 oppgaver: [
                     {
                         id: 'alg_01',
@@ -620,8 +686,59 @@
             }
         ];
 
-        // Aktiv oppgavekatalog (Inneholder Gist-oppgaver når de er tilgjengelige)
         let drillCategories = [...fallbackCategories];
+
+        /* ================= AUDIO SYNTHESIS (WEB AUDIO API) ================= */
+        function playSound(type) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+
+                if (type === 'correct') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16); // G5
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                } else if (type === 'wrong') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, ctx.currentTime);
+                    osc.frequency.setValueAtTime(175, ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.25);
+                } else if (type === 'complete') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * 0.08));
+                        gain.gain.setValueAtTime(0.25, ctx.currentTime + (idx * 0.08));
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (idx * 0.08) + 0.3);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + (idx * 0.08));
+                        osc.stop(ctx.currentTime + (idx * 0.08) + 0.3);
+                    });
+                }
+            } catch (e) {
+                // Audio not allowed or unsupported
+            }
+        }
 
         /* ================= INITIALIZATION & GIST FETCH ================= */
         window.onload = async function() {
@@ -629,6 +746,17 @@
             renderCategories();
             renderDictionary();
             updateStatsUI();
+
+            // Keyboard Enter Listener for Quiz Modal
+            document.addEventListener('keydown', (e) => {
+                const modal = document.getElementById('quiz-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        submitQuizAnswer();
+                    }
+                }
+            });
         };
 
         async function fetchGistTasks() {
@@ -638,13 +766,11 @@
             }
 
             try {
-                // Tving fersk utgave via cache-busting timestamp
                 const res = await fetch(`${GIST_URL}?t=${Date.now()}`);
                 if (!res.ok) throw new Error(`Status ${res.status}`);
 
                 const data = await res.json();
                 
-                // Håndterer matrise [...], { emner: [...] } eller { categories: [...] }
                 let parsedCategories = null;
                 if (Array.isArray(data)) {
                     parsedCategories = data;
@@ -663,7 +789,6 @@
                         'from-violet-500 to-fuchsia-600'
                     ];
 
-                    // Standardiser farger og ikoner dersom de mangler i Gist
                     drillCategories = parsedCategories.map((cat, idx) => ({
                         ...cat,
                         farge: cat.farge || defaultGradients[idx % defaultGradients.length],
@@ -671,7 +796,7 @@
                     }));
 
                     if (statusEl) {
-                        statusEl.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium";
+                        statusEl.className = "hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium";
                         statusEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-emerald-400"></i><span>Gist tilkoblet</span>`;
                     }
                     return true;
@@ -680,10 +805,9 @@
                 console.warn("Kunne ikke hente oppgaver fra GitHub Gist (bruker reserve-oppgaver):", err);
             }
 
-            // Dersom Gist er tom eller ugyldig: bruk reserve-oppgaver
             drillCategories = [...fallbackCategories];
             if (statusEl) {
-                statusEl.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium";
+                statusEl.className = "hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium";
                 statusEl.innerHTML = `<i class="fa-solid fa-hard-drive text-amber-400"></i><span>Lokal reserve-modus</span>`;
             }
             return false;
@@ -693,29 +817,26 @@
             const success = await fetchGistTasks();
             renderCategories();
             if (success) {
-                showFeedbackToast("Oppgaver ble oppdatert fra GitHub Gist!");
+                showToast("Oppgaver oppdatert fra GitHub Gist!");
             } else {
-                showFeedbackToast("Gist var tom eller utilgjengelig. Bruker reserve-oppgaver.");
+                showToast("Kunne ikke koble til Gist. Bruker lokalt reservelager.");
             }
         }
 
-        /* ================= TAB NAVIGATION ================= */
+        /* ================= NAVIGATION ================= */
         function switchTab(tabName) {
             state.activeTab = tabName;
             
-            // Hide all tabs
             document.getElementById('tab-drill').classList.add('hidden');
             document.getElementById('tab-dictionary').classList.add('hidden');
             document.getElementById('tab-profile').classList.add('hidden');
 
-            // Reset tab button styles
             const navBtnIds = ['nav-drill', 'nav-dictionary', 'nav-profile'];
             navBtnIds.forEach(id => {
                 const btn = document.getElementById(id);
                 btn.className = "py-3 px-3 sm:px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium text-sm flex items-center space-x-2 transition-all";
             });
 
-            // Show selected tab & set active button style
             if(tabName === 'drill') {
                 document.getElementById('tab-drill').classList.remove('hidden');
                 document.getElementById('nav-drill').className = "py-3 px-3 sm:px-1 border-b-2 border-indigo-500 text-indigo-400 font-medium text-sm flex items-center space-x-2 transition-all";
@@ -728,17 +849,20 @@
             }
         }
 
-        /* ================= RENDER CATEGORIES (DRILL) ================= */
+        /* ================= RENDER DRILL CATEGORIES ================= */
         function renderCategories() {
             const container = document.getElementById('categories-container');
             container.innerHTML = '';
 
             drillCategories.forEach(cat => {
+                const isCompleted = state.completedCategories.includes(cat.id);
+
                 const card = document.createElement('div');
-                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition-all cursor-pointer flex flex-col justify-between group";
+                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden";
                 card.onclick = () => startQuiz(cat.id);
 
                 card.innerHTML = `
+                    ${isCompleted ? '<div class="absolute top-3 right-3 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 text-xs font-bold flex items-center space-x-1"><i class="fa-solid fa-check"></i><span>Fullført</span></div>' : ''}
                     <div class="space-y-3">
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-tr ${cat.farge} flex items-center justify-center text-white text-xl shadow-md group-hover:scale-105 transition-transform">
                             <i class="fa-solid ${cat.ikon}"></i>
@@ -768,6 +892,7 @@
             state.currentQuiz = category;
             state.currentQuestionIndex = 0;
             state.quizXpGained = 0;
+            state.sessionCombo = 0;
 
             document.getElementById('quiz-category-badge').innerText = category.tittel;
             document.getElementById('quiz-total-steps').innerText = category.oppgaver.length;
@@ -782,11 +907,20 @@
             document.getElementById('quiz-xp-reward').innerText = `+${q.xp} XP`;
             document.getElementById('quiz-question').innerHTML = q.sporsmal;
 
-            // Reset states
+            // Combo counter UI
+            const comboBadge = document.getElementById('quiz-streak-combo');
+            if (state.sessionCombo > 1) {
+                comboBadge.innerText = `🔥 ${state.sessionCombo} på rad!`;
+                comboBadge.classList.remove('hidden');
+            } else {
+                comboBadge.classList.add('hidden');
+            }
+
+            // Reset UI state
             document.getElementById('quiz-hint-box').classList.add('hidden');
             document.getElementById('quiz-feedback').classList.add('hidden');
 
-            // Render visual aid (støtter både visuelt og visuelt_verktoy)
+            // Render Visual Aid
             const visualContainer = document.getElementById('quiz-visual-aid');
             const visualType = q.visuelt || q.visuelt_verktoy;
             const visualData = q.visuelt_data || q.verktoy_data;
@@ -797,20 +931,21 @@
                 const percent = Math.round((teller / nevner) * 100);
                 visualContainer.innerHTML = `
                     <div class="flex items-center space-x-4">
-                        <svg width="100" height="100" viewBox="0 0 36 36" class="transform -rotate-90">
+                        <svg width="90" height="90" viewBox="0 0 36 36" class="transform -rotate-90">
                             <path class="text-slate-800" stroke-width="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                             <path class="text-sky-500" stroke-dasharray="${percent}, 100" stroke-width="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                         </svg>
-                        <div class="text-xs text-slate-400">
-                            <span class="text-sky-400 font-bold text-sm">${teller} av ${nevner} deler</span> er markert
+                        <div class="text-xs text-slate-300">
+                            <span class="text-sky-400 font-bold text-sm block">${teller} av ${nevner} deler</span>
+                            <span>er markert i figuren</span>
                         </div>
                     </div>
                 `;
             } else {
-                visualContainer.innerHTML = `<div class="text-slate-500 text-xs italic"><i class="fa-solid fa-shapes mr-1"></i>Visuell modell lastet inn</div>`;
+                visualContainer.innerHTML = `<div class="text-slate-500 text-xs italic flex items-center space-x-2"><i class="fa-solid fa-shapes text-indigo-400"></i><span>Bruk kunnskapen din til å løse spørsmålet</span></div>`;
             }
 
-            // Render input area
+            // Render Answer Inputs
             const inputContainer = document.getElementById('quiz-input-container');
             inputContainer.innerHTML = '';
 
@@ -819,11 +954,14 @@
                 grid.className = 'grid grid-cols-2 gap-3';
                 q.alternativer.forEach(alt => {
                     const btn = document.createElement('button');
-                    btn.className = 'quiz-alt-btn p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-indigo-500 text-slate-200 font-semibold text-sm transition-all text-center';
+                    btn.className = 'quiz-alt-btn p-3.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-indigo-500 text-slate-200 font-semibold text-sm transition-all text-center focus:outline-none';
                     btn.innerText = alt;
                     btn.onclick = () => {
-                        document.querySelectorAll('.quiz-alt-btn').forEach(b => b.classList.remove('border-indigo-500', 'bg-indigo-600/20'));
-                        btn.classList.add('border-indigo-500', 'bg-indigo-600/20');
+                        document.querySelectorAll('.quiz-alt-btn').forEach(b => {
+                            b.classList.remove('border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300');
+                            delete b.dataset.selected;
+                        });
+                        btn.classList.add('border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300');
                         btn.dataset.selected = "true";
                     };
                     grid.appendChild(btn);
@@ -831,8 +969,13 @@
                 inputContainer.appendChild(grid);
             } else if (q.type === 'tall_input') {
                 inputContainer.innerHTML = `
-                    <input type="number" id="quiz-number-answer" placeholder="Skriv inn tallet her..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-center font-bold text-lg text-white focus:outline-none focus:border-indigo-500">
+                    <input type="number" id="quiz-number-answer" placeholder="Skriv svar her og trykk Enter..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500 shadow-inner">
                 `;
+                // Auto focus
+                setTimeout(() => {
+                    const numInput = document.getElementById('quiz-number-answer');
+                    if (numInput) numInput.focus();
+                }, 100);
             }
         }
 
@@ -855,33 +998,55 @@
                 if (input) userAnswer = parseFloat(input.value);
             }
 
-            if (userAnswer === null || userAnswer === undefined || userAnswer === "") {
-                showFeedback("Vennligst velg eller skriv inn et svar først!", "warning");
+            if (userAnswer === null || userAnswer === undefined || userAnswer === "" || isNaN(userAnswer) && q.type === 'tall_input') {
+                showFeedback("Vennligst skriv inn eller velg et svar først!", "warning");
                 return;
             }
 
             const isCorrect = (userAnswer == q.fasit);
-            const feedbackBox = document.getElementById('quiz-feedback');
 
             if (isCorrect) {
-                state.xp += q.xp;
-                state.quizXpGained += q.xp;
+                state.sessionCombo++;
+                if (state.streak === 0) state.streak = 1;
+
+                // Bonus calculation
+                let earnedXp = q.xp;
+                if (state.sessionCombo > 1) earnedXp += 5; // Combo bonus
+
+                state.xp += earnedXp;
+                state.quizXpGained += earnedXp;
+
+                // Sound & Visual Flash Effects
+                playSound('correct');
+                triggerXpPopAnimation(earnedXp);
                 updateStatsUI();
 
-                showFeedback(`Riktig! 🎉 ${q.forklaring}`, "success");
-                
+                showFeedback(`Riktig svar! 🎉 ${q.forklaring}`, "success");
+
+                // Progress to next question or end
                 setTimeout(() => {
                     if (state.currentQuestionIndex + 1 < state.currentQuiz.oppgaver.length) {
                         state.currentQuestionIndex++;
                         renderQuizQuestion();
                     } else {
-                        // Quiz completed
+                        // Mark category completed
+                        if (!state.completedCategories.includes(state.currentQuiz.id)) {
+                            state.completedCategories.push(state.currentQuiz.id);
+                        }
+                        
                         closeQuiz();
-                        showFeedbackToast(`Fantastisk! Økten er fullført. Du tjente +${state.quizXpGained} XP!`);
+                        playSound('complete');
+                        triggerConfetti();
+                        renderCategories();
+                        updateStatsUI();
+                        showToast(`Fantastisk jobbet! Økten er fullført og du fikk +${state.quizXpGained} XP!`);
                     }
-                }, 2000);
+                }, 1800);
+
             } else {
-                showFeedback(`Ikke helt riktig ennå. Prøv en gang til eller trykk på hint!`, "error");
+                state.sessionCombo = 0;
+                playSound('wrong');
+                showFeedback(`Ikke helt riktig ennå. Prøv igjen eller sjekk et hint!`, "error");
             }
         }
 
@@ -906,14 +1071,91 @@
         }
 
 
-        /* ================= DICTIONARY / MATTEORDBOK ENGINE ================= */
+        /* ================= GAMIFICATION VISUAL EFFECTS ================= */
+        function triggerXpPopAnimation(amount) {
+            const btn = document.getElementById('quiz-action-btn') || document.body;
+            const rect = btn.getBoundingClientRect();
+
+            const pop = document.createElement('div');
+            pop.className = "fixed pointer-events-none text-amber-300 font-black text-2xl z-50 animate-xp-pop flex items-center space-x-1 filter drop-shadow-[0_0_12px_rgba(245,158,11,0.9)]";
+            pop.style.left = `${rect.left + (rect.width / 2) - 40}px`;
+            pop.style.top = `${rect.top - 15}px`;
+            pop.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i><span>+${amount} XP!</span>`;
+            document.body.appendChild(pop);
+
+            // Flash header XP container
+            const xpBadge = document.getElementById('xp-badge-container');
+            if (xpBadge) {
+                xpBadge.classList.add('flash-xp');
+                setTimeout(() => xpBadge.classList.remove('flash-xp'), 600);
+            }
+
+            setTimeout(() => pop.remove(), 1200);
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#6366f1', '#38bdf8', '#f59e0b', '#10b981', '#ec4899'];
+
+            for (let i = 0; i < 70; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + Math.random() * 20,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: -(Math.random() * 8 + 8),
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            let animationFrame;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.25; // Gravity
+                    p.rotation += p.rSpeed;
+
+                    if (p.y < canvas.height + 20) alive = true;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (alive) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+
+            render();
+        }
+
+
+        /* ================= DICTIONARY ENGINE ================= */
         function renderDictionary() {
             const grid = document.getElementById('dictionary-grid');
             grid.innerHTML = '';
 
             const filtered = dictionaryData.filter(item => {
-                const matchesCat = (state.dictFilter === 'alle' || item.category === state.dictFilter);
-                return matchesCat;
+                return (state.dictFilter === 'alle' || item.category === state.dictFilter);
             });
 
             filtered.forEach(item => {
@@ -932,7 +1174,7 @@
                     </div>
                     <div class="pt-2 flex items-center space-x-1.5 text-xs text-sky-400 font-medium">
                         <i class="fa-solid fa-book-open"></i>
-                        <span>Les full forklaring & figurer</span>
+                        <span>Les full forklaring og figurer</span>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -992,9 +1234,7 @@
             document.getElementById('dict-modal-analogy').innerText = item.analogy;
             document.getElementById('dict-modal-visual').innerHTML = item.visualSvg;
 
-            // Reset AI box
             document.getElementById('ai-response-box').classList.add('hidden');
-
             document.getElementById('dict-modal').classList.remove('hidden');
         }
 
@@ -1007,7 +1247,23 @@
             document.getElementById('dict-modal').classList.add('hidden');
         }
 
-        /* ================= GEMINI AI INTEGRATION ================= */
+        /* Speech Synthesis */
+        function readTermAudio() {
+            if (!state.activeDictTerm) return;
+            const textToRead = `${state.activeDictTerm.term}. ${state.activeDictTerm.definition}`;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(textToRead);
+                utterance.lang = 'nb-NO';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                showToast("Nettleseren din støtter dessverre ikke direkte lydopplesing.");
+            }
+        }
+
+        /* AI Simplification Feature */
         async function askGeminiToSimplify() {
             if (!state.activeDictTerm) return;
 
@@ -1018,11 +1274,10 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> <span>Tenker...</span>`;
 
-            const prompt = `Forklar mattebegrepet "${state.activeDictTerm.term}" på en superenkel, humoristisk og engasjerende måte for en 13-åring som sliter i matte. Bruk en ny og morsom sammenligning fra hverdagen. Maks 3 korte setninger.`;
+            const prompt = `Forklar mattebegrepet "${state.activeDictTerm.term}" på en superenkel, morsom og engasjerende måte for en ungdomsskoleelev. Bruk et nytt eksempel fra hverdagen. Maks 3 korte setninger.`;
 
             try {
-                // Call Gemini 3 Flash API
-                const apiKey = ""; // Runtime automatically injected by Canvas if empty
+                const apiKey = ""; // Runtime automatically injected if available
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -1052,39 +1307,60 @@
             }
         }
 
-        /* Speech Synthesis / Lydopplesing */
-        function readTermAudio() {
-            if (!state.activeDictTerm) return;
-            const textToRead = `${state.activeDictTerm.term}. ${state.activeDictTerm.definition}`;
+        /* ================= STATS & LEVEL COMPUTATION ================= */
+        function getCurrentLevel() {
+            return LEVELS.find(l => state.xp >= l.minXp && state.xp < l.maxXp) || LEVELS[LEVELS.length - 1];
+        }
 
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop ongoing speech
-                const utterance = new SpeechSynthesisUtterance(textToRead);
-                utterance.lang = 'nb-NO'; // Norwegian Bokmål
-                utterance.rate = 0.9; // Slightly slower for clarity
-                window.speechSynthesis.speak(utterance);
-            } else {
-                alert("Nettleseren din støtter dessverre ikke direkte lydopplesing.");
+        function updateStatsUI() {
+            const currentLvl = getCurrentLevel();
+            const lvlIndex = LEVELS.indexOf(currentLvl) + 1;
+
+            // Compute progress percentage to next level
+            const xpInLevel = state.xp - currentLvl.minXp;
+            const levelSpan = currentLvl.maxXp - currentLvl.minXp;
+            const progressPercent = Math.min(100, Math.round((xpInLevel / levelSpan) * 100));
+
+            // Header elements
+            document.getElementById('xp-count').innerText = state.xp;
+            document.getElementById('streak-count').innerText = state.streak;
+            document.getElementById('level-title-badge').innerText = `Nivå ${lvlIndex}`;
+            document.getElementById('header-level-bar').style.width = `${progressPercent}%`;
+
+            // Profile elements
+            document.getElementById('profile-xp').innerText = `${state.xp} XP`;
+            document.getElementById('profile-streak').innerText = `${state.streak} dager`;
+            document.getElementById('profile-completed').innerText = `${state.completedCategories.length} av ${drillCategories.length}`;
+            document.getElementById('profile-level-title').innerText = `Nivå ${lvlIndex} • ${currentLvl.name}`;
+            document.getElementById('profile-xp-progress-text').innerText = `${state.xp} / ${currentLvl.maxXp} XP`;
+            document.getElementById('profile-xp-bar').style.width = `${progressPercent}%`;
+
+            // Theme Unlocks check
+            if (state.xp >= 100) {
+                const el = document.getElementById('theme-cyber');
+                if (el) {
+                    el.classList.remove('opacity-60');
+                    el.classList.add('border-indigo-500/30');
+                    document.getElementById('theme-cyber-icon').className = 'fa-solid fa-circle-check text-indigo-400';
+                }
+            }
+            if (state.xp >= 250) {
+                const el = document.getElementById('theme-matrix');
+                if (el) {
+                    el.classList.remove('opacity-60');
+                    el.classList.add('border-emerald-500/30');
+                    document.getElementById('theme-matrix-icon').className = 'fa-solid fa-circle-check text-emerald-400';
+                }
             }
         }
 
-        /* UI Helpers */
-        function updateStatsUI() {
-            document.getElementById('xp-count').innerText = state.xp;
-            document.getElementById('streak-count').innerText = state.streak;
-            document.getElementById('profile-xp').innerText = `${state.xp} XP`;
-            document.getElementById('profile-streak').innerText = `${state.streak} Dager`;
-        }
-
-        function showFeedbackToast(msg) {
+        function showToast(msg) {
             const toast = document.createElement('div');
-            toast.className = "fixed bottom-6 right-6 z-50 glass-card bg-indigo-600/90 text-white px-5 py-3 rounded-xl shadow-2xl border border-indigo-400/30 flex items-center space-x-2 text-sm font-semibold animate-bounce";
+            toast.className = "fixed bottom-6 right-6 z-50 glass-card bg-indigo-600/95 text-white px-5 py-3 rounded-xl shadow-2xl border border-indigo-400/30 flex items-center space-x-2 text-sm font-semibold animate-bounce";
             toast.innerHTML = `<i class="fa-solid fa-trophy text-amber-300"></i> <span>${msg}</span>`;
             document.body.appendChild(toast);
 
-            setTimeout(() => {
-                toast.remove();
-            }, 4000);
+            setTimeout(() => toast.remove(), 4000);
         }
     </script>
 </body>
