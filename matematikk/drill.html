@@ -9,7 +9,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -30,6 +30,7 @@
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
             }
@@ -46,6 +47,14 @@
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Grid background for Ruteark look */
+        .ruteark-bg {
+            background-color: #1e293b;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
         }
         /* Gamification XP float animation */
         @keyframes xpFloat {
@@ -93,7 +102,6 @@
             
             <!-- Venstre side: Tilbake-knapp + Logo -->
             <div class="flex items-center space-x-3 sm:space-x-4">
-                <!-- TILBAKE-KNAPP (Tilpasset slik at den ikke overlapper logo) -->
                 <a href="index.html" class="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-800/90 hover:bg-slate-700 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-lg transition-all font-sans text-xs font-semibold cursor-pointer shrink-0">
                     <i class="fa-solid fa-arrow-left"></i>
                     <span class="hidden sm:inline">Tilbake til Lærerverktøy</span>
@@ -183,7 +191,7 @@
                         </span>
                         <h2 class="text-2xl font-extrabold text-white">Hva vil du mestre i dag?</h2>
                         <p class="text-slate-400 text-sm">
-                            Du kan fortsette direkte der du slapp sist. Samle XP, stig i nivå og slå opp vanskelige fagord underveis!
+                            Du kan fortsette direkte der du slapp sist. Samle XP, stig i nivå og bruk det interaktive rutearket for oppstilt regning!
                         </p>
                     </div>
                     <button onclick="reloadGistTasks()" class="self-start sm:self-center px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-2 transition-colors shadow-sm" title="Hent nyeste oppgaver fra GitHub Gist">
@@ -200,16 +208,16 @@
 
             <!-- Interactive Quiz Modal / View -->
             <div id="quiz-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-                <div class="glass-card max-w-2xl w-full rounded-2xl border border-slate-700 p-6 space-y-6 relative shadow-2xl">
+                <div class="glass-card max-w-2xl w-full rounded-2xl border border-slate-700 p-6 space-y-6 relative shadow-2xl max-h-[92vh] overflow-y-auto">
                     <!-- Close button -->
-                    <button onclick="closeQuiz()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors">
+                    <button onclick="closeQuiz()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors z-10">
                         <i class="fa-solid fa-xmark text-lg"></i>
                     </button>
 
                     <!-- Quiz Header -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-2">
                         <div class="flex items-center space-x-2">
-                            <span id="quiz-category-badge" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-semibold">Brøk og desimal</span>
+                            <span id="quiz-category-badge" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-semibold">Tema</span>
                             <span class="text-slate-400 text-xs">Oppgave <span id="quiz-current-step">1</span> av <span id="quiz-total-steps">3</span></span>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -233,8 +241,8 @@
                             <!-- Question text -->
                         </h3>
 
-                        <!-- Visual Helper Canvas / Container -->
-                        <div id="quiz-visual-aid" class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col items-center justify-center min-h-[130px]">
+                        <!-- Visual Helper Canvas / Container (with Ruteark Support) -->
+                        <div id="quiz-visual-aid" class="p-4 bg-slate-900/90 rounded-2xl border border-slate-800 flex flex-col items-center justify-center min-h-[140px] shadow-inner">
                             <!-- Visual aid rendered dynamically -->
                         </div>
 
@@ -286,7 +294,7 @@
                         </div>
                         <h2 class="text-2xl font-extrabold text-white">Visuell matteordbok</h2>
                         <p class="text-slate-400 text-sm mt-1">
-                            Glem tørre leksikontekster. Her får du mattebegreper forklart med hverdagsord, eksempler og figurer.
+                            Glem tørre leksikontekster. Her får du mattebegreper og regneteknikker forklart med hverdagsord, eksempler og figurer.
                         </p>
                     </div>
 
@@ -294,6 +302,9 @@
                     <div class="flex flex-wrap gap-1.5" id="dict-category-filters">
                         <button onclick="filterDictionary('alle')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors" data-cat="alle">
                             Alle begreper
+                        </button>
+                        <button onclick="filterDictionary('oppstilling')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="oppstilling">
+                            Oppstilt regning
                         </button>
                         <button onclick="filterDictionary('brøk')" class="dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-cat="brøk">
                             Brøk og desimal
@@ -313,7 +324,7 @@
                 <!-- Search Input -->
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk etter fagord (f.eks. «nevner», «fellesnevner», «variabel», «hypotenus»)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk etter fagord (f.eks. «minnetall», «låne», «nevner», «variabel», «hypotenus»)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
                 </div>
             </div>
 
@@ -331,7 +342,7 @@
 
                     <!-- Header -->
                     <div class="space-y-1 pr-8">
-                        <span id="dict-modal-category" class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-xs font-semibold">BRØK</span>
+                        <span id="dict-modal-category" class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-xs font-semibold">KATEGORI</span>
                         <h3 id="dict-modal-title" class="text-3xl font-extrabold text-white">
                             <!-- Term Name -->
                         </h3>
@@ -366,10 +377,10 @@
                     <div class="space-y-2">
                         <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400 flex items-center space-x-1.5">
                             <i class="fa-solid fa-image text-indigo-400"></i>
-                            <span>Visuell figur</span>
+                            <span>Visuell figur / oppstilling</span>
                         </h4>
                         <div id="dict-modal-visual" class="p-4 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-center min-h-[120px]">
-                            <!-- Dynamic SVG -->
+                            <!-- Dynamic SVG or HTML -->
                         </div>
                     </div>
 
@@ -459,7 +470,7 @@
                     </div>
                     <div>
                         <span class="text-xs text-slate-400 font-medium">Fullførte temaer</span>
-                        <h4 class="text-2xl font-black text-white" id="profile-completed">0 av 3</h4>
+                        <h4 class="text-2xl font-black text-white" id="profile-completed">0 av 4</h4>
                     </div>
                 </div>
             </div>
@@ -498,43 +509,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Rewards & Theme Unlocks -->
-            <div class="glass-card p-6 rounded-2xl space-y-4">
-                <h3 class="text-lg font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-lock-open text-amber-400"></i>
-                    <span>Belønninger og opplåsinger</span>
-                </h3>
-                <p class="text-sm text-slate-400">
-                    Bruk din opptjente XP til å låse opp stilige fargetemaer for appen!
-                </p>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                    <div class="p-4 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-sm text-white">Nattblå (Standard)</h4>
-                            <span class="text-xs text-emerald-400 font-semibold">Aktiv nå</span>
-                        </div>
-                        <i class="fa-solid fa-circle-check text-indigo-400"></i>
-                    </div>
-
-                    <div id="theme-cyber" class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-sm text-white">Neon Cyber</h4>
-                            <span class="text-xs text-slate-400">Krever 100 XP</span>
-                        </div>
-                        <i class="fa-solid fa-lock text-slate-500" id="theme-cyber-icon"></i>
-                    </div>
-
-                    <div id="theme-matrix" class="p-4 rounded-xl bg-slate-900 border border-slate-800 opacity-60 flex items-center justify-between">
-                        <div>
-                            <h4 class="font-bold text-sm text-white">Matrise-grønn</h4>
-                            <span class="text-xs text-slate-400">Krever 250 XP</span>
-                        </div>
-                        <i class="fa-solid fa-lock text-slate-500" id="theme-matrix-icon"></i>
-                    </div>
-                </div>
-            </div>
         </section>
 
     </main>
@@ -548,7 +522,7 @@
     <script>
         /* ================= STATE & PERSISTENCE ================= */
         const GIST_URL = "https://gist.githubusercontent.com/hinsverk/f5c167e086b825429868db99fb566f25/raw/mattedrill.json";
-        const STORAGE_KEY = "mattedrill_user_progress_v1";
+        const STORAGE_KEY = "mattedrill_user_progress_v2";
 
         // Application State
         const state = {
@@ -585,7 +559,7 @@
         /* Load state from localStorage */
         function loadState() {
             try {
-                const saved = localStorage.setItem ? localStorage.getItem(STORAGE_KEY) : null;
+                const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     state.xp = parsed.xp || 0;
@@ -651,165 +625,115 @@
         // Dictionary Content
         const dictionaryData = [
             {
-                id: 'nevner',
-                term: 'Nevner',
-                category: 'brøk',
-                definition: 'Tallet som står UNDER brøkstreken. Det forteller hvor mange LIKE DELER det hele er delt inn i totalt.',
-                analogy: 'Hvis du skjærer en pizza i 8 like stykker, er 8 nevneren. Nevneren «nevner» navnet på brøkdelene (f.eks. åttedeler).',
+                id: 'minnetall',
+                term: 'Minnetall',
+                category: 'oppstilling',
+                definition: 'Et lite tall man skriver øverst i kolonnen under oppstilt addisjon eller multiplikasjon når summen blir 10 eller mer.',
+                analogy: 'Tenk på det som et «tilbake-i-lomma»-tall. Hvis 8 + 7 blir 15, beholder du 5 på plassen og putter 1-tallet (tiere) videre i minnet til neste kolonne.',
                 visualSvg: `
-                    <svg width="220" height="110" viewBox="0 0 220 110" class="mx-auto">
-                        <text x="70" y="45" fill="#f8fafc" font-size="32" font-weight="bold">3</text>
-                        <line x1="40" y1="58" x2="110" y2="58" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
-                        <text x="70" y="95" fill="#38bdf8" font-size="36" font-weight="black">4</text>
-                        <text x="125" y="75" fill="#38bdf8" font-size="12" font-weight="bold">← NEVNER (Nede)</text>
-                    </svg>
+                    <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center">
+                        <div class="text-amber-400 font-bold text-xs tracking-widest mb-1">MINNETALL ➜ <span class="bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/40">1</span></div>
+                        <div class="text-xl text-slate-200 tracking-widest">  4 8</div>
+                        <div class="text-xl text-slate-200 tracking-widest">+ 2 7</div>
+                        <div class="border-b-2 border-indigo-400 w-24 mx-auto my-1"></div>
+                        <div class="text-xl text-emerald-400 font-bold tracking-widest">  7 5</div>
+                    </div>
                 `
             },
             {
-                id: 'teller',
-                term: 'Teller',
-                category: 'brøk',
-                definition: 'Tallet som står OVER brøkstreken. Det «teller» hvor mange deler du har eller bruker.',
-                analogy: 'Hvis du spiser 3 pizzastykker av de 8, er 3 telleren din.',
+                id: 'laane',
+                term: 'Låne (Subtraksjon)',
+                category: 'oppstilling',
+                definition: 'Når tallet du skal trekke fra er større enn tallet du har øverst i kolonnen, må du «låne» 1 tier (10) fra kolonnen til venstre.',
+                analogy: 'Hvis du har 2 kr på deg og skal betale 5 kr, veksler du en 10-kroning fra naboen slik at du har 12 kr å ta av.',
                 visualSvg: `
-                    <svg width="220" height="110" viewBox="0 0 220 110" class="mx-auto">
-                        <text x="70" y="45" fill="#38bdf8" font-size="36" font-weight="black">3</text>
-                        <line x1="40" y1="58" x2="110" y2="58" stroke="#64748b" stroke-width="4" stroke-linecap="round" />
-                        <text x="70" y="95" fill="#f8fafc" font-size="32" font-weight="bold">4</text>
-                        <text x="125" y="38" fill="#38bdf8" font-size="12" font-weight="bold">← TELLER (Topp)</text>
-                    </svg>
+                    <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center">
+                        <div class="text-amber-400 font-bold text-xs tracking-widest mb-1">LÅNER 10 ➜ <span class="bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/40">10</span></div>
+                        <div class="text-xl text-slate-200 tracking-widest">  5 2</div>
+                        <div class="text-xl text-slate-200 tracking-widest">- 1 7</div>
+                        <div class="border-b-2 border-indigo-400 w-24 mx-auto my-1"></div>
+                        <div class="text-xl text-emerald-400 font-bold tracking-widest">  3 5</div>
+                    </div>
                 `
             },
             {
-                id: 'fellesnevner',
-                term: 'Fellesnevner',
-                category: 'brøk',
-                definition: 'Når to eller flere brøker har DET SAMME tallet under brøkstreken. Du må ha fellesnevner for å plusse eller minuse brøker!',
-                analogy: 'Tenk på det som å snakke samme språk. Du kan ikke enkelt legge sammen 2 epler og 3 appelsiner før du kaller alt for «frukt». Fellesnevner gjør at brøkene måler i samme størrelse.',
+                id: 'faktor_produkt',
+                term: 'Faktor og produkt',
+                category: 'oppstilling',
+                definition: 'I et gangestykke kalles tallene du ganger sammen for FAKTORER, og svaret kalles PRODUKTET.',
+                analogy: 'Faktor × Faktor = Produkt. (Ingredienser × Ingredienser = Ferdig rett).',
                 visualSvg: `
-                    <svg width="240" height="80" viewBox="0 0 240 80" class="mx-auto">
-                        <text x="30" y="50" fill="#f8fafc" font-size="24" font-weight="bold">1/<tspan fill="#38bdf8">6</tspan></text>
-                        <text x="90" y="50" fill="#f8fafc" font-size="24" font-weight="bold">+</text>
-                        <text x="120" y="50" fill="#f8fafc" font-size="24" font-weight="bold">3/<tspan fill="#38bdf8">6</tspan></text>
-                        <text x="180" y="50" fill="#f8fafc" font-size="24" font-weight="bold">=</text>
-                        <text x="210" y="50" fill="#38bdf8" font-size="24" font-weight="bold">4/6</text>
-                    </svg>
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1">
+                        <div class="text-sm font-bold text-slate-200">
+                            <span class="text-sky-400">6</span> × <span class="text-sky-400">7</span> = <span class="text-emerald-400">42</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 flex justify-center space-x-6">
+                            <span>Faktorer</span>
+                            <span class="text-emerald-400">Produkt</span>
+                        </div>
+                    </div>
                 `
             },
             {
-                id: 'prosent',
-                term: 'Prosent (%)',
-                category: 'prosent',
-                definition: 'Betyr bokstavelig talt «for hver hundre» (per centum). Det er en måte å oppgi en del av 100 på.',
-                analogy: '50 % betyr 50 ut av 100, som er akkurat det samme som halvparten (1/2).',
+                id: 'kvotient',
+                term: 'Kvotient (og dividend)',
+                category: 'oppstilling',
+                definition: 'Svaret du får i et delestykke kalles KVOTIENT. Tallet som deles kalles dividend, og tallet du deler på kalles divisor.',
+                analogy: 'Dividend ÷ Divisor = Kvotient. (12 pizzastykker ÷ 4 personer = 3 stykker per person).',
                 visualSvg: `
-                    <svg width="200" height="80" viewBox="0 0 200 80" class="mx-auto">
-                        <rect x="20" y="20" width="160" height="35" rx="8" fill="#1e293b" stroke="#475569" stroke-width="2"/>
-                        <rect x="20" y="20" width="80" height="35" rx="8" fill="#6366f1"/>
-                        <text x="50" y="42" fill="#ffffff" font-size="12" font-weight="bold">50%</text>
-                        <text x="120" y="42" fill="#94a3b8" font-size="12" font-weight="bold">50%</text>
-                    </svg>
-                `
-            },
-            {
-                id: 'variabel',
-                term: 'Variabel (f.eks. x eller y)',
-                category: 'algebra',
-                definition: 'En bokstav i matematikken som står i stedet for et tall vi ennå ikke kjenner, eller som kan endre seg.',
-                analogy: 'Tenk på variabelen som en lukket kiste eller en hemmelig gjenstand. Ligningen er et hint om hva som må være oppi kisten.',
-                visualSvg: `
-                    <svg width="200" height="80" viewBox="0 0 200 80" class="mx-auto">
-                        <rect x="30" y="15" width="50" height="50" rx="10" fill="#4f46e5" />
-                        <text x="48" y="48" fill="#ffffff" font-size="28" font-weight="black">x</text>
-                        <text x="95" y="48" fill="#f8fafc" font-size="22" font-weight="bold">+ 7 = 15</text>
-                    </svg>
-                `
-            },
-            {
-                id: 'hypotenus',
-                term: 'Hypotenus',
-                category: 'geometri',
-                definition: 'Den lengste siden i en rettvinklet trekant (trekant med 90-graders hjørne). Den ligger alltid rett overfor den rette vinkelen.',
-                analogy: 'Den skrå rutsjebanen i trekanten.',
-                visualSvg: `
-                    <svg width="180" height="100" viewBox="0 0 180 100" class="mx-auto">
-                        <polygon points="30,80 140,80 30,20" fill="none" stroke="#64748b" stroke-width="3"/>
-                        <line x1="30" y1="20" x2="140" y2="80" stroke="#38bdf8" stroke-width="4"/>
-                        <text x="90" y="40" fill="#38bdf8" font-size="11" font-weight="bold">Hypotenus</text>
-                    </svg>
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1">
+                        <div class="text-sm font-bold text-slate-200">
+                            <span class="text-slate-300">20</span> : <span class="text-slate-300">4</span> = <span class="text-amber-400">5</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400">
+                            Svaret (5) er <span class="text-amber-400 font-bold">Kvotienten</span>
+                        </div>
+                    </div>
                 `
             }
         ];
 
-        // Fallback categories if GitHub Gist is unavailable
+        // Fallback categories including standard oppstilt regning
         const fallbackCategories = [
             {
-                id: 'broek_grunnleggende',
-                tittel: 'Brøk og desimaltall',
-                beskrivelse: 'Mestrer du sammenhengen mellom 1/2, 0,5 og prosent?',
-                ikon: 'fa-chart-pie',
-                farge: 'from-sky-500 to-indigo-600',
+                id: 'oppstilling_regnearter',
+                tittel: 'Oppstilt regning (De 4 regneartene)',
+                beskrivelse: 'Mestrer du oppstilling med minnetall, låning, ganger og deling?',
+                ikon: 'fa-calculator',
+                farge: 'from-amber-500 to-indigo-600',
                 oppgaver: [
                     {
-                        id: 'bd_01',
-                        type: 'flervalg',
-                        sporsmal: 'Hva er brøken <span class="text-sky-400 font-bold underline cursor-pointer" onclick="openDictTerm(\'teller\')">3/4</span> skrevet som desimaltall?',
-                        alternativer: ['0,25', '0,50', '0,75', '1,25'],
-                        fasit: '0,75',
-                        xp: 10,
-                        hint: 'Tenk på penger: Hva utgjør 3 av 4 ti-kroninger (3/4 av en femtilapp)?',
-                        forklaring: '3/4 betyr 3 del på 4, som blir 0,75.',
-                        visuelt: 'broeksirkel',
-                        visuelt_data: { teller: 3, nevner: 4 }
+                        id: 'oppst_01',
+                        type: 'tall_input',
+                        sporsmal: 'Regn ut det oppstilte stykket i rutearket:',
+                        fasit: 737,
+                        xp: 15,
+                        hint: 'Husk å legge til minnetallene når du summerer enkeltkolonnene fra høyre (8+9 = 17 -> skriv 7 og 1 i minne).',
+                        forklaring: '458 + 279 = 737.',
+                        visuelt: 'oppstilling',
+                        visuelt_data: { tall1: 458, tall2: 279, operasjon: '+' }
                     },
                     {
-                        id: 'bd_02',
+                        id: 'oppst_02',
                         type: 'tall_input',
-                        sporsmal: 'Hva må stå i teller for at brøken ?/10 skal være like mye som 0,6?',
-                        fasit: 6,
+                        sporsmal: 'Bruk det oppstilte rutearket til å trekke fra 367 fra 842:',
+                        fasit: 475,
                         xp: 15,
-                        hint: '0,6 betyr 6 tiendedeler.',
-                        forklaring: '6/10 er nøyaktig det samme som 0,6.',
-                        visuelt: 'tallinje'
-                    }
-                ]
-            },
-            {
-                id: 'prosent_grunnleggende',
-                tittel: 'Prosent og vekst',
-                beskrivelse: 'Finn rabatter og lær hvor mye prosent egentlig utgjør.',
-                ikon: 'fa-percent',
-                farge: 'from-indigo-500 to-purple-600',
-                oppgaver: [
+                        hint: 'Du må låne en tier fra 4-tallet siden 2 er mindre enn 7 i enerplassen.',
+                        forklaring: '842 - 367 = 475.',
+                        visuelt: 'oppstilling',
+                        visuelt_data: { tall1: 842, tall2: 367, operasjon: '-' }
+                    },
                     {
-                        id: 'pr_01',
-                        type: 'flervalg',
-                        sporsmal: 'En jakke koster 1000 kr. Den er satt ned med 25 %. Hvor mange kroner i rabatt får du?',
-                        alternativer: ['25 kr', '250 kr', '500 kr', '750 kr'],
-                        fasit: '250 kr',
-                        xp: 10,
-                        hint: '25 % er det samme som én fjerdedel (1/4) av beløpet.',
-                        forklaring: '25 % av 1000 kr = 1000 ÷ 4 = 250 kr.',
-                        visuelt: 'prosentbar'
-                    }
-                ]
-            },
-            {
-                id: 'algebra_grunnleggende',
-                tittel: 'Algebra og ukjente',
-                beskrivelse: 'Knekk koden med bokstaver i matematikken!',
-                ikon: 'fa-square-root-variable',
-                farge: 'from-emerald-500 to-teal-700',
-                oppgaver: [
-                    {
-                        id: 'alg_01',
+                        id: 'oppst_03',
                         type: 'tall_input',
-                        sporsmal: 'Finn <span class="text-sky-400 font-bold underline cursor-pointer" onclick="openDictTerm(\'variabel\')">variabelen x</span> i ligningen: x + 7 = 15',
-                        fasit: 8,
-                        xp: 15,
-                        hint: 'Hvilket tall pluss 7 blir lik 15? Tenk (15 minus 7).',
-                        forklaring: 'Dersom x + 7 = 15, må x = 15 - 7 = 8.',
-                        visuelt: 'ligning'
+                        sporsmal: 'Regn ut gangestykket oppstilt: 24 × 13',
+                        fasit: 312,
+                        xp: 20,
+                        hint: 'Gang 24 med 3 (72), og 24 med 10 (240). Legg sammen til slutt.',
+                        forklaring: '24 × 3 = 72. 24 × 10 = 240. 72 + 240 = 312.',
+                        visuelt: 'oppstilling',
+                        visuelt_data: { tall1: 24, tall2: 13, operasjon: '*' }
                     }
                 ]
             }
@@ -817,7 +741,7 @@
 
         let drillCategories = [...fallbackCategories];
 
-        /* ================= AUDIO SYNTHESIS (WEB AUDIO API) ================= */
+        /* ================= AUDIO SYNTHESIS ================= */
         function playSound(type) {
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -828,9 +752,9 @@
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
-                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16); // G5
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16);
                     gain.gain.setValueAtTime(0.2, ctx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
                     osc.connect(gain);
@@ -849,24 +773,8 @@
                     gain.connect(ctx.destination);
                     osc.start();
                     osc.stop(ctx.currentTime + 0.25);
-                } else if (type === 'complete') {
-                    const notes = [523.25, 659.25, 783.99, 1046.50];
-                    notes.forEach((freq, idx) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * 0.08));
-                        gain.gain.setValueAtTime(0.25, ctx.currentTime + (idx * 0.08));
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (idx * 0.08) + 0.3);
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(ctx.currentTime + (idx * 0.08));
-                        osc.stop(ctx.currentTime + (idx * 0.08) + 0.3);
-                    });
                 }
-            } catch (e) {
-                // Audio not allowed or unsupported
-            }
+            } catch (e) {}
         }
 
         /* ================= INITIALIZATION & GIST FETCH ================= */
@@ -877,7 +785,6 @@
             renderDictionary();
             updateStatsUI();
 
-            // Keyboard Enter Listener for Quiz Modal
             document.addEventListener('keydown', (e) => {
                 const modal = document.getElementById('quiz-modal');
                 if (modal && !modal.classList.contains('hidden')) {
@@ -912,11 +819,10 @@
 
                 if (parsedCategories && parsedCategories.length > 0) {
                     const defaultGradients = [
+                        'from-amber-500 to-indigo-600',
                         'from-sky-500 to-indigo-600',
                         'from-indigo-500 to-purple-600',
-                        'from-emerald-500 to-teal-700',
-                        'from-amber-500 to-rose-600',
-                        'from-violet-500 to-fuchsia-600'
+                        'from-emerald-500 to-teal-700'
                     ];
 
                     drillCategories = parsedCategories.map((cat, idx) => ({
@@ -932,7 +838,7 @@
                     return true;
                 }
             } catch (err) {
-                console.warn("Kunne ikke hente oppgaver fra GitHub Gist (bruker reserve-oppgaver):", err);
+                console.warn("Kunne ikke hente fra Gist:", err);
             }
 
             drillCategories = [...fallbackCategories];
@@ -1002,7 +908,7 @@
                     actionBtnText = 'Øv på nytt';
                 } else if (savedStep > 0 && savedStep < totalSteps) {
                     badgeHtml = `<div class="absolute top-3 right-3 text-sky-300 bg-sky-500/15 px-2.5 py-0.5 rounded-md border border-sky-500/30 text-xs font-semibold flex items-center space-x-1"><i class="fa-solid fa-play text-[10px]"></i><span>Oppgave ${savedStep + 1}/${totalSteps}</span></div>`;
-                    actionBtnText = `Fortsett (oppgave ${savedStep + 1})`;
+                    actionBtnText = `Fortsett (${savedStep + 1}/${totalSteps})`;
                 }
 
                 card.innerHTML = `
@@ -1024,7 +930,7 @@
                         </div>
                         ` : ''}
                         <div class="flex items-center justify-between text-xs text-slate-400">
-                            <span>${cat.oppgaver.length} oppgaver totalt</span>
+                            <span>${cat.oppgaver.length} oppgaver</span>
                             <span class="text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform flex items-center space-x-1">
                                 <span>${actionBtnText}</span>
                                 <i class="fa-solid fa-arrow-right"></i>
@@ -1036,14 +942,206 @@
             });
         }
 
-        /* ================= QUIZ ENGINE WITH RESUME SUPPORT ================= */
+        /* ================= OPPSTILLING PARSER & INTERACTIVE RENDERER ================= */
+        function parseOppstillingData(q) {
+            let data = q.visuelt_data || q.verktoy_data || q.oppstilling;
+            if (data && data.tall1 !== undefined && data.tall2 !== undefined) {
+                return {
+                    tall1: String(data.tall1),
+                    tall2: String(data.tall2),
+                    operasjon: data.operasjon || data.op || '+'
+                };
+            }
+            
+            // Smart fortolkning fra teksten
+            const rawText = q.sporsmal.replace(/<[^>]*>/g, '');
+            const match = rawText.match(/(\d+[\d\s,.]*)\s*([\+\-\*·xX\:\/])\s*(\d+[\d\s,.]*)/);
+            if (match) {
+                let op = match[2].trim();
+                if (op === 'x' || op === 'X' || op === '·') op = '*';
+                if (op === '/') op = ':';
+                return {
+                    tall1: match[1].trim(),
+                    tall2: match[3].trim(),
+                    operasjon: op
+                };
+            }
+            return null;
+        }
+
+        function syncGridToAnswer() {
+            const inputs = Array.from(document.querySelectorAll('.main-result-digit'));
+            const resultDigits = inputs.map(input => input.value.trim()).join('');
+            const mainInput = document.getElementById('quiz-number-answer');
+            if (mainInput && resultDigits.length > 0) {
+                mainInput.value = resultDigits;
+            }
+        }
+
+        function renderOppstillingVisual(q) {
+            const data = parseOppstillingData(q);
+            if (!data) return '';
+
+            const op = data.operasjon;
+            const num1 = data.tall1;
+            const num2 = data.tall2;
+
+            if (op === '+' || op === '-') {
+                const maxLen = Math.max(num1.length, num2.length) + 1;
+                const pad1 = num1.padStart(maxLen, ' ');
+                const pad2 = num2.padStart(maxLen, ' ');
+
+                let minneRowHtml = '';
+                for (let i = 0; i < maxLen; i++) {
+                    minneRowHtml += `<input type="text" maxlength="2" placeholder=" " class="w-8 h-7 bg-slate-800/80 border border-slate-700 focus:border-amber-400 text-center text-amber-300 font-mono text-xs rounded transition-colors shadow-inner" title="Minnetall / Lånetall">`;
+                }
+
+                let row1Html = '';
+                for (let c of pad1) {
+                    row1Html += `<div class="w-8 h-9 flex items-center justify-center font-mono text-xl font-bold text-slate-100">${c === ' ' ? '' : c}</div>`;
+                }
+
+                let row2Html = '';
+                for (let c of pad2) {
+                    row2Html += `<div class="w-8 h-9 flex items-center justify-center font-mono text-xl font-bold text-slate-100">${c === ' ' ? '' : c}</div>`;
+                }
+
+                let resultBoxesHtml = '';
+                for (let i = 0; i < maxLen; i++) {
+                    resultBoxesHtml += `<input type="text" maxlength="1" class="w-8 h-9 bg-indigo-950/80 border border-indigo-500/50 focus:border-amber-400 text-center text-amber-300 font-mono text-lg font-bold rounded shadow-inner main-result-digit" oninput="syncGridToAnswer()" placeholder=" ">`;
+                }
+
+                return `
+                    <div class="ruteark-bg p-5 rounded-2xl border border-slate-700/80 shadow-2xl space-y-2 select-none w-full max-w-md mx-auto">
+                        <div class="flex items-center justify-between text-[11px] font-semibold text-indigo-300 border-b border-slate-700/60 pb-1.5 mb-2">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-border-all text-amber-400"></i> Interaktiv Oppstilt ${op === '+' ? 'Addisjon (+)' : 'Subtraksjon (-)'}</span>
+                            <span class="text-slate-400 text-[10px]">Skriv i rutenettet</span>
+                        </div>
+
+                        <!-- Minnetall Rad -->
+                        <div class="flex items-center justify-end space-x-1 pr-1">
+                            <div class="w-12 text-right text-amber-400 text-[10px] font-mono pr-1">minne:</div>
+                            ${minneRowHtml}
+                        </div>
+
+                        <!-- Tall 1 -->
+                        <div class="flex items-center justify-end space-x-1 pr-1">
+                            <div class="w-12"></div>
+                            ${row1Html}
+                        </div>
+
+                        <!-- Operatør & Tall 2 -->
+                        <div class="flex items-center justify-end space-x-1 pr-1">
+                            <div class="w-12 text-center font-mono text-xl font-black text-indigo-400">${op}</div>
+                            ${row2Html}
+                        </div>
+
+                        <!-- Strek -->
+                        <div class="border-b-2 border-indigo-500/80 my-1 w-full"></div>
+
+                        <!-- Svar-rad i ruteark -->
+                        <div class="flex items-center justify-end space-x-1 pt-1">
+                            <div class="w-12 text-right text-amber-400 text-[10px] font-mono pr-1 font-bold">svar:</div>
+                            ${resultBoxesHtml}
+                        </div>
+                    </div>
+                `;
+            } else if (op === '*' || op === '·' || op === 'x' || op === 'X') {
+                const s1 = String(num1);
+                const s2 = String(num2);
+                const digits2 = s2.split('').reverse();
+                const totalLen = Math.max(s1.length + s2.length, String(parseInt(num1) * parseInt(num2)).length);
+
+                let subProductsHtml = '';
+                digits2.forEach((d, idx) => {
+                    let boxes = '';
+                    for (let i = 0; i < totalLen; i++) {
+                        boxes += `<input type="text" maxlength="1" class="w-8 h-8 bg-slate-900 border border-slate-700 focus:border-indigo-400 text-center text-slate-200 font-mono text-sm rounded shadow-inner" placeholder=" ">`;
+                    }
+                    
+                    subProductsHtml += `
+                        <div class="flex items-center justify-end space-x-1">
+                            <span class="text-[10px] text-slate-400 font-mono mr-2">${num1} × ${d}${idx > 0 ? '0'.repeat(idx) : ''}:</span>
+                            ${boxes}
+                        </div>
+                    `;
+                });
+
+                let sumBoxes = '';
+                for (let i = 0; i < totalLen; i++) {
+                    sumBoxes += `<input type="text" maxlength="1" class="w-8 h-9 bg-indigo-950/80 border border-indigo-500/50 focus:border-amber-400 text-center text-amber-300 font-mono text-lg font-bold rounded shadow-inner main-result-digit" oninput="syncGridToAnswer()" placeholder=" ">`;
+                }
+
+                return `
+                    <div class="ruteark-bg p-5 rounded-2xl border border-slate-700/80 shadow-2xl space-y-3 select-none w-full max-w-md mx-auto">
+                        <div class="flex items-center justify-between text-[11px] font-semibold text-indigo-300 border-b border-slate-700/60 pb-1.5">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-border-all text-amber-400"></i> Interaktiv Oppstilt Multiplikasjon</span>
+                            <span class="text-slate-400 text-[10px]">Delprodukter & sum</span>
+                        </div>
+
+                        <!-- Oppsett -->
+                        <div class="flex flex-col items-end pr-1 space-y-1 font-mono text-xl font-bold text-slate-100">
+                            <div class="tracking-widest">${num1.padStart(totalLen, ' ')}</div>
+                            <div class="tracking-widest"><span class="text-indigo-400 font-black mr-2">×</span>${num2.padStart(totalLen - 1, ' ')}</div>
+                        </div>
+
+                        <div class="border-b-2 border-indigo-500/80 my-1 w-full"></div>
+
+                        <!-- Delprodukter -->
+                        <div class="space-y-1.5">
+                            ${subProductsHtml}
+                        </div>
+
+                        <div class="border-b border-slate-700 my-1 w-full"></div>
+
+                        <!-- Sluttsvar rad -->
+                        <div class="flex items-center justify-end space-x-1 pt-1">
+                            <span class="text-[10px] text-amber-400 font-mono mr-2 font-bold">Sum =</span>
+                            ${sumBoxes}
+                        </div>
+                    </div>
+                `;
+            } else if (op === ':' || op === '/') {
+                return `
+                    <div class="ruteark-bg p-5 rounded-2xl border border-slate-700/80 shadow-2xl space-y-3 select-none w-full max-w-md mx-auto">
+                        <div class="flex items-center justify-between text-[11px] font-semibold text-indigo-300 border-b border-slate-700/60 pb-1.5">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-divide text-amber-400"></i> Interaktiv Oppstilt Divisjon</span>
+                            <span class="text-slate-400 text-[10px]">Steg-for-steg ruteark</span>
+                        </div>
+
+                        <div class="flex items-center justify-center space-x-3 font-mono text-2xl font-black text-white py-2 bg-slate-900/80 rounded-xl border border-slate-800">
+                            <span class="text-sky-300">${num1}</span>
+                            <span class="text-indigo-400">:</span>
+                            <span class="text-amber-300">${num2}</span>
+                            <span class="text-slate-400">=</span>
+                            <span class="px-3 py-1 bg-indigo-950/80 border border-indigo-500/50 text-amber-300 font-bold rounded-lg">?</span>
+                        </div>
+
+                        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2 text-xs text-slate-300">
+                            <div class="font-bold text-amber-400 text-[11px] flex items-center gap-1">
+                                <i class="fa-solid fa-list-ol"></i> Husk de 4 stegene:
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-[11px]">
+                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">1. <b>Del</b> (${num1} : ${num2})</div>
+                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">2. <b>Gang</b> svaret tilbake</div>
+                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">3. <b>Trekk fra</b> for å finne rest</div>
+                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">4. <b>Flytt ned</b> neste siffer</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return '';
+        }
+
+        /* ================= QUIZ ENGINE ================= */
         function startQuiz(categoryId, forceRestart = false) {
             const category = drillCategories.find(c => c.id === categoryId);
             if (!category) return;
 
             state.currentQuiz = category;
             
-            // Resume progress or start from 0
             let startIdx = 0;
             if (!forceRestart && state.categoryProgress[categoryId] && state.categoryProgress[categoryId] < category.oppgaver.length) {
                 startIdx = state.categoryProgress[categoryId];
@@ -1075,7 +1173,6 @@
             document.getElementById('quiz-xp-reward').innerText = `+${q.xp} XP`;
             document.getElementById('quiz-question').innerHTML = q.sporsmal;
 
-            // Combo counter UI
             const comboBadge = document.getElementById('quiz-streak-combo');
             if (state.sessionCombo > 1) {
                 comboBadge.innerText = `🔥 ${state.sessionCombo} på rad!`;
@@ -1084,16 +1181,16 @@
                 comboBadge.classList.add('hidden');
             }
 
-            // Reset UI state
             document.getElementById('quiz-hint-box').classList.add('hidden');
             document.getElementById('quiz-feedback').classList.add('hidden');
 
-            // Render Visual Aid
             const visualContainer = document.getElementById('quiz-visual-aid');
-            const visualType = q.visuelt || q.visuelt_verktoy;
+            const visualType = (q.visuelt || q.visuelt_verktoy || '').toLowerCase();
             const visualData = q.visuelt_data || q.verktoy_data;
 
-            if (visualType === 'broeksirkel') {
+            if (visualType.includes('oppstilling') || visualType.includes('oppstilt') || visualType.includes('kolonne')) {
+                visualContainer.innerHTML = renderOppstillingVisual(q);
+            } else if (visualType === 'broeksirkel') {
                 const teller = visualData?.teller || 3;
                 const nevner = visualData?.nevner || 4;
                 const percent = Math.round((teller / nevner) * 100);
@@ -1110,10 +1207,14 @@
                     </div>
                 `;
             } else {
-                visualContainer.innerHTML = `<div class="text-slate-500 text-xs italic flex items-center space-x-2"><i class="fa-solid fa-shapes text-indigo-400"></i><span>Bruk kunnskapen din til å løse spørsmålet</span></div>`;
+                visualContainer.innerHTML = `
+                    <div class="text-slate-500 text-xs italic flex items-center space-x-2">
+                        <i class="fa-solid fa-shapes text-indigo-400"></i>
+                        <span>Bruk kunnskapen din til å løse spørsmålet</span>
+                    </div>
+                `;
             }
 
-            // Render Answer Inputs
             const inputContainer = document.getElementById('quiz-input-container');
             inputContainer.innerHTML = '';
 
@@ -1137,7 +1238,7 @@
                 inputContainer.appendChild(grid);
             } else if (q.type === 'tall_input') {
                 inputContainer.innerHTML = `
-                    <input type="number" id="quiz-number-answer" placeholder="Skriv svar her og trykk Enter..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500 shadow-inner">
+                    <input type="number" id="quiz-number-answer" placeholder="Skriv det endelige svaret ditt her..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3.5 px-4 text-center font-mono font-bold text-2xl text-white focus:outline-none focus:border-indigo-500 shadow-inner">
                 `;
                 setTimeout(() => {
                     const numInput = document.getElementById('quiz-number-answer');
@@ -1149,7 +1250,7 @@
         function showQuizHint() {
             const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
             const hintBox = document.getElementById('quiz-hint-box');
-            document.getElementById('quiz-hint-text').innerText = q.hint;
+            document.getElementById('quiz-hint-text').innerText = q.hint || "Ingen hint tilgjengelig for denne oppgaven.";
             hintBox.classList.remove('hidden');
         }
 
@@ -1165,7 +1266,7 @@
                 if (input) userAnswer = parseFloat(input.value);
             }
 
-            if (userAnswer === null || userAnswer === undefined || userAnswer === "" || isNaN(userAnswer) && q.type === 'tall_input') {
+            if (userAnswer === null || userAnswer === undefined || userAnswer === "" || (isNaN(userAnswer) && q.type === 'tall_input')) {
                 showFeedback("Vennligst skriv inn eller velg et svar først!", "warning");
                 return;
             }
@@ -1176,40 +1277,34 @@
                 state.sessionCombo++;
                 if (state.streak === 0) state.streak = 1;
 
-                // Bonus calculation
-                let earnedXp = q.xp;
-                if (state.sessionCombo > 1) earnedXp += 5; // Combo bonus
+                let earnedXp = q.xp || 10;
+                if (state.sessionCombo > 1) earnedXp += 5;
 
                 state.xp += earnedXp;
                 state.quizXpGained += earnedXp;
 
-                // Save next step progress
                 const nextStepIndex = state.currentQuestionIndex + 1;
                 state.categoryProgress[state.currentQuiz.id] = nextStepIndex;
                 saveState();
 
-                // Sound & Visual Flash Effects
                 playSound('correct');
                 triggerXpPopAnimation(earnedXp);
                 updateStatsUI();
 
-                showFeedback(`Riktig svar! 🎉 ${q.forklaring}`, "success");
+                showFeedback(`Riktig svar! 🎉 ${q.forklaring || ''}`, "success");
 
-                // Progress to next question or end
                 setTimeout(() => {
                     if (nextStepIndex < state.currentQuiz.oppgaver.length) {
                         state.currentQuestionIndex = nextStepIndex;
                         renderQuizQuestion();
                     } else {
-                        // Mark category completed
                         if (!state.completedCategories.includes(state.currentQuiz.id)) {
                             state.completedCategories.push(state.currentQuiz.id);
                         }
-                        state.categoryProgress[state.currentQuiz.id] = 0; // Reset step count when finished
+                        state.categoryProgress[state.currentQuiz.id] = 0;
                         saveState();
 
                         closeQuiz();
-                        playSound('complete');
                         triggerConfetti();
                         renderCategories();
                         updateStatsUI();
@@ -1245,7 +1340,6 @@
             renderCategories();
         }
 
-
         /* ================= GAMIFICATION VISUAL EFFECTS ================= */
         function triggerXpPopAnimation(amount) {
             const btn = document.getElementById('quiz-action-btn') || document.body;
@@ -1258,7 +1352,6 @@
             pop.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i><span>+${amount} XP!</span>`;
             document.body.appendChild(pop);
 
-            // Flash header XP container
             const xpBadge = document.getElementById('xp-badge-container');
             if (xpBadge) {
                 xpBadge.classList.add('flash-xp');
@@ -1299,7 +1392,7 @@
                 particles.forEach(p => {
                     p.x += p.vx;
                     p.y += p.vy;
-                    p.vy += 0.25; // Gravity
+                    p.vy += 0.25;
                     p.rotation += p.rSpeed;
 
                     if (p.y < canvas.height + 20) alive = true;
@@ -1322,7 +1415,6 @@
 
             render();
         }
-
 
         /* ================= DICTIONARY ENGINE ================= */
         function renderDictionary() {
@@ -1422,7 +1514,6 @@
             document.getElementById('dict-modal').classList.add('hidden');
         }
 
-        /* Speech Synthesis */
         function readTermAudio() {
             if (!state.activeDictTerm) return;
             const textToRead = `${state.activeDictTerm.term}. ${state.activeDictTerm.definition}`;
@@ -1438,7 +1529,6 @@
             }
         }
 
-        /* AI Simplification Feature */
         async function askGeminiToSimplify() {
             if (!state.activeDictTerm) return;
 
@@ -1495,37 +1585,17 @@
             const levelSpan = currentLvl.maxXp - currentLvl.minXp;
             const progressPercent = Math.min(100, Math.round((xpInLevel / levelSpan) * 100));
 
-            // Header elements
             document.getElementById('xp-count').innerText = state.xp;
             document.getElementById('streak-count').innerText = state.streak;
             document.getElementById('level-title-badge').innerText = `Nivå ${lvlIndex}`;
             document.getElementById('header-level-bar').style.width = `${progressPercent}%`;
 
-            // Profile elements
             document.getElementById('profile-xp').innerText = `${state.xp} XP`;
             document.getElementById('profile-streak').innerText = `${state.streak} dager`;
             document.getElementById('profile-completed').innerText = `${state.completedCategories.length} av ${drillCategories.length}`;
             document.getElementById('profile-level-title').innerText = `Nivå ${lvlIndex} • ${currentLvl.name}`;
             document.getElementById('profile-xp-progress-text').innerText = `${state.xp} / ${currentLvl.maxXp} XP`;
             document.getElementById('profile-xp-bar').style.width = `${progressPercent}%`;
-
-            // Theme Unlocks check
-            if (state.xp >= 100) {
-                const el = document.getElementById('theme-cyber');
-                if (el) {
-                    el.classList.remove('opacity-60');
-                    el.classList.add('border-indigo-500/30');
-                    document.getElementById('theme-cyber-icon').className = 'fa-solid fa-circle-check text-indigo-400';
-                }
-            }
-            if (state.xp >= 250) {
-                const el = document.getElementById('theme-matrix');
-                if (el) {
-                    el.classList.remove('opacity-60');
-                    el.classList.add('border-emerald-500/30');
-                    document.getElementById('theme-matrix-icon').className = 'fa-solid fa-circle-check text-emerald-400';
-                }
-            }
         }
 
         function showToast(msg) {
