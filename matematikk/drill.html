@@ -295,7 +295,7 @@
                         </div>
                         <h2 class="text-2xl font-extrabold text-white">Visuell matteordbok</h2>
                         <p class="text-slate-400 text-sm mt-1">
-                            Glem tørre leksikontekster. Her får du mattebegreper, minnetall og oppstilte regneteknikker forklart med hverdagsord, eksempler og figurer.
+                            Glem tørre leksikontekster. Her får du mattebegreper, minnetall, formler og oppstilte regneteknikker forklart med hverdagsord, eksempler og figurer.
                         </p>
                     </div>
 
@@ -325,7 +325,7 @@
                 <!-- Search Input -->
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk etter fagord (f.eks. «minnetall», «langdivisjon», «låne», «nevner», «variabel»)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk etter fagord (f.eks. «minnetall», «pytagoras», «nevner», «variabel», «vekstfaktor»)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
                 </div>
             </div>
 
@@ -623,14 +623,15 @@
             { name: "Matematisk geni", minXp: 500, maxXp: 10000 }
         ];
 
-        // Dictionary Content
+        /* ================= EXTENDED MATTEORDBOK DATA ================= */
         const dictionaryData = [
+            /* --- OPPSTILT REGNING & TALL --- */
             {
                 id: 'minnetall_addisjon',
                 term: 'Minnetall (Addisjon)',
                 category: 'oppstilling',
-                definition: 'Et lite tall man skriver øverst i kolonnen under oppstilt addisjon når summen blir 10 eller mer.',
-                analogy: 'Tenk på det som et «tilbake-i-lomma»-tall. Hvis 8 + 7 blir 15, beholder du 5 på plassen og putter 1-tallet (tiere) videre i minnet til neste kolonne.',
+                definition: 'Et lite tall man skriver øverst i kolonnen under oppstilt addisjon når summen i én kolonne blir 10 eller mer.',
+                analogy: 'Tenk på det som et «tilbake-i-lomma»-tall. Hvis 8 + 7 blir 15, beholder du 5 på plassen og flytter 1-tallet (tiere) over til neste kolonne som et minnetall.',
                 visualSvg: `
                     <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center">
                         <div class="text-amber-400 font-bold text-xs tracking-widest mb-1">MINNETALL ➜ <span class="bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/40">1</span></div>
@@ -645,8 +646,8 @@
                 id: 'minnetall_ganging',
                 term: 'Minnetall i ganging',
                 category: 'oppstilling',
-                definition: 'Når du ganger enkelttall og får over 10 (f.eks. 6 × 7 = 42), skriver du eneren (2) i svaret og tiere (4) som minnetall øverst over neste siffer som skal ganges.',
-                analogy: 'I 24 × 3: Du ganger først 4 × 3 = 12. Skriv 2 under streken, og 1 over 2-tallet i minne. Deretter gangers 2 × 3 = 6, pluss minnetallet 1 = 7 (Svar: 72).',
+                definition: 'Når du ganger enkelt-siffer og får 10 eller mer (f.eks. $6 \\times 7 = 42$), skriver du eneren (2) i svaret og tiere (4) over neste siffer som skal ganges.',
+                analogy: 'I $24 \\times 3$: Du ganger først $4 \\times 3 = 12$. Skriv 2 under streken, og putter 1-tallet i minne over 2-tallet. Deretter ganger du $2 \\times 3 = 6$, pluss minnetallet 1 = 7. (Svar: 72).',
                 visualSvg: `
                     <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center">
                         <div class="text-amber-400 font-bold text-xs tracking-widest mb-1">MINNETALL ➜ <span class="bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/40">1</span></div>
@@ -658,29 +659,11 @@
                 `
             },
             {
-                id: 'langdivisjon_utregning',
-                term: 'Langdivisjon & Utregning underveis',
-                category: 'oppstilling',
-                definition: 'Oppstilt deling trinn for trinn. For å ikke gå i stå eller glemme tall underveis, skriver vi ned delproduktene under hverandre og trekker fra til vi får resten.',
-                analogy: 'De 4 gylne stegene: 1. Del  ➜  2. Gang  ➜  3. Trekk fra  ➜  4. Flytt ned neste siffer.',
-                visualSvg: `
-                    <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center space-y-1">
-                        <div class="text-sm font-bold text-slate-200">8 4 : 2 = <span class="text-emerald-400 font-black">4 2</span></div>
-                        <div class="text-xs text-rose-400 font-bold">- 8 (4 × 2)</div>
-                        <div class="border-b border-slate-600 w-20 mx-auto"></div>
-                        <div class="text-xs text-sky-300">  0 4 (flytt ned 4)</div>
-                        <div class="text-xs text-rose-400 font-bold">  - 4 (2 × 2)</div>
-                        <div class="border-b border-slate-600 w-20 mx-auto"></div>
-                        <div class="text-xs text-emerald-400 font-bold">    0 (rest = 0)</div>
-                    </div>
-                `
-            },
-            {
                 id: 'laane',
                 term: 'Låne (Subtraksjon)',
                 category: 'oppstilling',
-                definition: 'Når tallet du skal trekke fra er større enn tallet du har øverst i kolonnen, må du «låne» 1 tier (10) fra kolonnen til venstre.',
-                analogy: 'Hvis du har 2 kr på deg og skal betale 5 kr, veksler du en 10-kroning fra naboen slik at du har 12 kr å ta av.',
+                definition: 'Når tallet du skal trekke fra er større enn tallet du har i kolonnen øverst, må du «låne» 1 tier (som tilsvarer 10 enheter) fra kolonnen til venstre.',
+                analogy: 'Hvis du har 2 kroner i lomma og må betale 7 kroner, låner du en tier fra naboen slik at du har 12 kroner å ta av.',
                 visualSvg: `
                     <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center">
                         <div class="text-amber-400 font-bold text-xs tracking-widest mb-1">LÅNER 10 ➜ <span class="bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/40">10</span></div>
@@ -692,37 +675,458 @@
                 `
             },
             {
-                id: 'faktor_produkt',
-                term: 'Faktor og produkt',
+                id: 'langdivisjon_utregning',
+                term: 'Langdivisjon (Oppstilt deling)',
                 category: 'oppstilling',
-                definition: 'I et gangestykke kalles tallene du ganger sammen for FAKTORER, og svaret kalles PRODUKTET.',
-                analogy: 'Faktor × Faktor = Produkt. (Ingredienser × Ingredienser = Ferdig rett).',
+                definition: 'En trinnvis metode for å dele større tall ved å dele et siffer av gangen, gange tilbake, trekke fra og flytte ned neste siffer.',
+                analogy: 'De 4 gyldne reglene i huskeregelen: **1. Del ➜ 2. Gang ➜ 3. Trekk fra ➜ 4. Flytt ned**.',
                 visualSvg: `
-                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1">
-                        <div class="text-sm font-bold text-slate-200">
-                            <span class="text-sky-400">6</span> × <span class="text-sky-400">7</span> = <span class="text-emerald-400">42</span>
+                    <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center space-y-1">
+                        <div class="text-sm font-bold text-slate-200">8 4 : 2 = <span class="text-emerald-400 font-black">4 2</span></div>
+                        <div class="text-xs text-rose-400 font-bold">- 8 (4 × 2)</div>
+                        <div class="border-b border-slate-600 w-24 mx-auto"></div>
+                        <div class="text-xs text-sky-300">  0 4 (flytt ned 4)</div>
+                        <div class="text-xs text-rose-400 font-bold">  - 4 (2 × 2)</div>
+                        <div class="border-b border-slate-600 w-24 mx-auto"></div>
+                        <div class="text-xs text-emerald-400 font-bold">    0 (rest = 0)</div>
+                    </div>
+                `
+            },
+            {
+                id: 'faktor_produkt',
+                term: 'Faktor og Produkt',
+                category: 'oppstilling',
+                definition: 'I et multiplikasjonsstykke kalles tallene man ganger sammen for **faktorer**, og svaret kalles **produktet**.',
+                analogy: 'Faktor × Faktor = Produkt. (Byggekloss × Byggekloss = Ferdig byggverk).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2">
+                        <div class="text-lg font-bold text-slate-200 font-mono">
+                            <span class="text-sky-400 px-2 py-1 bg-sky-500/10 rounded border border-sky-500/30">6</span> × 
+                            <span class="text-sky-400 px-2 py-1 bg-sky-500/10 rounded border border-sky-500/30">7</span> = 
+                            <span class="text-emerald-400 px-2 py-1 bg-emerald-500/10 rounded border border-emerald-500/30">42</span>
                         </div>
-                        <div class="text-[11px] text-slate-400 flex justify-center space-x-6">
-                            <span>Faktorer</span>
-                            <span class="text-emerald-400">Produkt</span>
+                        <div class="text-xs text-slate-400 flex justify-between px-6">
+                            <span class="text-sky-400 font-semibold">Faktorer</span>
+                            <span class="text-emerald-400 font-semibold">Produkt</span>
                         </div>
                     </div>
                 `
             },
             {
                 id: 'kvotient',
-                term: 'Kvotient (og dividend)',
+                term: 'Kvotient, Dividend og Divisor',
                 category: 'oppstilling',
-                definition: 'Svaret du får i et delestykke kalles KVOTIENT. Tallet som deles kalles dividend, og tallet du deler på kalles divisor.',
-                analogy: 'Dividend ÷ Divisor = Kvotient. (12 pizzastykker ÷ 4 personer = 3 stykker per person).',
+                definition: 'I divisjon kalles tallet som deles **dividend**, tallet man deler på **divisor**, og svaret **kvotient**.',
+                analogy: 'Dividend ÷ Divisor = Kvotient. (12 pizzastykker ÷ 4 venner = 3 stykker per person).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2 font-mono">
+                        <div class="text-base font-bold text-slate-200">
+                            <span class="text-indigo-400">20</span> : <span class="text-sky-400">4</span> = <span class="text-amber-400">5</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 grid grid-cols-3 gap-1">
+                            <span class="text-indigo-400">Dividend</span>
+                            <span class="text-sky-400">Divisor</span>
+                            <span class="text-amber-400 font-bold">Kvotient</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'potens',
+                term: 'Potens, Grunntall og Eksponent',
+                category: 'oppstilling',
+                definition: 'En potens er en forkortet skrivemåte for gjentatt multiplikasjon. $a^n$ betyr at grunntallet $a$ skal ganges med seg selv $n$ ganger.',
+                analogy: 'I $2^4$ er 2 grunntallet og 4 eksponenten: $2 \\times 2 \\times 2 \\times 2 = 16$. Det er som en snøballseffekt!',
+                visualSvg: `
+                    <div class="p-4 bg-slate-900 rounded-xl text-center font-mono space-y-2">
+                        <div class="text-3xl font-black text-white tracking-widest">
+                            <span class="text-sky-400">3</span><sup class="text-amber-400 text-xl font-extrabold">4</sup> = 81
+                        </div>
+                        <div class="text-xs text-slate-400 flex justify-center space-x-6">
+                            <span class="text-sky-400">Grunntall (3)</span>
+                            <span class="text-amber-400">Eksponent (4)</span>
+                        </div>
+                        <div class="text-xs text-slate-400 font-sans pt-1">($3 \\times 3 \\times 3 \\times 3 = 81$)</div>
+                    </div>
+                `
+            },
+            {
+                id: 'kvadratrot',
+                term: 'Kvadratrot',
+                category: 'oppstilling',
+                definition: 'Kvadratroten av et tall $x$ (skrevet $\\sqrt{x}$) er det positivet tallet som ganget med seg selv gir $x$.',
+                analogy: 'Siden $5 \\times 5 = 25$, er kvadratroten av 25 lik 5 ($\\sqrt{25} = 5$). Tenk på det som å finne sidelengden i et kvadrat med givet areal.',
+                visualSvg: `
+                    <div class="p-4 bg-slate-900 rounded-xl text-center font-mono flex items-center justify-around">
+                        <div class="text-2xl font-bold text-amber-400">√36 = <span class="text-emerald-400">6</span></div>
+                        <div class="w-12 h-12 border-2 border-emerald-400 bg-emerald-500/10 flex items-center justify-center text-xs font-bold text-emerald-300">
+                            Areal=36<br>side=6
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'primtall',
+                term: 'Primtall og Sammensatte tall',
+                category: 'oppstilling',
+                definition: 'Et **primtall** er et heltall større enn 1 som BARE kan deles med 1 og seg selv (f.eks. 2, 3, 5, 7, 11, 13). Sammensatte tall har flere faktorer.',
+                analogy: 'Primtall er matematikkens atomer! De kan ikke deles opp i mindre heltallige faktorer.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2">
+                        <div class="flex justify-center gap-2 text-xs font-mono">
+                            <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">2</span>
+                            <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">3</span>
+                            <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">5</span>
+                            <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">7</span>
+                            <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">11</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400">Kun delelig med 1 og seg selv!</div>
+                    </div>
+                `
+            },
+            {
+                id: 'avrunding',
+                term: 'Avrunding og Gjeldende siffer',
+                category: 'oppstilling',
+                definition: 'Å erstatte et tall med enklere tilnærmet verdi. Regel: Er neste siffer 0, 1, 2, 3 eller 4 rundes det ned. Er det 5, 6, 7, 8 eller 9 rundes det opp.',
+                analogy: 'Om en vare koster 49,90 kr, runder vi det opp til 50 kr fordi det er nærmeste hele tall.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1">
+                        <div class="text-sm text-slate-300">3,764 ➜ avrundet til 1 desimal ➜ <span class="text-emerald-400 font-bold">3,8</span></div>
+                        <div class="text-[11px] text-slate-400 font-sans">Fordi hundredelen er 6 (større enn eller lik 5)</div>
+                    </div>
+                `
+            },
+
+            /* --- BRØK OG DESIMAL --- */
+            {
+                id: 'teller_nevner',
+                term: 'Teller og Nevner',
+                category: 'brøk',
+                definition: 'I en brøk $\\frac{a}{b}$ forteller **telleren** ($a$) hvor mange deler vi har, mens **nevneren** ($b$) *nevner* hvor mange like deler helheten er delt inn i.',
+                analogy: 'I brøken $\\frac{3}{4}$: Nevneren (4) betyr at pizzaen er delt i 4 stykker. Telleren (3) forteller at du har spist 3 stykker.',
+                visualSvg: `
+                    <div class="p-4 bg-slate-900 rounded-xl text-center flex items-center justify-around font-mono">
+                        <div class="text-2xl font-bold">
+                            <div class="text-sky-400 border-b-2 border-slate-500 pb-0.5">3</div>
+                            <div class="text-amber-400 pt-0.5">4</div>
+                        </div>
+                        <div class="text-left text-xs text-slate-300 font-sans space-y-1">
+                            <div><span class="text-sky-400 font-bold">Teller</span> (øverst): Antall deler vi har</div>
+                            <div><span class="text-amber-400 font-bold">Nevner</span> (nederst): Antall deler totalt</div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'fellesnevner',
+                term: 'Fellesnevner (Minstefelles multiplum)',
+                category: 'brøk',
+                definition: 'Når du skal legge sammen eller trekke fra brøker med ulike nevnere, må de først gjøres om slik at de får **samme nevner** (fellesnevner).',
+                analogy: 'Du kan ikke legge sammen 2 epler og 3 appelsiner direkte. Du må kalle dem begge for «frukt». Fellesnevner gjør at brøkdelene har samme størrelse!',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2 font-mono text-sm">
+                        <div class="text-slate-300">½ + ⅓ ➜ omgjort til fellesnevner 6:</div>
+                        <div class="text-amber-300 font-bold">³/₆ + ²/₆ = ⁵/₆</div>
+                    </div>
+                `
+            },
+            {
+                id: 'utvide_forkorte',
+                term: 'Utvide og Forkorte brøk',
+                category: 'brøk',
+                definition: 'Å **utvide** en brøk betyr å gange teller og nevner med samme tall. Å **forkorte** betyr å dele teller og nevner med samme tall. Brøkverdien endres ikke!',
+                analogy: 'Å spise $\\frac{1}{2}$ av en pizza er nøyaktig det samme som å spise $\\frac{2}{4}$ eller $\\frac{4}{8}$ av den.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-2">
+                        <div class="text-base text-slate-200">
+                            <span class="text-sky-300">²/₄</span> 
+                            <span class="text-xs text-slate-400 font-sans">(dele på 2)</span> ➜ 
+                            <span class="text-emerald-400 font-bold">½</span>
+                        </div>
+                        <div class="text-xs text-slate-400 font-sans">Forkorting gir enklere tall uten å endre verdien!</div>
+                    </div>
+                `
+            },
+            {
+                id: 'blandet_tall',
+                term: 'Blandet tall og Uekte brøk',
+                category: 'brøk',
+                definition: 'En **uekte brøk** har teller som er større enn eller lik nevneren (f.eks. $\\frac{7}{3}$). Et **blandet tall** består av et heltall og en ekte brøk (f.eks. $2\\frac{1}{3}$).',
+                analogy: '$\\frac{7}{3}$ betyr 7 tredels-pizzastykker. Det gir 2 hele pizzaer og 1 enkelt stykke til overs ($2\\frac{1}{3}$).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1">
+                        <div class="text-lg font-bold text-slate-200">
+                            <span class="text-amber-400">⁷/₃</span> = <span class="text-emerald-400">2 ⅓</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 font-sans">Uekte brøk ➜ Blandet tall</div>
+                    </div>
+                `
+            },
+            {
+                id: 'desimaltall',
+                term: 'Desimaltall og Desimalplasser',
+                category: 'brøk',
+                definition: 'Et tall som inneholder et desimaltegn (komma). Plassene bak kommaet kalles tideler ($0,1$), hundredeler ($0,01$), tusendeler ($0,001$) osv.',
+                analogy: '1,50 kr betyr 1 hel krone og 50 hundredeler (50 øre).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1">
+                        <div class="text-xl font-bold text-white tracking-wider">
+                            3,<span class="text-sky-400">4</span><span class="text-amber-400">5</span><span class="text-emerald-400">8</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 flex justify-center space-x-3 font-sans">
+                            <span class="text-sky-400">4 tideler</span>
+                            <span class="text-amber-400">5 hundredeler</span>
+                            <span class="text-emerald-400">8 tusendeler</span>
+                        </div>
+                    </div>
+                `
+            },
+
+            /* --- PROSENT OG VEKST --- */
+            {
+                id: 'prosent',
+                term: 'Prosent (%)',
+                category: 'prosent',
+                definition: 'Prosent betyr **«deler av hundre»** (hundredeler). $1\\%$ betyr $\\frac{1}{100}$ eller $0,01$.',
+                analogy: 'Hvis $25\\%$ av elevene har rød jakke, betyr det at 25 ut av 100 elever har rød jakke (eller $\\frac{1}{4}$).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2">
+                        <div class="text-xl font-black text-amber-400 font-mono">25% = 25/100 = 0,25 = ¼</div>
+                        <div class="text-xs text-slate-400">Fire måter å uttrykke nøyaktig samme mengde på!</div>
+                    </div>
+                `
+            },
+            {
+                id: 'promille',
+                term: 'Promille (‰)',
+                category: 'prosent',
+                definition: 'Promille betyr **«deler av tusen»** (tusendeler). $1‰$ er $\\frac{1}{1000}$ eller $0,001$.',
+                analogy: 'Brukes for veldig små mengder, som for eksempel alkohol i blodet eller saltholdighet i sjøvann.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1 font-mono">
+                        <div class="text-lg font-bold text-indigo-300">5‰ = 5/1000 = 0,005</div>
+                        <div class="text-[11px] text-slate-400 font-sans">1 promille er 1/10 av 1 prosent.</div>
+                    </div>
+                `
+            },
+            {
+                id: 'vekstfaktor',
+                term: 'Vekstfaktor',
+                category: 'prosent',
+                definition: 'Et tall man ganger en verdi med for å finne den nye verdien direkte etter en prosentvis økning eller nedgang.',
+                analogy: 'Øker noe med $20\\%$, er vekstfaktoren $1 + 0,20 = 1,20$. Minsker det med $15\\%$, er vekstfaktoren $1 - 0,15 = 0,85$. Ganging med vekstfaktor sparer deg for masse tid!',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2 font-mono text-xs">
+                        <div class="text-emerald-400 font-bold">Økning 15%: Vekstfaktor = 1 + 0,15 = 1,15</div>
+                        <div class="text-rose-400 font-bold">Nedgang 20%: Vekstfaktor = 1 - 0,20 = 0,80</div>
+                    </div>
+                `
+            },
+            {
+                id: 'prosentpoeng',
+                term: 'Prosentpoeng vs. Prosent',
+                category: 'prosent',
+                definition: 'Endring i ren prosentverdi kalles **prosentpoeng**. Prosentvis endring er den relative endringen i forhold til utgangspunktet.',
+                analogy: 'Hvis renten stiger fra $2\\%$ til $3\\%$, har den økt med **1 prosentpoeng**, men selve renteutgiften har økt med hele **$50\\%$**!',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1 font-sans text-xs">
+                        <div class="text-amber-300 font-bold">Fra 2% til 3%</div>
+                        <div class="text-slate-300">= Endring på <span class="text-emerald-400 font-bold">1 prosentpoeng</span></div>
+                        <div class="text-slate-400">= Relativ økning på <span class="text-sky-400 font-bold">50%</span></div>
+                    </div>
+                `
+            },
+            {
+                id: 'rabatt_mva',
+                term: 'Merverdiavgift (MVA) og Rabatt',
+                category: 'prosent',
+                definition: '**MVA** er en statlig skatt på varer/tjenester (oftest $25\\%$). **Rabatt** er et avslag i pris oppgitt i kroner eller prosent.',
+                analogy: 'Sko til 1000 kr med $30\\%$ rabatt: Du sparer 300 kr og betaler 700 kr ($1000 \\times 0,70 = 700$).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1 text-xs">
+                        <div class="text-slate-200">Pris før rabatt: 800 kr</div>
+                        <div class="text-rose-400 font-bold">- 25% rabatt (Vekstfaktor 0,75)</div>
+                        <div class="text-emerald-400 text-sm font-bold pt-1">Sluttpris: 600 kr</div>
+                    </div>
+                `
+            },
+
+            /* --- ALGEBRA --- */
+            {
+                id: 'variabel',
+                term: 'Variabel og Ukjent',
+                category: 'algebra',
+                definition: 'En **variabel** er en bokstav (f.eks. $x$ eller $y$) som står for et tall som kan variere eller som vi skal finne verdien av.',
+                analogy: 'Tenk på $x$ som en lukket boks med et hemmelig antall viskelær oppi som du må regne deg fram til.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1 font-mono">
+                        <div class="text-lg font-bold text-slate-200">x + 5 = 12 ➜ <span class="text-emerald-400">x = 7</span></div>
+                        <div class="text-[11px] text-slate-400 font-sans">Bokstaven $x$ representerer det ukjente tallet!</div>
+                    </div>
+                `
+            },
+            {
+                id: 'uttrykk',
+                term: 'Matematisk Uttrykk vs. Likning',
+                category: 'algebra',
+                definition: 'Et **uttrykk** samler tall, variabler og regnetegn Uten er-lik-tegn (f.eks. $3x + 4$). En **likning** har et er-lik-tegn (f.eks. $3x + 4 = 19$).',
+                analogy: 'Uttrykk er som et uferdig setningsledd. Likning er en hel setning med en påstand som skal balansere.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2 font-mono text-xs">
+                        <div class="text-sky-300">3x + 7 ➜ <span class="font-sans text-slate-400">(Uttrykk)</span></div>
+                        <div class="text-emerald-400 font-bold">3x + 7 = 22 ➜ <span class="font-sans text-slate-400 font-normal">(Likning)</span></div>
+                    </div>
+                `
+            },
+            {
+                id: 'likning',
+                term: 'Likning og Balansemetoden',
+                category: 'algebra',
+                definition: 'Siden en likning har lik verdi på begge sider av er-lik-tegnet, må alt du gjør på den ene siden OGSÅ gjøres på den andre siden.',
+                analogy: 'Tenk på en skålvekt i balanse. Puttes 2 kg på venstre skål, må du også putte 2 kg på høyre skål for at vekta skal holde seg beint!',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2">
+                        <div class="text-sm font-bold text-amber-400 font-mono">2x = 10 ➜ del på 2 på begge sider ➜ x = 5</div>
+                        <div class="text-xs text-slate-400">Gjør alltid nøyaktig det samme på begge sider av =</div>
+                    </div>
+                `
+            },
+            {
+                id: 'koeffisient',
+                term: 'Koeffisient',
+                category: 'algebra',
+                definition: 'Tallet som står foran en variabel og multipliseres med den. I uttrykket $5x$ er tallet 5 koeffisienten til $x$.',
+                analogy: '$5x$ betyr ganske enkelt $x + x + x + x + x$ (fem stykk av variabelen $x$).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1">
+                        <div class="text-2xl font-bold"><span class="text-amber-400">7</span><span class="text-sky-300">y</span></div>
+                        <div class="text-xs text-amber-400 font-sans">Koeffisienten er 7</div>
+                    </div>
+                `
+            },
+            {
+                id: 'parentesregler',
+                term: 'Parentesregler i Algebra',
+                category: 'algebra',
+                definition: 'Når du løser opp en parentes med minustegn foran, må du skifte tegn for alle leddene inni parentesen: $-(a + b) = -a - b$ og $-(a - b) = -a + b$.',
+                analogy: 'Minus foran parentes fungerer som et «speil» som snur alle pluss-tegn til minus, og minus-tegn til pluss!',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1">
+                        <div class="text-sm text-slate-300">10 - (x - 3) = <span class="text-emerald-400 font-bold">10 - x + 3</span></div>
+                        <div class="text-[11px] text-slate-400 font-sans">Minustegnet snudde -3 til +3!</div>
+                    </div>
+                `
+            },
+            {
+                id: 'kvadratsetningene',
+                term: 'Kvadratsetningene',
+                category: 'algebra',
+                definition: 'Tre nyttige formler for å gange ut parentesuttrykk raskt:<br>1. $(a+b)^2 = a^2 + 2ab + b^2$<br>2. $(a-b)^2 = a^2 - 2ab + b^2$<br>3. Konjugatsetningen: $(a+b)(a-b) = a^2 - b^2$',
+                analogy: 'Matematikkens snarveier! Istedenfor å gange ut alle leddene manuelt hver gang, bruker du formelen direkte.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono text-xs space-y-1">
+                        <div class="text-sky-300">(x + 3)² = x² + 6x + 9</div>
+                        <div class="text-amber-300">(x - 3)² = x² - 6x + 9</div>
+                        <div class="text-emerald-300">(x + 3)(x - 3) = x² - 9</div>
+                    </div>
+                `
+            },
+
+            /* --- GEOMETRI --- */
+            {
+                id: 'areal',
+                term: 'Areal (Flateinnhold)',
+                category: 'geometri',
+                definition: 'Mål på hvor stor flate en todimensjonal figur dekker. Måles i kvadratenheter som $cm^2$ eller $m^2$. Formel for rektangel: $A = g \\cdot h$.',
+                analogy: 'Areal er hvor mange malingsstrøk eller gulvfliser du trenger for å dekke et rom helt.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-2">
+                        <div class="w-24 h-14 border-2 border-indigo-400 bg-indigo-500/10 mx-auto flex items-center justify-center font-mono text-xs text-indigo-300 font-bold">
+                            A = g × h
+                        </div>
+                        <div class="text-xs text-slate-400">Rektangel: $Areal = grunnlinje \\times høyde$</div>
+                    </div>
+                `
+            },
+            {
+                id: 'omkrets',
+                term: 'Omkrets',
+                category: 'geometri',
+                definition: 'Den totale lengden av ytterkanten (grensen) rundt en todimensjonal figur.',
+                analogy: 'Omkrets er hvor langt gjerde du må bygge for å gjerde inn en hage.',
                 visualSvg: `
                     <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1">
-                        <div class="text-sm font-bold text-slate-200">
-                            <span class="text-slate-300">20</span> : <span class="text-slate-300">4</span> = <span class="text-amber-400">5</span>
+                        <div class="w-20 h-20 border-2 border-dashed border-amber-400 mx-auto flex items-center justify-center font-mono text-xs text-amber-300">
+                            Side + Side + Side + Side
                         </div>
-                        <div class="text-[11px] text-slate-400">
-                            Svaret (5) er <span class="text-amber-400 font-bold">Kvotienten</span>
-                        </div>
+                        <div class="text-xs text-slate-400">Summen av alle sidene rundt</div>
+                    </div>
+                `
+            },
+            {
+                id: 'volum',
+                term: 'Volum (Rominnhold)',
+                category: 'geometri',
+                definition: 'Mål på hvor mye plass en tredimensjonal gjenstand opptar. Måles i $cm^3$, $m^3$ eller liter ($L$). Formel for prisme: $V = G \\cdot h$.',
+                analogy: 'Volum er hvor mye vann du kan fylle i et akvarium eller en juicekartong.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1">
+                        <div class="text-sm font-bold text-sky-300">V = l × b × h</div>
+                        <div class="text-xs text-slate-400 font-sans">Volum av et rett firkantet prisme</div>
+                    </div>
+                `
+            },
+            {
+                id: 'pytagoras',
+                term: 'Pytagoras\' læresetning',
+                category: 'geometri',
+                definition: 'I en rettvinklet trekant er summen av kvadratene av katetene lik kvadratet av hypotenusen: $a^2 + b^2 = c^2$.',
+                analogy: 'Brukes av tømrere og snekkere for å sjekke om et hjørne er helt vinkelrett ($90^\\circ$).',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-2">
+                        <div class="text-base font-bold text-amber-400">a² + b² = c²</div>
+                        <div class="text-xs text-slate-300 font-sans">3² + 4² = 9 + 16 = 25 = 5²</div>
+                    </div>
+                `
+            },
+            {
+                id: 'hypotenus_katet',
+                term: 'Hypotenus og Katet',
+                category: 'geometri',
+                definition: 'I en rettvinklet trekant kalles den lengste siden (motstående til $90^\\circ$-vinkelen) for **hypotenus**. De to korte sidene kalles **kateter**.',
+                analogy: 'Hypotenusen er som en sklie som binder sammen topp- og bunnpunktet til de to katetene.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center space-y-1 text-xs">
+                        <div class="text-emerald-400 font-bold font-mono">Hypotenus (lengst)</div>
+                        <div class="text-slate-400">Kateter (de to sidene som danner 90°)</div>
+                    </div>
+                `
+            },
+            {
+                id: 'radius_diameter',
+                term: 'Radius, Diameter og Pi (π)',
+                category: 'geometri',
+                definition: '**Radius** ($r$) er avstanden fra sentrum til kanten av sirkelen. **Diameter** ($d$) er linjen tvers gjennom sentrum ($d = 2r$). Pi ($\\pi \\approx 3,14$) er forholdet mellom omkrets og diameter.',
+                analogy: 'Uansett hvor stor eller liten en sirkel er, vil omkretsen bestandig være cirka $3,14$ ganger lengre enn diameteren!',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center font-mono space-y-1">
+                        <div class="text-sm font-bold text-indigo-300">Omkrets = π × d = 2 × π × r</div>
+                        <div class="text-xs text-amber-400">π ≈ 3,14159</div>
+                    </div>
+                `
+            },
+            {
+                id: 'vinkler',
+                term: 'Vinkeltyper (Spiss, Rett, Stum)',
+                category: 'geometri',
+                definition: 'En **spiss vinkel** er under $90^\\circ$. En **rett vinkel** er nøyaktig $90^\\circ$. En **stum vinkel** er mellom $90^\\circ$ og $180^\\circ$. Summen av vinklene i en trekant er alltid $180^\\circ$.',
+                analogy: 'Rett vinkel er som et helt skarpt hjørne på et ark eller en dørkarm.',
+                visualSvg: `
+                    <div class="p-3 bg-slate-900 rounded-xl text-center grid grid-cols-3 gap-1 text-[11px] font-semibold">
+                        <div class="text-sky-300">< 90°<br>Spiss</div>
+                        <div class="text-emerald-400 border-x border-slate-700">= 90°<br>Rett</div>
+                        <div class="text-amber-300">> 90°<br>Stum</div>
                     </div>
                 `
             }
@@ -1161,10 +1565,7 @@
                 `;
             } else if (op === ':' || op === '/') {
                 // Interactive Langdivisjon with Intermediate Rows + Scratchpad Memory Box
-                const divLen = Math.max(num1.length + 2, 6);
-                
                 let divisionStepRowsHtml = '';
-                // Provide 3 sets of intermediate calculation rows (Subtractions & Remainders)
                 for (let r = 1; r <= 3; r++) {
                     let boxesSub = '';
                     let boxesRem = '';
@@ -1204,17 +1605,17 @@
                             <input type="text" id="quiz-number-answer-grid" class="w-24 px-2 py-1 bg-indigo-950/90 border-2 border-indigo-500 text-amber-300 font-mono text-lg text-center font-bold rounded-lg focus:outline-none focus:border-amber-400 main-result-digit" oninput="syncGridToAnswer()" placeholder="svar">
                         </div>
 
-                        <!-- Kladd & Minnetall-sone for å forhindre at bruker går i stå -->
+                        <!-- Kladd & Minnetall-sone -->
                         <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-2">
                             <div class="flex items-center justify-between text-[11px] font-bold text-amber-300">
-                                <span><i class="fa-solid fa-memory mr-1"></i> Minnetall & Kladdeark (Noter tall du får i starten)</span>
+                                <span><i class="fa-solid fa-memory mr-1"></i> Minnetall & Kladdeark</span>
                                 <span class="text-[10px] text-slate-400">Valgfritt å bruke</span>
                             </div>
                             <div class="grid grid-cols-4 gap-1.5">
-                                <input type="text" placeholder="starttall" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Hva var tallet du starta med?">
-                                <input type="text" placeholder="minne 1" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Første delprodukt">
-                                <input type="text" placeholder="minne 2" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Andre delprodukt">
-                                <input type="text" placeholder="rest" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Nåværende rest">
+                                <input type="text" placeholder="starttall" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400">
+                                <input type="text" placeholder="minne 1" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400">
+                                <input type="text" placeholder="minne 2" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400">
+                                <input type="text" placeholder="rest" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400">
                             </div>
                         </div>
 
@@ -1299,7 +1700,6 @@
             } else if (q.bilde) {
                 visualHtml = `<img src="${q.bilde}" class="max-h-48 rounded-lg shadow" alt="Oppgavefigur">`;
             } else {
-                // Default interactive scratchpad toggle
                 visualHtml = `
                     <div class="text-center space-y-2 py-2">
                         <div class="text-xs text-slate-400 font-medium">Løs oppgaven i hodet eller bruk kladderutene nedenfor:</div>
@@ -1331,7 +1731,6 @@
                 });
                 inputContainer.appendChild(grid);
             } else {
-                // Default numeric or text input
                 const wrapper = document.createElement('div');
                 wrapper.className = "flex flex-col sm:flex-row gap-3";
                 wrapper.innerHTML = `
@@ -1339,7 +1738,6 @@
                 `;
                 inputContainer.appendChild(wrapper);
 
-                // Auto-focus input
                 setTimeout(() => {
                     const inp = document.getElementById('quiz-number-answer');
                     if (inp) inp.focus();
@@ -1374,7 +1772,6 @@
                 return;
             }
 
-            // Clean values for comparison
             const normUser = String(userVal).replace(',', '.').trim().toLowerCase();
             const normFasit = String(q.fasit).replace(',', '.').trim().toLowerCase();
 
@@ -1400,14 +1797,12 @@
 
                 triggerConfetti();
 
-                // Move to next question after short delay
                 setTimeout(() => {
                     state.currentQuestionIndex++;
                     state.categoryProgress[state.currentQuiz.id] = state.currentQuestionIndex;
                     saveState();
 
                     if (state.currentQuestionIndex >= state.currentQuiz.oppgaver.length) {
-                        // Category Completed!
                         if (!state.completedCategories.includes(state.currentQuiz.id)) {
                             state.completedCategories.push(state.currentQuiz.id);
                         }
@@ -1455,7 +1850,6 @@
             renderCategories();
             updateStatsUI();
             
-            // Restore quiz modal layout structure if modified by completion
             setTimeout(() => {
                 location.reload();
             }, 100);
@@ -1465,7 +1859,6 @@
         function addXp(amount) {
             state.xp += amount;
             
-            // Check streak
             const today = new Date().toISOString().split('T')[0];
             if (state.lastActiveDate !== today) {
                 state.streak += 1;
@@ -1475,7 +1868,6 @@
             saveState();
             updateStatsUI();
             
-            // XP Floating Pop Animation
             const xpBadge = document.getElementById('xp-badge-container');
             if (xpBadge) {
                 xpBadge.classList.add('flash-xp');
@@ -1495,7 +1887,6 @@
         }
 
         function updateStatsUI() {
-            // Header stats
             document.getElementById('xp-count').innerText = state.xp;
             document.getElementById('streak-count').innerText = state.streak;
 
@@ -1505,7 +1896,6 @@
             const pct = Math.min(100, Math.round(((state.xp - lvl.minXp) / (lvl.maxXp - lvl.minXp)) * 100));
             document.getElementById('header-level-bar').style.width = `${pct}%`;
 
-            // Profile stats
             const profileLevelTitle = document.getElementById('profile-level-title');
             if (profileLevelTitle) profileLevelTitle.innerText = `Nivå ${lvl.levelNum} • ${lvl.name}`;
 
@@ -1532,22 +1922,35 @@
 
             grid.innerHTML = '';
 
+            const searchVal = (document.getElementById('dict-search-input')?.value || '').toLowerCase();
+
             const filtered = dictionaryData.filter(term => {
                 const matchesCat = state.dictFilter === 'alle' || term.category === state.dictFilter;
-                const searchVal = (document.getElementById('dict-search-input')?.value || '').toLowerCase();
-                const matchesSearch = !searchVal || term.term.toLowerCase().includes(searchVal) || term.definition.toLowerCase().includes(searchVal);
+                const matchesSearch = !searchVal || 
+                    term.term.toLowerCase().includes(searchVal) || 
+                    term.definition.toLowerCase().includes(searchVal) ||
+                    term.analogy.toLowerCase().includes(searchVal);
                 return matchesCat && matchesSearch;
             });
 
             if (filtered.length === 0) {
                 grid.innerHTML = `
-                    <div class="col-span-full p-8 text-center text-slate-400 space-y-2">
+                    <div class="col-span-full p-8 text-center text-slate-400 space-y-2 glass-card rounded-2xl">
                         <i class="fa-solid fa-magnifying-glass text-3xl text-slate-600"></i>
-                        <p class="font-medium">Ingen fagbegreper funnet.</p>
+                        <p class="font-medium text-slate-300">Ingen fagbegreper funnet for «${searchVal}».</p>
+                        <p class="text-xs text-slate-500">Prøv å søke etter et annet ord eller endre kategorifilteret.</p>
                     </div>
                 `;
                 return;
             }
+
+            const catLabels = {
+                'oppstilling': 'Oppstilt regning',
+                'brøk': 'Brøk og desimal',
+                'prosent': 'Prosent og vekst',
+                'algebra': 'Algebra',
+                'geometri': 'Geometri'
+            };
 
             filtered.forEach(item => {
                 const card = document.createElement('div');
@@ -1557,13 +1960,22 @@
                 card.innerHTML = `
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="px-2.5 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-xs font-semibold uppercase tracking-wider">${item.category}</span>
+                            <span class="px-2.5 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-xs font-semibold uppercase tracking-wider">
+                                ${catLabels[item.category] || item.category}
+                            </span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-sky-400 transition-colors text-xs"></i>
                         </div>
                         <div>
                             <h3 class="font-bold text-lg text-white group-hover:text-sky-300 transition-colors">${item.term}</h3>
-                            <p class="text-xs text-slate-300 line-clamp-2 mt-1 leading-relaxed">${item.definition}</p>
+                            <p class="text-xs text-slate-300 line-clamp-2 mt-1 leading-relaxed">${item.definition.replace(/<[^>]*>/g, '')}</p>
                         </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+                        <span class="text-amber-400/80 text-[11px] font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb text-[10px]"></i>
+                            <span>Inkluderer hverdagseksempel</span>
+                        </span>
+                        <span class="text-sky-400 group-hover:translate-x-0.5 transition-transform">Les forklaring →</span>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -1576,7 +1988,7 @@
             const btns = document.querySelectorAll('.dict-filter-btn');
             btns.forEach(btn => {
                 if (btn.getAttribute('data-cat') === cat) {
-                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors";
+                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors shadow-md shadow-sky-500/20";
                 } else {
                     btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
                 }
@@ -1595,10 +2007,18 @@
 
             state.activeDictTerm = item;
 
-            document.getElementById('dict-modal-category').innerText = item.category.toUpperCase();
+            const catLabels = {
+                'oppstilling': 'OPPSTILT REGNING',
+                'brøk': 'BRØK OG DESIMAL',
+                'prosent': 'PROSENT OG VEKST',
+                'algebra': 'ALGEBRA',
+                'geometri': 'GEOMETRI'
+            };
+
+            document.getElementById('dict-modal-category').innerText = catLabels[item.category] || item.category.toUpperCase();
             document.getElementById('dict-modal-title').innerText = item.term;
-            document.getElementById('dict-modal-definition').innerText = item.definition;
-            document.getElementById('dict-modal-analogy').innerText = item.analogy;
+            document.getElementById('dict-modal-definition').innerHTML = item.definition;
+            document.getElementById('dict-modal-analogy').innerHTML = item.analogy;
             document.getElementById('dict-modal-visual').innerHTML = item.visualSvg || '<span class="text-xs text-slate-500">Ingen figur tilgjengelig</span>';
 
             document.getElementById('ai-response-box').classList.add('hidden');
@@ -1612,7 +2032,8 @@
         function readTermAudio() {
             if (!state.activeDictTerm) return;
             try {
-                const text = `${state.activeDictTerm.term}. ${state.activeDictTerm.definition}`;
+                const cleanDef = state.activeDictTerm.definition.replace(/<[^>]*>/g, '');
+                const text = `${state.activeDictTerm.term}. ${cleanDef}`;
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'nb-NO';
                 window.speechSynthesis.speak(utterance);
