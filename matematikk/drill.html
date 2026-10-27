@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Inter Font -->
+    <!-- Inter & JetBrains Mono Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     
     <script>
@@ -78,6 +78,7 @@
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
         ::-webkit-scrollbar-track {
             background: #0f172a;
@@ -191,7 +192,7 @@
                         </span>
                         <h2 class="text-2xl font-extrabold text-white">Hva vil du mestre i dag?</h2>
                         <p class="text-slate-400 text-sm">
-                            Du kan fortsette direkte der du slapp sist. Samle XP, stig i nivå og bruk det interaktive rutearket for oppstilt regning!
+                            Du kan fortsette direkte der du slapp sist. Nå med **interaktive minnetall** og **steg-for-steg utregning** for både ganging og deling!
                         </p>
                     </div>
                     <button onclick="reloadGistTasks()" class="self-start sm:self-center px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-2 transition-colors shadow-sm" title="Hent nyeste oppgaver fra GitHub Gist">
@@ -294,7 +295,7 @@
                         </div>
                         <h2 class="text-2xl font-extrabold text-white">Visuell matteordbok</h2>
                         <p class="text-slate-400 text-sm mt-1">
-                            Glem tørre leksikontekster. Her får du mattebegreper og regneteknikker forklart med hverdagsord, eksempler og figurer.
+                            Glem tørre leksikontekster. Her får du mattebegreper, minnetall og oppstilte regneteknikker forklart med hverdagsord, eksempler og figurer.
                         </p>
                     </div>
 
@@ -324,7 +325,7 @@
                 <!-- Search Input -->
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk etter fagord (f.eks. «minnetall», «låne», «nevner», «variabel», «hypotenus»)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                    <input type="text" id="dict-search-input" oninput="searchDictionary()" placeholder="Søk etter fagord (f.eks. «minnetall», «langdivisjon», «låne», «nevner», «variabel»)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
                 </div>
             </div>
 
@@ -515,14 +516,14 @@
 
     <!-- Footer -->
     <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        <p>Tilpasset drilleapp for matematikk • Ungdomstrinn • Lagres automatisk i nettleseren</p>
+        <p>Tilpasset drilleapp for matematikk • Ungdomstrinn • Interaktive minnetall for addisjon, subtraksjon, ganging og deling</p>
     </footer>
 
     <!-- Application Script -->
     <script>
         /* ================= STATE & PERSISTENCE ================= */
         const GIST_URL = "https://gist.githubusercontent.com/hinsverk/f5c167e086b825429868db99fb566f25/raw/mattedrill.json";
-        const STORAGE_KEY = "mattedrill_user_progress_v2";
+        const STORAGE_KEY = "mattedrill_user_progress_v3";
 
         // Application State
         const state = {
@@ -530,7 +531,7 @@
             streak: 0,
             sessionCombo: 0,
             completedCategories: [],
-            categoryProgress: {}, // Store question index per category: { categoryId: number }
+            categoryProgress: {}, // Store question index per category
             lastActiveDate: null,
             activeTab: 'drill',
             currentQuiz: null,
@@ -625,10 +626,10 @@
         // Dictionary Content
         const dictionaryData = [
             {
-                id: 'minnetall',
-                term: 'Minnetall',
+                id: 'minnetall_addisjon',
+                term: 'Minnetall (Addisjon)',
                 category: 'oppstilling',
-                definition: 'Et lite tall man skriver øverst i kolonnen under oppstilt addisjon eller multiplikasjon når summen blir 10 eller mer.',
+                definition: 'Et lite tall man skriver øverst i kolonnen under oppstilt addisjon når summen blir 10 eller mer.',
                 analogy: 'Tenk på det som et «tilbake-i-lomma»-tall. Hvis 8 + 7 blir 15, beholder du 5 på plassen og putter 1-tallet (tiere) videre i minnet til neste kolonne.',
                 visualSvg: `
                     <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center">
@@ -637,6 +638,40 @@
                         <div class="text-xl text-slate-200 tracking-widest">+ 2 7</div>
                         <div class="border-b-2 border-indigo-400 w-24 mx-auto my-1"></div>
                         <div class="text-xl text-emerald-400 font-bold tracking-widest">  7 5</div>
+                    </div>
+                `
+            },
+            {
+                id: 'minnetall_ganging',
+                term: 'Minnetall i ganging',
+                category: 'oppstilling',
+                definition: 'Når du ganger enkelttall og får over 10 (f.eks. 6 × 7 = 42), skriver du eneren (2) i svaret og tiere (4) som minnetall øverst over neste siffer som skal ganges.',
+                analogy: 'I 24 × 3: Du ganger først 4 × 3 = 12. Skriv 2 under streken, og 1 over 2-tallet i minne. Deretter gangers 2 × 3 = 6, pluss minnetallet 1 = 7 (Svar: 72).',
+                visualSvg: `
+                    <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center">
+                        <div class="text-amber-400 font-bold text-xs tracking-widest mb-1">MINNETALL ➜ <span class="bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/40">1</span></div>
+                        <div class="text-xl text-slate-200 tracking-widest">  2 4</div>
+                        <div class="text-xl text-slate-200 tracking-widest">×   3</div>
+                        <div class="border-b-2 border-indigo-400 w-24 mx-auto my-1"></div>
+                        <div class="text-xl text-emerald-400 font-bold tracking-widest">  7 2</div>
+                    </div>
+                `
+            },
+            {
+                id: 'langdivisjon_utregning',
+                term: 'Langdivisjon & Utregning underveis',
+                category: 'oppstilling',
+                definition: 'Oppstilt deling trinn for trinn. For å ikke gå i stå eller glemme tall underveis, skriver vi ned delproduktene under hverandre og trekker fra til vi får resten.',
+                analogy: 'De 4 gylne stegene: 1. Del  ➜  2. Gang  ➜  3. Trekk fra  ➜  4. Flytt ned neste siffer.',
+                visualSvg: `
+                    <div class="ruteark-bg p-4 rounded-xl border border-slate-700 font-mono text-center space-y-1">
+                        <div class="text-sm font-bold text-slate-200">8 4 : 2 = <span class="text-emerald-400 font-black">4 2</span></div>
+                        <div class="text-xs text-rose-400 font-bold">- 8 (4 × 2)</div>
+                        <div class="border-b border-slate-600 w-20 mx-auto"></div>
+                        <div class="text-xs text-sky-300">  0 4 (flytt ned 4)</div>
+                        <div class="text-xs text-rose-400 font-bold">  - 4 (2 × 2)</div>
+                        <div class="border-b border-slate-600 w-20 mx-auto"></div>
+                        <div class="text-xs text-emerald-400 font-bold">    0 (rest = 0)</div>
                     </div>
                 `
             },
@@ -698,7 +733,7 @@
             {
                 id: 'oppstilling_regnearter',
                 tittel: 'Oppstilt regning (De 4 regneartene)',
-                beskrivelse: 'Mestrer du oppstilling med minnetall, låning, ganger og deling?',
+                beskrivelse: 'Mestrer du oppstilling med minnetall, ganging og steg-for-steg deling?',
                 ikon: 'fa-calculator',
                 farge: 'from-amber-500 to-indigo-600',
                 oppgaver: [
@@ -727,13 +762,24 @@
                     {
                         id: 'oppst_03',
                         type: 'tall_input',
-                        sporsmal: 'Regn ut gangestykket oppstilt: 24 × 13',
+                        sporsmal: 'Regn ut gangestykket oppstilt med minnetall: 24 × 13',
                         fasit: 312,
                         xp: 20,
-                        hint: 'Gang 24 med 3 (72), og 24 med 10 (240). Legg sammen til slutt.',
+                        hint: 'Gang 24 med 3 først (husk minnetall 1 over 2-tallet). Gang deretter 24 med 10. Legg sammen delproduktene.',
                         forklaring: '24 × 3 = 72. 24 × 10 = 240. 72 + 240 = 312.',
                         visuelt: 'oppstilling',
                         visuelt_data: { tall1: 24, tall2: 13, operasjon: '*' }
+                    },
+                    {
+                        id: 'oppst_04',
+                        type: 'tall_input',
+                        sporsmal: 'Regn ut delestykket steg-for-steg i rutearket: 848 : 4',
+                        fasit: 212,
+                        xp: 25,
+                        hint: 'Del 8 på 4 = 2. Del 4 på 4 = 1. Del 8 på 4 = 2. Bruk de interaktive feltene underveis for å holde orden!',
+                        forklaring: '848 : 4 = 212.',
+                        visuelt: 'oppstilling',
+                        visuelt_data: { tall1: 848, tall2: 4, operasjon: ':' }
                     }
                 ]
             }
@@ -1052,6 +1098,12 @@
                 const digits2 = s2.split('').reverse();
                 const totalLen = Math.max(s1.length + s2.length, String(parseInt(num1) * parseInt(num2)).length);
 
+                // Minnetall rader for ganging
+                let minneBoxesTop = '';
+                for (let i = 0; i < totalLen; i++) {
+                    minneBoxesTop += `<input type="text" maxlength="2" placeholder=" " class="w-8 h-7 bg-slate-800/90 border border-amber-500/40 focus:border-amber-400 text-center text-amber-300 font-mono text-xs rounded transition-colors shadow-inner" title="Minnetall fra multiplikasjon">`;
+                }
+
                 let subProductsHtml = '';
                 digits2.forEach((d, idx) => {
                     let boxes = '';
@@ -1075,8 +1127,14 @@
                 return `
                     <div class="ruteark-bg p-5 rounded-2xl border border-slate-700/80 shadow-2xl space-y-3 select-none w-full max-w-md mx-auto">
                         <div class="flex items-center justify-between text-[11px] font-semibold text-indigo-300 border-b border-slate-700/60 pb-1.5">
-                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-border-all text-amber-400"></i> Interaktiv Oppstilt Multiplikasjon</span>
-                            <span class="text-slate-400 text-[10px]">Delprodukter & sum</span>
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-border-all text-amber-400"></i> Oppstilt Multiplikasjon (Ganging)</span>
+                            <span class="text-amber-400 text-[10px]"><i class="fa-solid fa-pen-to-square"></i> Minnetall inkludert</span>
+                        </div>
+
+                        <!-- Minnetall for ganging -->
+                        <div class="flex items-center justify-end space-x-1 pr-1">
+                            <span class="text-[10px] text-amber-400 font-mono mr-2 font-semibold">Minnetall:</span>
+                            ${minneBoxesTop}
                         </div>
 
                         <!-- Oppsett -->
@@ -1102,30 +1160,73 @@
                     </div>
                 `;
             } else if (op === ':' || op === '/') {
-                return `
-                    <div class="ruteark-bg p-5 rounded-2xl border border-slate-700/80 shadow-2xl space-y-3 select-none w-full max-w-md mx-auto">
-                        <div class="flex items-center justify-between text-[11px] font-semibold text-indigo-300 border-b border-slate-700/60 pb-1.5">
-                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-divide text-amber-400"></i> Interaktiv Oppstilt Divisjon</span>
-                            <span class="text-slate-400 text-[10px]">Steg-for-steg ruteark</span>
-                        </div>
-
-                        <div class="flex items-center justify-center space-x-3 font-mono text-2xl font-black text-white py-2 bg-slate-900/80 rounded-xl border border-slate-800">
-                            <span class="text-sky-300">${num1}</span>
-                            <span class="text-indigo-400">:</span>
-                            <span class="text-amber-300">${num2}</span>
-                            <span class="text-slate-400">=</span>
-                            <span class="px-3 py-1 bg-indigo-950/80 border border-indigo-500/50 text-amber-300 font-bold rounded-lg">?</span>
-                        </div>
-
-                        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2 text-xs text-slate-300">
-                            <div class="font-bold text-amber-400 text-[11px] flex items-center gap-1">
-                                <i class="fa-solid fa-list-ol"></i> Husk de 4 stegene:
+                // Interactive Langdivisjon with Intermediate Rows + Scratchpad Memory Box
+                const divLen = Math.max(num1.length + 2, 6);
+                
+                let divisionStepRowsHtml = '';
+                // Provide 3 sets of intermediate calculation rows (Subtractions & Remainders)
+                for (let r = 1; r <= 3; r++) {
+                    let boxesSub = '';
+                    let boxesRem = '';
+                    for (let i = 0; i < num1.length + 1; i++) {
+                        boxesSub += `<input type="text" maxlength="1" class="w-7 h-7 bg-slate-900 border border-slate-700 focus:border-rose-400 text-center text-rose-300 font-mono text-xs rounded shadow-inner" placeholder=" ">`;
+                        boxesRem += `<input type="text" maxlength="1" class="w-7 h-7 bg-slate-800/90 border border-slate-700 focus:border-sky-400 text-center text-sky-200 font-mono text-xs rounded shadow-inner" placeholder=" ">`;
+                    }
+                    
+                    divisionStepRowsHtml += `
+                        <div class="space-y-1">
+                            <div class="flex items-center justify-end space-x-1">
+                                <span class="text-[10px] text-rose-400 font-mono mr-1">- produkt ${r}:</span>
+                                ${boxesSub}
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-[11px]">
-                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">1. <b>Del</b> (${num1} : ${num2})</div>
-                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">2. <b>Gang</b> svaret tilbake</div>
-                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">3. <b>Trekk fra</b> for å finne rest</div>
-                                <div class="p-2 bg-slate-800/80 rounded border border-slate-700">4. <b>Flytt ned</b> neste siffer</div>
+                            <div class="border-b border-slate-700/80 my-0.5 w-full"></div>
+                            <div class="flex items-center justify-end space-x-1">
+                                <span class="text-[10px] text-sky-300 font-mono mr-1">rest + ned ${r}:</span>
+                                ${boxesRem}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="ruteark-bg p-5 rounded-2xl border border-slate-700/80 shadow-2xl space-y-4 select-none w-full max-w-lg mx-auto">
+                        <div class="flex items-center justify-between text-[11px] font-semibold text-indigo-300 border-b border-slate-700/60 pb-1.5">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-divide text-amber-400"></i> Oppstilt Divisjon med Mellomsteg & Minnetall</span>
+                            <span class="text-amber-400 text-[10px]"><i class="fa-solid fa-note-sticky"></i> Skriv ned underveis</span>
+                        </div>
+
+                        <!-- Main Division Equation Line -->
+                        <div class="flex items-center justify-center space-x-2 font-mono text-xl font-black text-white py-2.5 bg-slate-900/90 rounded-xl border border-slate-800 shadow-inner">
+                            <span class="text-sky-300 tracking-wider">${num1}</span>
+                            <span class="text-indigo-400 font-bold">:</span>
+                            <span class="text-amber-300 tracking-wider">${num2}</span>
+                            <span class="text-slate-400">=</span>
+                            <input type="text" id="quiz-number-answer-grid" class="w-24 px-2 py-1 bg-indigo-950/90 border-2 border-indigo-500 text-amber-300 font-mono text-lg text-center font-bold rounded-lg focus:outline-none focus:border-amber-400 main-result-digit" oninput="syncGridToAnswer()" placeholder="svar">
+                        </div>
+
+                        <!-- Kladd & Minnetall-sone for å forhindre at bruker går i stå -->
+                        <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between text-[11px] font-bold text-amber-300">
+                                <span><i class="fa-solid fa-memory mr-1"></i> Minnetall & Kladdeark (Noter tall du får i starten)</span>
+                                <span class="text-[10px] text-slate-400">Valgfritt å bruke</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1.5">
+                                <input type="text" placeholder="starttall" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Hva var tallet du starta med?">
+                                <input type="text" placeholder="minne 1" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Første delprodukt">
+                                <input type="text" placeholder="minne 2" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Andre delprodukt">
+                                <input type="text" placeholder="rest" class="bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs p-1.5 rounded text-center focus:border-amber-400" title="Nåværende rest">
+                            </div>
+                        </div>
+
+                        <!-- Steg-for-steg Utregninger underveis -->
+                        <div class="space-y-2 pt-1">
+                            <div class="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                                <span><i class="fa-solid fa-arrow-down-short-wide text-sky-400 mr-1"></i> Utregninger underveis:</span>
+                                <span class="text-[10px] text-slate-400">1. Del ➜ 2. Gang ➜ 3. Trekk fra ➜ 4. Flytt ned</span>
+                            </div>
+                            
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
+                                ${divisionStepRowsHtml}
                             </div>
                         </div>
                     </div>
@@ -1163,202 +1264,419 @@
                 state.categoryProgress[state.currentQuiz.id] = 0;
                 saveState();
                 startQuiz(state.currentQuiz.id, true);
-                showToast("Oppgavene er startet på nytt fra oppgave 1.");
             }
         }
 
         function renderQuizQuestion() {
+            if (!state.currentQuiz) return;
             const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
+            if (!q) return;
+
             document.getElementById('quiz-current-step').innerText = state.currentQuestionIndex + 1;
-            document.getElementById('quiz-xp-reward').innerText = `+${q.xp} XP`;
-            document.getElementById('quiz-question').innerHTML = q.sporsmal;
+            document.getElementById('quiz-question').innerText = q.sporsmal;
+            document.getElementById('quiz-xp-reward').innerText = `+${q.xp || 10} XP`;
 
-            const comboBadge = document.getElementById('quiz-streak-combo');
-            if (state.sessionCombo > 1) {
-                comboBadge.innerText = `🔥 ${state.sessionCombo} på rad!`;
-                comboBadge.classList.remove('hidden');
-            } else {
-                comboBadge.classList.add('hidden');
-            }
-
+            // Reset UI states
             document.getElementById('quiz-hint-box').classList.add('hidden');
             document.getElementById('quiz-feedback').classList.add('hidden');
+            
+            const comboEl = document.getElementById('quiz-streak-combo');
+            if (state.sessionCombo > 1) {
+                comboEl.classList.remove('hidden');
+                comboEl.innerText = `🔥 ${state.sessionCombo} på rad!`;
+            } else {
+                comboEl.classList.add('hidden');
+            }
 
-            const visualContainer = document.getElementById('quiz-visual-aid');
-            const visualType = (q.visuelt || q.visuelt_verktoy || '').toLowerCase();
-            const visualData = q.visuelt_data || q.verktoy_data;
+            // Visual aid area
+            const visualAidContainer = document.getElementById('quiz-visual-aid');
+            let visualHtml = '';
 
-            if (visualType.includes('oppstilling') || visualType.includes('oppstilt') || visualType.includes('kolonne')) {
-                visualContainer.innerHTML = renderOppstillingVisual(q);
-            } else if (visualType === 'broeksirkel') {
-                const teller = visualData?.teller || 3;
-                const nevner = visualData?.nevner || 4;
-                const percent = Math.round((teller / nevner) * 100);
-                visualContainer.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <svg width="90" height="90" viewBox="0 0 36 36" class="transform -rotate-90">
-                            <path class="text-slate-800" stroke-width="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-sky-500" stroke-dasharray="${percent}, 100" stroke-width="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <div class="text-xs text-slate-300">
-                            <span class="text-sky-400 font-bold text-sm block">${teller} av ${nevner} deler</span>
-                            <span>er markert i figuren</span>
+            if (q.visuelt === 'oppstilling' || q.oppstilling || parseOppstillingData(q)) {
+                visualHtml = renderOppstillingVisual(q);
+            } else if (q.visuelt_html) {
+                visualHtml = q.visuelt_html;
+            } else if (q.bilde) {
+                visualHtml = `<img src="${q.bilde}" class="max-h-48 rounded-lg shadow" alt="Oppgavefigur">`;
+            } else {
+                // Default interactive scratchpad toggle
+                visualHtml = `
+                    <div class="text-center space-y-2 py-2">
+                        <div class="text-xs text-slate-400 font-medium">Løs oppgaven i hodet eller bruk kladderutene nedenfor:</div>
+                        <div class="flex justify-center space-x-2 font-mono text-2xl font-black text-indigo-300 bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-800">
+                            ${q.sporsmal.replace(/<[^>]*>/g, '')}
                         </div>
                     </div>
                 `;
-            } else {
-                visualContainer.innerHTML = `
-                    <div class="text-slate-500 text-xs italic flex items-center space-x-2">
-                        <i class="fa-solid fa-shapes text-indigo-400"></i>
-                        <span>Bruk kunnskapen din til å løse spørsmålet</span>
-                    </div>
-                `;
             }
 
+            visualAidContainer.innerHTML = visualHtml;
+
+            // Render Answer Input Controls
             const inputContainer = document.getElementById('quiz-input-container');
             inputContainer.innerHTML = '';
 
-            if (q.type === 'flervalg') {
+            if (q.type === 'flervalg' && Array.isArray(q.alternativer)) {
                 const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-2 gap-3';
-                q.alternativer.forEach(alt => {
+                grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
+                q.alternativer.forEach((alt, idx) => {
                     const btn = document.createElement('button');
-                    btn.className = 'quiz-alt-btn p-3.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-indigo-500 text-slate-200 font-semibold text-sm transition-all text-center focus:outline-none';
-                    btn.innerText = alt;
-                    btn.onclick = () => {
-                        document.querySelectorAll('.quiz-alt-btn').forEach(b => {
-                            b.classList.remove('border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300');
-                            delete b.dataset.selected;
-                        });
-                        btn.classList.add('border-indigo-500', 'bg-indigo-600/20', 'text-indigo-300');
-                        btn.dataset.selected = "true";
-                    };
+                    btn.className = "p-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-left text-sm font-semibold text-slate-200 transition-all flex items-center justify-between group";
+                    btn.onclick = () => submitQuizAnswer(alt);
+                    btn.innerHTML = `
+                        <span>${alt}</span>
+                        <i class="fa-regular fa-circle text-slate-500 group-hover:text-indigo-400"></i>
+                    `;
                     grid.appendChild(btn);
                 });
                 inputContainer.appendChild(grid);
-            } else if (q.type === 'tall_input') {
-                inputContainer.innerHTML = `
-                    <input type="number" id="quiz-number-answer" placeholder="Skriv det endelige svaret ditt her..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3.5 px-4 text-center font-mono font-bold text-2xl text-white focus:outline-none focus:border-indigo-500 shadow-inner">
+            } else {
+                // Default numeric or text input
+                const wrapper = document.createElement('div');
+                wrapper.className = "flex flex-col sm:flex-row gap-3";
+                wrapper.innerHTML = `
+                    <input type="text" id="quiz-number-answer" placeholder="Skriv svaret ditt her..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-base font-mono font-bold text-amber-300 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors shadow-inner">
                 `;
+                inputContainer.appendChild(wrapper);
+
+                // Auto-focus input
                 setTimeout(() => {
-                    const numInput = document.getElementById('quiz-number-answer');
-                    if (numInput) numInput.focus();
+                    const inp = document.getElementById('quiz-number-answer');
+                    if (inp) inp.focus();
                 }, 100);
             }
         }
 
         function showQuizHint() {
+            if (!state.currentQuiz) return;
             const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
+            if (!q) return;
+
             const hintBox = document.getElementById('quiz-hint-box');
-            document.getElementById('quiz-hint-text').innerText = q.hint || "Ingen hint tilgjengelig for denne oppgaven.";
+            const hintText = document.getElementById('quiz-hint-text');
+            hintText.innerText = q.hint || "Tenk gjennom regnereglene og sjekk at du har satt opp tallene i riktige kolonner.";
             hintBox.classList.remove('hidden');
         }
 
-        function submitQuizAnswer() {
+        function submitQuizAnswer(givenAnswer = null) {
+            if (!state.currentQuiz) return;
             const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
-            let userAnswer = null;
+            if (!q) return;
 
-            if (q.type === 'flervalg') {
-                const selectedBtn = document.querySelector('.quiz-alt-btn[data-selected="true"]');
-                if (selectedBtn) userAnswer = selectedBtn.innerText;
-            } else if (q.type === 'tall_input') {
-                const input = document.getElementById('quiz-number-answer');
-                if (input) userAnswer = parseFloat(input.value);
+            let userVal = givenAnswer;
+            if (userVal === null) {
+                const inputEl = document.getElementById('quiz-number-answer');
+                if (inputEl) userVal = inputEl.value.trim();
             }
 
-            if (userAnswer === null || userAnswer === undefined || userAnswer === "" || (isNaN(userAnswer) && q.type === 'tall_input')) {
-                showFeedback("Vennligst skriv inn eller velg et svar først!", "warning");
+            if (userVal === null || userVal === '') {
+                showToast("Vennligst skriv inn et svar først!");
                 return;
             }
 
-            const isCorrect = (userAnswer == q.fasit);
+            // Clean values for comparison
+            const normUser = String(userVal).replace(',', '.').trim().toLowerCase();
+            const normFasit = String(q.fasit).replace(',', '.').trim().toLowerCase();
+
+            const isCorrect = normUser === normFasit || (parseFloat(normUser) === parseFloat(normFasit) && !isNaN(parseFloat(normUser)));
+
+            const feedbackEl = document.getElementById('quiz-feedback');
+            feedbackEl.classList.remove('hidden');
 
             if (isCorrect) {
-                state.sessionCombo++;
-                if (state.streak === 0) state.streak = 1;
-
-                let earnedXp = q.xp || 10;
-                if (state.sessionCombo > 1) earnedXp += 5;
-
-                state.xp += earnedXp;
-                state.quizXpGained += earnedXp;
-
-                const nextStepIndex = state.currentQuestionIndex + 1;
-                state.categoryProgress[state.currentQuiz.id] = nextStepIndex;
-                saveState();
-
                 playSound('correct');
-                triggerXpPopAnimation(earnedXp);
-                updateStatsUI();
+                state.sessionCombo++;
+                const earnedXp = (q.xp || 10) + (state.sessionCombo > 1 ? 5 : 0);
+                addXp(earnedXp);
 
-                showFeedback(`Riktig svar! 🎉 ${q.forklaring || ''}`, "success");
+                feedbackEl.className = "p-4 rounded-xl text-sm font-medium flex items-center space-x-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 animate-pulse";
+                feedbackEl.innerHTML = `
+                    <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+                    <div>
+                        <span class="font-bold">Helt riktig! +${earnedXp} XP</span>
+                        <p class="text-xs text-emerald-300/80 mt-0.5">${q.forklaring || 'Flott jobba med utregningen!'}</p>
+                    </div>
+                `;
 
+                triggerConfetti();
+
+                // Move to next question after short delay
                 setTimeout(() => {
-                    if (nextStepIndex < state.currentQuiz.oppgaver.length) {
-                        state.currentQuestionIndex = nextStepIndex;
-                        renderQuizQuestion();
-                    } else {
+                    state.currentQuestionIndex++;
+                    state.categoryProgress[state.currentQuiz.id] = state.currentQuestionIndex;
+                    saveState();
+
+                    if (state.currentQuestionIndex >= state.currentQuiz.oppgaver.length) {
+                        // Category Completed!
                         if (!state.completedCategories.includes(state.currentQuiz.id)) {
                             state.completedCategories.push(state.currentQuiz.id);
                         }
-                        state.categoryProgress[state.currentQuiz.id] = 0;
                         saveState();
-
-                        closeQuiz();
-                        triggerConfetti();
-                        renderCategories();
-                        updateStatsUI();
-                        showToast(`Fantastisk jobbet! Økten er fullført og du fikk +${state.quizXpGained} XP!`);
+                        showCategoryCompletionModal();
+                    } else {
+                        renderQuizQuestion();
                     }
-                }, 1800);
+                }, 1400);
 
             } else {
-                state.sessionCombo = 0;
                 playSound('wrong');
-                showFeedback(`Ikke helt riktig ennå. Prøv igjen eller sjekk et hint!`, "error");
+                state.sessionCombo = 0;
+                feedbackEl.className = "p-4 rounded-xl text-sm font-medium flex items-center space-x-3 bg-rose-500/15 border border-rose-500/30 text-rose-300";
+                feedbackEl.innerHTML = `
+                    <i class="fa-solid fa-circle-xmark text-rose-400 text-lg"></i>
+                    <div>
+                        <span class="font-bold">Ikke helt der ennå. Prøv en gang til!</span>
+                        <p class="text-xs text-rose-300/80 mt-0.5">Sjekk minnetall og utregningene underveis en ekstra gang.</p>
+                    </div>
+                `;
             }
         }
 
-        function showFeedback(msg, type) {
-            const box = document.getElementById('quiz-feedback');
-            box.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-300', 'bg-rose-500/20', 'text-rose-300', 'bg-amber-500/20', 'text-amber-300');
-            
-            if (type === 'success') {
-                box.classList.add('bg-emerald-500/20', 'text-emerald-300');
-                box.innerHTML = `<i class="fa-solid fa-circle-check text-lg"></i> <span>${msg}</span>`;
-            } else if (type === 'error') {
-                box.classList.add('bg-rose-500/20', 'text-rose-300');
-                box.innerHTML = `<i class="fa-solid fa-circle-xmark text-lg"></i> <span>${msg}</span>`;
-            } else {
-                box.classList.add('bg-amber-500/20', 'text-amber-300');
-                box.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-lg"></i> <span>${msg}</span>`;
-            }
+        function showCategoryCompletionModal() {
+            const modal = document.getElementById('quiz-modal');
+            modal.innerHTML = `
+                <div class="glass-card max-w-md w-full rounded-2xl border border-slate-700 p-8 text-center space-y-6 shadow-2xl relative">
+                    <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-indigo-500 rounded-2xl mx-auto flex items-center justify-center text-white text-4xl shadow-xl shadow-amber-500/20">
+                        <i class="fa-solid fa-trophy animate-bounce"></i>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-2xl font-black text-white">Gratulerer!</h3>
+                        <p class="text-slate-300 text-sm">Du har mestret alle oppgavene i <b>${state.currentQuiz.tittel}</b>!</p>
+                    </div>
+                    <button onclick="closeQuiz()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all">
+                        Fortsett å øve
+                    </button>
+                </div>
+            `;
         }
 
         function closeQuiz() {
             document.getElementById('quiz-modal').classList.add('hidden');
             renderCategories();
+            updateStatsUI();
+            
+            // Restore quiz modal layout structure if modified by completion
+            setTimeout(() => {
+                location.reload();
+            }, 100);
         }
 
-        /* ================= GAMIFICATION VISUAL EFFECTS ================= */
-        function triggerXpPopAnimation(amount) {
-            const btn = document.getElementById('quiz-action-btn') || document.body;
-            const rect = btn.getBoundingClientRect();
+        /* ================= GAMIFICATION & XP ================= */
+        function addXp(amount) {
+            state.xp += amount;
+            
+            // Check streak
+            const today = new Date().toISOString().split('T')[0];
+            if (state.lastActiveDate !== today) {
+                state.streak += 1;
+                state.lastActiveDate = today;
+            }
 
-            const pop = document.createElement('div');
-            pop.className = "fixed pointer-events-none text-amber-300 font-black text-2xl z-50 animate-xp-pop flex items-center space-x-1 filter drop-shadow-[0_0_12px_rgba(245,158,11,0.9)]";
-            pop.style.left = `${rect.left + (rect.width / 2) - 40}px`;
-            pop.style.top = `${rect.top - 15}px`;
-            pop.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i><span>+${amount} XP!</span>`;
-            document.body.appendChild(pop);
-
+            saveState();
+            updateStatsUI();
+            
+            // XP Floating Pop Animation
             const xpBadge = document.getElementById('xp-badge-container');
             if (xpBadge) {
                 xpBadge.classList.add('flash-xp');
                 setTimeout(() => xpBadge.classList.remove('flash-xp'), 600);
             }
+        }
 
-            setTimeout(() => pop.remove(), 1200);
+        function getCurrentLevelInfo(xp) {
+            let current = LEVELS[0];
+            for (let i = LEVELS.length - 1; i >= 0; i--) {
+                if (xp >= LEVELS[i].minXp) {
+                    current = { ...LEVELS[i], levelNum: i + 1 };
+                    break;
+                }
+            }
+            return current;
+        }
+
+        function updateStatsUI() {
+            // Header stats
+            document.getElementById('xp-count').innerText = state.xp;
+            document.getElementById('streak-count').innerText = state.streak;
+
+            const lvl = getCurrentLevelInfo(state.xp);
+            document.getElementById('level-title-badge').innerText = `Nivå ${lvl.levelNum}`;
+
+            const pct = Math.min(100, Math.round(((state.xp - lvl.minXp) / (lvl.maxXp - lvl.minXp)) * 100));
+            document.getElementById('header-level-bar').style.width = `${pct}%`;
+
+            // Profile stats
+            const profileLevelTitle = document.getElementById('profile-level-title');
+            if (profileLevelTitle) profileLevelTitle.innerText = `Nivå ${lvl.levelNum} • ${lvl.name}`;
+
+            const profileXp = document.getElementById('profile-xp');
+            if (profileXp) profileXp.innerText = `${state.xp} XP`;
+
+            const profileStreak = document.getElementById('profile-streak');
+            if (profileStreak) profileStreak.innerText = `${state.streak} dager`;
+
+            const profileCompleted = document.getElementById('profile-completed');
+            if (profileCompleted) profileCompleted.innerText = `${state.completedCategories.length} av ${drillCategories.length}`;
+
+            const profileXpProgressText = document.getElementById('profile-xp-progress-text');
+            if (profileXpProgressText) profileXpProgressText.innerText = `${state.xp} / ${lvl.maxXp} XP`;
+
+            const profileXpBar = document.getElementById('profile-xp-bar');
+            if (profileXpBar) profileXpBar.style.width = `${pct}%`;
+        }
+
+        /* ================= DICTIONARY LOGIC ================= */
+        function renderDictionary() {
+            const grid = document.getElementById('dictionary-grid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+
+            const filtered = dictionaryData.filter(term => {
+                const matchesCat = state.dictFilter === 'alle' || term.category === state.dictFilter;
+                const searchVal = (document.getElementById('dict-search-input')?.value || '').toLowerCase();
+                const matchesSearch = !searchVal || term.term.toLowerCase().includes(searchVal) || term.definition.toLowerCase().includes(searchVal);
+                return matchesCat && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full p-8 text-center text-slate-400 space-y-2">
+                        <i class="fa-solid fa-magnifying-glass text-3xl text-slate-600"></i>
+                        <p class="font-medium">Ingen fagbegreper funnet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-sky-500/50 transition-all cursor-pointer flex flex-col justify-between group";
+                card.onclick = () => openDictModal(item.id);
+
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 rounded-md bg-sky-500/15 text-sky-300 text-xs font-semibold uppercase tracking-wider">${item.category}</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-sky-400 transition-colors text-xs"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white group-hover:text-sky-300 transition-colors">${item.term}</h3>
+                            <p class="text-xs text-slate-300 line-clamp-2 mt-1 leading-relaxed">${item.definition}</p>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterDictionary(cat) {
+            state.dictFilter = cat;
+            
+            const btns = document.querySelectorAll('.dict-filter-btn');
+            btns.forEach(btn => {
+                if (btn.getAttribute('data-cat') === cat) {
+                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors";
+                } else {
+                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
+                }
+            });
+
+            renderDictionary();
+        }
+
+        function searchDictionary() {
+            renderDictionary();
+        }
+
+        function openDictModal(termId) {
+            const item = dictionaryData.find(t => t.id === termId);
+            if (!item) return;
+
+            state.activeDictTerm = item;
+
+            document.getElementById('dict-modal-category').innerText = item.category.toUpperCase();
+            document.getElementById('dict-modal-title').innerText = item.term;
+            document.getElementById('dict-modal-definition').innerText = item.definition;
+            document.getElementById('dict-modal-analogy').innerText = item.analogy;
+            document.getElementById('dict-modal-visual').innerHTML = item.visualSvg || '<span class="text-xs text-slate-500">Ingen figur tilgjengelig</span>';
+
+            document.getElementById('ai-response-box').classList.add('hidden');
+            document.getElementById('dict-modal').classList.remove('hidden');
+        }
+
+        function closeDictModal() {
+            document.getElementById('dict-modal').classList.add('hidden');
+        }
+
+        function readTermAudio() {
+            if (!state.activeDictTerm) return;
+            try {
+                const text = `${state.activeDictTerm.term}. ${state.activeDictTerm.definition}`;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'nb-NO';
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                showToast("Kunne ikke spille av lyd i denne nettleseren.");
+            }
+        }
+
+        /* ================= GEMINI AI INTEGRATION ================= */
+        async function askGeminiToSimplify() {
+            if (!state.activeDictTerm) return;
+
+            const btn = document.getElementById('ai-explain-btn');
+            const box = document.getElementById('ai-response-box');
+            const textEl = document.getElementById('ai-response-text');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i><span>Tenker...</span>`;
+            box.classList.remove('hidden');
+            textEl.innerText = "Spør AI-veilederen om en enda enklere forklaring...";
+
+            const userQuery = `Forklar begrepet "${state.activeDictTerm.term}" i matematikk for en ungdomsskoleelev på en superenkel, morsom og pedagogisk måte. Bruk en kort metafor.`;
+            const systemPrompt = "Du er en vennlig, oppmuntrende matematikk-lærer for ungdomsskolen. Svar kort, presist og engasjerende på norsk uten vanskelige ord.";
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            try {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!res.ok) throw new Error("API-feil");
+
+                const result = await res.json();
+                const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (aiText) {
+                    textEl.innerText = aiText;
+                } else {
+                    textEl.innerText = "Kunne ikke hente forklaring akkurat nå.";
+                }
+            } catch (err) {
+                textEl.innerText = "Kunne ikke koble til AI-veilederen i øyeblikket. Prøv igjen senere!";
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Spør AI-veileder</span><i class="fa-solid fa-bolt text-[10px]"></i>`;
+            }
+        }
+
+        /* ================= UI UTILS ================= */
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-6 right-6 z-50 bg-slate-800 text-slate-100 border border-slate-700 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center space-x-2 animate-bounce";
+            toast.innerHTML = `<i class="fa-solid fa-info-circle text-indigo-400"></i><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
         function triggerConfetti() {
@@ -1371,240 +1689,43 @@
             const particles = [];
             const colors = ['#6366f1', '#38bdf8', '#f59e0b', '#10b981', '#ec4899'];
 
-            for (let i = 0; i < 70; i++) {
+            for (let i = 0; i < 40; i++) {
                 particles.push({
-                    x: Math.random() * canvas.width,
-                    y: canvas.height + Math.random() * 20,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: -(Math.random() * 8 + 8),
-                    size: Math.random() * 8 + 4,
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.7) * 14,
+                    size: Math.random() * 6 + 4,
                     color: colors[Math.floor(Math.random() * colors.length)],
-                    rotation: Math.random() * 360,
-                    rSpeed: (Math.random() - 0.5) * 10
+                    life: 1
                 });
             }
 
-            let animationFrame;
-            function render() {
+            function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                let alive = false;
+                let active = false;
 
                 particles.forEach(p => {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vy += 0.25;
-                    p.rotation += p.rSpeed;
+                    if (p.life > 0) {
+                        active = true;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.4;
+                        p.life -= 0.025;
 
-                    if (p.y < canvas.height + 20) alive = true;
-
-                    ctx.save();
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate((p.rotation * Math.PI) / 180);
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-                    ctx.restore();
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = Math.max(0, p.life);
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                 });
 
-                if (alive) {
-                    animationFrame = requestAnimationFrame(render);
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    cancelAnimationFrame(animationFrame);
-                }
+                if (active) requestAnimationFrame(animate);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
 
-            render();
-        }
-
-        /* ================= DICTIONARY ENGINE ================= */
-        function renderDictionary() {
-            const grid = document.getElementById('dictionary-grid');
-            grid.innerHTML = '';
-
-            const filtered = dictionaryData.filter(item => {
-                return (state.dictFilter === 'alle' || item.category === state.dictFilter);
-            });
-
-            filtered.forEach(item => {
-                const card = document.createElement('div');
-                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-sky-500/50 transition-all cursor-pointer space-y-3 group";
-                card.onclick = () => openDictModal(item.id);
-
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold uppercase tracking-wider">${item.category}</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-500 group-hover:text-sky-400 transition-colors"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-extrabold text-xl text-white group-hover:text-sky-300 transition-colors">${item.term}</h3>
-                        <p class="text-slate-400 text-xs line-clamp-2 mt-1 leading-relaxed">${item.definition}</p>
-                    </div>
-                    <div class="pt-2 flex items-center space-x-1.5 text-xs text-sky-400 font-medium">
-                        <i class="fa-solid fa-book-open"></i>
-                        <span>Les full forklaring og figurer</span>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function filterDictionary(cat) {
-            state.dictFilter = cat;
-            document.querySelectorAll('.dict-filter-btn').forEach(btn => {
-                if (btn.dataset.cat === cat) {
-                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500 text-white transition-colors";
-                } else {
-                    btn.className = "dict-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors";
-                }
-            });
-            renderDictionary();
-        }
-
-        function searchDictionary() {
-            const query = document.getElementById('dict-search-input').value.toLowerCase();
-            const grid = document.getElementById('dictionary-grid');
-            grid.innerHTML = '';
-
-            const matches = dictionaryData.filter(item => 
-                item.term.toLowerCase().includes(query) || 
-                item.definition.toLowerCase().includes(query)
-            );
-
-            matches.forEach(item => {
-                const card = document.createElement('div');
-                card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-sky-500/50 transition-all cursor-pointer space-y-3 group";
-                card.onclick = () => openDictModal(item.id);
-
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold uppercase tracking-wider">${item.category}</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-500 group-hover:text-sky-400 transition-colors"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-extrabold text-xl text-white group-hover:text-sky-300 transition-colors">${item.term}</h3>
-                        <p class="text-slate-400 text-xs line-clamp-2 mt-1 leading-relaxed">${item.definition}</p>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function openDictModal(termId) {
-            const item = dictionaryData.find(d => d.id === termId);
-            if (!item) return;
-
-            state.activeDictTerm = item;
-
-            document.getElementById('dict-modal-category').innerText = item.category.toUpperCase();
-            document.getElementById('dict-modal-title').innerText = item.term;
-            document.getElementById('dict-modal-definition').innerText = item.definition;
-            document.getElementById('dict-modal-analogy').innerText = item.analogy;
-            document.getElementById('dict-modal-visual').innerHTML = item.visualSvg;
-
-            document.getElementById('ai-response-box').classList.add('hidden');
-            document.getElementById('dict-modal').classList.remove('hidden');
-        }
-
-        function openDictTerm(termId) {
-            switchTab('dictionary');
-            openDictModal(termId);
-        }
-
-        function closeDictModal() {
-            document.getElementById('dict-modal').classList.add('hidden');
-        }
-
-        function readTermAudio() {
-            if (!state.activeDictTerm) return;
-            const textToRead = `${state.activeDictTerm.term}. ${state.activeDictTerm.definition}`;
-
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(textToRead);
-                utterance.lang = 'nb-NO';
-                utterance.rate = 0.9;
-                window.speechSynthesis.speak(utterance);
-            } else {
-                showToast("Nettleseren din støtter dessverre ikke direkte lydopplesing.");
-            }
-        }
-
-        async function askGeminiToSimplify() {
-            if (!state.activeDictTerm) return;
-
-            const btn = document.getElementById('ai-explain-btn');
-            const responseBox = document.getElementById('ai-response-box');
-            const responseText = document.getElementById('ai-response-text');
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> <span>Tenker...</span>`;
-
-            const prompt = `Forklar mattebegrepet "${state.activeDictTerm.term}" på en superenkel, morsom og engasjerende måte for en ungdomsskoleelev. Bruk et nytt eksempel fra hverdagen. Maks 3 korte setninger.`;
-
-            try {
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
-
-                const data = await response.json();
-                const aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (aiResult) {
-                    responseText.innerText = aiResult;
-                    responseBox.classList.remove('hidden');
-                } else {
-                    responseText.innerText = "Kunne ikke hente AI-forklaring akkurat nå. Prøv igjen om et øyeblikk.";
-                    responseBox.classList.remove('hidden');
-                }
-            } catch (err) {
-                responseText.innerText = "Klarte ikke å koble til AI-veilederen. Sjekk internettforbindelsen din.";
-                responseBox.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<span>Spør AI-veileder</span> <i class="fa-solid fa-bolt text-[10px]"></i>`;
-            }
-        }
-
-        /* ================= STATS & LEVEL COMPUTATION ================= */
-        function getCurrentLevel() {
-            return LEVELS.find(l => state.xp >= l.minXp && state.xp < l.maxXp) || LEVELS[LEVELS.length - 1];
-        }
-
-        function updateStatsUI() {
-            const currentLvl = getCurrentLevel();
-            const lvlIndex = LEVELS.indexOf(currentLvl) + 1;
-
-            const xpInLevel = state.xp - currentLvl.minXp;
-            const levelSpan = currentLvl.maxXp - currentLvl.minXp;
-            const progressPercent = Math.min(100, Math.round((xpInLevel / levelSpan) * 100));
-
-            document.getElementById('xp-count').innerText = state.xp;
-            document.getElementById('streak-count').innerText = state.streak;
-            document.getElementById('level-title-badge').innerText = `Nivå ${lvlIndex}`;
-            document.getElementById('header-level-bar').style.width = `${progressPercent}%`;
-
-            document.getElementById('profile-xp').innerText = `${state.xp} XP`;
-            document.getElementById('profile-streak').innerText = `${state.streak} dager`;
-            document.getElementById('profile-completed').innerText = `${state.completedCategories.length} av ${drillCategories.length}`;
-            document.getElementById('profile-level-title').innerText = `Nivå ${lvlIndex} • ${currentLvl.name}`;
-            document.getElementById('profile-xp-progress-text').innerText = `${state.xp} / ${currentLvl.maxXp} XP`;
-            document.getElementById('profile-xp-bar').style.width = `${progressPercent}%`;
-        }
-
-        function showToast(msg) {
-            const toast = document.createElement('div');
-            toast.className = "fixed bottom-6 right-6 z-50 glass-card bg-indigo-600/95 text-white px-5 py-3 rounded-xl shadow-2xl border border-indigo-400/30 flex items-center space-x-2 text-sm font-semibold animate-bounce";
-            toast.innerHTML = `<i class="fa-solid fa-trophy text-amber-300"></i> <span>${msg}</span>`;
-            document.body.appendChild(toast);
-
-            setTimeout(() => toast.remove(), 4000);
+            animate();
         }
     </script>
 </body>
