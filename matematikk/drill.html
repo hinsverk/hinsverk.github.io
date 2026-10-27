@@ -89,23 +89,34 @@
 
     <!-- Top Header / Bar -->
     <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md">
-        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <!-- Logo -->
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('drill')">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-500/20">
-                    ∑
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                        MatteDrill <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Ungdomstrinn</span>
-                    </h1>
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+            
+            <!-- Venstre side: Tilbake-knapp + Logo -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <!-- TILBAKE-KNAPP (Tilpasset slik at den ikke overlapper logo) -->
+                <a href="index.html" class="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-800/90 hover:bg-slate-700 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-lg transition-all font-sans text-xs font-semibold cursor-pointer shrink-0">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span class="hidden sm:inline">Tilbake til Lærerverktøy</span>
+                    <span class="sm:hidden">Tilbake</span>
+                </a>
+
+                <!-- Logo -->
+                <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('drill')">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-500/20">
+                        ∑
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base sm:text-lg leading-tight tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                            MatteDrill <span class="hidden md:inline text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-normal">Ungdomstrinn</span>
+                        </h1>
+                    </div>
                 </div>
             </div>
 
-            <!-- User Gamification Stats -->
+            <!-- Høyre side: User Gamification Stats -->
             <div class="flex items-center space-x-2 sm:space-x-3">
                 <!-- Gist Sync Status Indicator -->
-                <div id="gist-status" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs border border-slate-700" title="Status for oppgaver fra GitHub Gist">
+                <div id="gist-status" class="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs border border-slate-700" title="Status for oppgaver fra GitHub Gist">
                     <i class="fa-solid fa-spinner animate-spin text-slate-400"></i>
                     <span>Sjekker Gist...</span>
                 </div>
@@ -166,15 +177,18 @@
                 <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                     <div class="space-y-2 max-w-2xl">
-                        <span class="text-xs uppercase tracking-wider font-bold text-indigo-400">Korte og effektive økter</span>
+                        <span class="text-xs uppercase tracking-wider font-bold text-indigo-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-bookmark"></i>
+                            <span>Progresjon lagres automatisk</span>
+                        </span>
                         <h2 class="text-2xl font-extrabold text-white">Hva vil du mestre i dag?</h2>
                         <p class="text-slate-400 text-sm">
-                            Bruk den tiden du trenger, samle XP og slå opp vanskelige fagord direkte i oppgavene. Trykk Enter for rask innlevering!
+                            Du kan fortsette direkte der du slapp sist. Samle XP, stig i nivå og slå opp vanskelige fagord underveis!
                         </p>
                     </div>
                     <button onclick="reloadGistTasks()" class="self-start sm:self-center px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center space-x-2 transition-colors shadow-sm" title="Hent nyeste oppgaver fra GitHub Gist">
                         <i class="fa-solid fa-arrows-rotate text-indigo-400"></i>
-                        <span>Oppdater fra Gist</span>
+                        <span>Oppdater oppgaver</span>
                     </button>
                 </div>
             </div>
@@ -193,12 +207,16 @@
                     </button>
 
                     <!-- Quiz Header -->
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-2">
                         <div class="flex items-center space-x-2">
                             <span id="quiz-category-badge" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-semibold">Brøk og desimal</span>
                             <span class="text-slate-400 text-xs">Oppgave <span id="quiz-current-step">1</span> av <span id="quiz-total-steps">3</span></span>
                         </div>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-3">
+                            <button onclick="restartCurrentQuiz()" class="text-xs text-slate-400 hover:text-slate-200 underline flex items-center gap-1" title="Start dette emnet på nytt fra oppgave 1">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                <span>Start på nytt</span>
+                            </button>
                             <span id="quiz-streak-combo" class="hidden text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">
                                 🔥 2 på rad!
                             </span>
@@ -446,6 +464,41 @@
                 </div>
             </div>
 
+            <!-- Manage Saved Progress & Reset Option -->
+            <div class="glass-card p-6 rounded-2xl space-y-4 border border-slate-800">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-floppy-disk text-sky-400"></i>
+                            <span>Lagret fremgang</span>
+                        </h3>
+                        <p class="text-sm text-slate-400 mt-0.5">
+                            Statusen din lagres automatisk på denne enheten. Ønsker du å begynne helt på nytt?
+                        </p>
+                    </div>
+
+                    <button onclick="toggleResetConfirm(true)" class="self-start sm:self-center px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-colors flex items-center space-x-2">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Nullstill fremgang</span>
+                    </button>
+                </div>
+
+                <!-- Confirmation Box for Reset -->
+                <div id="reset-confirm-box" class="hidden p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-200 space-y-3">
+                    <p class="text-xs font-medium">
+                        Er du sikker på at du vil slette all opptjent XP, streak og fremgang i oppgavene? Dette kan ikke angres.
+                    </p>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="confirmResetProgress()" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors">
+                            Ja, slett alt
+                        </button>
+                        <button onclick="toggleResetConfirm(false)" class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors">
+                            Avbryt
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Rewards & Theme Unlocks -->
             <div class="glass-card p-6 rounded-2xl space-y-4">
                 <h3 class="text-lg font-bold text-white flex items-center space-x-2">
@@ -488,20 +541,23 @@
 
     <!-- Footer -->
     <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        <p>Tilpasset drilleapp for matematikk • Ungdomstrinn • Ingen registrering kreves</p>
+        <p>Tilpasset drilleapp for matematikk • Ungdomstrinn • Lagres automatisk i nettleseren</p>
     </footer>
 
     <!-- Application Script -->
     <script>
-        /* ================= STATE & DATA ================= */
+        /* ================= STATE & PERSISTENCE ================= */
         const GIST_URL = "https://gist.githubusercontent.com/hinsverk/f5c167e086b825429868db99fb566f25/raw/mattedrill.json";
+        const STORAGE_KEY = "mattedrill_user_progress_v1";
 
-        // Initial State - Starts at ZERO as requested
+        // Application State
         const state = {
             xp: 0,
             streak: 0,
             sessionCombo: 0,
             completedCategories: [],
+            categoryProgress: {}, // Store question index per category: { categoryId: number }
+            lastActiveDate: null,
             activeTab: 'drill',
             currentQuiz: null,
             currentQuestionIndex: 0,
@@ -509,6 +565,79 @@
             activeDictTerm: null,
             dictFilter: 'alle'
         };
+
+        /* Save state to localStorage */
+        function saveState() {
+            try {
+                const dataToSave = {
+                    xp: state.xp,
+                    streak: state.streak,
+                    completedCategories: state.completedCategories,
+                    categoryProgress: state.categoryProgress,
+                    lastActiveDate: state.lastActiveDate
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+            } catch (e) {
+                console.warn("Kunne ikke lagre til localStorage:", e);
+            }
+        }
+
+        /* Load state from localStorage */
+        function loadState() {
+            try {
+                const saved = localStorage.setItem ? localStorage.getItem(STORAGE_KEY) : null;
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state.xp = parsed.xp || 0;
+                    state.streak = parsed.streak || 0;
+                    state.completedCategories = parsed.completedCategories || [];
+                    state.categoryProgress = parsed.categoryProgress || {};
+                    state.lastActiveDate = parsed.lastActiveDate || null;
+                    
+                    checkStreakLogic();
+                }
+            } catch (e) {
+                console.warn("Kunne ikke laste fra localStorage:", e);
+            }
+        }
+
+        function checkStreakLogic() {
+            const today = new Date().toISOString().split('T')[0];
+            if (state.lastActiveDate) {
+                const last = new Date(state.lastActiveDate);
+                const current = new Date(today);
+                const diffTime = Math.abs(current - last);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 1) {
+                    state.streak = 0; // Streak reset if missed a day
+                }
+            }
+            state.lastActiveDate = today;
+            saveState();
+        }
+
+        function toggleResetConfirm(show) {
+            const box = document.getElementById('reset-confirm-box');
+            if (box) {
+                if (show) box.classList.remove('hidden');
+                else box.classList.add('hidden');
+            }
+        }
+
+        function confirmResetProgress() {
+            state.xp = 0;
+            state.streak = 0;
+            state.completedCategories = [];
+            state.categoryProgress = {};
+            state.lastActiveDate = new Date().toISOString().split('T')[0];
+            saveState();
+            
+            toggleResetConfirm(false);
+            renderCategories();
+            updateStatsUI();
+            showToast("Progresjonen din er nullstilt.");
+        }
 
         // Levels configuration
         const LEVELS = [
@@ -742,6 +871,7 @@
 
         /* ================= INITIALIZATION & GIST FETCH ================= */
         window.onload = async function() {
+            loadState();
             await fetchGistTasks();
             renderCategories();
             renderDictionary();
@@ -796,7 +926,7 @@
                     }));
 
                     if (statusEl) {
-                        statusEl.className = "hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium";
+                        statusEl.className = "hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium";
                         statusEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-emerald-400"></i><span>Gist tilkoblet</span>`;
                     }
                     return true;
@@ -807,7 +937,7 @@
 
             drillCategories = [...fallbackCategories];
             if (statusEl) {
-                statusEl.className = "hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium";
+                statusEl.className = "hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium";
                 statusEl.innerHTML = `<i class="fa-solid fa-hard-drive text-amber-400"></i><span>Lokal reserve-modus</span>`;
             }
             return false;
@@ -856,13 +986,27 @@
 
             drillCategories.forEach(cat => {
                 const isCompleted = state.completedCategories.includes(cat.id);
+                const savedStep = state.categoryProgress[cat.id] || 0;
+                const totalSteps = cat.oppgaver.length;
+                const progressPct = totalSteps > 0 ? Math.min(100, Math.round((savedStep / totalSteps) * 100)) : 0;
 
                 const card = document.createElement('div');
                 card.className = "glass-card p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden";
                 card.onclick = () => startQuiz(cat.id);
 
+                let badgeHtml = '';
+                let actionBtnText = 'Start økt';
+
+                if (isCompleted) {
+                    badgeHtml = `<div class="absolute top-3 right-3 text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20 text-xs font-bold flex items-center space-x-1"><i class="fa-solid fa-circle-check"></i><span>Fullført</span></div>`;
+                    actionBtnText = 'Øv på nytt';
+                } else if (savedStep > 0 && savedStep < totalSteps) {
+                    badgeHtml = `<div class="absolute top-3 right-3 text-sky-300 bg-sky-500/15 px-2.5 py-0.5 rounded-md border border-sky-500/30 text-xs font-semibold flex items-center space-x-1"><i class="fa-solid fa-play text-[10px]"></i><span>Oppgave ${savedStep + 1}/${totalSteps}</span></div>`;
+                    actionBtnText = `Fortsett (oppgave ${savedStep + 1})`;
+                }
+
                 card.innerHTML = `
-                    ${isCompleted ? '<div class="absolute top-3 right-3 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 text-xs font-bold flex items-center space-x-1"><i class="fa-solid fa-check"></i><span>Fullført</span></div>' : ''}
+                    ${badgeHtml}
                     <div class="space-y-3">
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-tr ${cat.farge} flex items-center justify-center text-white text-xl shadow-md group-hover:scale-105 transition-transform">
                             <i class="fa-solid ${cat.ikon}"></i>
@@ -872,25 +1016,40 @@
                             <p class="text-xs text-slate-400 leading-relaxed mt-1">${cat.beskrivelse}</p>
                         </div>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                        <span>${cat.oppgaver.length} interaktive oppgaver</span>
-                        <span class="text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform flex items-center space-x-1">
-                            <span>Start økt</span>
-                            <i class="fa-solid fa-arrow-right"></i>
-                        </span>
+
+                    <div class="space-y-2 mt-4 pt-3 border-t border-slate-800/80">
+                        ${savedStep > 0 && !isCompleted ? `
+                        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="bg-sky-400 h-full transition-all duration-300" style="width: ${progressPct}%"></div>
+                        </div>
+                        ` : ''}
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <span>${cat.oppgaver.length} oppgaver totalt</span>
+                            <span class="text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform flex items-center space-x-1">
+                                <span>${actionBtnText}</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        /* ================= QUIZ ENGINE ================= */
-        function startQuiz(categoryId) {
+        /* ================= QUIZ ENGINE WITH RESUME SUPPORT ================= */
+        function startQuiz(categoryId, forceRestart = false) {
             const category = drillCategories.find(c => c.id === categoryId);
             if (!category) return;
 
             state.currentQuiz = category;
-            state.currentQuestionIndex = 0;
+            
+            // Resume progress or start from 0
+            let startIdx = 0;
+            if (!forceRestart && state.categoryProgress[categoryId] && state.categoryProgress[categoryId] < category.oppgaver.length) {
+                startIdx = state.categoryProgress[categoryId];
+            }
+
+            state.currentQuestionIndex = startIdx;
             state.quizXpGained = 0;
             state.sessionCombo = 0;
 
@@ -899,6 +1058,15 @@
             
             document.getElementById('quiz-modal').classList.remove('hidden');
             renderQuizQuestion();
+        }
+
+        function restartCurrentQuiz() {
+            if (state.currentQuiz) {
+                state.categoryProgress[state.currentQuiz.id] = 0;
+                saveState();
+                startQuiz(state.currentQuiz.id, true);
+                showToast("Oppgavene er startet på nytt fra oppgave 1.");
+            }
         }
 
         function renderQuizQuestion() {
@@ -971,7 +1139,6 @@
                 inputContainer.innerHTML = `
                     <input type="number" id="quiz-number-answer" placeholder="Skriv svar her og trykk Enter..." class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-center font-bold text-xl text-white focus:outline-none focus:border-indigo-500 shadow-inner">
                 `;
-                // Auto focus
                 setTimeout(() => {
                     const numInput = document.getElementById('quiz-number-answer');
                     if (numInput) numInput.focus();
@@ -1016,6 +1183,11 @@
                 state.xp += earnedXp;
                 state.quizXpGained += earnedXp;
 
+                // Save next step progress
+                const nextStepIndex = state.currentQuestionIndex + 1;
+                state.categoryProgress[state.currentQuiz.id] = nextStepIndex;
+                saveState();
+
                 // Sound & Visual Flash Effects
                 playSound('correct');
                 triggerXpPopAnimation(earnedXp);
@@ -1025,15 +1197,17 @@
 
                 // Progress to next question or end
                 setTimeout(() => {
-                    if (state.currentQuestionIndex + 1 < state.currentQuiz.oppgaver.length) {
-                        state.currentQuestionIndex++;
+                    if (nextStepIndex < state.currentQuiz.oppgaver.length) {
+                        state.currentQuestionIndex = nextStepIndex;
                         renderQuizQuestion();
                     } else {
                         // Mark category completed
                         if (!state.completedCategories.includes(state.currentQuiz.id)) {
                             state.completedCategories.push(state.currentQuiz.id);
                         }
-                        
+                        state.categoryProgress[state.currentQuiz.id] = 0; // Reset step count when finished
+                        saveState();
+
                         closeQuiz();
                         playSound('complete');
                         triggerConfetti();
@@ -1068,6 +1242,7 @@
 
         function closeQuiz() {
             document.getElementById('quiz-modal').classList.add('hidden');
+            renderCategories();
         }
 
 
@@ -1277,7 +1452,7 @@
             const prompt = `Forklar mattebegrepet "${state.activeDictTerm.term}" på en superenkel, morsom og engasjerende måte for en ungdomsskoleelev. Bruk et nytt eksempel fra hverdagen. Maks 3 korte setninger.`;
 
             try {
-                const apiKey = ""; // Runtime automatically injected if available
+                const apiKey = "";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -1316,7 +1491,6 @@
             const currentLvl = getCurrentLevel();
             const lvlIndex = LEVELS.indexOf(currentLvl) + 1;
 
-            // Compute progress percentage to next level
             const xpInLevel = state.xp - currentLvl.minXp;
             const levelSpan = currentLvl.maxXp - currentLvl.minXp;
             const progressPercent = Math.min(100, Math.round((xpInLevel / levelSpan) * 100));
