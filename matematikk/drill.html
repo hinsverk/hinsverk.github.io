@@ -1407,7 +1407,7 @@
                 o = String(o || '+').trim();
                 if (o === 'x' || o === 'X' || o === '×' || o === '·') return '*';
                 if (o === '−' || o === '–') return '-';
-                if (o === '/' ) return ':';
+                if (o === '/' || o === '÷') return ':';
                 return o;
             };
             const allowedOps = ['+', '-', '*', ':'];
@@ -1426,7 +1426,7 @@
             if (nums.length !== 2) return null;
             if (/(?<=\d)[,.](?=\d)/.test(rawText)) return null; // desimaltall
 
-            const m = rawText.match(/(?<![\d,.\/])(\d+)\s*(\+|×|·|\*|[xX]|\s[\-−–]\s|\s:\s)\s*(\d+)(?![\d,.\/])/);
+            const m = rawText.match(/(?<![\d,.\/])(\d+)\s*(\+|×|·|\*|[xX]|÷|\s[\-−–]\s|\s:\s)\s*(\d+)(?![\d,.\/])/);
             if (!m) return null;
             const op = normOp(m[2]);
             if (!allowedOps.includes(op)) return null;
@@ -1856,6 +1856,7 @@
             if (!q) return;
 
             document.getElementById('quiz-current-step').innerText = state.currentQuestionIndex + 1;
+            state.wrongAttempts = 0;
             document.getElementById('quiz-question').innerText = q.sporsmal;
             document.getElementById('quiz-xp-reward').innerText = `+${q.xp || 10} XP`;
 
@@ -1906,7 +1907,7 @@
             if (q.type === 'flervalg' && Array.isArray(q.alternativer)) {
                 const grid = document.createElement('div');
                 grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
-                q.alternativer.forEach((alt, idx) => {
+                shuffled(q.alternativer).forEach((alt, idx) => {
                     const btn = document.createElement('button');
                     btn.className = "p-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-left text-sm font-semibold text-slate-200 transition-all flex items-center justify-between group";
                     btn.onclick = () => submitQuizAnswer(alt);
@@ -1943,6 +1944,36 @@
             hintBox.classList.remove('hidden');
         }
 
+        function parseNumberInput(s) {
+            const t = String(s).trim().toLowerCase().replace(/(\d) (?=\d{3}(?!\d))/g, '$1');
+            const m = t.match(/^([-−+]?\d+(?:[.,]\d+)?)\s*(cm²|m²|cm2|m2|cm|mm|dm|km|m|kroner|kr|prosent|%|kg|g|dl|liter|l|min|timer|grader|°)?$/);
+            if (!m) return null;
+            return parseFloat(m[1].replace('−', '-').replace(',', '.'));
+        }
+
+        function checkAnswer(q, userVal) {
+            const raw = String(userVal).trim();
+            if (q.type === 'flervalg') {
+                const norm = s => String(s).trim().toLowerCase().replace(/\s+/g, ' ').replace(/(\d),(\d)/g, '$1.$2');
+                return { ok: norm(raw) === norm(q.fasit) };
+            }
+            if (raw.includes('/')) return { invalid: 'Skriv svaret som ett tall (for eksempel 0,5), ikke som brøk.' };
+            const val = parseNumberInput(raw);
+            if (val === null) return { invalid: 'Skriv svaret som et tall, for eksempel 42 eller 0,75.' };
+            const fasit = parseFloat(String(q.fasit).replace(',', '.'));
+            const tol = typeof q.toleranse === 'number' ? q.toleranse : 0;
+            return { ok: Math.abs(val - fasit) <= tol + 1e-9 };
+        }
+
+        function shuffled(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
         function submitQuizAnswer(givenAnswer = null) {
             if (!state.currentQuiz) return;
             const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
@@ -1959,10 +1990,9 @@
                 return;
             }
 
-            const normUser = String(userVal).replace(',', '.').trim().toLowerCase();
-            const normFasit = String(q.fasit).replace(',', '.').trim().toLowerCase();
-
-            const isCorrect = normUser === normFasit || (parseFloat(normUser) === parseFloat(normFasit) && !isNaN(parseFloat(normUser)));
+            const check = checkAnswer(q, userVal);
+            if (check.invalid) { showToast(check.invalid); return; }
+            const isCorrect = check.ok;
 
             const feedbackEl = document.getElementById('quiz-feedback');
             feedbackEl.classList.remove('hidden');
@@ -1970,7 +2000,8 @@
             if (isCorrect) {
                 playSound('correct');
                 state.sessionCombo++;
-                const earnedXp = (q.xp || 10) + (state.sessionCombo > 1 ? 5 : 0);
+                const baseXp = q.xp || 10;
+                const earnedXp = (state.wrongAttempts || 0) >= 2 ? Math.max(1, Math.round(baseXp / 2)) : baseXp + (state.sessionCombo > 1 ? 5 : 0);
                 addXp(earnedXp);
 
                 feedbackEl.className = "p-4 rounded-xl text-sm font-medium flex items-center space-x-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 animate-pulse";
@@ -2003,12 +2034,16 @@
             } else {
                 playSound('wrong');
                 state.sessionCombo = 0;
+                state.wrongAttempts = (state.wrongAttempts || 0) + 1;
+                const wrongMsg = state.wrongAttempts >= 2
+                    ? `<strong>Slik kan du tenke:</strong> ${q.forklaring || 'Se på hintet og prøv igjen.'}`
+                    : 'Sjekk utregningen din en ekstra gang. Trenger du hjelp, trykk på «Trenger et hint».';
                 feedbackEl.className = "p-4 rounded-xl text-sm font-medium flex items-center space-x-3 bg-rose-500/15 border border-rose-500/30 text-rose-300";
                 feedbackEl.innerHTML = `
                     <i class="fa-solid fa-circle-xmark text-rose-400 text-lg"></i>
                     <div>
                         <span class="font-bold">Ikke helt der ennå. Prøv en gang til!</span>
-                        <p class="text-xs text-rose-300/80 mt-0.5">Sjekk utregningen din en ekstra gang.</p>
+                        <p class="text-xs text-rose-300/80 mt-0.5">${wrongMsg}</p>
                     </div>
                 `;
             }
