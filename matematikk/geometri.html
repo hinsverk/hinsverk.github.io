@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interaktiv Geometri- og Tegneapp</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for ikoner -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Forhindre rulling og uønsket touch-oppførsel på smartskjermer */
+        html, body {
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Canvas-lag */
+        .canvas-container {
+            position: relative;
+            width: 100vw;
+            height: calc(100vh - 70px);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Styling av verktøy som flyttes/roteres oppå tegneflaten */
+        .overlay-tool {
+            position: absolute;
+            transform-origin: center center;
+            cursor: move;
+            z-index: 20;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            touch-action: none;
+        }
+
+        /* Gradskive spesifikk styling */
+        #protractor-tool {
+            transform-origin: 210px 210px; /* Eksakt senter nederst på gradskiven */
+        }
+
+        /* Linjal rotasjonspunkt-oppsett */
+        #ruler-tool {
+            transform-origin: 0px 80px; /* Siktepunkt / Origo nederst til venstre på linjalen */
+        }
+
+        .tool-handle {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 30;
+        }
+
+        /* Glassmorfisme for kontrollpaneler */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(229, 231, 235, 0.8);
+        }
+
+        /* Realistisk passer styling uten fast boksbegrensning */
+        .compass-container-el {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 25;
+            touch-action: none;
+            pointer-events: none;
+        }
+        .compass-interactive {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col justify-between">
+
+    <!-- Top Toolbar -->
+    <header class="glass-panel h-[70px] px-4 flex items-center justify-between shadow-sm z-40 relative">
+        <div class="flex items-center space-x-2">
+            <span class="font-bold text-xl text-indigo-700 flex items-center gap-2">
+                <i class="fa-solid fa-shapes"></i> GeoTegn
+            </span>
+            <span class="text-xs bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded-full hidden sm:inline-block">Smartskjerm Edition</span>
+        </div>
+
+        <!-- Hovedverktøy: Blyant, Linje, Viskelær, Mangekant, Flytt -->
+        <div class="flex items-center space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-xl border border-gray-200">
+            <button id="btn-pencil" class="tool-btn active p-2.5 sm:px-3 sm:py-2 rounded-lg flex items-center gap-2 transition bg-indigo-600 text-white font-medium text-sm shadow-sm" title="Blyant">
+                <i class="fa-solid fa-pen"></i> <span class="hidden md:inline">Blyant</span>
+            </button>
+            <button id="btn-line" class="tool-btn p-2.5 sm:px-3 sm:py-2 rounded-lg flex items-center gap-2 transition text-gray-700 hover:bg-gray-200 font-medium text-sm" title="Rett Linje">
+                <i class="fa-solid fa-slash"></i> <span class="hidden md:inline">Linje</span>
+            </button>
+            <button id="btn-polygon" class="tool-btn p-2.5 sm:px-3 sm:py-2 rounded-lg flex items-center gap-2 transition text-gray-700 hover:bg-gray-200 font-medium text-sm" title="Mangekant">
+                <i class="fa-solid fa-draw-polygon"></i> <span class="hidden md:inline">Mangekant</span>
+            </button>
+            <button id="btn-select" class="tool-btn p-2.5 sm:px-3 sm:py-2 rounded-lg flex items-center gap-2 transition text-gray-700 hover:bg-gray-200 font-medium text-sm" title="Flytt tegning">
+                <i class="fa-solid fa-hand"></i> <span class="hidden md:inline">Flytt</span>
+            </button>
+            <button id="btn-eraser" class="tool-btn p-2.5 sm:px-3 sm:py-2 rounded-lg flex items-center gap-2 transition text-gray-700 hover:bg-gray-200 font-medium text-sm" title="Viskelær">
+                <i class="fa-solid fa-eraser"></i> <span class="hidden md:inline">Viskelær</span>
+            </button>
+        </div>
+
+        <!-- Farger & Tykkelse -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+            <!-- Fargevelgere -->
+            <div class="flex items-center space-x-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
+                <button class="color-btn w-7 h-7 rounded-full bg-black ring-2 ring-offset-1 ring-indigo-500" data-color="#000000"></button>
+                <button class="color-btn w-7 h-7 rounded-full bg-blue-600" data-color="#2563eb"></button>
+                <button class="color-btn w-7 h-7 rounded-full bg-red-600" data-color="#dc2626"></button>
+                <button class="color-btn w-7 h-7 rounded-full bg-green-600" data-color="#16a34a"></button>
+                <input type="color" id="custom-color" value="#000000" class="w-7 h-7 rounded-full cursor-pointer opacity-0 absolute pointer-events-none">
+                <button id="btn-custom-color" class="w-7 h-7 rounded-full bg-conic-gradient flex items-center justify-center text-xs border border-gray-300" title="Velg farge">
+                    <i class="fa-solid fa-palette text-gray-700"></i>
+                </button>
+            </div>
+
+            <!-- Tykkelse -->
+            <div class="hidden lg:flex items-center space-x-2 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200">
+                <i class="fa-solid fa-circle text-xs text-gray-500"></i>
+                <input type="range" id="stroke-width" min="1" max="20" value="3" class="w-20 accent-indigo-600 cursor-pointer">
+                <span id="width-label" class="text-xs font-semibold text-gray-600 w-4">3</span>
+            </div>
+        </div>
+
+        <!-- Hjelpemidler Toggle (Linjal, Gradskive, Passer) -->
+        <div class="flex items-center space-x-1 sm:space-x-2">
+            <div class="flex bg-indigo-50 p-1 rounded-xl border border-indigo-100 space-x-1">
+                <button id="toggle-ruler" class="p-2 rounded-lg text-indigo-700 hover:bg-indigo-100 transition font-medium text-xs sm:text-sm flex items-center gap-1" title="Linjal">
+                    <i class="fa-solid fa-ruler-combined"></i> <span class="hidden sm:inline">Linjal</span>
+                </button>
+                <button id="toggle-protractor" class="p-2 rounded-lg text-indigo-700 hover:bg-indigo-100 transition font-medium text-xs sm:text-sm flex items-center gap-1" title="Gradskive">
+                    <i class="fa-solid fa-compass-drafting"></i> <span class="hidden sm:inline">Gradskive</span>
+                </button>
+                <button id="toggle-compass" class="p-2 rounded-lg text-indigo-700 hover:bg-indigo-100 transition font-medium text-xs sm:text-sm flex items-center gap-1" title="Passer">
+                    <i class="fa-solid fa-circle-notch"></i> <span class="hidden sm:inline">Passer</span>
+                </button>
+            </div>
+
+            <!-- Handling: Angre, Rensk, Rutenett -->
+            <div class="flex items-center space-x-1">
+                <button id="btn-grid" class="p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition" title="Bytt rutenett">
+                    <i class="fa-solid fa-border-all"></i>
+                </button>
+                <button id="btn-undo" class="p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition" title="Angre">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button id="btn-clear" class="p-2 rounded-lg text-red-600 hover:bg-red-100 transition" title="Tøm alt">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Canvas Area -->
+    <main class="canvas-container bg-white" id="canvas-container">
+        <!-- Rutenett Canvas (Bakgrunn) -->
+        <canvas id="grid-canvas"></canvas>
+        <!-- Hoved Tegne-canvas -->
+        <canvas id="draw-canvas"></canvas>
+        <!-- Midlertidig canvas for forhåndsvisning (f.eks. ved linjetegning) -->
+        <canvas id="temp-canvas"></canvas>
+
+        <!-- FLYTENDE HJELPEMIDLER -->
+
+        <!-- 1. Linjal -->
+        <div id="ruler-tool" class="overlay-tool hidden bg-amber-100/90 border border-amber-300 rounded shadow-lg text-amber-900 select-none" style="width: 400px; height: 80px; top: 30%; left: 30%;">
+            <div class="relative w-full h-full">
+                <!-- Roterings-håndtak (Sentrert på toppen for enkel rotasjon rundt fast punkt) -->
+                <div class="tool-handle -top-3 right-4 bg-amber-600" id="ruler-rotate" title="Roter linjal rundt fast punkt">
+                    <i class="fa-solid fa-rotate"></i>
+                </div>
+                <!-- Milimeter og Centimeter merker -->
+                <div id="ruler-ticks" class="w-full h-full relative pointer-events-none overflow-hidden"></div>
+                <div class="absolute inset-0 flex items-center justify-center font-bold text-amber-800/40 select-none text-xl pointer-events-none">
+                    LINJAL (CM)
+                </div>
+                <!-- Visuell indikator for magnetisk kant (Snap Guide) -->
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-amber-500/30 border-b border-amber-600/40 pointer-events-none"></div>
+            </div>
+        </div>
+
+        <!-- 2. Gradskive -->
+        <div id="protractor-tool" class="overlay-tool hidden rounded-t-full bg-blue-50/85 border-2 border-blue-400/80 shadow-xl overflow-hidden" style="width: 420px; height: 210px; top: 25%; left: 35%;">
+            <div class="relative w-full h-full">
+                <!-- Roterings-håndtak -->
+                <div class="tool-handle -top-2 left-1/2 -translate-x-1/2 bg-blue-600" id="protractor-rotate" title="Roter gradskive rundt siktepunktet">
+                    <i class="fa-solid fa-rotate"></i>
+                </div>
+                <!-- Vinkelmerker -->
+                <div id="protractor-ticks" class="w-full h-full relative pointer-events-none"></div>
+                <!-- Siktepunkt / Origo i bunnen -->
+                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-5 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center text-white text-[8px] shadow-sm">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Passer -->
+        <div id="compass-tool" class="compass-container-el hidden">
+            <svg id="compass-svg" class="w-full h-full absolute inset-0 pointer-events-none" style="z-index: 21;">
+                <!-- Ben 1 (Spissben) -->
+                <line id="leg-needle" x1="300" y1="200" x2="300" y2="350" stroke="#4b5563" stroke-width="6" stroke-linecap="round" />
+                <!-- Ben 2 (Blyantben) -->
+                <line id="leg-pencil" x1="300" y1="200" x2="450" y2="350" stroke="#6b7280" stroke-width="6" stroke-linecap="round" />
+                <!-- Hengsel på toppen -->
+                <circle id="compass-hinge-outer" cx="300" cy="200" r="12" fill="#1f2937" />
+                <circle id="compass-hinge-inner" cx="300" cy="200" r="5" fill="#9ca3af" />
+                <!-- Blyant-holder & Blyant -->
+                <line id="pencil-body" x1="450" y1="350" x2="455" y2="365" stroke="#3b82f6" stroke-width="8" stroke-linecap="round" />
+            </svg>
+
+            <!-- Håndtak 1: Topp / Roteringsgrep (for å slå bue) -->
+            <div id="compass-top-handle" class="compass-interactive tool-handle bg-indigo-600 hover:bg-indigo-700 shadow-md" style="left: 0px; top: 0px; width: 28px; height: 28px;" title="Roter passer for å slå bue/sirkel">
+                <i class="fa-solid fa-sync"></i>
+            </div>
+
+            <!-- Håndtak 2: Sentrumspigg (Spiss) -->
+            <div id="compass-needle-handle" class="compass-interactive absolute w-8 h-8 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs cursor-move" style="left: 0px; top: 0px; z-index: 30;" title="Plasser passer-spiss (rotasjonssenter)">
+                <i class="fa-solid fa-location-pin"></i>
+            </div>
+
+            <!-- Håndtak 3: Blyantspiss (Endrer radien/åpningen) -->
+            <div id="compass-pencil-handle" class="compass-interactive absolute w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs cursor-ew-resize" style="left: 0px; top: 0px; z-index: 30;" title="Juster passeråpning (radius)">
+                <i class="fa-solid fa-pen"></i>
+            </div>
+            
+            <!-- Visning av nåværende radius -->
+            <div id="compass-radius-label" class="compass-interactive absolute bg-gray-900/80 text-white text-[10px] font-mono px-2 py-0.5 rounded shadow pointer-events-none" style="left: 0px; top: 0px; transform: translateX(-50%);">
+                r: 150 px
+            </div>
+        </div>
+    </main>
+
+    <!-- Dialogboks for Mangekanter -->
+    <div id="polygon-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-2xl p-6 w-80 shadow-2xl border border-gray-100 transform transition-all">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-shapes text-indigo-600"></i> Velg Mangekant
+            </h3>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button class="poly-option flex flex-col items-center justify-center p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition" data-sides="3">
+                    <i class="fa-solid fa-play -rotate-90 text-2xl text-indigo-600 mb-1"></i>
+                    <span class="text-xs font-semibold text-gray-700">Trekant (3)</span>
+                </button>
+                <button class="poly-option flex flex-col items-center justify-center p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition" data-sides="4">
+                    <i class="fa-regular fa-square text-2xl text-indigo-600 mb-1"></i>
+                    <span class="text-xs font-semibold text-gray-700">Firkant (4)</span>
+                </button>
+                <button class="poly-option flex flex-col items-center justify-center p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition" data-sides="5">
+                    <i class="fa-solid fa-polygon text-2xl text-indigo-600 mb-1"></i>
+                    <span class="text-xs font-semibold text-gray-700">Femkant (5)</span>
+                </button>
+                <button class="poly-option flex flex-col items-center justify-center p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition" data-sides="6">
+                    <i class="fa-solid fa-cube text-2xl text-indigo-600 mb-1"></i>
+                    <span class="text-xs font-semibold text-gray-700">Sekskant (6)</span>
+                </button>
+                <button class="poly-option flex flex-col items-center justify-center p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition" data-sides="8">
+                    <i class="fa-solid fa-stop text-2xl text-indigo-600 mb-1"></i>
+                    <span class="text-xs font-semibold text-gray-700">Åttekant (8)</span>
+                </button>
+                <button class="poly-option flex flex-col items-center justify-center p-3 border rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition" data-sides="360">
+                    <i class="fa-regular fa-circle text-2xl text-indigo-600 mb-1"></i>
+                    <span class="text-xs font-semibold text-gray-700">Sirkel</span>
+                </button>
+            </div>
+            <button id="close-polygon-modal" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition text-sm">
+                Avbryt
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Applikasjonslogikk -->
+    <script>
+        // --- APPLIKASJONSTILSTAND ---
+        const state = {
+            tool: 'pencil', // 'pencil', 'line', 'polygon', 'select', 'eraser'
+            color: '#000000',
+            strokeWidth: 3,
+            gridType: 'none', // 'none', 'square', 'isometric'
+            selectedPolygonSides: 3,
+            history: [],
+            historyStep: -1,
+            maxHistory: 20
+        };
+
+        const rulerState = {
+            visible: false,
+            width: 400,
+            height: 80,
+            rotationDeg: 0
+        };
+
+        // --- DOM-ELEMENTER ---
+        const container = document.getElementById('canvas-container');
+        const drawCanvas = document.getElementById('draw-canvas');
+        const gridCanvas = document.getElementById('grid-canvas');
+        const tempCanvas = document.getElementById('temp-canvas');
+
+        const ctx = drawCanvas.getContext('2d');
+        const gridCtx = gridCanvas.getContext('2d');
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Tilstand for flytting/drag av figurer (Hånd-verktøy)
+        let isMovingCanvas = false;
+        let dragStartPos = { x: 0, y: 0 };
+        let dragCanvasSnapshot = null;
+
+        // --- CANVAS ELEMENT SKALERING ---
+        function resizeCanvases() {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Lagre nåværende tegning før endring av størrelse
+            const tempSnapshot = ctx.getImageData(0, 0, drawCanvas.width || 1, drawCanvas.height || 1);
+
+            drawCanvas.width = width;
+            drawCanvas.height = height;
+            gridCanvas.width = width;
+            gridCanvas.height = height;
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+
+            if (tempSnapshot && tempSnapshot.width > 1) {
+                ctx.putImageData(tempSnapshot, 0, 0);
+            }
+
+            drawGrid();
+            if (state.history.length === 0) {
+                saveState();
+            }
+        }
+
+        // --- RUTENETT (GRID) DRAWING ---
+        function drawGrid() {
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+            if (state.gridType === 'none') return;
+
+            gridCtx.beginPath();
+            gridCtx.strokeStyle = '#e5e7eb';
+            gridCtx.lineWidth = 1;
+
+            const step = 30;
+
+            if (state.gridType === 'square') {
+                for (let x = 0; x < gridCanvas.width; x += step) {
+                    gridCtx.moveTo(x, 0);
+                    gridCtx.lineTo(x, gridCanvas.height);
+                }
+                for (let y = 0; y < gridCanvas.height; y += step) {
+                    gridCtx.moveTo(0, y);
+                    gridCtx.lineTo(gridCanvas.width, y);
+                }
+            } else if (state.gridType === 'isometric') {
+                const h = step * Math.sqrt(3) / 2;
+                for (let y = 0; y < gridCanvas.height; y += h) {
+                    gridCtx.moveTo(0, y);
+                    gridCtx.lineTo(gridCanvas.width, y);
+                }
+                for (let x = -gridCanvas.height; x < gridCanvas.width; x += step) {
+                    gridCtx.moveTo(x, 0);
+                    gridCtx.lineTo(x + gridCanvas.height / Math.sqrt(3), gridCanvas.height);
+                    gridCtx.moveTo(x, 0);
+                    gridCtx.lineTo(x - gridCanvas.height / Math.sqrt(3), gridCanvas.height);
+                }
+            }
+            gridCtx.stroke();
+        }
+
+        // --- ANGRE / GJENOPPRETT (UNDO) ---
+        function saveState() {
+            if (state.historyStep < state.history.length - 1) {
+                state.history = state.history.slice(0, state.historyStep + 1);
+            }
+            state.history.push(ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+            if (state.history.length > state.maxHistory) {
+                state.history.shift();
+            } else {
+                state.historyStep++;
+            }
+        }
+
+        function undo() {
+            if (state.historyStep > 0) {
+                state.historyStep--;
+                ctx.putImageData(state.history[state.historyStep], 0, 0);
+            }
+        }
+
+        // --- LINJAL-SNAP & PROJEKSJON ---
+        function getRulerEdgeSnap(pos) {
+            if (!rulerState.visible) return null;
+
+            const rulerEl = document.getElementById('ruler-tool');
+            if (rulerEl.classList.contains('hidden')) return null;
+
+            const rect = rulerEl.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            const cx = (rect.left + rect.width / 2) - containerRect.left;
+            const cy = (rect.top + rect.height / 2) - containerRect.top;
+
+            const rad = rulerState.rotationDeg * (Math.PI / 180);
+            const cos = Math.cos(-rad);
+            const sin = Math.sin(-rad);
+
+            const dx = pos.x - cx;
+            const dy = pos.y - cy;
+            const localX = dx * cos - dy * sin;
+            const localY = dx * sin + dy * cos;
+
+            const halfW = rulerState.width / 2;
+            const halfH = rulerState.height / 2;
+            const edgeY = halfH;
+
+            const distToEdge = Math.abs(localY - edgeY);
+            const isWithinXBounds = localX >= -halfW - 20 && localX <= halfW + 20;
+
+            if (distToEdge < 35 && isWithinXBounds) {
+                const clampedLocalX = Math.max(-halfW, Math.min(halfW, localX));
+                const cosRot = Math.cos(rad);
+                const sinRot = Math.sin(rad);
+
+                const snappedWorldX = cx + (clampedLocalX * cosRot - edgeY * sinRot);
+                const snappedWorldY = cy + (clampedLocalX * sinRot + edgeY * cosRot);
+
+                return {
+                    x: snappedWorldX,
+                    y: snappedWorldY,
+                    isSnapped: true
+                };
+            }
+            return null;
+        }
+
+        // --- TEGNE-LOGIKK ---
+        let isDrawing = false;
+        let startX = 0;
+        let startY = 0;
+        let isRulerGuided = false;
+
+        function getPos(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            if (e.target !== tempCanvas && e.target !== drawCanvas) return;
+            let pos = getPos(e);
+            
+            if (state.tool === 'pencil' || state.tool === 'line') {
+                const snap = getRulerEdgeSnap(pos);
+                if (snap) {
+                    pos = { x: snap.x, y: snap.y };
+                    isRulerGuided = true;
+                } else {
+                    isRulerGuided = false;
+                }
+            }
+
+            startX = pos.x;
+            startY = pos.y;
+
+            if (state.tool === 'select') {
+                isMovingCanvas = true;
+                dragStartPos = pos;
+                dragCanvasSnapshot = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+                tempCanvas.style.cursor = 'grabbing';
+                return;
+            }
+
+            isDrawing = true;
+
+            if (state.tool === 'pencil' || state.tool === 'eraser') {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.strokeStyle = state.tool === 'eraser' ? '#ffffff' : state.color;
+                ctx.lineWidth = state.strokeWidth;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+            }
+        }
+
+        function draw(e) {
+            let pos = getPos(e);
+
+            if (isMovingCanvas && dragCanvasSnapshot) {
+                const dx = pos.x - dragStartPos.x;
+                const dy = pos.y - dragStartPos.y;
+
+                ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                tempCtx.putImageData(dragCanvasSnapshot, 0, 0);
+                ctx.drawImage(tempCanvas, dx, dy);
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                return;
+            }
+
+            if (!isDrawing) return;
+
+            if ((state.tool === 'pencil' || state.tool === 'line') && (isRulerGuided || rulerState.visible)) {
+                const snap = getRulerEdgeSnap(pos);
+                if (snap) {
+                    pos = { x: snap.x, y: snap.y };
+                }
+            }
+
+            if (state.tool === 'pencil') {
+                if (isRulerGuided) {
+                    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    tempCtx.beginPath();
+                    tempCtx.moveTo(startX, startY);
+                    tempCtx.lineTo(pos.x, pos.y);
+                    tempCtx.strokeStyle = state.color;
+                    tempCtx.lineWidth = state.strokeWidth;
+                    tempCtx.lineCap = 'round';
+                    tempCtx.stroke();
+                } else {
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                }
+            } else if (state.tool === 'eraser') {
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            } else if (state.tool === 'line') {
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.beginPath();
+                tempCtx.moveTo(startX, startY);
+                tempCtx.lineTo(pos.x, pos.y);
+                tempCtx.strokeStyle = state.color;
+                tempCtx.lineWidth = state.strokeWidth;
+                tempCtx.lineCap = 'round';
+                tempCtx.stroke();
+            } else if (state.tool === 'polygon') {
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                drawRegularPolygon(tempCtx, startX, startY, pos.x, pos.y, state.selectedPolygonSides);
+            }
+        }
+
+        function stopDrawing(e) {
+            if (isMovingCanvas) {
+                isMovingCanvas = false;
+                dragCanvasSnapshot = null;
+                tempCanvas.style.cursor = 'default';
+                saveState();
+                return;
+            }
+
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            if (state.tool === 'line' || (state.tool === 'pencil' && isRulerGuided)) {
+                let pos = getPos(e);
+                if (e.changedTouches) {
+                    const rect = drawCanvas.getBoundingClientRect();
+                    pos = {
+                        x: e.changedTouches[0].clientX - rect.left,
+                        y: e.changedTouches[0].clientY - rect.top
+                    };
+                }
+
+                if (isRulerGuided || rulerState.visible) {
+                    const snap = getRulerEdgeSnap(pos);
+                    if (snap) pos = { x: snap.x, y: snap.y };
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.strokeStyle = state.color;
+                ctx.lineWidth = state.strokeWidth;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            } else if (state.tool === 'polygon') {
+                const pos = e.changedTouches ? {
+                    x: e.changedTouches[0].clientX - drawCanvas.getBoundingClientRect().left,
+                    y: e.changedTouches[0].clientY - drawCanvas.getBoundingClientRect().top
+                } : getPos(e);
+
+                drawRegularPolygon(ctx, startX, startY, pos.x, pos.y, state.selectedPolygonSides);
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+            }
+
+            isRulerGuided = false;
+            saveState();
+        }
+
+        function drawRegularPolygon(targetCtx, cx, cy, px, py, sides) {
+            const radius = Math.hypot(px - cx, py - cy);
+            if (radius < 5) return;
+
+            const startAngle = Math.atan2(py - cy, px - cx);
+
+            targetCtx.beginPath();
+            targetCtx.strokeStyle = state.color;
+            targetCtx.lineWidth = state.strokeWidth;
+
+            if (sides >= 360) {
+                targetCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            } else {
+                for (let i = 0; i < sides; i++) {
+                    const angle = startAngle + (i * 2 * Math.PI / sides);
+                    const x = cx + radius * Math.cos(angle);
+                    const y = cy + radius * Math.sin(angle);
+                    if (i === 0) targetCtx.moveTo(x, y);
+                    else targetCtx.lineTo(x, y);
+                }
+                targetCtx.closePath();
+            }
+            targetCtx.stroke();
+        }
+
+        // --- EVENT LISTENERS FOR DRAWING ---
+        tempCanvas.addEventListener('mousedown', startDrawing);
+        tempCanvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', stopDrawing);
+
+        tempCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); }, {passive: false});
+        tempCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, {passive: false});
+        window.addEventListener('touchend', stopDrawing);
+
+        // --- VERKTØYVALG INTERAKSJONER ---
+        const toolBtns = document.querySelectorAll('.tool-btn');
+        function setTool(toolName) {
+            state.tool = toolName;
+            toolBtns.forEach(btn => {
+                btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+                btn.classList.add('text-gray-700', 'hover:bg-gray-200');
+            });
+
+            const activeBtn = document.getElementById(`btn-${toolName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'bg-indigo-600', 'text-white');
+                activeBtn.classList.remove('text-gray-700', 'hover:bg-gray-200');
+            }
+        }
+
+        document.getElementById('btn-pencil').addEventListener('click', () => setTool('pencil'));
+        document.getElementById('btn-line').addEventListener('click', () => setTool('line'));
+        document.getElementById('btn-polygon').addEventListener('click', () => setTool('polygon'));
+        document.getElementById('btn-select').addEventListener('click', () => setTool('select'));
+        document.getElementById('btn-eraser').addEventListener('click', () => setTool('eraser'));
+        
+        // Mangekant Modal
+        const polyModal = document.getElementById('polygon-modal');
+        document.getElementById('btn-polygon').addEventListener('click', () => {
+            polyModal.classList.remove('hidden');
+        });
+        document.getElementById('close-polygon-modal').addEventListener('click', () => {
+            polyModal.classList.add('hidden');
+        });
+
+        document.querySelectorAll('.poly-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sides = parseInt(btn.getAttribute('data-sides'));
+                state.selectedPolygonSides = sides;
+                setTool('polygon');
+                polyModal.classList.add('hidden');
+            });
+        });
+
+        // Fargevelgere
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('ring-2', 'ring-offset-1', 'ring-indigo-500'));
+                btn.classList.add('ring-2', 'ring-offset-1', 'ring-indigo-500');
+                state.color = btn.getAttribute('data-color');
+            });
+        });
+
+        const customColorInput = document.getElementById('custom-color');
+        document.getElementById('btn-custom-color').addEventListener('click', () => customColorInput.click());
+        customColorInput.addEventListener('input', (e) => {
+            state.color = e.target.value;
+        });
+
+        // Linjetykkelse
+        const strokeWidthInput = document.getElementById('stroke-width');
+        const widthLabel = document.getElementById('width-label');
+        strokeWidthInput.addEventListener('input', (e) => {
+            state.strokeWidth = e.target.value;
+            widthLabel.innerText = e.target.value;
+        });
+
+        // Angre og Tøm
+        document.getElementById('btn-undo').addEventListener('click', undo);
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            saveState();
+        });
+
+        // Rutenett-bytte
+        document.getElementById('btn-grid').addEventListener('click', () => {
+            if (state.gridType === 'none') state.gridType = 'square';
+            else if (state.gridType === 'square') state.gridType = 'isometric';
+            else state.gridType = 'none';
+            drawGrid();
+        });
+        // --- LINJAL (DRAGGABLE & ROTATABLE MED FAST PIVOT) ---
+        function makeRulerInteractive() {
+            const el = document.getElementById('ruler-tool');
+            const rotateHandle = document.getElementById('ruler-rotate');
+
+            let currentX = 0, currentY = 0, initialX = 0, initialY = 0;
+            let currentRotation = 0;
+
+            el.addEventListener('mousedown', dragStart);
+            el.addEventListener('touchstart', dragStart, {passive: false});
+
+            function dragStart(e) {
+                if (e.target === rotateHandle || rotateHandle?.contains(e.target)) return;
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                initialX = clientX - currentX;
+                initialY = clientY - currentY;
+
+                document.addEventListener('mousemove', dragging);
+                document.addEventListener('touchmove', dragging, {passive: false});
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchend', dragEnd);
+            }
+
+            function dragging(e) {
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                currentX = clientX - initialX;
+                currentY = clientY - initialY;
+
+                updateTransform();
+            }
+
+            function dragEnd() {
+                document.removeEventListener('mousemove', dragging);
+                document.removeEventListener('touchmove', dragging);
+            }
+
+            rotateHandle.addEventListener('mousedown', rotateStart);
+            rotateHandle.addEventListener('touchstart', rotateStart, {passive: false});
+
+            function rotateStart(e) {
+                e.stopPropagation();
+                document.addEventListener('mousemove', rotating);
+                document.addEventListener('touchmove', rotating, {passive: false});
+                document.addEventListener('mouseup', rotateEnd);
+                document.addEventListener('touchend', rotateEnd);
+            }
+
+            function rotating(e) {
+                e.preventDefault();
+                const rect = el.getBoundingClientRect();
+                // Pivot-punktet er låst til nederste venstre hjørne av linjalen (origo)
+                const pivotX = rect.left;
+                const pivotY = rect.bottom;
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const rad = Math.atan2(clientY - pivotY, clientX - pivotX);
+                currentRotation = rad * (180 / Math.PI);
+                rulerState.rotationDeg = currentRotation;
+
+                updateTransform();
+            }
+
+            function rotateEnd() {
+                document.removeEventListener('mousemove', rotating);
+                document.removeEventListener('touchmove', rotating);
+            }
+
+            function updateTransform() {
+                el.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${currentRotation}deg)`;
+            }
+        }
+        makeRulerInteractive();
+
+        // --- GRADSKIVE (ROTASJON LÅST TIL SIKTEPUNKTET/ORIGO) ---
+        function makeProtractorInteractive() {
+            const el = document.getElementById('protractor-tool');
+            const rotateHandle = document.getElementById('protractor-rotate');
+
+            let currentX = 0, currentY = 0, initialX = 0, initialY = 0;
+            let currentRotation = 0;
+
+            el.addEventListener('mousedown', dragStart);
+            el.addEventListener('touchstart', dragStart, {passive: false});
+
+            function dragStart(e) {
+                if (e.target === rotateHandle || rotateHandle?.contains(e.target)) return;
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                initialX = clientX - currentX;
+                initialY = clientY - currentY;
+
+                document.addEventListener('mousemove', dragging);
+                document.addEventListener('touchmove', dragging, {passive: false});
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchend', dragEnd);
+            }
+
+            function dragging(e) {
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                currentX = clientX - initialX;
+                currentY = clientY - initialY;
+
+                updateTransform();
+            }
+
+            function dragEnd() {
+                document.removeEventListener('mousemove', dragging);
+                document.removeEventListener('touchmove', dragging);
+            }
+
+            rotateHandle.addEventListener('mousedown', rotateStart);
+            rotateHandle.addEventListener('touchstart', rotateStart, {passive: false});
+
+            function rotateStart(e) {
+                e.stopPropagation();
+                document.addEventListener('mousemove', rotating);
+                document.addEventListener('touchmove', rotating, {passive: false});
+                document.addEventListener('mouseup', rotateEnd);
+                document.addEventListener('touchend', rotateEnd);
+            }
+
+            function rotating(e) {
+                e.preventDefault();
+                const rect = el.getBoundingClientRect();
+                const pivotX = rect.left + rect.width / 2;
+                const pivotY = rect.bottom;
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const rad = Math.atan2(clientY - pivotY, clientX - pivotX);
+                currentRotation = rad * (180 / Math.PI) + 90;
+
+                updateTransform();
+            }
+
+            function rotateEnd() {
+                document.removeEventListener('mousemove', rotating);
+                document.removeEventListener('touchmove', rotating);
+            }
+
+            function updateTransform() {
+                el.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${currentRotation}deg)`;
+            }
+        }
+        makeProtractorInteractive();
+
+        // Toggle visning av verktøy
+        document.getElementById('toggle-ruler').addEventListener('click', () => {
+            const rulerEl = document.getElementById('ruler-tool');
+            rulerEl.classList.toggle('hidden');
+            rulerState.visible = !rulerEl.classList.contains('hidden');
+        });
+        document.getElementById('toggle-protractor').addEventListener('click', () => {
+            document.getElementById('protractor-tool').classList.toggle('hidden');
+        });
+        document.getElementById('toggle-compass').addEventListener('click', () => {
+            document.getElementById('compass-tool').classList.toggle('hidden');
+        });
+
+        // --- LINJAL SKALEMERKER ---
+        function generateRulerTicks() {
+            const container = document.getElementById('ruler-ticks');
+            container.innerHTML = '';
+            const width = 400;
+            const stepPx = 10;
+
+            for (let i = 0; i < width; i += stepPx) {
+                const tick = document.createElement('div');
+                tick.className = 'absolute bottom-0 bg-amber-900';
+                tick.style.left = `${i}px`;
+
+                if (i % 50 === 0) {
+                    tick.style.height = '25px';
+                    tick.style.width = '2px';
+                    const num = document.createElement('span');
+                    num.className = 'absolute top-1 left-1 text-[10px] font-bold text-amber-900 select-none';
+                    num.innerText = i / 10;
+                    tick.appendChild(num);
+                } else if (i % 10 === 0) {
+                    tick.style.height = '15px';
+                    tick.style.width = '1px';
+                } else {
+                    tick.style.height = '8px';
+                    tick.style.width = '1px';
+                }
+                container.appendChild(tick);
+            }
+        }
+
+        // --- GRADSKIVE SKALEMERKER ---
+        function generateProtractorTicks() {
+            const container = document.getElementById('protractor-ticks');
+            container.innerHTML = '';
+            const radius = 175;
+
+            for (let deg = 0; deg <= 180; deg += 5) {
+                const tick = document.createElement('div');
+                tick.className = 'absolute bg-blue-900 origin-bottom';
+
+                const isMajor = deg % 10 === 0;
+                const length = isMajor ? 14 : 8;
+
+                tick.style.width = isMajor ? '2px' : '1px';
+                tick.style.height = `${length}px`;
+                tick.style.bottom = '0px';
+                tick.style.left = '50%';
+                tick.style.transform = `rotate(${deg - 90}deg) translateY(-${radius - length}px)`;
+
+                if (isMajor) {
+                    const label = document.createElement('span');
+                    label.className = 'absolute text-[10px] font-bold text-blue-950 select-none whitespace-nowrap';
+                    label.style.top = '-18px';
+                    label.style.left = '50%';
+                    label.style.transform = `translateX(-50%) rotate(${90 - deg}deg)`;
+                    label.innerText = deg;
+                    tick.appendChild(label);
+                }
+                container.appendChild(tick);
+            }
+        }
+
+        // --- INTERAKTIV KONSTRUKSJONSPASSER LOGIKK ---
+        function initCompass() {
+            const needleHandle = document.getElementById('compass-needle-handle');
+            const pencilHandle = document.getElementById('compass-pencil-handle');
+            const topHandle = document.getElementById('compass-top-handle');
+            const radiusLabel = document.getElementById('compass-radius-label');
+
+            const legNeedle = document.getElementById('leg-needle');
+            const legPencil = document.getElementById('leg-pencil');
+            const pencilBody = document.getElementById('pencil-body');
+            const hingeOuter = document.getElementById('compass-hinge-outer');
+            const hingeInner = document.getElementById('compass-hinge-inner');
+
+            let center = { x: 300, y: 350 };
+            let pencil = { x: 450, y: 350 };
+            let hinge = { x: 375, y: 200 };
+
+            let isArcDrawing = false;
+            let lastAngle = 0;
+
+            function updateCompassVisuals() {
+                const radius = Math.hypot(pencil.x - center.x, pencil.y - center.y);
+                
+                needleHandle.style.left = `${center.x - 16}px`;
+                needleHandle.style.top = `${center.y - 16}px`;
+
+                pencilHandle.style.left = `${pencil.x - 16}px`;
+                pencilHandle.style.top = `${pencil.y - 16}px`;
+
+                hinge.x = (center.x + pencil.x) / 2;
+                const legHeight = Math.max(80, radius * 0.75);
+                hinge.y = Math.min(center.y, pencil.y) - legHeight;
+
+                topHandle.style.left = `${hinge.x - 14}px`;
+                topHandle.style.top = `${hinge.y - 30}px`;
+
+                legNeedle.setAttribute('x1', hinge.x);
+                legNeedle.setAttribute('y1', hinge.y);
+                legNeedle.setAttribute('x2', center.x);
+                legNeedle.setAttribute('y2', center.y);
+
+                legPencil.setAttribute('x1', hinge.x);
+                legPencil.setAttribute('y1', hinge.y);
+                legPencil.setAttribute('x2', pencil.x);
+                legPencil.setAttribute('y2', pencil.y);
+
+                const pAngle = Math.atan2(pencil.y - hinge.y, pencil.x - hinge.x);
+                pencilBody.setAttribute('x1', pencil.x);
+                pencilBody.setAttribute('y1', pencil.y);
+                pencilBody.setAttribute('x2', pencil.x + 12 * Math.cos(pAngle));
+                pencilBody.setAttribute('y2', pencil.y + 12 * Math.sin(pAngle));
+
+                hingeOuter.setAttribute('cx', hinge.x);
+                hingeOuter.setAttribute('cy', hinge.y);
+                hingeInner.setAttribute('cx', hinge.x);
+                hingeInner.setAttribute('cy', hinge.y);
+
+                radiusLabel.innerText = `r: ${Math.round(radius)} px`;
+                radiusLabel.style.left = `${center.x + (pencil.x - center.x) / 2}px`;
+                radiusLabel.style.top = `${Math.max(center.y, pencil.y) + 20}px`;
+            }
+
+            // 1. FLYTT SPISSEN
+            needleHandle.addEventListener('mousedown', dragNeedleStart);
+            needleHandle.addEventListener('touchstart', dragNeedleStart, {passive: false});
+
+            function dragNeedleStart(e) {
+                e.stopPropagation();
+                document.addEventListener('mousemove', draggingNeedle);
+                document.addEventListener('touchmove', draggingNeedle, {passive: false});
+                document.addEventListener('mouseup', stopNeedleDrag);
+                document.addEventListener('touchend', stopNeedleDrag);
+            }
+
+            function draggingNeedle(e) {
+                e.preventDefault();
+                const drawRect = drawCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const mouseX = clientX - drawRect.left;
+                const mouseY = clientY - drawRect.top;
+
+                const dx = mouseX - center.x;
+                const dy = mouseY - center.y;
+
+                center.x += dx;
+                center.y += dy;
+                pencil.x += dx;
+                pencil.y += dy;
+
+                updateCompassVisuals();
+            }
+
+            function stopNeedleDrag() {
+                document.removeEventListener('mousemove', draggingNeedle);
+                document.removeEventListener('touchmove', draggingNeedle);
+            }
+
+            // 2. JUSTER PASSERÅPNING
+            pencilHandle.addEventListener('mousedown', dragPencilStart);
+            pencilHandle.addEventListener('touchstart', dragPencilStart, {passive: false});
+
+            function dragPencilStart(e) {
+                e.stopPropagation();
+                document.addEventListener('mousemove', draggingPencil);
+                document.addEventListener('touchmove', draggingPencil, {passive: false});
+                document.addEventListener('mouseup', stopPencilDrag);
+                document.addEventListener('touchend', stopPencilDrag);
+            }
+
+            function draggingPencil(e) {
+                e.preventDefault();
+                const drawRect = drawCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                pencil.x = clientX - drawRect.left;
+                pencil.y = clientY - drawRect.top;
+
+                updateCompassVisuals();
+            }
+
+            function stopPencilDrag() {
+                document.removeEventListener('mousemove', draggingPencil);
+                document.removeEventListener('touchmove', draggingPencil);
+            }
+
+            // 3. TEGN BUE / SIRKEL (Top Handle)
+            topHandle.addEventListener('mousedown', startArcDraw);
+            topHandle.addEventListener('touchstart', startArcDraw, {passive: false});
+
+            function startArcDraw(e) {
+                e.stopPropagation();
+                isArcDrawing = true;
+
+                const drawRect = drawCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const mouseX = clientX - drawRect.left;
+                const mouseY = clientY - drawRect.top;
+
+                lastAngle = Math.atan2(mouseY - center.y, mouseX - center.x);
+
+                document.addEventListener('mousemove', drawingArc);
+                document.addEventListener('touchmove', drawingArc, {passive: false});
+                document.addEventListener('mouseup', stopArcDraw);
+                document.addEventListener('touchend', stopArcDraw);
+            }
+
+            function drawingArc(e) {
+                if (!isArcDrawing) return;
+                e.preventDefault();
+
+                const drawRect = drawCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const mouseX = clientX - drawRect.left;
+                const mouseY = clientY - drawRect.top;
+
+                const currentAngle = Math.atan2(mouseY - center.y, mouseX - center.x);
+                const angleDiff = currentAngle - lastAngle;
+
+                const currentRadius = Math.hypot(pencil.x - center.x, pencil.y - center.y);
+                const startAnglePencil = Math.atan2(pencil.y - center.y, pencil.x - center.x);
+                const newAnglePencil = startAnglePencil + angleDiff;
+
+                pencil.x = center.x + currentRadius * Math.cos(newAnglePencil);
+                pencil.y = center.y + currentRadius * Math.sin(newAnglePencil);
+
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, currentRadius, startAnglePencil, newAnglePencil, angleDiff < 0);
+                ctx.strokeStyle = state.color;
+                ctx.lineWidth = state.strokeWidth;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                lastAngle = currentAngle;
+                updateCompassVisuals();
+            }
+
+            function stopArcDraw() {
+                if (isArcDrawing) {
+                    isArcDrawing = false;
+                    saveState();
+                }
+                document.removeEventListener('mousemove', drawingArc);
+                document.removeEventListener('touchmove', drawingArc);
+            }
+
+            updateCompassVisuals();
+        }
+
+        // --- INITIALISERING ---
+        window.addEventListener('load', () => {
+            resizeCanvases();
+            generateRulerTicks();
+            generateProtractorTicks();
+            initCompass();
+        });
+
+        window.addEventListener('resize', resizeCanvases);
+    </script>
+</body>
+</html>
