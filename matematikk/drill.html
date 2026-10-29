@@ -1857,8 +1857,11 @@
 
             document.getElementById('quiz-current-step').innerText = state.currentQuestionIndex + 1;
             state.wrongAttempts = 0;
+            state.hintLevel = 0;
+            setHintButton('Trenger et hint', false);
             document.getElementById('quiz-question').innerText = q.sporsmal;
-            document.getElementById('quiz-xp-reward').innerText = `+${q.xp || 10} XP`;
+            const nivaLabels = { 1: 'Lett', 2: 'Middels', 3: 'Vanskelig', 4: 'Utfordring' };
+            document.getElementById('quiz-xp-reward').innerText = `+${q.xp || 10} XP` + (nivaLabels[q.niva] ? ` · ${nivaLabels[q.niva]}` : '');
 
             // Reset UI states
             document.getElementById('quiz-hint-box').classList.add('hidden');
@@ -1933,15 +1936,35 @@
             }
         }
 
+        function getHintSteps(q) {
+            const s = Array.isArray(q.hints) ? q.hints.filter(Boolean) : [];
+            return s.length ? s : [q.hint || 'Tenk gjennom regnereglene og sjekk at du har satt opp tallene riktig.'];
+        }
+
+        function setHintButton(label, disabled) {
+            const btn = document.getElementById('quiz-hint-btn');
+            if (!btn) return;
+            const span = btn.querySelector('span');
+            if (span) span.innerText = label;
+            btn.disabled = !!disabled;
+            btn.classList.toggle('opacity-50', !!disabled);
+            btn.classList.toggle('cursor-not-allowed', !!disabled);
+        }
+
         function showQuizHint() {
             if (!state.currentQuiz) return;
             const q = state.currentQuiz.oppgaver[state.currentQuestionIndex];
             if (!q) return;
-
-            const hintBox = document.getElementById('quiz-hint-box');
-            const hintText = document.getElementById('quiz-hint-text');
-            hintText.innerText = q.hint || "Tenk gjennom regnereglene og sjekk at du har satt opp tallene i riktige kolonner.";
-            hintBox.classList.remove('hidden');
+            const steps = getHintSteps(q);
+            state.hintLevel = Math.min((state.hintLevel || 0) + 1, steps.length);
+            const labels = steps.length >= 3 ? ['Tenk først', 'Metode', 'Første steg'] : steps.length === 2 ? ['Tenk først', 'Metode'] : ['Hint'];
+            const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+            document.getElementById('quiz-hint-text').innerHTML = steps.slice(0, state.hintLevel).map((h, i) =>
+                `<div class="${i ? 'mt-2 pt-2 border-t border-amber-500/20' : ''}"><span class="text-[10px] uppercase tracking-wider font-bold opacity-70">${labels[i]}</span><div>${esc(h)}</div></div>`
+            ).join('');
+            document.getElementById('quiz-hint-box').classList.remove('hidden');
+            if (state.hintLevel < steps.length) setHintButton(`Enda et hint (${state.hintLevel}/${steps.length})`, false);
+            else setHintButton(`Alle hint vist (${steps.length}/${steps.length})`, true);
         }
 
         function parseNumberInput(s) {
@@ -2001,7 +2024,7 @@
                 playSound('correct');
                 state.sessionCombo++;
                 const baseXp = q.xp || 10;
-                const earnedXp = (state.wrongAttempts || 0) >= 2 ? Math.max(1, Math.round(baseXp / 2)) : baseXp + (state.sessionCombo > 1 ? 5 : 0);
+                const earnedXp = (state.wrongAttempts || 0) >= 2 ? Math.max(1, Math.round(baseXp / 2)) : baseXp + (state.sessionCombo > 1 ? Math.max(2, Math.round(baseXp / 2)) : 0);
                 addXp(earnedXp);
 
                 feedbackEl.className = "p-4 rounded-xl text-sm font-medium flex items-center space-x-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 animate-pulse";
