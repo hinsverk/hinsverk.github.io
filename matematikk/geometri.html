@@ -53,17 +53,18 @@
             transform-origin: 0px 80px; /* Siktepunkt / Origo nederst til venstre på linjalen */
         }
 
+        /* Forstørrede touch-mål (44px) for god ergonomi på smartboard */
         .tool-handle {
             position: absolute;
-            width: 28px;
-            height: 28px;
+            width: 44px;
+            height: 44px;
             background-color: #3b82f6;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 16px;
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             z-index: 30;
@@ -186,8 +187,8 @@
         <!-- 1. Linjal -->
         <div id="ruler-tool" class="overlay-tool hidden bg-amber-100/90 border border-amber-300 rounded shadow-lg text-amber-900 select-none" style="width: 400px; height: 80px; top: 30%; left: 30%;">
             <div class="relative w-full h-full">
-                <!-- Roterings-håndtak (Sentrert på toppen for enkel rotasjon rundt fast punkt) -->
-                <div class="tool-handle -top-3 right-4 bg-amber-600" id="ruler-rotate" title="Roter linjal rundt fast punkt">
+                <!-- Roterings-håndtak (Forstørret touch-flate) -->
+                <div class="tool-handle -top-6 right-4 bg-amber-600 hover:bg-amber-700" id="ruler-rotate" title="Roter linjal rundt fast punkt">
                     <i class="fa-solid fa-rotate"></i>
                 </div>
                 <!-- Milimeter og Centimeter merker -->
@@ -204,13 +205,13 @@
         <div id="protractor-tool" class="overlay-tool hidden rounded-t-full bg-blue-50/85 border-2 border-blue-400/80 shadow-xl overflow-hidden" style="width: 420px; height: 210px; top: 25%; left: 35%;">
             <div class="relative w-full h-full">
                 <!-- Roterings-håndtak -->
-                <div class="tool-handle -top-2 left-1/2 -translate-x-1/2 bg-blue-600" id="protractor-rotate" title="Roter gradskive rundt siktepunktet">
+                <div class="tool-handle -top-6 left-1/2 -translate-x-1/2 bg-blue-600 hover:bg-blue-700" id="protractor-rotate" title="Roter gradskive rundt siktepunktet">
                     <i class="fa-solid fa-rotate"></i>
                 </div>
                 <!-- Vinkelmerker -->
                 <div id="protractor-ticks" class="w-full h-full relative pointer-events-none"></div>
                 <!-- Siktepunkt / Origo i bunnen -->
-                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-5 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center text-white text-[8px] shadow-sm">
+                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-6 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center text-white text-[10px] shadow-sm">
                     <i class="fa-solid fa-plus"></i>
                 </div>
             </div>
@@ -224,25 +225,30 @@
                 <!-- Ben 2 (Blyantben) -->
                 <line id="leg-pencil" x1="300" y1="200" x2="450" y2="350" stroke="#6b7280" stroke-width="6" stroke-linecap="round" />
                 <!-- Hengsel på toppen -->
-                <circle id="compass-hinge-outer" cx="300" cy="200" r="12" fill="#1f2937" />
-                <circle id="compass-hinge-inner" cx="300" cy="200" r="5" fill="#9ca3af" />
+                <circle id="compass-hinge-outer" cx="300" cy="200" r="14" fill="#1f2937" />
+                <circle id="compass-hinge-inner" cx="300" cy="200" r="6" fill="#9ca3af" />
                 <!-- Blyant-holder & Blyant -->
                 <line id="pencil-body" x1="450" y1="350" x2="455" y2="365" stroke="#3b82f6" stroke-width="8" stroke-linecap="round" />
             </svg>
 
             <!-- Håndtak 1: Topp / Roteringsgrep (for å slå bue) -->
-            <div id="compass-top-handle" class="compass-interactive tool-handle bg-indigo-600 hover:bg-indigo-700 shadow-md" style="left: 0px; top: 0px; width: 28px; height: 28px;" title="Roter passer for å slå bue/sirkel">
+            <div id="compass-top-handle" class="compass-interactive tool-handle bg-indigo-600 hover:bg-indigo-700 shadow-md" style="left: 0px; top: 0px;" title="Roter passer for å slå bue/sirkel">
                 <i class="fa-solid fa-sync"></i>
             </div>
 
             <!-- Håndtak 2: Sentrumspigg (Spiss) -->
-            <div id="compass-needle-handle" class="compass-interactive absolute w-8 h-8 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs cursor-move" style="left: 0px; top: 0px; z-index: 30;" title="Plasser passer-spiss (rotasjonssenter)">
+            <div id="compass-needle-handle" class="compass-interactive absolute w-11 h-11 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white cursor-move" style="left: 0px; top: 0px; z-index: 30;" title="Plasser passer-spiss (rotasjonssenter)">
                 <i class="fa-solid fa-location-pin"></i>
             </div>
 
             <!-- Håndtak 3: Blyantspiss (Endrer radien/åpningen) -->
-            <div id="compass-pencil-handle" class="compass-interactive absolute w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs cursor-ew-resize" style="left: 0px; top: 0px; z-index: 30;" title="Juster passeråpning (radius)">
+            <div id="compass-pencil-handle" class="compass-interactive absolute w-11 h-11 rounded-full bg-blue-600 border-2 border-white shadow-lg flex items-center justify-center text-white cursor-ew-resize" style="left: 0px; top: 0px; z-index: 30;" title="Juster passeråpning (radius)">
                 <i class="fa-solid fa-pen"></i>
+            </div>
+
+            <!-- Håndtak 4: Snu/Speilvend passer -->
+            <div id="compass-flip-handle" class="compass-interactive absolute w-10 h-10 rounded-full bg-gray-700 border-2 border-white shadow-lg flex items-center justify-center text-white cursor-pointer hover:bg-gray-600 transition" style="left: 0px; top: 0px; z-index: 31;" title="Speilvend passer">
+                <i class="fa-solid fa-arrows-left-right"></i>
             </div>
             
             <!-- Visning av nåværende radius -->
@@ -528,23 +534,15 @@
                 const snap = getRulerEdgeSnap(pos);
                 if (snap) {
                     pos = { x: snap.x, y: snap.y };
+                    isRulerGuided = true;
+                } else {
+                    isRulerGuided = false;
                 }
             }
 
             if (state.tool === 'pencil') {
-                if (isRulerGuided) {
-                    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-                    tempCtx.beginPath();
-                    tempCtx.moveTo(startX, startY);
-                    tempCtx.lineTo(pos.x, pos.y);
-                    tempCtx.strokeStyle = state.color;
-                    tempCtx.lineWidth = state.strokeWidth;
-                    tempCtx.lineCap = 'round';
-                    tempCtx.stroke();
-                } else {
-                    ctx.lineTo(pos.x, pos.y);
-                    ctx.stroke();
-                }
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
             } else if (state.tool === 'eraser') {
                 ctx.lineTo(pos.x, pos.y);
                 ctx.stroke();
@@ -575,7 +573,7 @@
             if (!isDrawing) return;
             isDrawing = false;
 
-            if (state.tool === 'line' || (state.tool === 'pencil' && isRulerGuided)) {
+            if (state.tool === 'line') {
                 let pos = getPos(e);
                 if (e.changedTouches) {
                     const rect = drawCanvas.getBoundingClientRect();
@@ -723,19 +721,37 @@
             else state.gridType = 'none';
             drawGrid();
         });
-        // --- LINJAL (DRAGGABLE & ROTATABLE MED FAST PIVOT) ---
+
+        // --- LINJAL (DRAGGABLE, ROTATABLE & MULTITOUCH) ---
         function makeRulerInteractive() {
             const el = document.getElementById('ruler-tool');
             const rotateHandle = document.getElementById('ruler-rotate');
 
             let currentX = 0, currentY = 0, initialX = 0, initialY = 0;
             let currentRotation = 0;
+            let initialPinchAngle = 0, initialRotationAtPinch = 0;
+
+            function getTouchAngle(touches) {
+                return Math.atan2(touches[1].clientY - touches[0].clientY, touches[1].clientX - touches[0].clientX) * (180 / Math.PI);
+            }
 
             el.addEventListener('mousedown', dragStart);
             el.addEventListener('touchstart', dragStart, {passive: false});
 
             function dragStart(e) {
                 if (e.target === rotateHandle || rotateHandle?.contains(e.target)) return;
+
+                if (e.touches && e.touches.length === 2) {
+                    initialPinchAngle = getTouchAngle(e.touches);
+                    initialRotationAtPinch = currentRotation;
+                    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    initialX = cx - currentX;
+                    initialY = cy - currentY;
+                    document.addEventListener('touchmove', dragging, {passive: false});
+                    document.addEventListener('touchend', dragEnd);
+                    return;
+                }
 
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -751,6 +767,20 @@
 
             function dragging(e) {
                 e.preventDefault();
+
+                if (e.touches && e.touches.length === 2) {
+                    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    currentX = cx - initialX;
+                    currentY = cy - initialY;
+
+                    const newPinchAngle = getTouchAngle(e.touches);
+                    currentRotation = initialRotationAtPinch + (newPinchAngle - initialPinchAngle);
+                    rulerState.rotationDeg = currentRotation;
+                    updateTransform();
+                    return;
+                }
+
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -779,7 +809,6 @@
             function rotating(e) {
                 e.preventDefault();
                 const rect = el.getBoundingClientRect();
-                // Pivot-punktet er låst til nederste venstre hjørne av linjalen (origo)
                 const pivotX = rect.left;
                 const pivotY = rect.bottom;
 
@@ -804,19 +833,36 @@
         }
         makeRulerInteractive();
 
-        // --- GRADSKIVE (ROTASJON LÅST TIL SIKTEPUNKTET/ORIGO) ---
+        // --- GRADSKIVE (ROTATABLE & MULTITOUCH) ---
         function makeProtractorInteractive() {
             const el = document.getElementById('protractor-tool');
             const rotateHandle = document.getElementById('protractor-rotate');
 
             let currentX = 0, currentY = 0, initialX = 0, initialY = 0;
             let currentRotation = 0;
+            let initialPinchAngle = 0, initialRotationAtPinch = 0;
+
+            function getTouchAngle(touches) {
+                return Math.atan2(touches[1].clientY - touches[0].clientY, touches[1].clientX - touches[0].clientX) * (180 / Math.PI);
+            }
 
             el.addEventListener('mousedown', dragStart);
             el.addEventListener('touchstart', dragStart, {passive: false});
 
             function dragStart(e) {
                 if (e.target === rotateHandle || rotateHandle?.contains(e.target)) return;
+
+                if (e.touches && e.touches.length === 2) {
+                    initialPinchAngle = getTouchAngle(e.touches);
+                    initialRotationAtPinch = currentRotation;
+                    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    initialX = cx - currentX;
+                    initialY = cy - currentY;
+                    document.addEventListener('touchmove', dragging, {passive: false});
+                    document.addEventListener('touchend', dragEnd);
+                    return;
+                }
 
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -832,6 +878,19 @@
 
             function dragging(e) {
                 e.preventDefault();
+
+                if (e.touches && e.touches.length === 2) {
+                    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    currentX = cx - initialX;
+                    currentY = cy - initialY;
+
+                    const newPinchAngle = getTouchAngle(e.touches);
+                    currentRotation = initialRotationAtPinch + (newPinchAngle - initialPinchAngle);
+                    updateTransform();
+                    return;
+                }
+
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -963,6 +1022,7 @@
             const needleHandle = document.getElementById('compass-needle-handle');
             const pencilHandle = document.getElementById('compass-pencil-handle');
             const topHandle = document.getElementById('compass-top-handle');
+            const flipHandle = document.getElementById('compass-flip-handle');
             const radiusLabel = document.getElementById('compass-radius-label');
 
             const legNeedle = document.getElementById('leg-needle');
@@ -981,18 +1041,21 @@
             function updateCompassVisuals() {
                 const radius = Math.hypot(pencil.x - center.x, pencil.y - center.y);
                 
-                needleHandle.style.left = `${center.x - 16}px`;
-                needleHandle.style.top = `${center.y - 16}px`;
+                needleHandle.style.left = `${center.x - 22}px`;
+                needleHandle.style.top = `${center.y - 22}px`;
 
-                pencilHandle.style.left = `${pencil.x - 16}px`;
-                pencilHandle.style.top = `${pencil.y - 16}px`;
+                pencilHandle.style.left = `${pencil.x - 22}px`;
+                pencilHandle.style.top = `${pencil.y - 22}px`;
 
                 hinge.x = (center.x + pencil.x) / 2;
                 const legHeight = Math.max(80, radius * 0.75);
                 hinge.y = Math.min(center.y, pencil.y) - legHeight;
 
-                topHandle.style.left = `${hinge.x - 14}px`;
-                topHandle.style.top = `${hinge.y - 30}px`;
+                topHandle.style.left = `${hinge.x - 22}px`;
+                topHandle.style.top = `${hinge.y - 40}px`;
+
+                flipHandle.style.left = `${hinge.x + 30}px`;
+                flipHandle.style.top = `${hinge.y - 20}px`;
 
                 legNeedle.setAttribute('x1', hinge.x);
                 legNeedle.setAttribute('y1', hinge.y);
@@ -1085,6 +1148,24 @@
                 document.removeEventListener('mousemove', draggingPencil);
                 document.removeEventListener('touchmove', draggingPencil);
             }
+
+            // SPEILVEND PASSER (FLIP)
+            function flipCompass(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                const oldCenterX = center.x;
+                const oldCenterY = center.y;
+                center.x = pencil.x;
+                center.y = pencil.y;
+                pencil.x = oldCenterX;
+                pencil.y = oldCenterY;
+
+                updateCompassVisuals();
+            }
+            flipHandle.addEventListener('mousedown', flipCompass);
+            flipHandle.addEventListener('touchstart', flipCompass, {passive: false});
 
             // 3. TEGN BUE / SIRKEL (Top Handle)
             topHandle.addEventListener('mousedown', startArcDraw);
