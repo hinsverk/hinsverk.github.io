@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oppgaveark: Omkrets og Areal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* Utskriftsvennlig stil */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff;
+                color: #000000;
+                padding: 0;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .card {
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+            input {
+                border: none !important;
+                border-bottom: 1px solid #000 !important;
+                background: transparent !important;
+            }
+            .solution {
+                display: none !important;
+            }
+        }
+
+        .svg-shape {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 max-w-5xl mx-auto">
+
+    <!-- Header / Meny (Skjules ved utskrift) -->
+    <header class="no-print bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Oppgaveark: Omkrets & Areal</h1>
+            <p class="text-slate-500 text-sm mt-1">Trinnvis progression • Ekskludert sirkler • Totalt 60 oppgaver</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <button onclick="toggleFasit()" id="fasitBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Vis Fasit
+            </button>
+            <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Skriv Ut / PDF
+            </button>
+        </div>
+    </header>
+
+    <!-- Navnefelt for utskrift -->
+    <div class="hidden print:block mb-6 p-4 border border-slate-300 rounded-lg">
+        <div class="flex justify-between items-center text-sm">
+            <span><strong>Navn:</strong> ____________________________________</span>
+            <span><strong>Dato:</strong> ______________</span>
+            <span><strong>Klasse:</strong> _________</span>
+        </div>
+    </div>
+
+    <!-- Formeloversikt (Hjelpeboks) -->
+    <section class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 mb-10">
+        <h2 class="text-lg font-bold text-indigo-900 mb-3 flex items-center gap-2">
+            💡 Formeloversikt
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs md:text-sm text-indigo-800">
+            <div><strong>Kvadrat:</strong><br>O = 4 · s<br>A = s · s</div>
+            <div><strong>Rektangel:</strong><br>O = 2g + 2h<br>A = g · h</div>
+            <div><strong>Trekant:</strong><br>O = side1 + side2 + side3<br>A = (g · h) / 2</div>
+            <div><strong>Parallellogram:</strong><br>O = 2a + 2b<br>A = g · h</div>
+            <div><strong>Trapes:</strong><br>O = sum av alle sider<br>A = ((a + b) · h) / 2</div>
+            <div><strong>Sammensatte:</strong><br>Del figuren opp i enklere deler!</div>
+        </div>
+    </section>
+
+    <!-- CONTAINER FOR OPPGAVER -->
+    <main class="space-y-12">
+
+        <!-- DEL 1: KVADRAT -->
+        <section class="card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 border-b pb-2 border-slate-100 flex items-center justify-between">
+                <span>1. Kvadrat</span>
+                <span class="text-xs font-normal text-slate-400">10 Oppgaver</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <!-- Omkrets Kvadrat -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">A) Omkrets (Stigende vanskelighetsgrad)</h3>
+
+                    <!-- Oppgave 1 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <div class="flex justify-between items-center">
+                            <p class="font-medium text-sm">1. Finn omkretsen:</p>
+                            <span class="text-xs text-slate-400">Nivå 1</span>
+                        </div>
+                        <svg width="120" height="95" class="my-2 mx-auto">
+                            <rect x="25" y="10" width="60" height="60" fill="#e0e7ff" stroke="#4338ca" stroke-width="2"/>
+                            <text x="55" y="88" font-size="12" text-anchor="middle" fill="#1e293b">s = 4 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 16 cm</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 2 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">2. Kvadrat med side <span class="font-semibold">s = 7 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 28 cm</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 3 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">3. Kvadrat med side <span class="font-semibold">s = 4.5 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 18 cm</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 4 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">4. Et kvadrat har en omkrets på <span class="font-semibold">36 cm</span>. Hvor lang er én side?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 9 cm</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 5 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">5. Omkretsen er <span class="font-semibold">25 cm</span>. Hvor lang er én side?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 6.25 cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Areal Kvadrat -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">B) Areal (Stigende vanskelighetsgrad)</h3>
+
+                    <!-- Oppgave 6 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <div class="flex justify-between items-center">
+                            <p class="font-medium text-sm">6. Finn arealet:</p>
+                            <span class="text-xs text-slate-400">Nivå 1</span>
+                        </div>
+                        <svg width="120" height="95" class="my-2 mx-auto">
+                            <rect x="25" y="10" width="60" height="60" fill="#e0e7ff" stroke="#4338ca" stroke-width="2"/>
+                            <text x="55" y="88" font-size="12" text-anchor="middle" fill="#1e293b">s = 5 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 25 cm²</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 7 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">7. Kvadrat med side <span class="font-semibold">s = 8 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 64 cm²</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 8 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">8. Kvadrat med side <span class="font-semibold">s = 3.5 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 12.25 m²</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 9 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">9. Et kvadrat har areal <span class="font-semibold">49 cm²</span>. Hvor lang er siden?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 7 cm</span>
+                        </div>
+                    </div>
+
+                    <!-- Oppgave 10 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">10. Omkretsen av et kvadrat er <span class="font-semibold">24 cm</span>. Hva er arealet?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 36 cm²</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEL 2: REKTANGEL -->
+        <section class="card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 border-b pb-2 border-slate-100 flex items-center justify-between">
+                <span>2. Rektangel</span>
+                <span class="text-xs font-normal text-slate-400">10 Oppgaver</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <!-- Omkrets Rektangel -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">A) Omkrets</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">11. Finn omkretsen:</p>
+                        <svg width="200" height="95" class="my-2 mx-auto">
+                            <rect x="20" y="10" width="110" height="45" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+                            <text x="75" y="80" font-size="11" text-anchor="middle" fill="#1e293b">g = 6 cm</text>
+                            <text x="140" y="38" font-size="11" text-anchor="start" fill="#1e293b">h = 3 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 18 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">12. Rektangel: <span class="font-semibold">g = 9 m</span> og <span class="font-semibold">h = 4 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 26 m</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">13. Rektangel: <span class="font-semibold">g = 7.5 cm</span> og <span class="font-semibold">h = 2.4 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 19.8 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">14. Omkrets = <span class="font-semibold">30 cm</span>. Grunnlinje <span class="font-semibold">g = 10 cm</span>. Hva er høyden?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 5 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">15. Omkrets = <span class="font-semibold">42 m</span>. Lengden er dobbel så lang som bredden. Finn lengden.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 14 m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Areal Rektangel -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">B) Areal</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">16. Finn arealet:</p>
+                        <svg width="200" height="95" class="my-2 mx-auto">
+                            <rect x="20" y="10" width="110" height="45" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+                            <text x="75" y="80" font-size="11" text-anchor="middle" fill="#1e293b">g = 8 cm</text>
+                            <text x="140" y="38" font-size="11" text-anchor="start" fill="#1e293b">h = 5 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 40 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">17. Rektangel: <span class="font-semibold">g = 12 m</span> og <span class="font-semibold">h = 6 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 72 m²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">18. Rektangel: <span class="font-semibold">g = 6.4 cm</span> og <span class="font-semibold">h = 3.5 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 22.4 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">19. Areal = <span class="font-semibold">48 cm²</span>, høyde <span class="font-semibold">h = 6 cm</span>. Finn grunnlinjen.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 8 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">20. Et rektangel har omkrets <span class="font-semibold">20 cm</span> og grunnlinje <span class="font-semibold">g = 6 cm</span>. Hva er arealet?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 24 cm²</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEL 3: TREKANT -->
+        <section class="card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm page-break">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 border-b pb-2 border-slate-100 flex items-center justify-between">
+                <span>3. Trekant</span>
+                <span class="text-xs font-normal text-slate-400">10 Oppgaver</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <!-- Omkrets Trekant -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">A) Omkrets</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">21. Finn omkretsen:</p>
+                        <svg width="130" height="95" class="my-2 mx-auto">
+                            <polygon points="10,65 110,65 50,15" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+                            <text x="60" y="88" font-size="10" text-anchor="middle" fill="#1e293b">6 cm</text>
+                            <text x="22" y="38" font-size="10" text-anchor="middle" fill="#1e293b">5 cm</text>
+                            <text x="90" y="38" font-size="10" text-anchor="middle" fill="#1e293b">5 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 16 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">22. Sider: <span class="font-semibold">a = 4 cm, b = 7 cm, c = 9 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 20 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">23. Likesidet trekant med side <span class="font-semibold">s = 8.2 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 24.6 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">24. Likebeint trekant har omkrets <span class="font-semibold">22 cm</span> og grunnlinje <span class="font-semibold">6 cm</span>. Hvor lange er de like sidene?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 8 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">25. En rettvinklet trekant har sider <span class="font-semibold">3.5 cm, 12 cm, 12.5 cm</span>. Finn omkretsen.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 28 cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Areal Trekant -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">B) Areal</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">26. Finn arealet:</p>
+                        <svg width="130" height="95" class="my-2 mx-auto">
+                            <polygon points="10,65 110,65 50,15" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+                            <line x1="50" y1="15" x2="50" y2="65" stroke="#ea580c" stroke-dasharray="3,3"/>
+                            <text x="60" y="88" font-size="10" text-anchor="middle" fill="#1e293b">g = 8 cm</text>
+                            <text x="62" y="40" font-size="10" text-anchor="start" fill="#ea580c">h = 5 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 20 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">27. Trekant: <span class="font-semibold">g = 10 m</span> og <span class="font-semibold">h = 6 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 30 m²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">28. Rettvinklet trekant med kateter <span class="font-semibold">6 cm</span> og <span class="font-semibold">7.2 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 21.6 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">29. Trekant har areal <span class="font-semibold">36 cm²</span> og <span class="font-semibold">g = 9 cm</span>. Finn høyden.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 8 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">30. Trekant har areal <span class="font-semibold">17.5 cm²</span> og <span class="font-semibold">h = 5 cm</span>. Finn grunnlinjen.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 7 cm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEL 4: PARALLELLOGRAM -->
+        <section class="card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 border-b pb-2 border-slate-100 flex items-center justify-between">
+                <span>4. Parallellogram</span>
+                <span class="text-xs font-normal text-slate-400">10 Oppgaver</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <!-- Omkrets Parallellogram -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">A) Omkrets</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">31. Finn omkretsen:</p>
+                        <svg width="200" height="90" class="my-2 mx-auto">
+                            <polygon points="35,15 135,15 115,60 15,60" fill="#fdf4ff" stroke="#c026d3" stroke-width="2"/>
+                            <text x="65" y="80" font-size="10" text-anchor="middle" fill="#1e293b">a = 7 cm</text>
+                            <text x="135" y="40" font-size="10" text-anchor="start" fill="#1e293b">b = 4 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 22 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">32. Sider <span class="font-semibold">a = 11 m</span> og <span class="font-semibold">b = 5 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 32 m</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">33. Sider <span class="font-semibold">a = 6.8 cm</span> og <span class="font-semibold">b = 3.2 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 20 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">34. Omkrets = <span class="font-semibold">38 cm</span>, side <span class="font-semibold">a = 12 cm</span>. Finn side <span class="font-semibold">b</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 7 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">35. Omkrets = <span class="font-semibold">50 m</span>. Side <span class="font-semibold">a</span> er 5 m lengre enn <span class="font-semibold">b</span>. Finn side <span class="font-semibold">a</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 15 m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Areal Parallellogram -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">B) Areal</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">36. Finn arealet:</p>
+                        <svg width="200" height="90" class="my-2 mx-auto">
+                            <polygon points="35,15 135,15 115,60 15,60" fill="#fdf4ff" stroke="#c026d3" stroke-width="2"/>
+                            <line x1="35" y1="15" x2="35" y2="60" stroke="#c026d3" stroke-dasharray="3,3"/>
+                            <text x="65" y="80" font-size="10" text-anchor="middle" fill="#1e293b">g = 8 cm</text>
+                            <text x="40" y="40" font-size="10" text-anchor="start" fill="#c026d3">h = 4 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 32 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">37. Parallellogram: <span class="font-semibold">g = 9 m</span> og <span class="font-semibold">h = 7 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 63 m²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">38. Parallellogram: <span class="font-semibold">g = 12.5 cm</span> og <span class="font-semibold">h = 4 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 50 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">39. Areal = <span class="font-semibold">54 cm²</span>, grunnlinje <span class="font-semibold">g = 6 cm</span>. Finn høyden.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 9 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">40. Et parallellogram har sider <span class="font-semibold">8 cm</span> og <span class="font-semibold">5 cm</span>. Høyden mot den lengste siden er <span class="font-semibold">4 cm</span>. Finn arealet.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 32 cm²</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEL 5: TRAPES -->
+        <section class="card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm page-break">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 border-b pb-2 border-slate-100 flex items-center justify-between">
+                <span>5. Trapes</span>
+                <span class="text-xs font-normal text-slate-400">10 Oppgaver</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <!-- Omkrets Trapes -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">A) Omkrets</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">41. Finn omkretsen:</p>
+                        <svg width="200" height="90" class="my-2 mx-auto">
+                            <polygon points="50,15 110,15 140,60 30,60" fill="#f0f9ff" stroke="#0284c7" stroke-width="2"/>
+                            <text x="80" y="12" font-size="10" text-anchor="middle" fill="#1e293b">a = 4 cm</text>
+                            <text x="85" y="80" font-size="10" text-anchor="middle" fill="#1e293b">b = 8 cm</text>
+                            <text x="25" y="38" font-size="10" text-anchor="end" fill="#1e293b">3 cm</text>
+                            <text x="145" y="38" font-size="10" text-anchor="start" fill="#1e293b">3 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 18 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">42. Sider i trapeset: <span class="font-semibold">5 m, 8 m, 4 m, 6 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 23 m</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">43. Likebeint trapes: Paralleller <span class="font-semibold">6 cm</span> og <span class="font-semibold">10 cm</span>, beina er <span class="font-semibold">5 cm</span> hver.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 26 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">44. Sider: <span class="font-semibold">3.2 cm, 7.5 cm, 4.1 cm, 5.2 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 20 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">45. Omkrets = <span class="font-semibold">35 m</span>. Tre sider er <span class="font-semibold">6 m, 10 m, 8 m</span>. Finn den fjerde siden.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 11 m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Areal Trapes -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">B) Areal</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">46. Finn arealet:</p>
+                        <svg width="200" height="90" class="my-2 mx-auto">
+                            <polygon points="50,15 110,15 140,60 30,60" fill="#f0f9ff" stroke="#0284c7" stroke-width="2"/>
+                            <line x1="50" y1="15" x2="50" y2="60" stroke="#0284c7" stroke-dasharray="3,3"/>
+                            <text x="80" y="12" font-size="10" text-anchor="middle" fill="#1e293b">a = 4 cm</text>
+                            <text x="85" y="80" font-size="10" text-anchor="middle" fill="#1e293b">b = 8 cm</text>
+                            <text x="55" y="40" font-size="10" text-anchor="start" fill="#0284c7">h = 3 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 18 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">47. Paralleller: <span class="font-semibold">a = 5 m, b = 9 m</span>. Høyde: <span class="font-semibold">h = 4 m</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 28 m²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">48. Paralleller: <span class="font-semibold">a = 3.5 cm, b = 6.5 cm</span>. Høyde: <span class="font-semibold">h = 4.2 cm</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 21 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">49. Areal = <span class="font-semibold">40 cm²</span>, <span class="font-semibold">a = 6 cm, b = 10 cm</span>. Finn høyden.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 5 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">50. Areal = <span class="font-semibold">30 m²</span>, <span class="font-semibold">h = 4 m</span>, <span class="font-semibold">a = 5 m</span>. Finn siden <span class="font-semibold">b</span>.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 10 m</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEL 6: SAMMENSATTE FIGURER -->
+        <section class="card bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2 border-b pb-2 border-slate-100 flex items-center justify-between">
+                <span>6. Sammensatte figurer</span>
+                <span class="text-xs font-normal text-slate-400">10 Oppgaver</span>
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <!-- Omkrets Sammensatte -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">A) Omkrets</h3>
+
+                    <!-- Figuroppgave 51 -->
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">51. Finn omkretsen av L-figuren:</p>
+                        <svg width="200" height="110" class="my-2 mx-auto">
+                            <path d="M 30 12 L 70 12 L 70 50 L 130 50 L 130 80 L 30 80 Z" fill="#faf5ff" stroke="#9333ea" stroke-width="2"/>
+                            <text x="50" y="9" font-size="9" text-anchor="middle" fill="#1e293b">4 cm</text>
+                            <text x="100" y="46" font-size="9" text-anchor="middle" fill="#1e293b">6 cm</text>
+                            <text x="133" y="68" font-size="9" text-anchor="start" fill="#1e293b">3 cm</text>
+                            <text x="80" y="98" font-size="9" text-anchor="middle" fill="#1e293b">10 cm</text>
+                            <text x="25" y="45" font-size="9" text-anchor="end" fill="#1e293b">7 cm</text>
+                        </svg>
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 34 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">52. Et rektangel (8x5 cm) med et kvadratisk "hull" trykket ut fra hjørnet (2x2 cm). Finn ytre omkrets.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 26 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">53. T-formet figur sammensatt av to rektangler på 10x3 cm. Hva er ytteromkretsen?</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 46 cm</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">54. Et hus-omriss (rektangel 6x4 m med trekantet tak på toppen med sider 5 m og 5 m). Finn samlet omkrets.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 24 m</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">55. En trappefigur med 3 like trinn (hver 2 cm høy og 3 cm dyp). Finn total omkrets av figuren.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 30 cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Areal Sammensatte -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg text-sm">B) Areal</h3>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">56. Finn arealet av L-figuren (fra oppgave 51):</p>
+                        <p class="text-xs text-slate-500 my-1">Topprektangel: 4x4 cm, Bunnrektangel: 10x3 cm.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 46 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">57. Et rektangel på 10x6 m har et kvadratisk hull på 3x3 m i midten. Finn restarealet.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 51 m²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">58. Hus-figur: Rektangel (6m bred, 4m høy) + trekant-tak (grunnlinje 6m, høyde 3m). Finn samlet areal.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="m²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 33 m²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">59. Et stort kvadrat (8x8 cm) har fire mindre kvadrater (2x2 cm) fjernet fra hvert hjørne. Finn arealet.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 48 cm²</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 p-3 rounded-xl">
+                        <p class="font-medium text-sm">60. Et parallellogram (g=10 cm, h=6 cm) har en trekant stanset ut innvendig (g=4 cm, h=3 cm). Finn restarealet.</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-sm">Svar:</span>
+                            <input type="text" class="border rounded px-2 py-1 text-sm w-28" placeholder="cm²">
+                            <span class="solution text-sm font-semibold text-emerald-600 hidden">Fasit: 54 cm²</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-slate-400 text-sm no-print border-t pt-6">
+        <p>Matematikk Oppgaveark • Geometri (Areal og Omkrets)</p>
+    </footer>
+
+    <!-- JS for interaktivitet -->
+    <script>
+        function toggleFasit() {
+            const solutions = document.querySelectorAll('.solution');
+            const btn = document.getElementById('fasitBtn');
+            let isHidden = true;
+
+            solutions.forEach(sol => {
+                if (sol.classList.contains('hidden')) {
+                    sol.classList.remove('hidden');
+                    sol.classList.add('inline-block');
+                    isHidden = false;
+                } else {
+                    sol.classList.add('hidden');
+                    sol.classList.remove('inline-block');
+                    isHidden = true;
+                }
+            });
+
+            if (!isHidden) {
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 013.682-.763c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18" />
+                    </svg>
+                    Skjul Fasit
+                `;
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                btn.classList.add('bg-slate-600', 'hover:bg-slate-700');
+            } else {
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Vis Fasit
+                `;
+                btn.classList.remove('bg-slate-600', 'hover:bg-slate-700');
+                btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }
+        }
+    </script>
+</body>
+</html>
