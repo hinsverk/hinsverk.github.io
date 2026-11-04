@@ -86,6 +86,21 @@
                 <p class="text-slate-600 dark:text-slate-400 text-lg">Test kunnskapene dine på et interaktivt kart!</p>
             </div>
 
+            <!-- Tidsvalg (gjelder alle quizer) -->
+            <div class="max-w-2xl mx-auto bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 space-y-3 text-center">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">⏱️ Tid for alle quizer</p>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <button onclick="setTimeMode('default')" id="btn-time-default" class="px-4 py-2 border-2 border-emerald-500 bg-emerald-500/10 rounded-xl text-sm font-bold transition">Standard</button>
+                    <button onclick="setTimeMode('custom')" id="btn-time-custom" class="px-4 py-2 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold transition">Velg tid</button>
+                    <button onclick="setTimeMode('none')" id="btn-time-none" class="px-4 py-2 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold transition">Uten tid</button>
+                </div>
+                <div id="custom-time" class="hidden flex items-center justify-center gap-2">
+                    <input type="number" id="custom-minutes" min="1" max="120" value="5" class="w-20 text-center bg-white dark:bg-slate-950 border-2 border-slate-300 dark:border-slate-700 rounded-xl py-2 font-bold outline-none focus:border-emerald-500">
+                    <span class="text-sm font-semibold text-slate-500">minutter</span>
+                </div>
+                <p id="time-hint" class="text-xs text-slate-400">Hver quiz bruker sin vanlige tid.</p>
+            </div>
+
             <!-- Verden -->
             <div class="space-y-4">
                 <h2 class="text-lg font-bold border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><span>🌍</span> Verden</h2>
@@ -198,6 +213,7 @@
             <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                 <button onclick="triggerExitConfirm()" class="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition">&larr; Meny</button>
                 <div class="flex items-center gap-4">
+                    <button id="finish-btn" onclick="endGame()" class="hidden text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20 transition">Avslutt</button>
                     <span id="difficulty-badge" class="text-xs font-bold px-2.5 py-1 rounded-full uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"></span>
                     <div class="bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-bold text-amber-500"><span id="timer-text">0:00</span></div>
                     <div class="bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 font-bold text-emerald-500">Poeng: <span id="score-text">0</span></div>
@@ -291,9 +307,12 @@
     <div id="flag-settings-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur flex items-center justify-center p-4 z-[95] animate-fade-in">
         <div class="bg-white dark:bg-slate-900 max-w-md w-full rounded-3xl p-8 shadow-2xl space-y-6 text-center">
             <h3 class="text-2xl font-black">Flagg-Quiz Instillinger</h3>
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="setFlagInputType('choice')" id="btn-input-choice" class="p-3 border-2 border-emerald-500 bg-emerald-500/10 rounded-xl font-bold">Flervalg</button>
-                <button onclick="setFlagInputType('write')" id="btn-input-write" class="p-3 border-2 border-slate-200 dark:border-slate-800 rounded-xl font-bold">Skriv svar</button>
+            <div class="space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Svarmåte</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="setFlagInputType('choice')" id="btn-input-choice" class="p-3 border-2 border-emerald-500 bg-emerald-500/10 rounded-xl font-bold transition">Flervalg</button>
+                    <button onclick="setFlagInputType('write')" id="btn-input-write" class="p-3 border-2 border-slate-200 dark:border-slate-800 rounded-xl font-bold transition">Skriv svar</button>
+                </div>
             </div>
             <button onclick="confirmStartFlagQuiz()" class="w-full bg-emerald-500 text-slate-950 font-extrabold py-3.5 rounded-xl">Start Quiz</button>
             <button onclick="closeFlagSettingsModal()" class="w-full text-slate-400 text-xs font-semibold">Avbryt</button>
@@ -314,6 +333,8 @@
         let guessedCountries = []; 
         let clickTransitionActive = false;
         let flagInputType = "choice";
+        let timeMode = "default";
+        let timerUp = false;
         let attemptsForCurrentQuestion = 0;
 
         // Kart- og SVG-variabler
@@ -857,7 +878,7 @@
         }
 
         async function startQuiz() {
-            score = 0; currentQuestionIndex = 0; correctAnswersCount = 0; guessedCountries = []; gameActive = true; attemptsForCurrentQuestion = 0;
+            score = 0; currentQuestionIndex = 0; correctAnswersCount = 0; guessedCountries = []; gameActive = true; attemptsForCurrentQuestion = 0; timerUp = false;
             document.getElementById('missing-countries-container').classList.add('hidden');
             
             const badge = document.getElementById('difficulty-badge');
@@ -961,6 +982,14 @@
                 badge.innerText = "Normal 🟢";
                 currentQuestions = shuffleArray([...ALL_COUNTRIES]);
             }
+
+            if (timeMode === 'none') {
+                timerUp = true; timeRemaining = 0;
+            } else if (timeMode === 'custom') {
+                const mins = Math.min(120, Math.max(1, parseInt(document.getElementById('custom-minutes').value, 10) || 5));
+                timeRemaining = mins * 60;
+            }
+            document.getElementById('finish-btn').classList.toggle('hidden', !timerUp);
 
             document.getElementById('menu-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
@@ -1185,7 +1214,15 @@
             showNextQuestion();
         }
 
-        function startTimer() { timer = setInterval(() => { timeRemaining--; document.getElementById('timer-text').innerText = formatTime(timeRemaining); if (timeRemaining <= 0) endGame(); }, 1000); }
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            document.getElementById('timer-text').innerText = formatTime(timeRemaining);
+            timer = setInterval(() => {
+                if (timerUp) { timeRemaining++; } else { timeRemaining--; }
+                document.getElementById('timer-text').innerText = formatTime(timeRemaining);
+                if (!timerUp && timeRemaining <= 0) endGame();
+            }, 1000);
+        }
         function formatTime(s) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
         function shuffleArray(a) { return a.sort(() => Math.random() - 0.5); }
 
@@ -1213,8 +1250,34 @@
         }
         function closeLetterModal() { document.getElementById('letter-modal').classList.add('hidden'); }
 
-        function openFlagSettings(m) { currentMode = m; document.getElementById('flag-settings-modal').classList.remove('hidden'); }
-        function setFlagInputType(t) { flagInputType = t; }
+        function openFlagSettings(m) { currentMode = m; updateFlagSettingsUI(); document.getElementById('flag-settings-modal').classList.remove('hidden'); }
+        function setFlagInputType(t) { flagInputType = t; updateFlagSettingsUI(); }
+        function updateFlagSettingsUI() {
+            const on = ['border-emerald-500', 'bg-emerald-500/10'];
+            const off = ['border-slate-200', 'dark:border-slate-800'];
+            const mark = (id, active) => {
+                const el = document.getElementById(id);
+                el.classList.remove(...on, ...off);
+                el.classList.add(...(active ? on : off));
+            };
+            mark('btn-input-choice', flagInputType === 'choice');
+            mark('btn-input-write', flagInputType === 'write');
+        }
+        function setTimeMode(t) {
+            timeMode = t;
+            const on = ['border-emerald-500', 'bg-emerald-500/10'];
+            const off = ['border-slate-200', 'dark:border-slate-700'];
+            ['default', 'custom', 'none'].forEach(m => {
+                const el = document.getElementById('btn-time-' + m);
+                el.classList.remove(...on, ...off);
+                el.classList.add(...(m === t ? on : off));
+            });
+            document.getElementById('custom-time').classList.toggle('hidden', t !== 'custom');
+            document.getElementById('time-hint').innerText =
+                t === 'default' ? 'Hver quiz bruker sin vanlige tid.' :
+                t === 'custom' ? 'Nedtelling på tiden du velger, i alle quizer.' :
+                'Ingen tidspress. Tiden telles opp, og du avslutter selv eller når alt er tatt.';
+        }
         function confirmStartFlagQuiz() { closeFlagSettingsModal(); startQuiz(); }
         function closeFlagSettingsModal() { document.getElementById('flag-settings-modal').classList.add('hidden'); }
 
