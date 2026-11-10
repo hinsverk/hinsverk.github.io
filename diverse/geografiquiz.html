@@ -21,33 +21,31 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
+        /* Kartfarger: lyse, tydelige grenser. Mørkt tema = html.dark, lyst tema = html:not(.dark) */
         .country-boundary {
-            fill: #334155;
-            stroke: #0f172a;
-            stroke-width: 0.8px;
+            fill: #475569;
+            stroke: #e2e8f0;
+            stroke-width: 1px;
             transition: fill 0.2s ease;
             cursor: pointer;
         }
-        .country-boundary:hover {
-            fill: #475569;
-        }
-        .light .country-boundary {
-            fill: #cbd5e1;
-            stroke: #f8fafc;
-        }
-        .light .country-boundary:hover {
-            fill: #94a3b8;
-        }
+        .country-boundary:not([data-tiny]) { vector-effect: non-scaling-stroke; }
+        .country-boundary:hover { fill: #64748b; }
+        html:not(.dark) .country-boundary { fill: #cbd5e1; stroke: #1e293b; }
+        html:not(.dark) .country-boundary:hover { fill: #94a3b8; }
         .context-land {
             fill: #1e293b;
-            stroke: #0f172a;
-            stroke-width: 0.5px;
+            stroke: #94a3b8;
+            stroke-width: 0.6px;
+            vector-effect: non-scaling-stroke;
             pointer-events: none;
         }
-        .light .context-land {
-            fill: #e2e8f0;
-            stroke: #f8fafc;
-        }
+        html:not(.dark) .context-land { fill: #e2e8f0; stroke: #64748b; }
+        /* Høy kontrast (knapp i toppen) */
+        html.hc .country-boundary:not([data-tiny]) { stroke-width: 2px; stroke: #ffffff; }
+        html.hc:not(.dark) .country-boundary:not([data-tiny]) { stroke: #000000; }
+        html.hc .country-boundary { fill: #334155; }
+        html.hc:not(.dark) .country-boundary { fill: #e2e8f0; }
         .active-target {
             animation: pulse-active 1.2s infinite alternate;
         }
@@ -57,22 +55,22 @@
         }
         .correct-answer {
             fill: #10b981 !important;
-            stroke: #047857 !important;
-            stroke-width: 1px;
+            stroke: #d1fae5 !important;
         }
+        html:not(.dark) .correct-answer { stroke: #064e3b !important; }
         .wrong-answer {
             fill: #ef4444 !important;
         }
         /* Småstater/-regioner: tykk kontur gjør dem synlige og enkle å treffe */
         .country-boundary[data-tiny] {
-            stroke: #64748b;
+            stroke: #cbd5e1;
             stroke-width: var(--tiny-w, 5px);
             stroke-linejoin: round;
             paint-order: stroke;
         }
-        .country-boundary[data-tiny]:hover { stroke: #94a3b8; }
-        .light .country-boundary[data-tiny] { stroke: #94a3b8; }
-        .light .country-boundary[data-tiny]:hover { stroke: #64748b; }
+        .country-boundary[data-tiny]:hover { stroke: #ffffff; }
+        html:not(.dark) .country-boundary[data-tiny] { stroke: #475569; }
+        html:not(.dark) .country-boundary[data-tiny]:hover { stroke: #1e293b; }
         .active-target[data-tiny] { animation: pulse-active 1.2s infinite alternate, pulse-active-stroke 1.2s infinite alternate; }
         @keyframes pulse-active-stroke {
             0% { stroke: #d97706; }
@@ -95,6 +93,7 @@
                 </span>
             </div>
             <div class="flex items-center space-x-3">
+                <button id="contrast-btn" onclick="toggleContrast()" title="Høy kontrast på kartet" aria-label="Høy kontrast på kartet" class="bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-300 dark:hover:bg-slate-700 text-lg w-10 h-10 rounded-lg flex items-center justify-center transition shadow-sm mr-2">◐</button>
                 <button id="theme-btn" onclick="toggleTheme()" class="bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-300 dark:hover:bg-slate-700 text-lg w-10 h-10 rounded-lg flex items-center justify-center transition shadow-sm">☀️</button>
                 <div id="header-score" class="hidden text-sm font-semibold bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
                     Poeng: <span id="header-score-val" class="text-emerald-500 dark:text-emerald-400 font-extrabold">0</span>
@@ -1305,6 +1304,7 @@
         function zoomOut() { if (svg && zoomBehavior) svg.transition().call(zoomBehavior.scaleBy, 0.7); }
 
         function updateScoreUI() { document.getElementById('score-text').innerText = score; document.getElementById('header-score-val').innerText = score; }
+        function toggleContrast() { document.documentElement.classList.toggle('hc'); }
         function toggleTheme() { document.documentElement.classList.toggle('dark'); }
         function goHome() { location.reload(); }
         
@@ -1420,7 +1420,7 @@
     <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
 <a href="index.html" id="back-link" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
     <i class="fa-solid fa-arrow-left"></i>
-    <span id="back-link-text">Tilbake til Lærerverktøy</span>
+    <span id="back-link-text">Tilbake</span>
 </a>
 <script>
     // Tilbakeknappen går til quiz-menyen når man er inne i en quiz, og til index.html kun fra menyen
