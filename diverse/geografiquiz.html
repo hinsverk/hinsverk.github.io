@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuperQuiz - Geografi og kartutfordringer</title>
+    <title>Geografiquiz - Geografi og kartutfordringer</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -1418,10 +1418,30 @@
         }
     </script>
     <!-- TILBAKE-KNAPP (Svever øverst til venstre) -->
-<a href="index.html" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
+<a href="index.html" id="back-link" style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 99999 !important;" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-800 text-white rounded-xl backdrop-blur-md border border-white/20 shadow-2xl transition-all font-sans text-xs font-semibold cursor-pointer">
     <i class="fa-solid fa-arrow-left"></i>
-    <span>Tilbake til Lærerverktøy</span>
+    <span id="back-link-text">Tilbake til Lærerverktøy</span>
 </a>
+<script>
+    // Tilbakeknappen går til quiz-menyen når man er inne i en quiz, og til index.html kun fra menyen
+    (function () {
+        const link = document.getElementById('back-link');
+        const label = document.getElementById('back-link-text');
+        const menu = document.getElementById('menu-screen');
+        const game = document.getElementById('game-screen');
+        const result = document.getElementById('result-screen');
+        const inQuiz = () => menu.classList.contains('hidden');
+        function updateLabel() { label.textContent = inQuiz() ? 'Tilbake til menyen' : 'Tilbake til Lærerverktøy'; }
+        link.addEventListener('click', function (e) {
+            if (!inQuiz()) return; // fra menyen: vanlig lenke til index.html
+            e.preventDefault();
+            if (!result.classList.contains('hidden')) goHome();
+            else triggerExitConfirm();
+        });
+        new MutationObserver(updateLabel).observe(menu, { attributes: true, attributeFilter: ['class'] });
+        updateLabel();
+    })();
+</script>
 
 </body>
 </html>
