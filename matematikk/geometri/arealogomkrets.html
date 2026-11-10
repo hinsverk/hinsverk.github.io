@@ -3,1085 +3,780 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Areal og Omkrets - Mestring for 9. trinn</title>
+    <title>Areal og Omkrets - Øveapp 9. trinn</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for ikoner -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- FontAwesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Font: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        pastel: {
-                            blue: '#e0f2fe',
-                            blueDark: '#0284c7',
-                            green: '#dcfce7',
-                            greenDark: '#15803d',
-                            purple: '#f3e8ff',
-                            purpleDark: '#7e22ce',
-                            yellow: '#fef9c3',
-                            yellowDark: '#a16207',
-                            pink: '#fce7f3',
-                            pinkDark: '#be185d',
-                            bg: '#f8fafc',
-                            card: '#ffffff'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            color: #334155;
-        }
-        .figure-canvas {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+            background-color: #f0f9ff; /* sky-50 */
         }
         .fade-in {
             animation: fadeIn 0.3s ease-in-out;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
 
-    <!-- TOP NAV / HEADER -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <!-- TOP HEADER -->
+    <header class="bg-white border-b border-sky-100 shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center font-bold text-xl shadow-md">
-                    <i class="fa-solid font-shapes text-lg"></i>📐
+                <div class="bg-sky-500 text-white p-2.5 rounded-2xl shadow-md shadow-sky-200">
+                    <i class="fa-solid fa-shapes text-2xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-slate-800 leading-tight">Areal og omkrets</h1>
-                    <p class="text-xs font-medium text-slate-500">Matematikk for 9. trinn</p>
+                    <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">GeoMaster <span class="text-xs bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded-full ml-1">9. trinn</span></h1>
+                    <p class="text-xs text-slate-500 font-medium">Areal og omkrets av geometriske figurer</p>
                 </div>
             </div>
-            
-            <!-- Overall Stats Bar -->
-            <div class="flex items-center gap-4 bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-700">
-                <div class="flex items-center gap-1.5" title="Fullførte oppgaver i øvingsmodus">
-                    <i class="fa-solid fa-circle-check text-emerald-500"></i>
-                    <span id="total-completed">0</span>/60
-                </div>
-                <div class="w-px h-4 bg-slate-300"></div>
-                <div class="flex items-center gap-1.5" title="Poengsum">
-                    <i class="fa-solid fa-star text-amber-400"></i>
-                    <span id="total-score">0</span> poeng
-                </div>
+
+            <!-- MODUS-VELGER -->
+            <div class="flex bg-slate-100 p-1 rounded-2xl w-full sm:w-auto">
+                <button onclick="switchMode('practice')" id="tab-practice" class="flex-1 sm:flex-none py-2 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all bg-sky-600 text-white shadow-md">
+                    <i class="fa-solid fa-graduation-cap"></i> Øvingsmodus
+                </button>
+                <button onclick="switchMode('test')" id="tab-test" class="flex-1 sm:flex-none py-2 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all bg-white text-slate-600 hover:bg-slate-50 border border-slate-200">
+                    <i class="fa-solid fa-trophy"></i> Test deg selv
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- MAIN CONTAINER -->
-    <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
-        
-        <!-- MODE SWITCH TABS -->
-        <div class="flex flex-wrap gap-2 mb-6">
-            <button id="tab-practice" onclick="switchMode('practice')" class="flex-1 min-w-[140px] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-sky-600 text-white shadow-md">
-                <i class="fa-solid fa-graduation-cap"></i> Øvingsmodus
-            </button>
-            <button id="tab-test" onclick="switchMode('test')" class="flex-1 min-w-[140px] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200">
-                <i class="fa-solid fa-trophy"></i> Test deg selv!
-            </button>
-        </div>
+    <!-- HOVEDINNHOLD -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
 
-        <!-- PRACTICE MODE VIEW -->
+        <!-- ==================== ØVINGSMODUS ==================== -->
         <div id="practice-view" class="space-y-6">
             
-            <!-- Shape Selector (Chips) -->
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Velg figur å øve på:</h2>
-                <div class="flex flex-wrap gap-2" id="shape-selector">
-                    <!-- Dynamic Buttons Generated by JS -->
-                </div>
+            <!-- SHAPE NAVIGATOR -->
+            <div class="bg-white p-2 rounded-2xl shadow-sm border border-sky-100 flex items-center gap-2 overflow-x-auto" id="shape-selector">
+                <!-- Dynamisk generert -->
             </div>
 
-            <!-- Task Workspace Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                <!-- Left: Figure Visualization & Details -->
-                <div class="lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between mb-4">
-                            <span id="task-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">
-                                Kvadrat - Oppgave 1/10
-                            </span>
-                            <span id="difficulty-badge" class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800">
-                                Vanskelighetsgrad: Lett
-                            </span>
-                        </div>
-                        <h3 id="task-title" class="text-lg font-bold text-slate-800 mb-1">Finn arealet</h3>
-                        <p id="task-description" class="text-slate-600 text-sm mb-4">Beregn arealet av figuren ut fra målene som er oppgitt.</p>
+            <!-- OPPGAVE-KORT (2 KOLONNER NÅR SKJERMEN ER BRED) -->
+            <div class="bg-white rounded-3xl shadow-xl shadow-sky-100/50 border border-sky-100 overflow-hidden">
+                <!-- KORT HEADER -->
+                <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-4 text-white flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span id="task-badge" class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
+                            Rektangel - Oppgave 1/10
+                        </span>
+                        <span id="difficulty-badge" class="bg-sky-400/40 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                            Vanskelighetsgrad: Lett
+                        </span>
                     </div>
-
-                    <!-- SVG Canvas Box -->
-                    <div class="w-full h-64 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center p-4 relative overflow-hidden">
-                        <svg id="figure-svg" class="w-full h-full max-w-[320px] max-h-[220px]" viewBox="0 0 400 300">
-                            <!-- SVG elements injected here dynamically -->
-                        </svg>
-                    </div>
-
-                    <div class="mt-4 flex justify-between items-center text-xs text-slate-500">
-                        <span><i class="fa-solid fa-circle-info text-sky-500 mr-1"></i> Husk riktig benevning (cm eller cm²)</span>
-                        <span id="task-type-indicator" class="font-bold text-slate-700">Areal</span>
+                    <div class="text-xs font-bold bg-white text-sky-700 px-3 py-1 rounded-full shadow-sm" id="task-type-indicator">
+                        Areal (cm²)
                     </div>
                 </div>
 
-                <!-- Right: Answer Input & Feedback Column -->
-                <div class="lg:col-span-6 space-y-4 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <!-- Input Card -->
-                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                            <label for="user-answer" class="block font-bold text-slate-700 text-base">Ditt svar:</label>
-                            <div class="flex gap-2">
-                                <div class="relative flex-1">
-                                    <input type="number" step="any" id="user-answer" placeholder="Skriv svaret ditt her..." 
-                                           onkeydown="if(event.key === 'Enter') checkAnswer()"
-                                           class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-lg font-semibold text-slate-800 bg-slate-50 focus:bg-white transition-all">
-                                </div>
-                                <span id="unit-tag" class="inline-flex items-center px-4 rounded-xl bg-slate-100 border border-slate-300 font-bold text-slate-600 text-base">
-                                    cm²
-                                </span>
+                <div class="p-6">
+                    <!-- GRID MED TO EQUAL KOLONNER PÅ STOR SKJERM -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                        
+                        <!-- VENSTRE KOLONNE: VISUELL FIGUR EGEN BOKS -->
+                        <div class="flex flex-col space-y-4">
+                            <div class="bg-sky-50/50 rounded-2xl p-4 border border-sky-100 flex flex-col items-center justify-center min-h-[280px]">
+                                <svg id="figure-svg" class="w-full max-w-[340px] h-[240px] overflow-visible" viewBox="0 0 400 300">
+                                    <!-- Dynamic SVG shape rendered here -->
+                                </svg>
+                            </div>
+                            <div class="text-xs text-slate-400 text-center flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-circle-info"></i> Figurer er skissert med målangivelse
+                            </div>
+                        </div>
+
+                        <!-- HØYRE KOLONNE: OPPGAVETEKST, INPUT, HINT OG FORKLARING -->
+                        <div class="space-y-5">
+                            
+                            <!-- Oppgavetekst -->
+                            <div>
+                                <h2 id="task-title" class="text-lg font-extrabold text-slate-800 mb-1">Finn arealet av kvadratet</h2>
+                                <p id="task-description" class="text-slate-600 text-sm leading-relaxed">Et kvadrat har sider på s = 4 cm. Regn ut arealet.</p>
                             </div>
 
-                            <!-- Buttons Row -->
-                            <div class="flex flex-wrap gap-2 pt-2">
-                                <button id="btn-submit" onclick="checkAnswer()" class="flex-1 py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                                    <i class="fa-solid fa-check"></i> Sjekk svar
-                                </button>
+                            <!-- Input felt og send inn -->
+                            <div class="space-y-2">
+                                <label for="user-answer" class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Ditt svar:</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <input type="number" step="any" id="user-answer" placeholder="Skriv inn tall..." 
+                                               onkeydown="if(event.key === 'Enter') checkAnswer()"
+                                               class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-lg font-bold text-slate-800 bg-slate-50/50">
+                                        <span id="unit-tag" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">cm²</span>
+                                    </div>
+                                    <button onclick="checkAnswer()" id="btn-submit" class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-sky-200 active:scale-95 flex items-center gap-2">
+                                        Svar <i class="fa-solid fa-paper-plane"></i>
+                                    </button>
+                                </div>
                             </div>
-                            
-                            <!-- Secondary Action Row -->
-                            <div class="flex justify-between items-center pt-2 border-t border-slate-100 text-sm">
-                                <button id="btn-hint" onclick="useHint()" class="px-3 py-1.5 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg font-medium transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-lightbulb"></i> Trenger du hint? (<span id="hint-counter">Hint 1/2</span>)
+
+                            <!-- Hint & Gi opp-knapper -->
+                            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                                <button onclick="useHint()" id="btn-hint" class="text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-lightbulb"></i> Trenger du et hint? (<span id="hint-counter">Hint 1/2</span>)
                                 </button>
-                                <button id="btn-giveup" onclick="giveUp()" class="px-3 py-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg font-medium transition-all flex items-center gap-1.5">
+                                
+                                <button onclick="giveUp()" id="btn-giveup" class="text-xs font-semibold text-slate-400 hover:text-slate-600 hover:underline">
                                     <i class="fa-solid fa-flag"></i> Jeg gir opp
                                 </button>
                             </div>
-                        </div>
 
-                        <!-- Hint Display Box -->
-                        <div id="hint-box" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-900 text-sm space-y-2 fade-in">
-                            <div class="font-bold flex items-center gap-2 text-amber-800">
-                                <i class="fa-solid fa-lightbulb text-amber-500"></i> <span id="hint-title">Hint 1:</span>
+                            <!-- Hint boks (skjult som standard) -->
+                            <div id="hint-box" class="hidden bg-amber-50/80 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 space-y-1 fade-in">
+                                <div class="font-bold flex items-center gap-1.5 text-amber-700" id="hint-title">
+                                    <i class="fa-solid fa-lightbulb"></i> Hint 1:
+                                </div>
+                                <div id="hint-text">Arealet av et kvadrat finner du ved å multiplisere side med side.</div>
                             </div>
-                            <p id="hint-text" class="text-slate-700 leading-relaxed"></p>
-                        </div>
 
-                        <!-- Explanation Box (Feedback on Correct or Give Up) -->
-                        <div id="explanation-box" class="hidden rounded-2xl p-5 border text-sm space-y-3 fade-in">
-                            <div class="flex items-center gap-2 font-bold text-base" id="explanation-header">
-                                <!-- Injected dynamically -->
+                            <!-- Forklaring / Løsningsboks (skjult som standard) -->
+                            <div id="explanation-box" class="hidden rounded-2xl p-5 border text-sm space-y-3 fade-in">
+                                <div class="font-bold text-base flex items-center gap-2" id="explanation-header">
+                                    <!-- Dynamisk status overskrift -->
+                                </div>
+                                <div id="explanation-text" class="text-slate-700 leading-relaxed">
+                                    <!-- Forklaringstekst -->
+                                </div>
+                                <div class="pt-2">
+                                    <button onclick="nextTask()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+                                        Neste oppgave <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <p id="explanation-text" class="text-slate-700 leading-relaxed"></p>
-                            
-                            <div class="pt-2 flex justify-end">
-                                <button id="btn-next" onclick="nextTask()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow transition-all flex items-center gap-2">
-                                    Neste oppgave <i class="fa-solid fa-arrow-right"></i>
-                                </button>
-                            </div>
+
                         </div>
                     </div>
                 </div>
+            </div>
 
+            <!-- PROGRESJONSKORT -->
+            <div class="bg-white rounded-2xl p-4 border border-sky-100 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-slate-500">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-base"></i> Fullførte oppgaver i denne mappen: <span id="total-completed" class="font-extrabold text-slate-800">0</span> / 60
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-star text-amber-400 text-base"></i> Total poengsum: <span id="total-score" class="font-extrabold text-slate-800">0</span> p
+                </div>
             </div>
 
         </div>
 
-        <!-- TEST MODE VIEW -->
+
+        <!-- ==================== TEST DEG SELV MODUS ==================== -->
         <div id="test-view" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto">
-                
-                <!-- START TEST SCREEN -->
-                <div id="test-start-screen" class="space-y-4 py-6">
-                    <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
-                        <i class="fa-solid fa-trophy"></i>
+            
+            <!-- START-SKJERM TEST -->
+            <div id="test-start-screen" class="bg-white rounded-3xl p-8 border border-sky-100 shadow-xl shadow-sky-100/50 text-center max-w-xl mx-auto space-y-5">
+                <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-slate-800">Klar for "Test deg selv"?</h2>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                    Testen består av <b>10 tilfeldige oppgaver</b> samlet fra alle de seks geometriske figurene. 
+                    I testen er det <span class="text-amber-600 font-bold">ingen hint</span> eller forklaringer underveis!
+                </p>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left text-xs space-y-2 text-slate-500">
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> 10 tilfeldige oppgaver på tid du velger selv</div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Ingen hint tilgjengelig</div>
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Tilbakemelding og poengsum til slutt</div>
+                </div>
+                <button onclick="startTest()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-3.5 px-6 rounded-xl transition-all shadow-md shadow-amber-200">
+                    Start testen nå!
+                </button>
+            </div>
+
+            <!-- AKTIV TEST-SKJERM -->
+            <div id="test-active-screen" class="hidden bg-white rounded-3xl shadow-xl shadow-sky-100/50 border border-sky-100 overflow-hidden">
+                <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                    <div class="text-xs font-bold text-slate-300">
+                        Oppgave <span id="test-current-num">1</span> av 10
                     </div>
-                    <h2 class="text-2xl font-bold text-slate-800">Test deg selv!</h2>
-                    <p class="text-slate-600 max-w-md mx-auto text-sm">
-                        Testen består av 10 tilfeldige oppgaver på tvers av alle figurene. Her får du <strong>ingen hint</strong> og ingen svarforklaring underveis. Du får resultatet ditt til slutt!
-                    </p>
-                    <div class="pt-4">
-                        <button onclick="startTest()" class="px-8 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-base rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5">
-                            Start testen nå 🚀
-                        </button>
+                    <!-- Framdriftslinje -->
+                    <div class="w-48 bg-slate-700 h-2 rounded-full overflow-hidden">
+                        <div id="test-progress-bar" class="bg-amber-400 h-full transition-all" style="width: 10%;"></div>
                     </div>
                 </div>
 
-                <!-- ACTIVE TEST SCREEN -->
-                <div id="test-active-screen" class="hidden text-left space-y-6">
-                    <div class="flex items-center justify-between border-b pb-4 border-slate-100">
-                        <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Test-modus</span>
-                            <h3 class="text-lg font-bold text-slate-800">Spørsmål <span id="test-current-num">1</span> av 10</h3>
-                        </div>
-                        <div class="w-32 bg-slate-100 rounded-full h-3 overflow-hidden">
-                            <div id="test-progress-bar" class="bg-amber-500 h-full w-10 transition-all duration-300"></div>
-                        </div>
-                    </div>
-
-                    <!-- Test Task Content -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                        <div class="w-full h-56 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center p-4">
-                            <svg id="test-figure-svg" class="w-full h-full max-w-[280px] max-h-[190px]" viewBox="0 0 400 300">
-                                <!-- Dynamic SVG -->
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                        <!-- Figur -->
+                        <div class="bg-sky-50/50 rounded-2xl p-4 border border-sky-100 flex items-center justify-center min-h-[260px]">
+                            <svg id="test-figure-svg" class="w-full max-w-[340px] h-[240px] overflow-visible" viewBox="0 0 400 300">
+                                <!-- Dynamic test SVG -->
                             </svg>
                         </div>
-                        <div class="space-y-4">
+
+                        <!-- Oppgavetekst & Input -->
+                        <div class="space-y-5">
                             <div>
-                                <h4 id="test-task-title" class="font-bold text-slate-800 text-base mb-1"></h4>
-                                <p id="test-task-desc" class="text-sm text-slate-600"></p>
+                                <h2 id="test-task-title" class="text-lg font-extrabold text-slate-800 mb-1">Finn omkretsen</h2>
+                                <p id="test-task-desc" class="text-slate-600 text-sm leading-relaxed">Beskrivelse...</p>
                             </div>
-                            <div>
-                                <label class="block font-bold text-slate-700 text-xs uppercase mb-1">Ditt svar:</label>
+
+                            <div class="space-y-2">
+                                <label for="test-user-answer" class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Ditt svar:</label>
                                 <div class="flex gap-2">
-                                    <input type="number" step="any" id="test-user-answer" placeholder="Svar..." 
-                                           onkeydown="if(event.key === 'Enter') submitTestAnswer()"
-                                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold text-slate-800">
-                                    <span id="test-unit-tag" class="inline-flex items-center px-3 rounded-xl bg-slate-100 border border-slate-300 font-bold text-slate-600 text-sm">
-                                        cm²
-                                    </span>
+                                    <div class="relative flex-1">
+                                        <input type="number" step="any" id="test-user-answer" placeholder="Skriv inn tall..." 
+                                               onkeydown="if(event.key === 'Enter') submitTestAnswer()"
+                                               class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-lg font-bold text-slate-800 bg-slate-50/50">
+                                        <span id="test-unit-tag" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">cm²</span>
+                                    </div>
+                                    <button onclick="submitTestAnswer()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-md shadow-amber-100 flex items-center gap-2">
+                                        Neste <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <button onclick="submitTestAnswer()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all">
-                                Neste spørsmål <i class="fa-solid fa-arrow-right ml-1"></i>
-                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- TEST END RESULTS SCREEN -->
-                <div id="test-result-screen" class="hidden space-y-6 py-6">
-                    <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto text-3xl font-bold text-white shadow-lg" id="test-score-badge-bg">
+            <!-- RESULTATSKJERM FOR TEST -->
+            <div id="test-result-screen" class="hidden bg-white rounded-3xl p-8 border border-sky-100 shadow-xl max-w-2xl mx-auto space-y-6 fade-in">
+                <div class="text-center space-y-3">
+                    <div id="test-score-badge-bg" class="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto text-3xl font-extrabold shadow-lg">
                         <span id="test-final-score">8/10</span>
                     </div>
                     <div>
-                        <h3 class="text-2xl font-bold text-slate-800" id="test-result-title">Flott jobba!</h3>
-                        <p class="text-slate-600 text-sm max-w-md mx-auto mt-1" id="test-result-feedback">
-                            Du har god kontroll på areal og omkrets for 9. trinn!
-                        </p>
-                    </div>
-                    <div class="pt-4 flex justify-center gap-3">
-                        <button onclick="startTest()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all">
-                            Prøv testen på nytt
-                        </button>
-                        <button onclick="switchMode('practice')" class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all">
-                            Tilbake til øving
-                        </button>
+                        <h2 class="text-2xl font-extrabold text-slate-800">Test fullført!</h2>
+                        <p id="test-result-feedback" class="text-slate-600 text-sm mt-1">Bra jobbet!</p>
                     </div>
                 </div>
 
+                <!-- DYNAMISK GEM-GJENNOMGANG AV OPPGAVENE -->
+                <div class="space-y-3 border-t border-slate-100 pt-5">
+                    <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-sky-500"></i> Gjennomgang av testoppgavene:
+                    </h3>
+                    <div id="test-review-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                        <!-- Dynamisk gjennomgang av hvert spørsmål -->
+                    </div>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button onclick="startTest()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> Ta testen på nytt
+                    </button>
+                    <button onclick="switchMode('practice')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl text-xs transition-all">
+                        Gå til øvingsmodus
+                    </button>
+                </div>
             </div>
+
         </div>
 
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-white border-t border-slate-200 py-4 mt-auto text-center text-xs text-slate-400">
-        <p>Areal og Omkrets Øveapp • Utviklet for 9. trinn i den norske skolen • Matematikk (LK20)</p>
+    <footer class="bg-white border-t border-sky-100 py-4 mt-8">
+        <div class="max-w-6xl mx-auto px-4 text-center text-xs text-slate-400 font-medium">
+            GeoMaster 9. trinn &bull; Tilpasset matematikklæreplanen (LK20) &bull; Areal & Omkrets
+        </div>
     </footer>
 
-    <!-- APPLICATION LOGIC SCRIPT -->
-    <script>
-        /* ==========================================================================
-           TASK DATA & GENERATION ENGINE
-           ========================================================================== */
 
+    <!-- ==========================================================================
+         JAVASCRIPT LOGIKK OG OPPGAVEGENERATOR
+         ========================================================================== -->
+    <script>
+        /* ---------------- FIGUR-DATA STRUKTUR ---------------- */
         const SHAPES = [
-            { id: 'kvadrat', name: 'Kvadrat', icon: 'fa-square' },
-            { id: 'rektangel', name: 'Rektangel', icon: 'fa-vector-square' },
+            { id: 'kvadrat', name: 'Kvadrat', icon: 'fa-vector-square' },
+            { id: 'rektangel', name: 'Rektangel', icon: 'fa-rectangle-ad' },
             { id: 'parallellogram', name: 'Parallellogram', icon: 'fa-draw-polygon' },
-            { id: 'trapes', name: 'Trapes', icon: 'fa-cubes' },
+            { id: 'trapes', name: 'Trapes', icon: 'fa-shapes' },
             { id: 'sirkel', name: 'Sirkel', icon: 'fa-circle' },
-            { id: 'sammensatt', name: 'Sammensatt figur', icon: 'fa-layer-group' }
+            { id: 'sammensatt', name: 'Sammensatt', icon: 'fa-cubes' }
         ];
 
-        // Generator functions for 10 progressive tasks per shape (5 Area, 5 Perimeter)
-        function generateTaskPool(shapeId) {
-            const tasks = [];
-            
-            for (let i = 1; i <= 10; i++) {
-                const isArea = i <= 5; // 1-5 Area, 6-10 Perimeter
-                const diffLevel = (i % 5 === 1 || i % 5 === 2) ? 'Lett' : ((i % 5 === 3 || i % 5 === 4) ? 'Middels' : 'Vanskelig');
-                
-                let task = {};
-
-                switch (shapeId) {
-                    case 'kvadrat':
-                        task = generateKvadrat(i, isArea, diffLevel);
-                        break;
-                    case 'rektangel':
-                        task = generateRektangel(i, isArea, diffLevel);
-                        break;
-                    case 'parallellogram':
-                        task = generateParallellogram(i, isArea, diffLevel);
-                        break;
-                    case 'trapes':
-                        task = generateTrapes(i, isArea, diffLevel);
-                        break;
-                    case 'sirkel':
-                        task = generateSirkel(i, isArea, diffLevel);
-                        break;
-                    case 'sammensatt':
-                        task = generateSammensatt(i, isArea, diffLevel);
-                        break;
-                }
-
-                task.index = i;
-                task.shapeId = shapeId;
-                task.isArea = isArea;
-                task.difficulty = diffLevel;
-                tasks.push(task);
-            }
-            return tasks;
-        }
-
-        // --- HELPER RANDOM GENERATORS ---
+        // Hjelpefunksjoner for tilfeldige tall
         function randInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
+
         function round1(val) {
             return Math.round(val * 10) / 10;
         }
 
+        /* ---------------- GENERATORER FOR KVAR FIGUR ---------------- */
+        function generateTaskPool(shapeId) {
+            let tasks = [];
+            for (let i = 1; i <= 10; i++) {
+                const isArea = i <= 5; // 1-5 areal, 6-10 omkrets
+                const difficulty = i <= 2 || (i >= 6 && i <= 7) ? 'Lett' : (i <= 4 || i >= 9 ? 'Medium' : 'Avansert');
+                
+                let taskData = {};
+                switch(shapeId) {
+                    case 'kvadrat':
+                        taskData = generateKvadrat(i, isArea, difficulty);
+                        break;
+                    case 'rektangel':
+                        taskData = generateRektangel(i, isArea, difficulty);
+                        break;
+                    case 'parallellogram':
+                        taskData = generateParallellogram(i, isArea, difficulty);
+                        break;
+                    case 'trapes':
+                        taskData = generateTrapes(i, isArea, difficulty);
+                        break;
+                    case 'sirkel':
+                        taskData = generateSirkel(i, isArea, difficulty);
+                        break;
+                    case 'sammensatt':
+                        taskData = generateSammensatt(i, isArea, difficulty);
+                        break;
+                }
+                
+                taskData.shapeId = shapeId;
+                taskData.index = i;
+                taskData.isArea = isArea;
+                taskData.difficulty = difficulty;
+                tasks.push(taskData);
+            }
+            return tasks;
+        }
+
         /* ---------------- KVADRAT ---------------- */
         function generateKvadrat(index, isArea, diff) {
-            const s = index * 2 + randInt(1, 3);
+            const s = randInt(3, 8) + Math.floor(index / 2);
             if (isArea) {
                 const ans = s * s;
                 return {
                     title: `Kvadrat: Areal (Oppgave ${index}/10)`,
-                    description: `Finn arealet til et kvadrat hvor hver side er s = ${s} cm.`,
+                    description: `Finn arealet til et kvadrat hvor sidekanten s = ${s} cm.`,
                     unit: 'cm²',
                     answer: ans,
                     vars: { s },
-                    hint1: "Arealet av et kvadrat forteller hvor mange kvadratcentimeter som får plass inni. Formelen er side · side (s · s).",
-                    hint2: `Gang sidelengden med seg selv: ${s} · ${s}.`,
-                    explanation: `Arealet av et kvadrat regnes ut med formelen A = s² (eller side · side).<br>Her blir det: ${s} cm · ${s} cm = <b>${ans} cm²</b>.`
+                    hint1: "Arealet av et kvadrat regnes ut ved å multiplisere sidekanten med seg selv.",
+                    hint2: `Multipliser ${s} cm med ${s} cm (${s} · ${s}).`,
+                    explanation: `Arealet av et kvadrat regnes ut med formelen A = s² (side · side).<br>Her blir det: ${s} cm · ${s} cm = <b>${ans} cm²</b>.`
                 };
             } else {
                 const ans = 4 * s;
                 return {
                     title: `Kvadrat: Omkrets (Oppgave ${index}/10)`,
-                    description: `Finn omkretsen til et kvadrat hvor hver side er s = ${s} cm.`,
+                    description: `Finn omkretsen til et kvadrat med sidekant s = ${s} cm.`,
                     unit: 'cm',
                     answer: ans,
                     vars: { s },
-                    hint1: "Omkrets er den totale lengden rundt hele figuren.",
-                    hint2: `Et kvadrat har 4 like lange sider. Du kan enten legge sammen alle 4 sidene (${s} + ${s} + ${s} + ${s}) eller gange med 4 (4 · ${s}).`,
-                    explanation: `Omkretsen av et kvadrat er summen av de fire sidene: O = 4 · s.<br>Her blir det: 4 · ${s} cm = <b>${ans} cm</b>.`
+                    hint1: "Omkretsen er den totale lengden rundt hele figuren. Et kvadrat har 4 like lange sider.",
+                    hint2: `Legg sammen alle 4 sidene: ${s} + ${s} + ${s} + ${s}, eller 4 · ${s}.`,
+                    explanation: `Omkretsen av et kvadrat er summen av alle fire sidene: O = 4 · s.<br>Her blir det: 4 · ${s} cm = <b>${ans} cm</b>.`
                 };
             }
         }
 
         /* ---------------- REKTANGEL ---------------- */
         function generateRektangel(index, isArea, diff) {
-            const l = randInt(4, 8) + (index % 3);
-            const b = randInt(2, 5);
+            // Lengde blir et tall fra 6 til 12
+            const l = randInt(6, 10) + Math.floor(index / 2);
+            // Bredde blir alltid mindre enn lengden (minimum 2 cm mindre) slik at det aldri blir et kvadrat
+            const b = randInt(2, Math.max(3, l - 2));
             if (isArea) {
                 const ans = l * b;
                 return {
                     title: `Rektangel: Areal (Oppgave ${index}/10)`,
-                    description: `Et rektangel har lengde l = ${l} cm og bredde b = ${b} cm. Hva er arealet?`,
+                    description: `Finn arealet til et rektangel med lengde l = ${l} cm og bredde b = ${b} cm.`,
                     unit: 'cm²',
                     answer: ans,
                     vars: { l, b },
-                    hint1: "Formelen for arealet av et rektangel er A = lengde · bredde (l · b).",
+                    hint1: "Arealet av et rektangel finner du ved å multiplisere lengden med bredden.",
                     hint2: `Multipliser lengden (${l} cm) med bredden (${b} cm).`,
-                    explanation: `Arealet av et rektangel finnes ved å gange lengde med bredde: A = l · b.<br>Beregning: ${l} cm · ${b} cm = <b>${ans} cm²</b>.`
+                    explanation: `Arealet av et rektangel er A = l · b.<br>Her blir det: ${l} cm · ${b} cm = <b>${ans} cm²</b>.`
                 };
             } else {
                 const ans = 2 * (l + b);
                 return {
                     title: `Rektangel: Omkrets (Oppgave ${index}/10)`,
-                    description: `Et rektangel har lengde l = ${l} cm og bredde b = ${b} cm. Hva er omkretsen?`,
+                    description: `Finn omkretsen til et rektangel med lengde l = ${l} cm og bredde b = ${b} cm.`,
                     unit: 'cm',
                     answer: ans,
                     vars: { l, b },
-                    hint1: "Omkretsen er veilengden helt rundt rektangelet.",
+                    hint1: "Omkretsen er lengden hele veien rundt rektangelet.",
                     hint2: `Legg sammen alle 4 sidene: ${l} + ${b} + ${l} + ${b}, eller 2 · (${l} + ${b}).`,
-                    explanation: `Rektangelet har to sider på ${l} cm og to sider på ${b} cm.<br>Omkrets: O = 2 · l + 2 · b = 2 · ${l} + 2 · ${b} = ${2*l} + ${2*b} = <b>${ans} cm</b>.`
+                    explanation: `Omkretsen av et rektangel er O = 2 · l + 2 · b.<br>Her blir det: 2 · ${l} cm + 2 · ${b} cm = <b>${ans} cm</b>.`
                 };
             }
         }
 
         /* ---------------- PARALLELLOGRAM ---------------- */
         function generateParallellogram(index, isArea, diff) {
-            const g = randInt(5, 10);
-            const h = randInt(4, 7);
+            const b = randInt(5, 10) + index;
+            const h = randInt(4, 8);
             const a = h + randInt(1, 3); // skråside
-            
             if (isArea) {
-                const ans = g * h;
+                const ans = b * h;
                 return {
                     title: `Parallellogram: Areal (Oppgave ${index}/10)`,
-                    description: `Et parallellogram har grunnlinje g = ${g} cm og høyde h = ${h} cm. Skråsiden er ${a} cm. Finn arealet.`,
+                    description: `Finn arealet til et parallellogram med grunnlinje g = ${b} cm og høyde h = ${h} cm.`,
                     unit: 'cm²',
                     answer: ans,
-                    vars: { g, h, a },
-                    hint1: "Vær forsiktig! Arealet av et parallellogram bruker bare grunnlinjen og den vinkelrette høyden. Skråsiden skal ikke brukes her.",
-                    hint2: `Bruk formelen A = g · h, altså ${g} · ${h}.`,
-                    explanation: `Formelen for arealet av et parallellogram er A = g · h (grunnlinje · høyde). Skråsiden trenger vi ikke for arealet.<br>Regnestykke: ${g} cm · ${h} cm = <b>${ans} cm²</b>.`
+                    vars: { b, h, a },
+                    hint1: "Arealet av et parallellogram regnes ut på samme måte som et rektangel: grunnlinje ganget med høyde. Pass på å bruke høyden, ikke den skrå sidekanten!",
+                    hint2: `Multipliser grunnlinjen g = ${b} med høyden h = ${h}.`,
+                    explanation: `Arealet av et parallellogram er A = g · h.<br>Her blir det: ${b} cm · ${h} cm = <b>${ans} cm²</b>.`
                 };
             } else {
-                const ans = 2 * (g + a);
+                const ans = 2 * (b + a);
                 return {
                     title: `Parallellogram: Omkrets (Oppgave ${index}/10)`,
-                    description: `Et parallellogram har grunnlinje g = ${g} cm, høyde h = ${h} cm og skråside a = ${a} cm. Finn omkretsen.`,
+                    description: `Finn omkretsen til et parallellogram med grunnlinje g = ${b} cm og sidekant s = ${a} cm (høyden h = ${h} cm).`,
                     unit: 'cm',
                     answer: ans,
-                    vars: { g, h, a },
-                    hint1: "Omkretsen er lengden rundt kanten på figuren. Pass på hvilke mål som utgjør ytterkanten!",
-                    hint2: `Ytterkanten består av to grunnlinjer (${g} cm) og to skråsider (${a} cm). Høyden ligger inni og telles ikke med i omkretsen.`,
-                    explanation: `Omkretsen er summen av de 4 ytterlinjene: O = 2 · g + 2 · a.<br>Beregning: 2 · ${g} + 2 · ${a} = ${2*g} + ${2*a} = <b>${ans} cm</b>.`
+                    vars: { b, h, a },
+                    hint1: "Omkretsen er summen av sidene rundt parallellogrammet. Til omkrets trenger du sidekantene, ikke høyden!",
+                    hint2: `Legg sammen de 4 ytre sidene: ${b} + ${a} + ${b} + ${a}.`,
+                    explanation: `Omkretsen av et parallellogram regnes ut ved å legge sammen alle fire sidene: O = 2 · g + 2 · s.<br>Her blir det: 2 · ${b} cm + 2 · ${a} cm = <b>${ans} cm</b>.`
                 };
             }
         }
 
         /* ---------------- TRAPES ---------------- */
         function generateTrapes(index, isArea, diff) {
-            const a = randInt(4, 7); // topplinje
-            const b = a + randInt(3, 6); // grunnlinje
-            const h = randInt(3, 6); // høyde
-            const s1 = h + 1; // skråside 1
-            const s2 = h + 2; // skråside 2
+            const a = randInt(4, 8);
+            const b = a + randInt(4, 8);
+            const h = randInt(3, 7);
+            const s1 = h + randInt(1, 2);
+            const s2 = h + randInt(1, 2);
 
             if (isArea) {
                 const ans = ((a + b) * h) / 2;
                 return {
                     title: `Trapes: Areal (Oppgave ${index}/10)`,
-                    description: `Et trapes har parallelle sider a = ${a} cm og b = ${b} cm, samt høyde h = ${h} cm. Finn arealet.`,
+                    description: `Finn arealet til et trapes med de parallelle sidene a = ${a} cm, b = ${b} cm og høyde h = ${h} cm.`,
                     unit: 'cm²',
                     answer: ans,
                     vars: { a, b, h, s1, s2 },
-                    hint1: "Formelen for areal av et trapes er: A = ((a + b) · h) / 2. Legg sammen de to parallelle sidene først.",
-                    hint2: `1) Legg sammen de parallelle sidene: ${a} + ${b} = ${a+b}.<br>2) Gang med høyden: ${a+b} · ${h} = ${(a+b)*h}.<br>3) Del svaret på 2.`,
-                    explanation: `Arealet av et trapes regnes ut med A = ((a + b) · h) / 2.<br>Utregning: ((${a} + ${b}) · ${h}) / 2 = (${a+b} · ${h}) / 2 = ${(a+b)*h} / 2 = <b>${ans} cm²</b>.`
+                    hint1: "Formelen for areal av trapes er A = ((a + b) · h) / 2. Legg sammen de to parallelle sidene først.",
+                    hint2: `Legg sammen parallelle sider (${a} + ${b} = ${a+b}), gang med høyden ${h} (får ${(a+b)*h}), og del til slutt på 2.`,
+                    explanation: `Arealet av et trapes regnes ut med formelen A = ((a + b) · h) / 2.<br>Her blir det: ((${a} cm + ${b} cm) · ${h} cm) / 2 = (${a+b} · ${h}) / 2 = <b>${ans} cm²</b>.`
                 };
             } else {
                 const ans = a + b + s1 + s2;
                 return {
                     title: `Trapes: Omkrets (Oppgave ${index}/10)`,
-                    description: `Et trapes har sider a = ${a} cm, b = ${b} cm, og skråsider på s₁ = ${s1} cm og s₂ = ${s2} cm. Høyden er h = ${h} cm. Finn omkretsen.`,
+                    description: `Finn omkretsen til et trapes med sidene a = ${a} cm, b = ${b} cm, s1 = ${s1} cm og s2 = ${s2} cm.`,
                     unit: 'cm',
                     answer: ans,
                     vars: { a, b, h, s1, s2 },
-                    hint1: "Omkrets betyr å legge sammen lengden av alle fire ytterlinjene.",
-                    hint2: `Legg sammen sidene: ${a} + ${b} + ${s1} + ${s2}. Husk at høyden h = ${h} er inni figuren og skal ikke regnes med!`,
-                    explanation: `Omkretsen av et trapes er summen av de fire ytterkantene (a + b + s₁ + s₂).<br>Regnestykke: ${a} + ${b} + ${s1} + ${s2} = <b>${ans} cm</b>.`
+                    hint1: "Omkretsen er den totale lengden av alle de fire ytre sidene lagt sammen.",
+                    hint2: `Legg sammen alle sidene: ${a} + ${b} + ${s1} + ${s2}.`,
+                    explanation: `Omkretsen av et trapes finner du ved å legge sammen alle de fire ytre sidene: O = a + b + s1 + s2.<br>Her blir det: ${a} cm + ${b} cm + ${s1} cm + ${s2} cm = <b>${ans} cm</b>.`
                 };
             }
         }
 
         /* ---------------- SIRKEL ---------------- */
         function generateSirkel(index, isArea, diff) {
-            const r = randInt(2, 7);
-            const d = 2 * r;
-            const useDiameter = index % 2 === 0;
+            const r = randInt(2, 8);
+            const d = r * 2;
+            const pi = 3.14;
 
             if (isArea) {
-                // Area = pi * r^2
-                const ans = round1(Math.PI * r * r);
-                const descText = useDiameter 
-                    ? `En sirkel har diameter d = ${d} cm. Finn arealet. (Bruk π ≈ 3,14, rund av til 1 desimal)`
-                    : `En sirkel har radius r = ${r} cm. Finn arealet. (Bruk π ≈ 3,14, rund av til 1 desimal)`;
-                
+                const ans = round1(pi * r * r);
                 return {
                     title: `Sirkel: Areal (Oppgave ${index}/10)`,
-                    description: descText,
+                    description: `Finn arealet til en sirkel med radius r = ${r} cm (bruk π ≈ 3,14).`,
                     unit: 'cm²',
                     answer: ans,
-                    vars: { r, d, useDiameter },
-                    hint1: "Formelen for sirkelareal er A = π · r². Legg merke til om du har fått radius eller diameter!",
-                    hint2: useDiameter 
-                        ? `Siden diameteren er ${d} cm, er radien halvparten: r = ${r} cm. Gang deretter 3,14 · ${r} · ${r}.`
-                        : `Bruk formelen direkte: 3,14 · ${r}² = 3,14 · ${r*r}.`,
-                    explanation: `Formelen for sirkelareal er A = π · r².` + 
-                        (useDiameter ? `<br>Siden diameter d = ${d} cm, er radius r = ${d} / 2 = ${r} cm.` : '') +
-                        `<br>Beregning: 3,14 · ${r}² = 3,14 · ${r*r} = <b>${ans} cm²</b>.`
+                    vars: { r, d },
+                    hint1: "Arealet av en sirkel regnes ut med formelen A = π · r².",
+                    hint2: `Gang 3,14 med radius opphøyd i annen: 3,14 · ${r} · ${r}.`,
+                    explanation: `Arealet av en sirkel er A = π · r².<br>Her blir det: 3,14 · ${r} cm · ${r} cm = <b>${ans} cm²</b>.`
                 };
             } else {
-                // Perimeter = 2 * pi * r
-                const ans = round1(2 * Math.PI * r);
-                const descText = useDiameter 
-                    ? `En sirkel har diameter d = ${d} cm. Finn omkretsen. (Rund av til 1 desimal)`
-                    : `En sirkel har radius r = ${r} cm. Finn omkretsen. (Rund av til 1 desimal)`;
-
+                const ans = round1(pi * d);
                 return {
                     title: `Sirkel: Omkrets (Oppgave ${index}/10)`,
-                    description: descText,
+                    description: `Finn omkretsen til en sirkel med diameter d = ${d} cm (eller radius r = ${r} cm). Bruk π ≈ 3,14.`,
                     unit: 'cm',
                     answer: ans,
-                    vars: { r, d, useDiameter },
-                    hint1: "Formelen for omkretsen av en sirkel er O = 2 · π · r (eller O = π · d).",
-                    hint2: useDiameter 
-                        ? `Gang diameteren direkte med π: 3,14 · ${d}.`
-                        : `Bruk 2 · 3,14 · ${r} (eller 3,14 · ${d}).`,
-                    explanation: `Omkretsen av en sirkel er O = 2 · π · r = π · d.<br>Beregning: 3,14 · ${d} = <b>${ans} cm</b>.`
+                    vars: { r, d },
+                    hint1: "Omkretsen av en sirkel kalles også omkrets = π · d (eller 2 · π · r).",
+                    hint2: `Multipliser π (3,14) med diameteren (${d} cm).`,
+                    explanation: `Omkretsen av en sirkel er O = π · d.<br>Her blir det: 3,14 · ${d} cm = <b>${ans} cm</b>.`
                 };
             }
         }
 
         /* ---------------- SAMMENSATT FIGUR ---------------- */
         function generateSammensatt(index, isArea, diff) {
-            const isLShape = index % 2 !== 0;
+            const a = randInt(6, 10);
+            const b = randInt(6, 10);
+            const c = randInt(2, 4);
+            const d = randInt(2, 4);
+            const e = a - c;
+            const f = b - d;
 
-            if (isLShape) {
-                // L-shape
-                const w1 = randInt(3, 5); // top width
-                const h1 = randInt(2, 4); // top height
-                const w2 = w1 + randInt(3, 5); // total bottom width
-                const h2 = randInt(3, 5); // bottom right height
-                const totalH = h1 + h2;
-                const cutW = w2 - w1;
-
-                if (isArea) {
-                    const ans = (w1 * totalH) + (cutW * h2);
-                    return {
-                        title: `Sammensatt figur (L-form): Areal (Oppgave ${index}/10)`,
-                        description: `Sammensatt L-formet figur. Finn det totale arealet.`,
-                        unit: 'cm²',
-                        answer: ans,
-                        vars: { isLShape: true, w1, h1, w2, h2, totalH, cutW },
-                        hint1: "Del figuren inn i to enklere rektangler med en stiplet linje.",
-                        hint2: `Del figuren vertikalt eller horisontalt. F.eks. et venstre rektangel (${w1} · ${totalH} = ${w1*totalH}) og et høyre rektangel (${cutW} · ${h2} = ${cutW*h2}). Legg dem sammen.`,
-                        explanation: `Vi deler L-figuren inn i to rektangler:<br>` +
-                            `1) Venstre del: ${w1} cm · ${totalH} cm = ${w1*totalH} cm²<br>` +
-                            `2) Høyre del: ${cutW} cm · ${h2} cm = ${cutW*h2} cm²<br>` +
-                            `Totalt areal = ${w1*totalH} + ${cutW*h2} = <b>${ans} cm²</b>.`
-                    };
-                } else {
-                    const ans = w2 + totalH + w1 + h1 + cutW + h2;
-                    return {
-                        title: `Sammensatt figur (L-form): Omkrets (Oppgave ${index}/10)`,
-                        description: `Finn den totale omkretsen (veilengden rundt hele yttersiden av L-figuren).`,
-                        unit: 'cm',
-                        answer: ans,
-                        vars: { isLShape: true, w1, h1, w2, h2, totalH, cutW },
-                        hint1: "Omkretsen er summen av alle 6 yttersidene i L-figuren.",
-                        hint2: `Legg sammen alle de ytre sidene: ${w2} + ${totalH} + ${w1} + ${h1} + ${cutW} + ${h2}.`,
-                        explanation: `Vi legger sammen de 6 yttersidene:<br>` +
-                            `${w2} + ${totalH} + ${w1} + ${h1} + ${cutW} + ${h2} = <b>${ans} cm</b>.`
-                    };
-                }
+            if (isArea) {
+                const ans = (a * d) + (c * f);
+                return {
+                    title: `Sammensatt figur: Areal (Oppgave ${index}/10)`,
+                    description: `Finn det totale arealet av denne L-formede figuren med sidene: A = ${a} cm, B = ${b} cm, C = ${c} cm og D = ${d} cm.`,
+                    unit: 'cm²',
+                    answer: ans,
+                    vars: { a, b, c, d, e, f },
+                    hint1: "Del den sammensatte figuren inn i to enklere rektangler. Regn ut arealet av hvert rektangel og legg dem sammen.",
+                    hint2: `Del i rektangel 1 (${a} · ${d} = ${a*d}) og rektangel 2 (${c} · ${f} = ${c*f}), og legg sammen resultatene.`,
+                    explanation: `Del figuren inn i to rektangler.<br>Rektangel 1: ${a} cm · ${d} cm = ${a*d} cm².<br>Rektangel 2: ${c} cm · ${f} cm = ${c*f} cm².<br>Totalt areal: ${a*d} + ${c*f} = <b>${ans} cm²</b>.`
+                };
             } else {
-                // Rektangel + Halvsirkel
-                const w = randInt(4, 8); // bredde
-                const r = w / 2;
-                const h = randInt(5, 9); // rektangel høyde
-
-                if (isArea) {
-                    const areaRect = w * h;
-                    const areaSemi = (Math.PI * r * r) / 2;
-                    const ans = round1(areaRect + areaSemi);
-
-                    return {
-                        title: `Sammensatt figur (Hus-form): Areal (Oppgave ${index}/10)`,
-                        description: `Figuren består av et rektangel (${w} cm · ${h} cm) og en halvsirkel på toppen (diameter d = ${w} cm). Finn totalt areal. (Rund av til 1 desimal)`,
-                        unit: 'cm²',
-                        answer: ans,
-                        vars: { isLShape: false, w, h, r },
-                        hint1: "Beregn arealet av rektangelet for seg, og arealet av halvsirkelen for seg. Legg dem så sammen.",
-                        hint2: `1) Rektangel: ${w} · ${h} = ${areaRect}.<br>2) Halvsirkel: (3,14 · ${r}²) / 2 ≈ ${round1(areaSemi)}.<br>3) Legg dem sammen.`,
-                        explanation: `1) Areal av rektangel: ${w} · ${h} = ${areaRect} cm².<br>` +
-                            `2) Areal av halvsirkel (radius r = ${r} cm): (3,14 · ${r}²) / 2 ≈ ${round1(areaSemi)} cm².<br>` +
-                            `Totalt areal: ${areaRect} + ${round1(areaSemi)} = <b>${ans} cm²</b>.`
-                    };
-                } else {
-                    const arcLen = Math.PI * r;
-                    const ans = round1(w + 2 * h + arcLen);
-
-                    return {
-                        title: `Sammensatt figur (Hus-form): Omkrets (Oppgave ${index}/10)`,
-                        description: `Et rektangel med bredde ${w} cm og høyde ${h} cm har en halvsirkel på toppen. Finn den totale omkretsen rundt figuren. (Rund av til 1 desimal)`,
-                        unit: 'cm',
-                        answer: ans,
-                        vars: { isLShape: false, w, h, r },
-                        hint1: "Husk at linjen mellom rektangelet og halvsirkelen er inni figuren, og skal IKKE regnes med i omkretsen!",
-                        hint2: `Legg sammen tre sider av rektangelet (${w} + ${h} + ${h} = ${w+2*h}) og bue-lengden til halvsirkelen (3,14 · ${r} ≈ ${round1(arcLen)}).`,
-                        explanation: `Ytterkanten består av:<br>` +
-                            `- Bunn: ${w} cm<br>` +
-                            `- 2 vertikale sider: 2 · ${h} = ${2*h} cm<br>` +
-                            `- Halvsirkel-bue: 3,14 · ${r} ≈ ${round1(arcLen)} cm<br>` +
-                            `Total omkrets: ${w} + ${2*h} + ${round1(arcLen)} = <b>${ans} cm</b>.`
-                    };
-                }
+                const ans = 2 * (a + b);
+                return {
+                    title: `Sammensatt figur: Omkrets (Oppgave ${index}/10)`,
+                    description: `Finn omkretsen av L-figuren med sidene A = ${a} cm, B = ${b} cm, C = ${c} cm, D = ${d} cm, E = ${e} cm og F = ${f} cm.`,
+                    unit: 'cm',
+                    answer: ans,
+                    vars: { a, b, c, d, e, f },
+                    hint1: "Omkretsen er summen av alle de ytre sidene (A + B + C + D + E + F).",
+                    hint2: `Legg sammen alle seks yttersidene: ${a} + ${b} + ${c} + ${d} + ${e} + ${f}.`,
+                    explanation: `Omkretsen er summen av alle de ytre sidene: O = A + B + C + D + E + F.<br>Her blir det: ${a} + ${b} + ${c} + ${d} + ${e} + ${f} = <b>${ans} cm</b>.`
+                };
             }
         }
 
-
         /* ==========================================================================
-           SVG DRAWING ENGINE
+           STATE & APP CONTROLLER LOGIKK
            ========================================================================== */
 
-        function renderSVG(task, targetSvgId) {
-            const svg = document.getElementById(targetSvgId);
-            svg.innerHTML = ''; // clear previous
+        let currentShapeId = 'kvadrat';
+        let currentTaskIndex = 0;
+        let currentTasks = [];
+        let completedTasks = new Set();
+        let currentHintLevel = 0;
+        let totalScore = 0;
 
-            const shape = task.shapeId;
-            const vars = task.vars;
+        // Test mode state
+        let testTasks = [];
+        let testCurrentIndex = 0;
+        let testScore = 0;
 
-            // Common SVG styling attributes
-            const fill = "#e0f2fe";
-            const stroke = "#0284c7";
-            const strokeWidth = "3";
-            const textFill = "#1e293b";
-            const font = "font-family: Inter, sans-serif; font-size: 14px; font-weight: 600;";
-
-            if (shape === 'kvadrat') {
-                const s = vars.s;
-                svg.innerHTML = `
-                    <rect x="100" y="50" width="200" height="200" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" rx="8" />
-                    <!-- Bottom side label -->
-                    <text x="200" y="275" text-anchor="middle" style="${font}" fill="${textFill}">s = ${s} cm</text>
-                    <!-- Left side label -->
-                    <text x="80" y="155" text-anchor="middle" style="${font}" fill="${textFill}">s = ${s} cm</text>
-                `;
-            } 
-            else if (shape === 'rektangel') {
-                const { l, b } = vars;
-                svg.innerHTML = `
-                    <rect x="60" y="70" width="280" height="160" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" rx="8" />
-                    <!-- Bottom side label -->
-                    <text x="200" y="260" text-anchor="middle" style="${font}" fill="${textFill}">l = ${l} cm</text>
-                    <!-- Left side label -->
-                    <text x="40" y="155" text-anchor="middle" style="${font}" fill="${textFill}">b = ${b} cm</text>
-                `;
-            }
-            else if (shape === 'parallellogram') {
-                const { g, h, a } = vars;
-                svg.innerHTML = `
-                    <polygon points="100,70 340,70 300,230 60,230" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />
-                    <!-- Dashed Height line -->
-                    <line x1="100" y1="70" x2="100" y2="230" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5" />
-                    <!-- Right angle icon for height -->
-                    <path d="M 100,215 L 115,215 L 115,230" fill="none" stroke="#f59e0b" stroke-width="1.5" />
-                    
-                    <!-- Labels -->
-                    <text x="180" y="255" text-anchor="middle" style="${font}" fill="${textFill}">g = ${g} cm</text>
-                    <text x="120" y="155" text-anchor="start" style="${font}" fill="#b45309">h = ${h} cm</text>
-                    <text x="330" y="155" text-anchor="start" style="${font}" fill="${textFill}">a = ${a} cm</text>
-                `;
-            }
-            else if (shape === 'trapes') {
-                const { a, b, h, s1, s2 } = vars;
-                svg.innerHTML = `
-                    <polygon points="120,70 280,70 350,230 50,230" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />
-                    <!-- Dashed Height line -->
-                    <line x1="120" y1="70" x2="120" y2="230" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5" />
-                    
-                    <!-- Labels -->
-                    <text x="200" y="55" text-anchor="middle" style="${font}" fill="${textFill}">a = ${a} cm</text>
-                    <text x="200" y="255" text-anchor="middle" style="${font}" fill="${textFill}">b = ${b} cm</text>
-                    <text x="130" y="155" text-anchor="start" style="${font}" fill="#b45309">h = ${h} cm</text>
-                    <text x="70" y="140" text-anchor="end" style="${font}" fill="${textFill}">s₁ = ${s1} cm</text>
-                    <text x="330" y="140" text-anchor="start" style="${font}" fill="${textFill}">s₂ = ${s2} cm</text>
-                `;
-            }
-            else if (shape === 'sirkel') {
-                const { r, d, useDiameter } = vars;
-                svg.innerHTML = `
-                    <circle cx="200" cy="150" r="100" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" />
-                    <circle cx="200" cy="150" r="4" fill="${stroke}" />
-                    
-                    ${useDiameter ? `
-                        <!-- Diameter line -->
-                        <line x1="100" y1="150" x2="300" y2="150" stroke="#e11d48" stroke-width="2.5" />
-                        <text x="200" y="140" text-anchor="middle" style="${font}" fill="#be123c">d = ${d} cm</text>
-                    ` : `
-                        <!-- Radius line -->
-                        <line x1="200" y1="150" x2="300" y2="150" stroke="#e11d48" stroke-width="2.5" />
-                        <text x="250" y="140" text-anchor="middle" style="${font}" fill="#be123c">r = ${r} cm</text>
-                    `}
-                `;
-            }
-            else if (shape === 'sammensatt') {
-                if (vars.isLShape) {
-                    const { w1, h1, w2, h2, totalH, cutW } = vars;
-                    svg.innerHTML = `
-                        <!-- L-polygon -->
-                        <polygon points="80,50 180,50 180,150 320,150 320,240 80,240" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />
-                        
-                        <!-- Internal dashed division line -->
-                        <line x1="180" y1="50" x2="180" y2="240" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4" />
-
-                        <!-- Labels -->
-                        <text x="130" y="40" text-anchor="middle" style="${font}" fill="${textFill}">${w1} cm</text>
-                        <text x="250" y="140" text-anchor="middle" style="${font}" fill="${textFill}">${cutW} cm</text>
-                        <text x="200" y="260" text-anchor="middle" style="${font}" fill="${textFill}">${w2} cm</text>
-                        <text x="65" y="145" text-anchor="end" style="${font}" fill="${textFill}">${totalH} cm</text>
-                        <text x="335" y="200" text-anchor="start" style="${font}" fill="${textFill}">${h2} cm</text>
-                        <text x="190" y="100" text-anchor="start" style="${font}" fill="${textFill}">${h1} cm</text>
-                    `;
-                } else {
-                    // Rectangle + Semicircle
-                    const { w, h, r } = vars;
-                    svg.innerHTML = `
-                        <!-- Rectangle -->
-                        <rect x="110" y="130" width="180" height="120" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" />
-                        
-                        <!-- Semicircle -->
-                        <path d="M 110,130 A 90,90 0 0,1 290,130" fill="#bae6fd" stroke="${stroke}" stroke-width="${strokeWidth}" />
-                        
-                        <!-- Internal separation dashed line -->
-                        <line x1="110" y1="130" x2="290" y2="130" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="4,4" />
-
-                        <!-- Labels -->
-                        <text x="200" y="270" text-anchor="middle" style="${font}" fill="${textFill}">w = ${w} cm</text>
-                        <text x="90" y="190" text-anchor="end" style="${font}" fill="${textFill}">h = ${h} cm</text>
-                        <text x="200" y="115" text-anchor="middle" style="${font}" fill="#be123c">d = ${w} cm (r = ${r} cm)</text>
-                    `;
-                }
-            }
-        }
-
-
-        /* ==========================================================================
-           STATE MANAGEMENT & APP LOGIC
-           ========================================================================== */
-
-        let state = {
-            currentMode: 'practice', // 'practice' or 'test'
-            activeShapeId: 'kvadrat',
-            shapeProgress: {
-                kvadrat: 1,
-                rektangel: 1,
-                parallellogram: 1,
-                trapes: 1,
-                sirkel: 1,
-                sammensatt: 1
-            },
-            totalCompleted: 0,
-            score: 0,
-            currentHintLevel: 0, // 0 = none, 1 = hint1, 2 = hint2
-            taskPools: {}, // Stores generated tasks per shape
-            currentTask: null,
-            
-            // Test Mode State
-            test: {
-                active: false,
-                tasks: [],
-                currentIndex: 0,
-                score: 0
-            }
-        };
-
-        // Initialize App on DOM Load
-        window.addEventListener('DOMContentLoaded', () => {
-            initTaskPools();
+        window.onload = function() {
             renderShapeSelector();
-            loadTask('kvadrat', 1);
-        });
-
-        function initTaskPools() {
-            SHAPES.forEach(s => {
-                state.taskPools[s.id] = generateTaskPool(s.id);
-            });
-        }
-
-        /* ---------------- PRACTICE MODE LOGIC ---------------- */
+            loadShape(currentShapeId);
+        };
 
         function renderShapeSelector() {
             const container = document.getElementById('shape-selector');
-            container.innerHTML = '';
-
-            SHAPES.forEach(s => {
-                const currentIdx = state.shapeProgress[s.id];
-                const isActive = state.activeShapeId === s.id;
-                
-                const btn = document.createElement('button');
-                btn.onclick = () => selectShape(s.id);
-                btn.className = `px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                    isActive 
-                        ? 'bg-sky-600 text-white shadow' 
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`;
-
-                btn.innerHTML = `
-                    <i class="fa-solid ${s.icon}"></i>
-                    <span>${s.name}</span>
-                    <span class="ml-1 px-1.5 py-0.5 text-[10px] rounded-full ${isActive ? 'bg-sky-700 text-white' : 'bg-slate-200 text-slate-600'}">
-                        ${currentIdx > 10 ? '10/10' : `${currentIdx}/10`}
-                    </span>
-                `;
-                container.appendChild(btn);
-            });
+            container.innerHTML = SHAPES.map(shape => `
+                <button onclick="loadShape('${shape.id}')" 
+                        id="btn-shape-${shape.id}" 
+                        class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border ${
+                            shape.id === currentShapeId 
+                            ? 'bg-sky-500 text-white border-sky-500 shadow-sm' 
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }">
+                    <i class="fa-solid ${shape.icon}"></i> ${shape.name}
+                </button>
+            `).join('');
         }
 
-        function selectShape(shapeId) {
-            state.activeShapeId = shapeId;
+        function loadShape(shapeId) {
+            currentShapeId = shapeId;
             renderShapeSelector();
-            let idx = state.shapeProgress[shapeId];
-            if (idx > 10) idx = 10; // Cap at max
-            loadTask(shapeId, idx);
+            currentTasks = generateTaskPool(shapeId);
+            currentTaskIndex = 0;
+            displayTask();
         }
 
-        function loadTask(shapeId, taskIndex) {
-            const pool = state.taskPools[shapeId];
-            state.currentTask = pool[taskIndex - 1];
-            state.currentHintLevel = 0;
+        function displayTask() {
+            const task = currentTasks[currentTaskIndex];
+            currentHintLevel = 0;
 
-            const t = state.currentTask;
+            document.getElementById('task-badge').innerText = `${SHAPES.find(s=>s.id===currentShapeId).name} - Oppgave ${currentTaskIndex+1}/10`;
+            document.getElementById('difficulty-badge').innerText = `Vanskelighetsgrad: ${task.difficulty}`;
+            document.getElementById('task-title').innerText = task.title;
+            document.getElementById('task-description').innerText = task.description;
+            document.getElementById('task-type-indicator').innerText = task.isArea ? 'Areal (cm²)' : 'Omkrets (cm)';
+            document.getElementById('unit-tag').innerText = task.unit;
 
-            // Reset UI components
-            document.getElementById('task-badge').textContent = `${SHAPES.find(s=>s.id===shapeId).name} - Oppgave ${t.index}/10`;
-            document.getElementById('difficulty-badge').textContent = `Vanskelighetsgrad: ${t.difficulty}`;
-            document.getElementById('task-title').textContent = t.title;
-            document.getElementById('task-description').innerHTML = formatMathText(t.description);
-            document.getElementById('unit-tag').textContent = t.unit;
-            document.getElementById('task-type-indicator').textContent = t.isArea ? 'Areal' : 'Omkrets';
-            
-            document.getElementById('user-answer').value = '';
-            document.getElementById('user-answer').disabled = false;
+            // Nullstill input og UI
+            const answerInput = document.getElementById('user-answer');
+            answerInput.value = '';
+            answerInput.disabled = false;
             document.getElementById('btn-submit').disabled = false;
-            
-            // Hide hint and explanation boxes
-            document.getElementById('hint-box').classList.add('hidden');
-            document.getElementById('explanation-box').classList.add('hidden');
-            document.getElementById('hint-counter').textContent = 'Hint 1/2';
             document.getElementById('btn-hint').disabled = false;
-            document.getElementById('btn-hint').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('btn-giveup').disabled = false;
 
-            // Render SVG Figure
-            renderSVG(t, 'figure-svg');
-        }
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('hint-counter').innerText = 'Hint 1/2';
+            document.getElementById('explanation-box').classList.add('hidden');
 
-        function formatMathText(str) {
-            // Simply returns text formatted safely for HTML view without raw code syntax
-            return str;
-        }
-
-        /* ---------------- ANSWER CHECKING & FEEDBACK ---------------- */
-
-        function checkAnswer() {
-            const inputVal = document.getElementById('user-answer').value.trim();
-            if (!inputVal) return;
-
-            const userAns = parseFloat(inputVal.replace(',', '.'));
-            const targetAns = state.currentTask.answer;
-            
-            // Allow small margin of error for rounding (0.2)
-            const isCorrect = Math.abs(userAns - targetAns) <= 0.25;
-
-            if (isCorrect) {
-                // Trigger Confetti Celebration!
-                confetti({
-                    particleCount: 70,
-                    spread: 60,
-                    origin: { y: 0.7 }
-                });
-
-                // Update Progress & Score
-                state.score += (state.currentHintLevel === 0 ? 10 : (state.currentHintLevel === 1 ? 7 : 5));
-                updateHeaderStats();
-
-                showExplanation(true);
-            } else {
-                // Incorrect feedback shake/style
-                const inputEl = document.getElementById('user-answer');
-                inputEl.classList.add('border-rose-500', 'bg-rose-50');
-                setTimeout(() => {
-                    inputEl.classList.remove('border-rose-500', 'bg-rose-50');
-                }, 1000);
-
-                showToast("Nesten! Prøv en gang til eller bruk hint-knappen om du står fast.", "amber");
-            }
+            renderSVG('figure-svg', task);
         }
 
         function useHint() {
-            const t = state.currentTask;
+            const task = currentTasks[currentTaskIndex];
             const hintBox = document.getElementById('hint-box');
             const hintTitle = document.getElementById('hint-title');
             const hintText = document.getElementById('hint-text');
-            const hintBtnCounter = document.getElementById('hint-counter');
 
-            hintBox.classList.remove('hidden');
-
-            if (state.currentHintLevel === 0) {
-                state.currentHintLevel = 1;
-                hintTitle.textContent = "Hint 1 (Litt hjelp):";
-                hintText.innerHTML = formatMathText(t.hint1);
-                hintBtnCounter.textContent = "Hint 2/2";
-            } else if (state.currentHintLevel === 1) {
-                state.currentHintLevel = 2;
-                hintTitle.textContent = "Hint 2 (Mye hjelp):";
-                hintText.innerHTML = formatMathText(t.hint2);
-                hintBtnCounter.textContent = "Ingen flere hint";
+            if (currentHintLevel === 0) {
+                currentHintLevel = 1;
+                hintTitle.innerText = "Hint 1 (Formel & idé):";
+                hintText.innerText = task.hint1;
+                document.getElementById('hint-counter').innerText = 'Hint 2/2';
+            } else if (currentHintLevel === 1) {
+                currentHintLevel = 2;
+                hintTitle.innerText = "Hint 2 (Steg-for-steg):";
+                hintText.innerText = task.hint2;
+                document.getElementById('hint-counter').innerText = 'Ingen flere hint';
                 document.getElementById('btn-hint').disabled = true;
-                document.getElementById('btn-hint').classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            hintBox.classList.remove('hidden');
+        }
+
+        function checkAnswer() {
+            const task = currentTasks[currentTaskIndex];
+            const val = parseFloat(document.getElementById('user-answer').value.replace(',', '.'));
+
+            if (isNaN(val)) return;
+
+            const isCorrect = Math.abs(val - task.answer) < 0.2; // tillat små avrundingsdifferanser
+
+            const expBox = document.getElementById('explanation-box');
+            const expHeader = document.getElementById('explanation-header');
+            const expText = document.getElementById('explanation-text');
+
+            expBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                expBox.className = "rounded-2xl p-5 border text-sm space-y-3 bg-emerald-50 border-emerald-200 text-emerald-900 fade-in";
+                expHeader.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i> Helt riktig! Bravo!`;
+                expText.innerHTML = task.explanation;
+
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
+
+                const taskIdStr = `${currentShapeId}-${currentTaskIndex}`;
+                if (!completedTasks.has(taskIdStr)) {
+                    completedTasks.add(taskIdStr);
+                    totalScore += 10;
+                    document.getElementById('total-completed').innerText = completedTasks.size;
+                    document.getElementById('total-score').innerText = totalScore;
+                }
+
+                disableTaskControls();
+            } else {
+                expBox.className = "rounded-2xl p-5 border text-sm space-y-3 bg-rose-50 border-rose-200 text-rose-900 fade-in";
+                expHeader.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-600 text-xl"></i> Ikke helt riktig ennå`;
+                expText.innerHTML = `Prøv en gang til! Sjekk ut hint-knappen om du står fast.`;
             }
         }
 
         function giveUp() {
-            // When student gives up, show explanation and create a similar task so they can retry
-            showExplanation(false);
+            const task = currentTasks[currentTaskIndex];
+            const expBox = document.getElementById('explanation-box');
+            const expHeader = document.getElementById('explanation-header');
+            const expText = document.getElementById('explanation-text');
 
-            // Generate a similar task and replace current in pool
-            const currentIdx = state.currentTask.index;
-            const shapeId = state.currentTask.shapeId;
-            let newTask;
-            
-            // Re-generate fresh task of same category
-            switch (shapeId) {
-                case 'kvadrat': newTask = generateKvadrat(currentIdx, state.currentTask.isArea, state.currentTask.difficulty); break;
-                case 'rektangel': newTask = generateRektangel(currentIdx, state.currentTask.isArea, state.currentTask.difficulty); break;
-                case 'parallellogram': newTask = generateParallellogram(currentIdx, state.currentTask.isArea, state.currentTask.difficulty); break;
-                case 'trapes': newTask = generateTrapes(currentIdx, state.currentTask.isArea, state.currentTask.difficulty); break;
-                case 'sirkel': newTask = generateSirkel(currentIdx, state.currentTask.isArea, state.currentTask.difficulty); break;
-                case 'sammensatt': newTask = generateSammensatt(currentIdx, state.currentTask.isArea, state.currentTask.difficulty); break;
-            }
-            newTask.index = currentIdx;
-            newTask.shapeId = shapeId;
-            newTask.isArea = state.currentTask.isArea;
-            newTask.difficulty = state.currentTask.difficulty;
+            expBox.classList.remove('hidden');
+            expBox.className = "rounded-2xl p-5 border text-sm space-y-3 bg-amber-50 border-amber-200 text-amber-900 fade-in";
+            expHeader.innerHTML = `<i class="fa-solid fa-book-open text-amber-600 text-xl"></i> Her er løsningen:`;
+            expText.innerHTML = task.explanation + `<br><br><i>Når du trykker "Neste oppgave", får du en ny og lik oppgave slik at du kan prøve på nytt!</i>`;
 
-            state.taskPools[shapeId][currentIdx - 1] = newTask; // replace for retry
+            // Erstatt gjeldende oppgave med en ny versjon slik at eleven kan prøve på nytt
+            currentTasks[currentTaskIndex] = generateTaskPool(currentShapeId)[currentTaskIndex];
+
+            disableTaskControls();
         }
 
-        function showExplanation(isCorrect) {
-            const box = document.getElementById('explanation-box');
-            const header = document.getElementById('explanation-header');
-            const text = document.getElementById('explanation-text');
-
-            box.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-200', 'bg-slate-100', 'border-slate-300');
-            
-            if (isCorrect) {
-                box.classList.add('bg-emerald-50', 'border-emerald-200');
-                header.className = "flex items-center gap-2 font-bold text-base text-emerald-800";
-                header.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i> Riktig svar! Bra jobba!`;
-            } else {
-                box.classList.add('bg-slate-100', 'border-slate-300');
-                header.className = "flex items-center gap-2 font-bold text-base text-slate-800";
-                header.innerHTML = `<i class="fa-solid fa-lightbulb text-amber-500 text-lg"></i> Her er løsningen:`;
-            }
-
-            text.innerHTML = formatMathText(state.currentTask.explanation);
-
-            // Lock input
+        function disableTaskControls() {
             document.getElementById('user-answer').disabled = true;
             document.getElementById('btn-submit').disabled = true;
+            document.getElementById('btn-hint').disabled = true;
+            document.getElementById('btn-giveup').disabled = true;
         }
 
         function nextTask() {
-            const shapeId = state.activeShapeId;
-            let currentIdx = state.shapeProgress[shapeId];
-
-            // Advance task if it was completed
-            if (currentIdx < 10) {
-                state.shapeProgress[shapeId] = currentIdx + 1;
-                state.totalCompleted++;
+            if (currentTaskIndex < 9) {
+                currentTaskIndex++;
             } else {
-                showToast("Fantastisk! Du har fullført alle 10 oppgaver for denne figuren!", "emerald");
+                currentTaskIndex = 0;
             }
-
-            updateHeaderStats();
-            renderShapeSelector();
-            loadTask(shapeId, state.shapeProgress[shapeId] > 10 ? 10 : state.shapeProgress[shapeId]);
+            displayTask();
         }
-
-        function updateHeaderStats() {
-            document.getElementById('total-completed').textContent = state.totalCompleted;
-            document.getElementById('total-score').textContent = state.score;
-        }
-
 
         /* ==========================================================================
-           TEST MODE LOGIC ("Test deg selv")
+           MODUSBYTTE OG TEST-MOTOR
            ========================================================================== */
 
         function switchMode(mode) {
-            state.currentMode = mode;
-            const practiceView = document.getElementById('practice-view');
+            const pracTab = document.getElementById('tab-practice');
+            const testTab = document.getElementById('tab-test');
+            const pracView = document.getElementById('practice-view');
             const testView = document.getElementById('test-view');
-            const tabPractice = document.getElementById('tab-practice');
-            const tabTest = document.getElementById('tab-test');
 
             if (mode === 'practice') {
-                practiceView.classList.remove('hidden');
+                pracTab.className = "flex-1 sm:flex-none py-2 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all bg-sky-600 text-white shadow-md";
+                testTab.className = "flex-1 sm:flex-none py-2 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all bg-white text-slate-600 hover:bg-slate-50 border border-slate-200";
+                pracView.classList.remove('hidden');
                 testView.classList.add('hidden');
-                tabPractice.className = "flex-1 min-w-[140px] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-sky-600 text-white shadow-md";
-                tabTest.className = "flex-1 min-w-[140px] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200";
             } else {
-                practiceView.classList.add('hidden');
+                testTab.className = "flex-1 sm:flex-none py-2 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all bg-amber-500 text-white shadow-md";
+                pracTab.className = "flex-1 sm:flex-none py-2 px-5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all bg-white text-slate-600 hover:bg-slate-50 border border-slate-200";
+                pracView.classList.add('hidden');
                 testView.classList.remove('hidden');
-                tabTest.className = "flex-1 min-w-[140px] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-amber-500 text-white shadow-md";
-                tabPractice.className = "flex-1 min-w-[140px] py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200";
             }
         }
 
         function startTest() {
-            // Pick 10 random tasks across all shape categories
-            const testTasks = [];
-            const shapeKeys = Object.keys(state.taskPools);
-
-            for (let i = 0; i < 10; i++) {
-                const randomShape = shapeKeys[Math.floor(Math.random() * shapeKeys.length)];
-                const randomIdx = Math.floor(Math.random() * 10);
-                testTasks.push(state.taskPools[randomShape][randomIdx]);
-            }
-
-            state.test = {
-                active: true,
-                tasks: testTasks,
-                currentIndex: 0,
-                score: 0
-            };
+            testTasks = [];
+            SHAPES.forEach(s => {
+                const pool = generateTaskPool(s.id);
+                testTasks.push(pool[randInt(0, 4)]);  // en areal-oppgave
+                testTasks.push(pool[randInt(5, 9)]);  // en omkrets-oppgave
+            });
+            // Trekk 10 tilfeldige oppgaver fra utvalget
+            testTasks = testTasks.sort(() => 0.5 - Math.random()).slice(0, 10);
+            testCurrentIndex = 0;
+            testScore = 0;
 
             document.getElementById('test-start-screen').classList.add('hidden');
             document.getElementById('test-result-screen').classList.add('hidden');
             document.getElementById('test-active-screen').classList.remove('hidden');
 
-            loadTestTask();
+            displayTestQuestion();
         }
 
-        function loadTestTask() {
-            const t = state.test.tasks[state.test.currentIndex];
-            
-            document.getElementById('test-current-num').textContent = state.test.currentIndex + 1;
-            document.getElementById('test-progress-bar').style.width = `${((state.test.currentIndex + 1) / 10) * 100}%`;
-            
-            document.getElementById('test-task-title').textContent = t.title;
-            document.getElementById('test-task-desc').innerHTML = formatMathText(t.description);
-            document.getElementById('test-unit-tag').textContent = t.unit;
+        function displayTestQuestion() {
+            const task = testTasks[testCurrentIndex];
+            document.getElementById('test-current-num').innerText = testCurrentIndex + 1;
+            document.getElementById('test-progress-bar').style.width = `${((testCurrentIndex + 1) / 10) * 100}%`;
+            document.getElementById('test-task-title').innerText = task.title;
+            document.getElementById('test-task-desc').innerText = task.description;
+            document.getElementById('test-unit-tag').innerText = task.unit;
             document.getElementById('test-user-answer').value = '';
 
-            renderSVG(t, 'test-figure-svg');
+            renderSVG('test-figure-svg', task);
         }
 
         function submitTestAnswer() {
-            const inputVal = document.getElementById('test-user-answer').value.trim();
-            if (!inputVal) return;
+            const task = testTasks[testCurrentIndex];
+            const val = parseFloat(document.getElementById('test-user-answer').value.replace(',', '.'));
 
-            const userAns = parseFloat(inputVal.replace(',', '.'));
-            const targetAns = state.test.tasks[state.test.currentIndex].answer;
-            
-            if (Math.abs(userAns - targetAns) <= 0.25) {
-                state.test.score++;
+            task.userAnswer = isNaN(val) ? null : val;
+            task.isCorrect = !isNaN(val) && Math.abs(val - task.answer) < 0.2;
+
+            if (task.isCorrect) {
+                testScore++;
             }
 
-            state.test.currentIndex++;
+            testCurrentIndex++;
 
-            if (state.test.currentIndex < 10) {
-                loadTestTask();
+            if (testCurrentIndex < 10) {
+                displayTestQuestion();
             } else {
                 finishTest();
             }
@@ -1091,49 +786,119 @@
             document.getElementById('test-active-screen').classList.add('hidden');
             document.getElementById('test-result-screen').classList.remove('hidden');
 
-            const score = state.test.score;
-            document.getElementById('test-final-score').textContent = `${score}/10`;
+            document.getElementById('test-final-score').innerText = `${testScore}/10`;
 
             const badgeBg = document.getElementById('test-score-badge-bg');
-            const title = document.getElementById('test-result-title');
             const feedback = document.getElementById('test-result-feedback');
 
-            if (score >= 8) {
+            if (testScore >= 8) {
                 badgeBg.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto text-3xl font-bold text-white shadow-lg bg-emerald-500";
-                title.textContent = "Fantastisk resultat! 🌟";
-                feedback.textContent = "Du har skikkelig god kontroll på både areal og omkrets for 9. trinn!";
-                confetti({ particleCount: 100, spread: 80 });
-            } else if (score >= 5) {
+                feedback.innerText = "Fantastisk! Du har full kontroll på geometriske figurer for 9. trinn!";
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            } else if (testScore >= 5) {
                 badgeBg.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto text-3xl font-bold text-white shadow-lg bg-amber-500";
-                title.textContent = "Godt jobba! 👍";
-                feedback.textContent = "Du kan mye, men ta gjerne en ny runde med øving på de figurene du synes var vanskelige.";
+                feedback.innerText = "Bra jobbet! Du kan det meste, men ta gjerne en ny øvingsrunde på noen figurer.";
             } else {
                 badgeBg.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto text-3xl font-bold text-white shadow-lg bg-rose-500";
-                title.textContent = "Stå på videre! 💪";
-                feedback.textContent = "Det krever litt mer øving. Gå tilbake til øvingsmodus og bruk hintene aktivt for å lære formlene.";
+                feedback.innerText = "Her trengs det litt mer øving. Gå tilbake til øvingsmodus og prøv igjen!";
             }
-        }
 
+            // Generer detaljert oppsummering for hver oppgave
+            const reviewList = document.getElementById('test-review-list');
+            reviewList.innerHTML = testTasks.map((t, idx) => `
+                <div class="p-3.5 rounded-2xl border text-xs space-y-2 ${t.isCorrect ? 'bg-emerald-50/60 border-emerald-200' : 'bg-rose-50/60 border-rose-200'}">
+                    <div class="flex justify-between items-center font-bold">
+                        <span class="flex items-center gap-2 ${t.isCorrect ? 'text-emerald-800' : 'text-rose-800'}">
+                            <i class="fa-solid ${t.isCorrect ? 'fa-circle-check text-emerald-600' : 'fa-circle-xmark text-rose-600'} text-sm"></i>
+                            Oppgave ${idx + 1}: ${t.title}
+                        </span>
+                        <span class="${t.isCorrect ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'} px-2 py-0.5 rounded-md font-semibold">
+                            ${t.isCorrect ? 'Riktig' : 'Feil'}
+                        </span>
+                    </div>
+                    <p class="text-slate-600">${t.description}</p>
+                    <div class="flex flex-wrap justify-between gap-2 pt-1 font-semibold text-slate-700">
+                        <div>Ditt svar: <span class="${t.isCorrect ? 'text-emerald-700 font-extrabold' : 'text-rose-700 font-extrabold'}">${t.userAnswer !== null ? t.userAnswer : 'Ingen svar'} ${t.unit}</span></div>
+                        <div>Riktig fasit: <span class="font-extrabold text-slate-900">${t.answer} ${t.unit}</span></div>
+                    </div>
+                    ${!t.isCorrect ? `
+                        <div class="bg-white/80 p-2.5 rounded-xl border border-rose-100 text-slate-700 mt-2 leading-relaxed">
+                            <span class="font-bold text-rose-800 block mb-0.5">Forklaring:</span> ${t.explanation}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
 
         /* ==========================================================================
-           UTILITY TOAST NOTIFICATION
+           DYNAMISK SVG-TEGNING
            ========================================================================== */
 
-        function showToast(message, type = "sky") {
-            const toast = document.createElement('div');
-            toast.className = `fixed bottom-5 right-5 px-5 py-3 rounded-xl shadow-xl text-white font-semibold text-sm fade-in z-50 flex items-center gap-2 ${
-                type === 'emerald' ? 'bg-emerald-600' : (type === 'amber' ? 'bg-amber-600' : 'bg-sky-600')
-            }`;
-            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;
-            document.body.appendChild(toast);
+        function renderSVG(elementId, task) {
+            const svg = document.getElementById(elementId);
+            svg.innerHTML = '';
+            const v = task.vars;
 
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.5s ease';
-                setTimeout(() => toast.remove(), 500);
-            }, 3000);
+            const strokeStyle = `stroke="#0284c7" stroke-width="3" fill="#e0f2fe" fill-opacity="0.6" stroke-linejoin="round"`;
+            const textStyle = `font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0f172a" text-anchor="middle"`;
+            const dashStyle = `stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"`;
+
+            let content = '';
+
+            switch (task.shapeId) {
+                case 'kvadrat':
+                    content = `
+                        <rect x="110" y="60" width="180" height="180" rx="4" ${strokeStyle} />
+                        <text x="200" y="260" ${textStyle}>s = ${v.s} cm</text>
+                        <text x="90" y="155" ${textStyle}>s = ${v.s} cm</text>
+                    `;
+                    break;
+                case 'rektangel':
+                    content = `
+                        <rect x="80" y="80" width="240" height="140" rx="4" ${strokeStyle} />
+                        <text x="200" y="245" ${textStyle}>l = ${v.l} cm</text>
+                        <text x="60" y="155" ${textStyle}>b = ${v.b} cm</text>
+                    `;
+                    break;
+                case 'parallellogram':
+                    content = `
+                        <polygon points="110,70 320,70 270,230 60,230" ${strokeStyle} />
+                        <line x1="110" y1="70" x2="110" y2="230" ${dashStyle} />
+                        <text x="165" y="255" ${textStyle}>g = ${v.b} cm</text>
+                        <text x="125" y="155" ${textStyle} text-anchor="start">h = ${v.h} cm</text>
+                        <text x="305" y="155" ${textStyle} text-anchor="start">s = ${v.a} cm</text>
+                    `;
+                    break;
+                case 'trapes':
+                    content = `
+                        <polygon points="120,70 280,70 340,230 60,230" ${strokeStyle} />
+                        <line x1="120" y1="70" x2="120" y2="230" ${dashStyle} />
+                        <text x="200" y="55" ${textStyle}>a = ${v.a} cm</text>
+                        <text x="200" y="255" ${textStyle}>b = ${v.b} cm</text>
+                        <text x="135" y="155" ${textStyle} text-anchor="start">h = ${v.h} cm</text>
+                    `;
+                    break;
+                case 'sirkel':
+                    content = `
+                        <circle cx="200" cy="150" r="95" ${strokeStyle} />
+                        <circle cx="200" cy="150" r="4" fill="#0284c7" />
+                        <line x1="200" y1="150" x2="295" y2="150" stroke="#0284c7" stroke-width="2.5" />
+                        <text x="245" y="140" ${textStyle}>r = ${v.r} cm</text>
+                    `;
+                    break;
+                case 'sammensatt':
+                    content = `
+                        <polygon points="80,50 180,50 180,150 320,150 320,240 80,240" ${strokeStyle} />
+                        <text x="130" y="40" ${textStyle}>C = ${v.c} cm</text>
+                        <text x="60" y="145" ${textStyle}>A = ${v.a} cm</text>
+                        <text x="200" y="260" ${textStyle}>B = ${v.b} cm</text>
+                        <text x="335" y="200" ${textStyle}>D = ${v.d} cm</text>
+                    `;
+                    break;
+            }
+
+            svg.innerHTML = content;
         }
-
     </script>
 </body>
 </html>
