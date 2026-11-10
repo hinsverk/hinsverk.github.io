@@ -148,7 +148,7 @@
                             <p class="text-slate-500 text-xs sm:text-sm">Snu kortet for å sjå omsetjinga. Perfekt for å lære nye ord!</p>
                         </div>
                         <div class="mt-6 flex items-center text-xs font-bold text-amber-600 group-hover:translate-x-1 transition-transform">
-                            <span>Kom i gang</span> <i class="fa-solid fa-arrow-right ml-1"></i>
+                            <span>Start</span> <i class="fa-solid fa-arrow-right ml-1"></i>
                         </div>
                     </div>
 
@@ -162,7 +162,7 @@
                             <p class="text-slate-500 text-xs sm:text-sm">Tast inn riktig nynorsk ord.</p>
                         </div>
                         <div class="mt-6 flex items-center text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform">
-                            <span>Kom i gang</span> <i class="fa-solid fa-arrow-right ml-1"></i>
+                            <span>Start</span> <i class="fa-solid fa-arrow-right ml-1"></i>
                         </div>
                     </div>
 
@@ -176,7 +176,7 @@
                             <p class="text-slate-500 text-xs sm:text-sm">Vel rett nynorsk omsetjing blant fire alternativ.</p>
                         </div>
                         <div class="mt-6 flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                            <span>Kom i gang</span> <i class="fa-solid fa-arrow-right ml-1"></i>
+                            <span>Start</span> <i class="fa-solid fa-arrow-right ml-1"></i>
                         </div>
                     </div>
                 </div>
@@ -186,7 +186,7 @@
             <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-bold text-slate-800 flex items-center">
-                        <i class="fa-solid fa-chart-pie text-indigo-500 mr-2"></i> Din status & data
+                        <i class="fa-solid fa-chart-pie text-indigo-500 mr-2"></i> Din status og data
                     </h3>
                     <button onclick="reloadGistData()" class="text-xs text-sky-600 hover:text-sky-700 font-bold flex items-center space-x-1 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-100">
                         <i class="fa-solid fa-arrows-rotate"></i>
@@ -278,6 +278,7 @@
                                class="w-full text-center px-4 py-3 text-lg font-bold bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-sky-500 focus:bg-white focus:outline-none transition-all"
                                onkeydown="if(event.key==='Enter') checkTypingAnswer()">
                         
+                    
                     </div>
 
                     <button onclick="checkTypingAnswer()" class="w-full mt-5 py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-2xl shadow-lg shadow-sky-200 transition-all">
@@ -295,7 +296,7 @@
                     <h3 id="quiz-bm-word" class="text-3xl font-extrabold text-slate-800 my-4">Bokmålsord</h3>
 
                     <div id="quiz-options-container" class="grid grid-cols-1 gap-3 text-left">
-                        <!-- Alternativ blir generert dinamisk her -->
+                        <!-- Alternativ blir generert dynamisk her -->
                     </div>
 
                     <div id="quiz-feedback" class="hidden mt-4 p-3 rounded-xl text-sm font-bold text-center"></div>
@@ -317,7 +318,7 @@
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Vel testing-retning</label>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Vel retning</label>
                         <div class="grid grid-cols-1 gap-2">
                             <label class="flex items-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50">
                                 <input type="radio" name="test-direction" value="bm-nn" checked class="text-sky-500 focus:ring-sky-400 h-4 w-4">
@@ -406,7 +407,7 @@
                 <div class="text-left space-y-2">
                     <h4 class="font-bold text-slate-700 text-sm">Gjennomgang av svara dine:</h4>
                     <div id="test-breakdown-list" class="max-h-60 overflow-y-auto space-y-2 pr-1">
-                        <!-- Generert dinamisk -->
+                        <!-- Generert dynamisk -->
                     </div>
                 </div>
 
@@ -452,7 +453,7 @@
 
     <!-- FOOTER -->
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-        <p>NynorskTreneren &copy; 2026 – Eit verktøy for betre nynorskopplæring</p>
+        <p>Nynorsktrenaren &copy; 2026 – Eit verktøy for betre nynorskopplæring</p>
     </footer>
 
     <!-- JAVASCRIPT APP LOGIKK -->
@@ -464,9 +465,9 @@
         const defaultWords = [
             { bm: "gutt", nn: "gut" },
             { bm: "jente", nn: "jente" },
-            { bm: "spise", nn: "ete" },
-            { bm: "snakke", nn: "snakke" },
-            { bm: "hvorfor", nn: "kvifor" },
+            { bm: "spise", nn: "ete / spise" },
+            { bm: "snakke", nn: "snakke / prate" },
+            { bm: "hvorfor", nn: "kvifor / korfor" },
             { bm: "hvordan", nn: "korleis" },
             { bm: "hva", nn: "kva" },
             { bm: "hvem", nn: "kven" },
@@ -539,19 +540,42 @@
             loadGistData();
         }
 
+        // Helper for å dele opp ord som har fleire alternativer (skråstrek, komma eller array)
+        function parseWordVariants(val) {
+            if (Array.isArray(val)) {
+                return val.map(v => cleanWord(v)).filter(v => v.length > 0);
+            }
+            if (typeof val === 'string') {
+                return val.split(/[\/,]/).map(v => cleanWord(v)).filter(v => v.length > 0);
+            }
+            return [];
+        }
+
+        // Formaterer liste av variantar til ein lesbar tekststreng (f.eks. "snakke / prate")
+        function formatVariants(val) {
+            const arr = parseWordVariants(val);
+            return arr.join(' / ');
+        }
+
+        // Sjekkar om brukaren sitt input matchar ein av variantane
+        function isCorrectAnswer(userInput, targetVal) {
+            const cleanInput = cleanWord(userInput);
+            const validVariants = parseWordVariants(targetVal);
+            return validVariants.includes(cleanInput);
+        }
+
         // Rens og strukturer matrise/JSON frå Gist (filtrer bort synonymer osv.)
         function processGistJSON(data) {
             let cleaned = [];
 
-            // Sjekk om JSON har "kategorier"-strukturen din
+            // Sjekk om JSON har "kategorier"-strukturen
             if (data && Array.isArray(data.kategorier)) {
                 data.kategorier.forEach(kategori => {
                     if (Array.isArray(kategori.ord)) {
                         kategori.ord.forEach(item => {
-                            let bmWord = cleanWord(item.bokmaal || item.bm || item.bokmål || "");
-                            let nnWord = cleanWord(item.nynorsk || item.nn || "");
+                            let bmWord = formatVariants(item.bokmaal || item.bm || item.bokmål || "");
+                            let nnWord = formatVariants(item.nynorsk || item.nn || "");
 
-                            // Hopp over dersom det er oppgitt synonym i parantes eller manglar ord
                             if (bmWord && nnWord) {
                                 cleaned.push({ bm: bmWord, nn: nnWord });
                             }
@@ -566,15 +590,12 @@
                     let bmWord = "";
 
                     if (Array.isArray(item)) {
-                        bmWord = item[0] || "";
-                        nnWord = item[1] || "";
+                        bmWord = formatVariants(item[0] || "");
+                        nnWord = formatVariants(item[1] || "");
                     } else if (typeof item === 'object' && item !== null) {
-                        bmWord = item.bokmaal || item.bokmål || item.bm || "";
-                        nnWord = item.nynorsk || item.nn || "";
+                        bmWord = formatVariants(item.bokmaal || item.bokmål || item.bm || "");
+                        nnWord = formatVariants(item.nynorsk || item.nn || "");
                     }
-
-                    nnWord = cleanWord(nnWord);
-                    bmWord = cleanWord(bmWord);
 
                     if (nnWord && bmWord) {
                         cleaned.push({ nn: nnWord, bm: bmWord });
@@ -713,18 +734,18 @@
         }
 
         function checkTypingAnswer() {
-            const input = document.getElementById('type-input').value.trim().toLowerCase();
-            const correct = practiceList[practiceIndex].nn.toLowerCase();
+            const input = document.getElementById('type-input').value;
+            const target = practiceList[practiceIndex].nn;
             const fb = document.getElementById('type-feedback');
 
             fb.classList.remove('hidden');
-            if(input === correct) {
+            if(isCorrectAnswer(input, target)) {
                 fb.className = "mt-4 p-3 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-200";
                 fb.innerHTML = `<i class="fa-solid fa-check mr-1.5"></i> Supert! Helt rett!`;
                 setTimeout(() => nextPracticeItem(), 1200);
             } else {
                 fb.className = "mt-4 p-3 rounded-xl text-sm font-bold bg-red-100 text-red-800 border border-red-200";
-                fb.innerHTML = `<i class="fa-solid fa-xmark mr-1.5"></i> Nesten! Rett svar er: <span class="underline">${correct}</span>`;
+                fb.innerHTML = `<i class="fa-solid fa-xmark mr-1.5"></i> Nesten! Rett svar er: <span class="underline">${target}</span>`;
             }
         }
 
@@ -832,13 +853,13 @@
         }
 
         function submitTestAnswer() {
-            const inputVal = document.getElementById('test-answer-input').value.trim().toLowerCase();
+            const inputVal = document.getElementById('test-answer-input').value;
             const current = testList[testIndex];
-            const isCorrect = inputVal === current.target.toLowerCase();
+            const isCorrect = isCorrectAnswer(inputVal, current.target);
 
             testAnswers.push({
                 prompt: current.prompt,
-                userAnswer: inputVal,
+                userAnswer: inputVal.trim(),
                 correctAnswer: current.target,
                 isCorrect: isCorrect
             });
