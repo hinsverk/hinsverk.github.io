@@ -228,6 +228,10 @@
                             <div class="text-3xl mb-2 leading-none">✍️</div>
                             <h3 class="font-bold text-sm leading-tight w-full">Skriv Landene</h3>
                         </div>
+                        <div onclick="selectDifficulty('eu_capitals')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                            <div class="text-3xl mb-2 leading-none">🏛️</div>
+                            <h3 class="font-bold text-sm leading-tight w-full">Hovedsteder</h3>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -803,7 +807,7 @@
             { id: "583", name: "Mikronesiaføderasjonen", synonyms: ["mikronesiaføderasjonen", "mikronesia", "micronesia"], flag: "🇫🇲", capital: "Palikir", difficulty: "expert" }
         ];
 
-        const EUROPE_IDS = ["578", "752", "208", "246", "352", "826", "372", "250", "276", "380", "724", "620", "528", "056", "442", "040", "756", "616", "203", "703", "348", "642", "100", "300", "008", "807", "688", "191", "070", "705", "499", "383", "233", "428", "440", "112", "804", "498", "643", "020", "438", "492", "674", "336", "470"];
+        const EUROPE_IDS = ["792", "196", "578", "752", "208", "246", "352", "826", "372", "250", "276", "380", "724", "620", "528", "056", "442", "040", "756", "616", "203", "703", "348", "642", "100", "300", "008", "807", "688", "191", "070", "705", "499", "383", "233", "428", "440", "112", "804", "498", "643", "020", "438", "492", "674", "336", "470"];
         const EUROPE_COUNTRIES = ALL_COUNTRIES.filter(c => EUROPE_IDS.includes(c.id));
 
         async function buildMapGeometry(mapType) {
@@ -905,12 +909,18 @@
                 if (!europeData) {
                     const res = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json");
                     const topo = await res.json();
-                    europeData = topojson.feature(topo, topo.objects.countries).features;
+                    const geoms = topo.objects.countries.geometries;
+                    const cyGeoms = geoms.filter(x => x.properties && (x.properties.name === 'Cyprus' || x.properties.name === 'N. Cyprus'));
+                    const rest = geoms.filter(x => !cyGeoms.includes(x));
+                    europeData = topojson.feature(topo, { type: "GeometryCollection", geometries: rest }).features;
                     europeData.forEach(d => { d.euId = (d.properties && d.properties.name === 'Kosovo') ? '383' : String(d.id).padStart(3, '0'); });
+                    if (cyGeoms.length) {
+                        europeData.push({ type: "Feature", id: "196", properties: { name: "Cyprus" }, geometry: topojson.merge(topo, cyGeoms), euId: "196" });
+                    }
                 }
                 const euFeatures = europeData.filter(d => EUROPE_IDS.includes(d.euId));
                 const otherFeatures = europeData.filter(d => !EUROPE_IDS.includes(d.euId));
-                projection.fitExtent([[10, 10], [width - 10, height - 10]], { type: "MultiPoint", coordinates: [[-25, 34], [45, 34], [45, 71], [-25, 71]] });
+                projection.fitExtent([[10, 10], [width - 10, height - 10]], { type: "MultiPoint", coordinates: [[-25, 33], [46, 33], [46, 71], [-25, 71]] });
                 path = d3.geoPath().projection(projection);
 
                 g.selectAll(".context-land")
@@ -1013,6 +1023,18 @@
                 timeRemaining = 120;
                 badge.innerText = "Norge Maraton 🇳🇴";
                 currentQuestions = ALL_NORWAY_COUNTIES;
+            } else if (currentMode === 'eu_capitals') {
+                timeRemaining = 180;
+                badge.innerText = "Europa Hovedsteder 🇪🇺";
+                let pool = EUROPE_COUNTRIES;
+                if (currentDifficulty === 'normal') pool = pool.filter(c => c.difficulty === 'normal');
+                currentQuestions = shuffleArray(pool.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    question: `Hva er hovedstaden i ${c.name}?`,
+                    correct: c.capital,
+                    options: getRandomOptions(c.capital, 'capital', EUROPE_COUNTRIES)
+                })));
             } else if (currentMode === 'eu_click') {
                 timeRemaining = 180;
                 badge.innerText = "Europa Klikk 🇪🇺";
