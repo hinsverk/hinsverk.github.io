@@ -1431,7 +1431,7 @@
         const game = document.getElementById('game-screen');
         const result = document.getElementById('result-screen');
         const inQuiz = () => menu.classList.contains('hidden');
-        function updateLabel() { label.textContent = inQuiz() ? 'Tilbake til menyen' : 'Tilbake til Lærerverktøy'; }
+        function updateLabel() { label.textContent = inQuiz() ? 'Tilbake til menyen' : 'Tilbake'; }
         link.addEventListener('click', function (e) {
             if (!inQuiz()) return; // fra menyen: vanlig lenke til index.html
             e.preventDefault();
