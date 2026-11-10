@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geografiquiz - Geografi og kartutfordringer</title>
+    <title>SuperQuiz - Geografi og kartutfordringer</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -63,6 +63,22 @@
         .wrong-answer {
             fill: #ef4444 !important;
         }
+        /* Småstater/-regioner: tykk kontur gjør dem synlige og enkle å treffe */
+        .country-boundary[data-tiny] {
+            stroke: #64748b;
+            stroke-width: var(--tiny-w, 5px);
+            stroke-linejoin: round;
+            paint-order: stroke;
+        }
+        .country-boundary[data-tiny]:hover { stroke: #94a3b8; }
+        .light .country-boundary[data-tiny] { stroke: #94a3b8; }
+        .light .country-boundary[data-tiny]:hover { stroke: #64748b; }
+        .active-target[data-tiny] { animation: pulse-active 1.2s infinite alternate, pulse-active-stroke 1.2s infinite alternate; }
+        @keyframes pulse-active-stroke {
+            0% { stroke: #d97706; }
+            100% { stroke: #dc2626; }
+        }
+        .wrong-answer[data-tiny] { stroke: #ef4444 !important; }
         .map-btn {
             @apply bg-slate-200 hover:bg-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-800 dark:text-white p-2 rounded-lg border border-slate-300 dark:border-slate-700 transition flex items-center justify-center font-bold text-lg w-10 h-10 shadow-sm;
         }
@@ -803,7 +819,7 @@
             if (!svg) {
                 svg = d3.select("#d3-world-map").attr("viewBox", `0 0 ${width} ${height}`).attr("width", "100%").attr("height", "100%");
                 g = svg.append("g");
-                zoomBehavior = d3.zoom().scaleExtent([1, 40]).on("zoom", (event) => g.attr("transform", event.transform));
+                zoomBehavior = d3.zoom().scaleExtent([1, 40]).on("zoom", (event) => { g.attr("transform", event.transform); svg.style("--tiny-w", (5 / event.transform.k) + "px"); });
                 svg.call(zoomBehavior);
             } else { 
                 g.selectAll("*").remove(); 
@@ -931,8 +947,21 @@
                     .attr("id", d => `country-${d.id}`);
             }
 
+            emphasizeTinyRegions();
             resetMapZoom();
             resetMapStyles();
+        }
+
+        function emphasizeTinyRegions() {
+            if (!svg || !path) return;
+            svg.style("--tiny-w", "5px");
+            g.selectAll(".country-boundary").each(function(d) {
+                let area = Infinity;
+                try { area = path.area(d); } catch (e) {}
+                if (area < 60) this.setAttribute("data-tiny", "1");
+                else this.removeAttribute("data-tiny");
+            });
+            g.selectAll("[data-tiny]").raise();
         }
 
         async function startQuiz() {
