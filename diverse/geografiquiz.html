@@ -159,6 +159,45 @@
                 </div>
             </div>
 
+            <!-- Klikk landene -->
+            <div class="space-y-4">
+                <h2 class="text-lg font-bold border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><span>🎯</span> Klikk på landet</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+                    <div onclick="startRegionClick('world','normal')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🌍</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Hele verden<br><span class='text-xs font-normal text-slate-500'>Vanlige land</span></h3>
+                    </div>
+                    <div onclick="startRegionClick('world','expert')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🔥</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Hele verden<br><span class='text-xs font-normal text-slate-500'>Ekspert: alle land</span></h3>
+                    </div>
+                    <div onclick="selectDifficulty('eu_click')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🇪🇺</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Europa</h3>
+                    </div>
+                    <div onclick="selectDifficulty('rc_asia')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🌏</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Asia</h3>
+                    </div>
+                    <div onclick="selectDifficulty('rc_africa')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🌍</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Afrika</h3>
+                    </div>
+                    <div onclick="selectDifficulty('rc_namerica')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🌎</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Nord-Amerika</h3>
+                    </div>
+                    <div onclick="selectDifficulty('rc_samerica')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🌎</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Sør-Amerika</h3>
+                    </div>
+                    <div onclick="selectDifficulty('rc_oceania')" class="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col items-center justify-center text-center min-w-0">
+                        <div class="text-3xl mb-2 leading-none">🏝️</div>
+                        <h3 class="font-bold text-sm leading-tight w-full">Oseania</h3>
+                    </div>
+                </div>
+            </div>
+
             <!-- Norge, USA & Tyskland -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Norge -->
@@ -633,7 +672,7 @@
             { id: "233", name: "Estland", synonyms: ["estland", "estonia"], flag: "🇪🇪", capital: "Tallinn", difficulty: "normal" },
             { id: "428", name: "Latvia", synonyms: ["lettland", "latvia"], flag: "🇱🇻", capital: "Riga", difficulty: "normal" },
             { id: "440", name: "Litauen", synonyms: ["litauen", "lithuania"], flag: "🇱🇹", capital: "Vilnius", difficulty: "normal" },
-            { id: "112", name: "Hviterussland", synonyms: ["hviterussland", "belarus"], flag: "🇧🇾", capital: "Minsk", difficulty: "normal" },
+            { id: "112", name: "Belarus", synonyms: ["hviterussland", "belarus"], flag: "🇧🇾", capital: "Minsk", difficulty: "normal" },
             { id: "804", name: "Ukraina", synonyms: ["ukraina", "ukraine"], flag: "🇺🇦", capital: "Kyiv", difficulty: "normal" },
             { id: "498", name: "Moldova", synonyms: ["moldova"], flag: "🇲🇩", capital: "Chișinău", difficulty: "expert" },
             { id: "643", name: "Russland", synonyms: ["russland", "russia"], flag: "🇷🇺", capital: "Moskva", difficulty: "normal" },
@@ -762,7 +801,7 @@
             { id: "558", name: "Nicaragua", synonyms: ["nicaragua"], flag: "🇳🇮", capital: "Managua", difficulty: "expert" },
             { id: "188", name: "Costa Rica", synonyms: ["costa rica"], flag: "🇨🇷", capital: "San José", difficulty: "normal" },
             { id: "591", name: "Panama", synonyms: ["panama"], flag: "🇵🇦", capital: "Panama By", difficulty: "normal" },
-            { id: "192", name: "Kuba", synonyms: ["kuba", "cuba"], flag: "🇨🇺", capital: "Havana", difficulty: "normal" },
+            { id: "192", name: "Cuba", synonyms: ["kuba", "cuba"], flag: "🇨🇺", capital: "Havana", difficulty: "normal" },
             { id: "388", name: "Jamaica", synonyms: ["jamaica"], flag: "🇯🇲", capital: "Kingston", difficulty: "normal" },
             { id: "332", name: "Haiti", synonyms: ["haiti"], flag: "🇭🇹", capital: "Port-au-Prince", difficulty: "normal" },
             { id: "214", name: "Den dominikanske republikk", synonyms: ["den dominikanske republikk", "dominican republic"], flag: "🇩🇴", capital: "Santo Domingo", difficulty: "normal" },
@@ -810,6 +849,23 @@
         const EUROPE_IDS = ["792", "196", "578", "752", "208", "246", "352", "826", "372", "250", "276", "380", "724", "620", "528", "056", "442", "040", "756", "616", "203", "703", "348", "642", "100", "300", "008", "807", "688", "191", "070", "705", "499", "383", "233", "428", "440", "112", "804", "498", "643", "020", "438", "492", "674", "336", "470"];
         const EUROPE_COUNTRIES = ALL_COUNTRIES.filter(c => EUROPE_IDS.includes(c.id));
 
+        // Verdensdeler for klikk-quizene. pts = hjørnepunkter [lon, lat] kartutsnittet tilpasses til.
+        const REGIONS = {
+            europe:   { label: "Europa",       emoji: "🇪🇺", w: 600, time: 180, ids: EUROPE_IDS, pts: [[-25, 33], [46, 33], [46, 71], [-25, 71]] },
+            asia:     { label: "Asia",         emoji: "🌏", w: 800, time: 240, ids: ["792", "196", "268", "051", "031", "760", "422", "376", "275", "400", "368", "364", "414", "682", "887", "512", "784", "634", "048", "004", "586", "356", "524", "064", "050", "144", "462", "104", "764", "418", "704", "116", "458", "702", "096", "360", "626", "608", "158", "156", "496", "408", "410", "392", "398", "860", "795", "417", "762"], pts: [[24, -12], [148, -12], [148, 56], [24, 56]] },
+            africa:   { label: "Afrika",       emoji: "🌍", w: 600, time: 300, ids: ["818", "434", "788", "012", "504", "729", "728", "231", "232", "262", "706", "404", "800", "834", "646", "108", "180", "178", "266", "226", "120", "140", "148", "562", "566", "204", "768", "288", "384", "430", "694", "324", "624", "270", "686", "478", "466", "854", "024", "894", "716", "454", "508", "516", "072", "710", "426", "748", "450", "480", "174", "690", "678", "132"], pts: [[-26, -36], [60, -36], [60, 38], [-26, 38]] },
+            namerica: { label: "Nord-Amerika", emoji: "🌎", w: 600, time: 180, ids: ["840", "124", "484", "320", "084", "222", "340", "558", "188", "591", "192", "388", "332", "214", "044", "780", "028", "052", "212", "308", "659", "662", "670"], pts: [[-170, 6], [-50, 6], [-50, 72], [-170, 72]] },
+            samerica: { label: "Sør-Amerika",  emoji: "🌎", w: 420, time: 120, ids: ["170", "862", "328", "740", "218", "604", "076", "068", "600", "152", "032", "858"], pts: [[-82, -56], [-34, -56], [-34, 13], [-82, 13]] },
+            oceania:  { label: "Oseania",      emoji: "🌏", w: 800, time: 150, ids: ["036", "554", "598", "242", "090", "548", "882", "776", "585", "798", "520", "296", "584", "583"], pts: [[110, -48], [210, -48], [210, 15], [110, 15]], rotate: -155 },
+            world:    { label: "Verden",       emoji: "🌍", w: 800, time: 300, ids: null }
+        };
+        function regionPool(key) {
+            const r = REGIONS[key];
+            let pool = r.ids ? ALL_COUNTRIES.filter(c => r.ids.includes(c.id)) : ALL_COUNTRIES;
+            if (currentDifficulty === 'normal') pool = pool.filter(c => c.difficulty === 'normal');
+            return pool;
+        }
+
         async function buildMapGeometry(mapType) {
             if (activeMapType === mapType) { 
                 resetMapStyles(); 
@@ -817,7 +873,7 @@
                 return; 
             }
             activeMapType = mapType;
-            const width = (mapType === 'europe') ? 600 : 800, height = 480;
+            const width = mapType.startsWith('region:') ? REGIONS[mapType.slice(7)].w : 800, height = 480;
             
             if (!svg) {
                 svg = d3.select("#d3-world-map").attr("viewBox", `0 0 ${width} ${height}`).attr("width", "100%").attr("height", "100%");
@@ -904,8 +960,9 @@
                     .on("click", function(event, d) {
                         if (currentMode === 'no_click') handleCountyClick(d.properties.fylkesnummer || d.properties.id, this);
                     });
-            } else if (mapType === 'europe') {
-                projection = d3.geoMercator();
+            } else if (mapType.startsWith('region:')) {
+                const key = mapType.slice(7);
+                const R = REGIONS[key];
                 if (!europeData) {
                     const res = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json");
                     const topo = await res.json();
@@ -918,9 +975,17 @@
                         europeData.push({ type: "Feature", id: "196", properties: { name: "Cyprus" }, geometry: topojson.merge(topo, cyGeoms), euId: "196" });
                     }
                 }
-                const euFeatures = europeData.filter(d => EUROPE_IDS.includes(d.euId));
-                const otherFeatures = europeData.filter(d => !EUROPE_IDS.includes(d.euId));
-                projection.fitExtent([[10, 10], [width - 10, height - 10]], { type: "MultiPoint", coordinates: [[-25, 33], [46, 33], [46, 71], [-25, 71]] });
+                const allIds = R.ids || ALL_COUNTRIES.map(c => c.id);
+                const euFeatures = europeData.filter(d => allIds.includes(d.euId));
+                const otherFeatures = europeData.filter(d => !allIds.includes(d.euId) && d.euId !== '010');
+                if (R.ids) {
+                    projection = d3.geoMercator();
+                    if (R.rotate) projection.rotate([R.rotate, 0]);
+                    projection.fitExtent([[10, 10], [width - 10, height - 10]], { type: "MultiPoint", coordinates: R.pts });
+                } else {
+                    projection = d3.geoEqualEarth();
+                    projection.fitExtent([[10, 10], [width - 10, height - 10]], { type: "Sphere" });
+                }
                 path = d3.geoPath().projection(projection);
 
                 g.selectAll(".context-land")
@@ -936,7 +1001,7 @@
                     .attr("d", path)
                     .attr("id", d => `country-${d.euId}`)
                     .on("click", function(event, d) {
-                        if (currentMode === 'eu_click') handleRegionClick(d.euId, this);
+                        if (currentMode === 'eu_click' || currentMode.startsWith('rc_')) handleRegionClick(d.euId, this);
                     });
             } else {
                 projection = d3.geoEqualEarth();
@@ -1035,6 +1100,12 @@
                     correct: c.capital,
                     options: getRandomOptions(c.capital, 'capital', EUROPE_COUNTRIES)
                 })));
+            } else if (currentMode.startsWith('rc_')) {
+                const key = currentMode.slice(3);
+                const R = REGIONS[key];
+                timeRemaining = (key === 'world' && currentDifficulty === 'expert') ? 600 : R.time;
+                badge.innerText = `${R.label} Klikk ${R.emoji}`;
+                currentQuestions = shuffleArray([...regionPool(key)]);
             } else if (currentMode === 'eu_click') {
                 timeRemaining = 180;
                 badge.innerText = "Europa Klikk 🇪🇺";
@@ -1115,12 +1186,17 @@
             document.getElementById('game-screen').classList.remove('hidden');
             
             let mapType = "world";
-            if (currentMode.startsWith('eu_')) mapType = "europe";
+            if (currentMode.startsWith('eu_')) mapType = "region:europe";
+            else if (currentMode.startsWith('rc_')) mapType = "region:" + currentMode.slice(3);
             else if (currentMode.includes('us_')) mapType = "usa";
             else if (currentMode.includes('no_')) mapType = "norway";
             else if (currentMode.includes('de_')) mapType = "germany";
             
             await buildMapGeometry(mapType);
+            // Hopp over land som ikke finnes i kartdataene (kan ikke klikkes)
+            if (currentMode.startsWith('rc_') || currentMode === 'eu_click') {
+                currentQuestions = currentQuestions.filter(c => document.getElementById('country-' + c.id));
+            }
             startTimer();
             showNextQuestion();
         }
@@ -1166,7 +1242,7 @@
                     document.getElementById('answer-input').value = "";
                     document.getElementById('answer-input').focus();
                 }
-            } else if (currentMode === 'de_click' || currentMode === 'us_click' || currentMode === 'no_click' || currentMode === 'eu_click') {
+            } else if (currentMode === 'de_click' || currentMode === 'us_click' || currentMode === 'no_click' || currentMode === 'eu_click' || currentMode.startsWith('rc_')) {
                 document.getElementById('game-question').innerText = `Finn og klikk på: ${q.name}`;
                 mapContainer.classList.remove('hidden'); 
                 textInput.classList.add('hidden'); 
@@ -1353,6 +1429,7 @@
         function confirmExit() { goHome(); }
         function startQuizWithDirectMode(m) { currentMode = m; startQuiz(); }
         
+        function startRegionClick(key, diff) { currentMode = 'rc_' + key; currentDifficulty = diff; startQuiz(); }
         function selectDifficulty(m) { currentMode = m; document.getElementById('difficulty-modal').classList.remove('hidden'); }
         function closeDifficultyModal() { document.getElementById('difficulty-modal').classList.add('hidden'); }
         function confirmStartWithDifficulty(diff) { currentDifficulty = diff; closeDifficultyModal(); startQuiz(); }
