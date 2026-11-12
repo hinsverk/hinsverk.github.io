@@ -158,9 +158,10 @@
             padding-top: 4rem;
         }
 
+        /* Utvidet bredde på spillvinduet (fra 500px til 680px) så lengre ord og uttrykk får plass */
         #game-container {
             width: 100%;
-            max-width: 500px;
+            max-width: 680px;
             background: white;
             border-radius: 24px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
@@ -170,13 +171,37 @@
 
         .word-letter {
             border-bottom: 3px solid #3b82f6;
-            min-width: 28px;
-            text-align: center;
-            font-size: 1.6rem;
+            min-width: 26px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
             font-weight: 800;
             margin: 0 3px;
             text-transform: uppercase;
             transition: all 0.2s;
+        }
+
+        /* Stil for mellomrom mellom to ord */
+        .word-space {
+            min-width: 22px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 4px;
+            position: relative;
+        }
+        
+        /* Subtil prikk eller indikator i mellomrommet slik at eleven ser at det er et mellomrom */
+        .word-space::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+            margin-top: 12px;
         }
 
         .letter-revealed { color: #10b981; border-bottom-color: #10b981; transform: scale(1.1); }
@@ -206,6 +231,22 @@
             0% { transform: translateY(0); opacity: 1; }
             100% { transform: translateY(-40px); opacity: 0; }
         }
+
+        @media (max-width: 520px) {
+            #game-container {
+                padding: 1.25rem;
+            }
+            .word-letter {
+                min-width: 20px;
+                height: 32px;
+                font-size: 1.2rem;
+                margin: 0 2px;
+            }
+            .word-space {
+                min-width: 14px;
+                height: 32px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -234,7 +275,7 @@
             <p class="text-gray-500 text-xs mb-6 font-semibold tracking-wide uppercase">Tysk ord-utfordring</p>
 
             <!-- Status for ordliste -->
-            <div id="gist-status-bar" class="w-full mb-5 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-left flex items-center justify-between text-xs">
+            <div id="gist-status-bar" class="w-full max-w-[400px] mb-5 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-left flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2 text-blue-800 font-semibold truncate">
                     <span id="gist-status-dot" class="h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
                     <span id="gist-status-text" class="truncate">Sjekker ordliste...</span>
@@ -242,7 +283,7 @@
                 <button onclick="fetchGistData(true)" class="text-blue-600 hover:text-blue-800 text-[11px] font-bold underline flex-shrink-0 ml-2">Oppdater</button>
             </div>
             
-            <div class="space-y-2.5 w-full max-w-[320px]">
+            <div class="space-y-2.5 w-full max-w-[380px]">
                 <p class="text-[10px] text-gray-400 font-black uppercase text-center tracking-widest mb-1">Standard vanskegrad</p>
                 <div class="grid grid-cols-3 gap-2">
                     <button onclick="startGame('easy')" class="bg-white border-2 border-green-500 text-green-700 font-black py-3 rounded-xl shadow-sm hover:bg-green-50 active:scale-95 transition-all text-sm uppercase">Enkel</button>
@@ -263,7 +304,7 @@
                 </div>
             </div>
 
-            <div id="highscore-display" class="w-full"></div>
+            <div id="highscore-display" class="w-full max-w-[440px]"></div>
         </div>
 
         <!-- Kapittelvekging -->
@@ -271,7 +312,7 @@
             <h2 id="chapter-title" class="text-2xl font-black text-gray-800 mb-1 uppercase tracking-tight">Tysk 8. Klasse</h2>
             <p class="text-gray-500 text-xs mb-6 font-semibold uppercase tracking-wider">Velg tekst eller kapittel du vil øve på</p>
 
-            <div id="chapter-buttons-container" class="space-y-2 w-full max-w-[320px] max-h-[260px] overflow-y-auto pr-1">
+            <div id="chapter-buttons-container" class="space-y-2 w-full max-w-[400px] max-h-[280px] overflow-y-auto pr-1">
                 <!-- Dynamisk fylt inn av JS -->
             </div>
 
@@ -314,13 +355,20 @@
                 </span>
             </div>
 
-            <div class="relative bg-blue-600 text-white rounded-[2rem] p-6 mb-8 text-center shadow-xl min-h-[150px] flex flex-col justify-center">
+            <div class="relative bg-blue-600 text-white rounded-[2rem] p-6 mb-6 text-center shadow-xl min-h-[150px] flex flex-col justify-center">
                 <p id="german-definition" class="text-2xl font-black leading-tight mb-3"></p>
                 <div class="mx-auto w-12 h-1 bg-white/20 rounded-full mb-3"></div>
                 <p id="norwegian-definition" class="text-sm font-semibold opacity-90 italic"></p>
             </div>
 
-            <div id="word-display" class="flex justify-center flex-wrap gap-y-3 mb-8 min-h-[45px]"></div>
+            <!-- Indikator hvis det er flere ord (f.eks. "2 ord") -->
+            <div id="word-count-hint" class="hidden text-center mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-md">
+                    <i class="fa-solid fa-font mr-1"></i> <span id="word-count-text">2 ord</span>
+                </span>
+            </div>
+
+            <div id="word-display" class="flex justify-center items-center flex-wrap gap-y-3 mb-8 min-h-[45px] px-2"></div>
 
             <input type="text" id="word-input" autocomplete="off" class="absolute opacity-0 pointer-events-none" inputmode="text">
             
@@ -379,9 +427,9 @@
   "hard": [ ... ],
   "tysk8": [
     {
-      "word": "SCHULE",
-      "de": "Ort zum Lernen.",
-      "no": "Sted for å lære.",
+      "word": "DER APFEL",
+      "de": "Eine Frucht.",
+      "no": "Eplet.",
       "text": "Kapittel 1: Skolen min"
     }
   ],
@@ -402,7 +450,7 @@
         // Standard ordlister som fallback dersom Gist mangler nøkler
         const defaultWords = {
             easy: [
-                { word: "APFEL", de: "Eine Frucht, die rot oder grün ist.", no: "En frukt som er rød eller grønn." },
+                { word: "DER APFEL", de: "Eine Frucht, die rot oder grün ist.", no: "Et eple (med artikkel)." },
                 { word: "HUND", de: "Das Tier ist der beste Freund des Menschen.", no: "Dette dyret er menneskets beste venn." },
                 { word: "BUCH", de: "Man liest es, um eine Geschichte zu erfahren.", no: "Man leser det for å lære en historie." },
                 { word: "SCHULE", de: "Der Ort, wo Kinder jeden Tag lernen.", no: "Stedet der barn lærer hver dag." },
@@ -429,12 +477,12 @@
             ],
             tysk8: [
                 { word: "KLASSE", de: "Eine Gruppe von Schülern in der Schule.", no: "Klasse på skolen.", text: "Kapittel 1: Mein Alltag" },
-                { word: "LEHRER", de: "Eine Person, die etwas unterrichtet.", no: "En person som underviser.", text: "Kapittel 1: Mein Alltag" },
+                { word: "DER LEHRER", de: "Eine Person, die etwas unterrichtet.", no: "Læreren.", text: "Kapittel 1: Mein Alltag" },
                 { word: "HAUSAUFGABE", de: "Schularbeit, die man zu Hause macht.", no: "Lekser man gjør hjemme.", text: "Kapittel 1: Mein Alltag" },
                 { word: "FAMILIE", de: "Eltern, Kinder und Verwandte.", no: "Foreldre, barn og slektninger.", text: "Kapittel 2: Meine Familie" }
             ],
             tysk10: [
-                { word: "ZUKUNFT", de: "Die Zeit, die erst noch kommen wird.", no: "Fremtiden.", text: "Tekst 1: Unsere Zukunft" },
+                { word: "DIE ZUKUNFT", de: "Die Zeit, die erst noch kommen wird.", no: "Fremtiden.", text: "Tekst 1: Unsere Zukunft" },
                 { word: "BERUF", de: "Die Arbeit, die man täglich macht.", no: "Yrke / jobb.", text: "Tekst 1: Unsere Zukunft" },
                 { word: "KULTUR", de: "Traditionen, Kunst und Geschichte eines Landes.", no: "Kultur og tradisjoner.", text: "Tekst 2: Deutschland heute" }
             ]
@@ -451,7 +499,7 @@
         let timeLeft = 60;
         let skipsLeft = 3;
         let timerInterval;
-        let currentGuess = "";
+        let currentGuess = ""; // Lagrer nå kun bokstavene (uten mellomrom) for smidig inntasting
         let gameWords = [];
         let isRevealing = false;
 
@@ -460,6 +508,23 @@
         const playScreen = document.getElementById('play-screen');
         const endScreen = document.getElementById('end-screen');
         const wordInput = document.getElementById('word-input');
+
+        // Egendefinert melding i stedet for nettleserens alert()
+        function showToast(message, isError = false) {
+            const existing = document.getElementById('custom-toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'custom-toast';
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[99999] px-5 py-3 rounded-2xl shadow-2xl text-white text-xs font-bold tracking-wide transition-all duration-300 ${isError ? 'bg-red-600' : 'bg-slate-900'}`;
+            toast.innerText = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         function getRawGistUrl(url) {
             if (!url) return '';
@@ -476,18 +541,12 @@
             return cleaned;
         }
 
-        // Robust rensefunksjon som sikrer at tysk10 og andre nøkler parsese riktig uavhengig av skrivemåte
         function cleanAndParseJSON(text) {
             if (!text) throw new Error("Tom tekst fra Gist.");
             
-            // Fjern UTF-8 BOM tegn om det finnes
             let cleaned = text.replace(/^\uFEFF/, '');
-            
-            // Fjern eventuelle JS-variabeldeklarasjoner i starten
             cleaned = cleaned.replace(/^\s*(?:const|let|var)\s+\w+\s*=\s*/i, '');
-            // Fjern semikolon på slutten
             cleaned = cleaned.trim().replace(/;\s*$/, '');
-            // Fjern trailing commas før ] eller }
             cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
 
             const parsed = JSON.parse(cleaned);
@@ -498,13 +557,13 @@
                 
                 const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
                 
-                // Normaliser og rens hvert ordobjekt
                 const cleanedList = parsed[key].map(item => {
                     if (typeof item === 'string') {
-                        return { word: item.toUpperCase().trim(), de: item, no: "", text: "" };
+                        return { word: item.toUpperCase().trim().replace(/\s+/g, ' '), de: item, no: "", text: "" };
                     }
                     
-                    const wordVal = (item.word || item.ord || item.Wort || "").toString().trim().toUpperCase();
+                    // Beholder enkle mellomrom mellom ord, fjerner doble
+                    const wordVal = (item.word || item.ord || item.Wort || "").toString().trim().replace(/\s+/g, ' ').toUpperCase();
                     const deVal = (item.de || item.deutsch || item.tysk || item.definition || wordVal).toString().trim();
                     const noVal = (item.no || item.norsk || item.norwegian || "").toString().trim();
                     const textVal = (item.text || item.chapter || item.tekst || item.kapittel || "").toString().trim();
@@ -535,7 +594,7 @@
             return normalized;
         }
 
-        async function fetchGistData(showAlert = false) {
+        async function fetchGistData(notify = false) {
             const savedUrl = localStorage.getItem(`gist_url_${appId}`) || DEFAULT_GIST_URL;
             const statusDot = document.getElementById('gist-status-dot');
             const statusText = document.getElementById('gist-status-text');
@@ -553,7 +612,6 @@
                 const json = cleanAndParseJSON(rawText);
                 
                 if (json && (json.easy || json.tysk8 || json.tysk10 || json.medium || json.hard)) {
-                    // Fyll med standard som backup hvis enkeltkategorier mangler i JSON
                     activeWords = {
                         easy: json.easy && json.easy.length > 0 ? json.easy : defaultWords.easy,
                         medium: json.medium && json.medium.length > 0 ? json.medium : defaultWords.medium,
@@ -564,8 +622,8 @@
 
                     statusDot.className = "h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0";
                     statusText.innerText = "Ordliste hentet fra GitHub Gist!";
-                    if (showAlert) {
-                        alert("Vellykket! Ordlisten ble oppdatert fra GitHub Gist.");
+                    if (notify) {
+                        showToast("Vellykket! Ordlisten ble oppdatert fra GitHub Gist.");
                     }
                 } else {
                     throw new Error("Ugyldig JSON-struktur eller ingen kjente nøkler.");
@@ -575,8 +633,8 @@
                 activeWords = JSON.parse(JSON.stringify(defaultWords));
                 statusDot.className = "h-2.5 w-2.5 rounded-full bg-red-500 flex-shrink-0";
                 statusText.innerText = "Feil ved henting av Gist. Bruker standard.";
-                if (showAlert) {
-                    alert("Kunne ikke laste ordlisten fra Gist-en. Sjekk at URL-en er riktig og at JSON-en er gyldig formatted.");
+                if (notify) {
+                    showToast("Kunne ikke laste ordlisten fra Gist-en. Sjekk URL og JSON-format.", true);
                 }
             }
         }
@@ -612,7 +670,7 @@
         function copyJsonTemplate() {
             const template = JSON.stringify({
                 easy: [
-                    { word: "APFEL", de: "Eine Frucht", no: "Eple" }
+                    { word: "DER APFEL", de: "Eine Frucht", no: "Eplet" }
                 ],
                 medium: [
                     { word: "FAHRRAD", de: "Fahrzeug mit zwei Rädern", no: "Sykkel" }
@@ -635,9 +693,9 @@
                 el.select();
                 document.execCommand('copy');
                 document.body.removeChild(el);
-                alert("JSON-skal kopiert til utklippstavlen!");
+                showToast("JSON-skal kopiert til utklippstavlen!");
             } catch(e) {
-                alert("Kunne ikke kopiere automatisk.");
+                showToast("Kunne ikke kopiere automatisk.", true);
             }
         }
 
@@ -647,7 +705,7 @@
 
             if (modeWords.length === 0) {
                 const displayName = modeKey === 'tysk8' ? 'Tysk 8.' : (modeKey === 'tysk10' ? 'Tysk 10.' : modeKey);
-                alert(`Ingen gloser er lagt inn for ${displayName} ennå.`);
+                showToast(`Ingen gloser er lagt inn for ${displayName} ennå.`, true);
                 return;
             }
 
@@ -659,14 +717,12 @@
 
             const chapterList = Array.from(chapters);
 
-            // Sett dynamisk tittel basert på valgt klasse
             const titleMap = {
                 'tysk8': 'Tysk 8. Klasse',
                 'tysk10': 'Tysk 10. Klasse'
             };
             document.getElementById('chapter-title').innerText = titleMap[modeKey] || `${modeKey.toUpperCase()} Klasse`;
 
-            // Hvis det ikke er definert flere tekster/kapitler i dataene, start spillet direkte med alle gloser
             if (chapterList.length <= 1) {
                 startGame(modeKey, 'all');
                 return;
@@ -707,7 +763,7 @@
             }
 
             if (sourceList.length === 0) {
-                alert("Fant ingen ord i valgte kategori.");
+                showToast("Fant ingen ord i valgte kategori.", true);
                 return;
             }
 
@@ -777,7 +833,8 @@
             
             const wordData = gameWords[currentWordIndex] || { word: "TEST", de: "Beskrivelse mangler", no: "" };
             
-            const word = (wordData.word || "ORD").toString().toUpperCase();
+            // Rens eventuelle doble mellomrom
+            const word = (wordData.word || "ORD").toString().trim().replace(/\s+/g, ' ').toUpperCase();
             const de = wordData.de || wordData.word || "";
             const no = wordData.no || "";
 
@@ -794,7 +851,19 @@
                 badgeContainer.classList.add('hidden');
             }
 
-            currentGuess = word[0] || "";
+            // Vis hint hvis svaret består av flere ord (f.eks. artikkel + substantiv)
+            const parts = word.split(' ');
+            const wordCountHint = document.getElementById('word-count-hint');
+            if (parts.length > 1) {
+                document.getElementById('word-count-text').innerText = `${parts.length} ord`;
+                wordCountHint.classList.remove('hidden');
+            } else {
+                wordCountHint.classList.add('hidden');
+            }
+
+            // Første bokstav er alltid ferdig utfylt
+            const cleanTarget = word.replace(/\s+/g, '');
+            currentGuess = cleanTarget[0] || "";
             wordInput.value = "";
             isRevealing = false;
             renderWord();
@@ -802,33 +871,64 @@
 
         function renderWord(revealed = false) {
             const wordObj = gameWords[currentWordIndex] || { word: "ORD" };
-            const targetWord = (wordObj.word || "ORD").toUpperCase();
+            const targetWord = (wordObj.word || "ORD").trim().replace(/\s+/g, ' ').toUpperCase();
             const display = document.getElementById('word-display');
             display.innerHTML = "";
-            for (let i = 0; i < targetWord.length; i++) {
-                const span = document.createElement('span');
-                span.classList.add('word-letter');
-                if (revealed) {
-                    span.innerText = targetWord[i];
-                    span.classList.add('letter-revealed');
-                } else {
-                    span.innerText = i < currentGuess.length ? currentGuess[i] : "";
-                    if (i < currentGuess.length) span.classList.add('text-blue-500');
+
+            // Del opp i enkeltord basert på mellomrom slik at et enkeltord aldri brekkes midt i på to linjer
+            const wordsArray = targetWord.split(' ');
+            let letterIndex = 0; // Holder styr på posisjonen i currentGuess (som ikke har mellomrom)
+
+            wordsArray.forEach((singleWord, wIdx) => {
+                // Pakk hvert ord inn i en nowrap-container slik at hvert ord holder seg samlet
+                const wordGroup = document.createElement('div');
+                wordGroup.className = "inline-flex items-center whitespace-nowrap my-1";
+
+                for (let i = 0; i < singleWord.length; i++) {
+                    const span = document.createElement('span');
+                    span.classList.add('word-letter');
+                    
+                    if (revealed) {
+                        span.innerText = singleWord[i];
+                        span.classList.add('letter-revealed');
+                    } else {
+                        span.innerText = letterIndex < currentGuess.length ? currentGuess[letterIndex] : "";
+                        if (letterIndex < currentGuess.length) {
+                            span.classList.add('text-blue-500');
+                        }
+                    }
+                    wordGroup.appendChild(span);
+                    letterIndex++;
                 }
-                display.appendChild(span);
-            }
+
+                display.appendChild(wordGroup);
+
+                // Legg til visuelt mellomrom mellom ordene hvis det er flere ord
+                if (wIdx < wordsArray.length - 1) {
+                    const spaceSpan = document.createElement('span');
+                    spaceSpan.classList.add('word-space');
+                    spaceSpan.title = "Mellomrom";
+                    display.appendChild(spaceSpan);
+                }
+            });
         }
 
         wordInput.addEventListener('input', (e) => {
             if (isRevealing) return;
             const wordObj = gameWords[currentWordIndex] || { word: "ORD" };
-            const targetWord = (wordObj.word || "ORD").toUpperCase();
+            const targetWord = (wordObj.word || "ORD").trim().replace(/\s+/g, ' ').toUpperCase();
             
-            const rawVal = e.target.value.toUpperCase();
-            currentGuess = targetWord[0] + rawVal.substring(0, targetWord.length - 1);
+            // Fjern mellomrom fra både fasit og brukerens inntasting slik at mellomrom hoppes elegant over
+            const cleanTarget = targetWord.replace(/\s+/g, '');
+            const rawVal = e.target.value.toUpperCase().replace(/\s+/g, '');
+            
+            // Oppdater input-feltet uten mellomrom så backspace fungerer sømløst
+            e.target.value = rawVal;
+
+            currentGuess = cleanTarget[0] + rawVal.substring(0, cleanTarget.length - 1);
             renderWord();
             
-            if (currentGuess === targetWord) {
+            if (currentGuess === cleanTarget) {
                 isRevealing = true;
                 streak++;
                 score += (10 + Math.min(streak, 10));
@@ -843,14 +943,14 @@
                     currentWordIndex++;
                     nextWord();
                 }, 400);
-            } else if (currentGuess.length >= targetWord.length) {
+            } else if (currentGuess.length >= cleanTarget.length) {
                 document.getElementById('word-display').classList.add('shake');
                 streak = 0;
                 updateStreakUI();
                 setTimeout(() => {
                     document.getElementById('word-display').classList.remove('shake');
                     wordInput.value = "";
-                    currentGuess = targetWord[0];
+                    currentGuess = cleanTarget[0];
                     renderWord();
                 }, 400);
             }
