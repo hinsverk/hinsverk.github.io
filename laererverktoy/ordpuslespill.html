@@ -63,12 +63,15 @@
             <h1 class="text-2xl font-bold text-slate-800 mb-4">Setningspuslespill</h1>
             
             <div class="space-y-4">
-                <!-- Valg av modus: Enkeltord eller Avsnitt -->
-                <div class="flex items-center gap-2">
+                <!-- Valg av modus: Ord, Setning eller Avsnitt -->
+                <div class="flex flex-wrap items-center gap-2">
                     <span class="text-sm font-medium text-slate-700 mr-1">Del opp i:</span>
                     <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200" role="group">
                         <button type="button" id="mode-words" class="rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition cursor-pointer">
-                            Enkeltord
+                            Ord
+                        </button>
+                        <button type="button" id="mode-sentences" class="rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                            Setning
                         </button>
                         <button type="button" id="mode-paragraphs" class="rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer">
                             Avsnitt
@@ -141,6 +144,7 @@
         const sentenceInput = document.getElementById('sentence-input');
         const inputLabel = document.getElementById('input-label');
         const modeWordsBtn = document.getElementById('mode-words');
+        const modeSentencesBtn = document.getElementById('mode-sentences');
         const modeParagraphsBtn = document.getElementById('mode-paragraphs');
         const generateBtn = document.getElementById('generate-btn');
         const clearBtn = document.getElementById('clear-btn');
@@ -150,20 +154,26 @@
         const emptyState = document.getElementById('empty-state');
         const messageBox = document.getElementById('message-box');
 
-        let currentMode = 'words'; // 'words' eller 'paragraphs'
+        let currentMode = 'words'; // 'words', 'sentences' eller 'paragraphs'
 
-        // Skift mellom enkeltord og avsnitt
+        const activeBtnClass = 'rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition cursor-pointer';
+        const inactiveBtnClass = 'rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer';
+
+        // Skift mellom ord, setning og avsnitt
         function setMode(mode) {
             currentMode = mode;
 
+            modeWordsBtn.className = mode === 'words' ? activeBtnClass : inactiveBtnClass;
+            modeSentencesBtn.className = mode === 'sentences' ? activeBtnClass : inactiveBtnClass;
+            modeParagraphsBtn.className = mode === 'paragraphs' ? activeBtnClass : inactiveBtnClass;
+
             if (mode === 'words') {
-                modeWordsBtn.className = 'rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition cursor-pointer';
-                modeParagraphsBtn.className = 'rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer';
                 inputLabel.textContent = 'Skriv inn én eller flere setninger (én per linje)';
                 sentenceInput.placeholder = 'Katten sitter på taket.';
+            } else if (mode === 'sentences') {
+                inputLabel.textContent = 'Lim inn eller skriv en tekst (deles automatisk ved punktum, utropstegn og spørsmålstegn)';
+                sentenceInput.placeholder = 'Katten sitter på taket. Hunden sover i kurven! Hva gjør fuglen?';
             } else {
-                modeParagraphsBtn.className = 'rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition cursor-pointer';
-                modeWordsBtn.className = 'rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer';
                 inputLabel.textContent = 'Lim inn eller skriv en tekst (nytt avsnitt ved linjeskift)';
                 sentenceInput.placeholder = 'Første avsnitt skrives her.\n\nAndre avsnitt på ny linje.';
             }
@@ -174,6 +184,7 @@
         }
 
         modeWordsBtn.addEventListener('click', () => setMode('words'));
+        modeSentencesBtn.addEventListener('click', () => setMode('sentences'));
         modeParagraphsBtn.addEventListener('click', () => setMode('paragraphs'));
 
         // Hent og del opp tekst basert på valgt modus
@@ -190,10 +201,10 @@
             printBtn.classList.remove('hidden');
             cardsContainer.innerHTML = '';
 
-            const lines = rawText.split(/\n+/).map(line => line.trim()).filter(line => line.length > 0);
             const sizeSetting = fontSizeSelect.value;
 
             if (currentMode === 'words') {
+                const lines = rawText.split(/\n+/).map(line => line.trim()).filter(line => line.length > 0);
                 const wordSizeClass = {
                     normal: 'text-3xl',
                     large: 'text-4xl',
@@ -217,7 +228,30 @@
 
                     cardsContainer.appendChild(sentenceGroup);
                 });
+            } else if (currentMode === 'sentences') {
+                // Del opp i setninger ved skilletegn (. ! ?) eller linjeskift
+                const sentences = rawText
+                    .replace(/\n+/g, ' ')
+                    .match(/[^.!?]+[.!?]+|[^.!?]+$/g)
+                    ?.map(s => s.trim())
+                    .filter(s => s.length > 0) || [];
+
+                const sentenceSizeClass = {
+                    normal: 'text-xl leading-relaxed',
+                    large: 'text-2xl leading-relaxed',
+                    xlarge: 'text-3xl leading-relaxed'
+                }[sizeSetting];
+
+                cardsContainer.className = 'space-y-4';
+
+                sentences.forEach((sentence) => {
+                    const card = document.createElement('div');
+                    card.className = `word-card border-2 border-dashed border-slate-400 rounded-xl px-7 py-5 bg-white text-slate-900 font-medium select-none w-full ${sentenceSizeClass}`;
+                    card.textContent = sentence;
+                    cardsContainer.appendChild(card);
+                });
             } else {
+                const lines = rawText.split(/\n+/).map(line => line.trim()).filter(line => line.length > 0);
                 const paragraphSizeClass = {
                     normal: 'text-lg leading-relaxed',
                     large: 'text-xl leading-relaxed',
