@@ -56,20 +56,33 @@
     <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-10">
         <div class="max-w-4xl mx-auto px-4 py-6 sm:px-6">
             <div class="mb-3">
-                <a href="/laererverktoy/index.html" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                <a href="../index.html" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
                     <span aria-hidden="true">&larr;</span> Tilbake
                 </a>
             </div>
             <h1 class="text-2xl font-bold text-slate-800 mb-4">Setningspuslespill</h1>
             
             <div class="space-y-4">
+                <!-- Valg av modus: Enkeltord eller Avsnitt -->
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-slate-700 mr-1">Del opp i:</span>
+                    <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200" role="group">
+                        <button type="button" id="mode-words" class="rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition cursor-pointer">
+                            Enkeltord
+                        </button>
+                        <button type="button" id="mode-paragraphs" class="rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                            Avsnitt
+                        </button>
+                    </div>
+                </div>
+
                 <div>
-                    <label for="sentence-input" class="block text-sm font-medium text-slate-700 mb-1">
+                    <label id="input-label" for="sentence-input" class="block text-sm font-medium text-slate-700 mb-1">
                         Skriv inn én eller flere setninger (én per linje)
                     </label>
                     <textarea 
                         id="sentence-input" 
-                        rows="3" 
+                        rows="4" 
                         class="w-full rounded-xl border border-slate-300 bg-slate-50 p-3.5 text-lg text-slate-900 focus:border-slate-500 focus:bg-white focus:outline-none transition"
                         placeholder="Katten sitter på taket."></textarea>
                 </div>
@@ -92,9 +105,9 @@
                         <div class="flex items-center gap-2">
                             <label for="font-size" class="text-sm font-medium text-slate-700">Skriftstørrelse:</label>
                             <select id="font-size" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none">
-                                <option value="text-3xl">Stor</option>
-                                <option value="text-4xl" selected>Ekstra stor</option>
-                                <option value="text-5xl">Enorm</option>
+                                <option value="normal">Normal</option>
+                                <option value="large" selected>Stor</option>
+                                <option value="xlarge">Ekstra stor</option>
                             </select>
                         </div>
 
@@ -108,7 +121,7 @@
 
                 <!-- Melding ved tom inntasting -->
                 <div id="message-box" class="hidden rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 text-sm text-amber-800">
-                    Skriv inn minst én setning først.
+                    Skriv inn tekst først.
                 </div>
             </div>
         </div>
@@ -118,7 +131,7 @@
     <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8 sm:px-6">
         <div id="print-area" class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-10 min-h-[400px] shadow-sm">
             <div id="empty-state" class="h-full flex items-center justify-center py-20 text-slate-400 text-lg">
-                Ordkortene vises her
+                Utklippskortene vises her
             </div>
             <div id="cards-container" class="space-y-8"></div>
         </div>
@@ -126,6 +139,9 @@
 
     <script>
         const sentenceInput = document.getElementById('sentence-input');
+        const inputLabel = document.getElementById('input-label');
+        const modeWordsBtn = document.getElementById('mode-words');
+        const modeParagraphsBtn = document.getElementById('mode-paragraphs');
         const generateBtn = document.getElementById('generate-btn');
         const clearBtn = document.getElementById('clear-btn');
         const printBtn = document.getElementById('print-btn');
@@ -134,7 +150,33 @@
         const emptyState = document.getElementById('empty-state');
         const messageBox = document.getElementById('message-box');
 
-        // Hent og del opp setninger i enkeltord
+        let currentMode = 'words'; // 'words' eller 'paragraphs'
+
+        // Skift mellom enkeltord og avsnitt
+        function setMode(mode) {
+            currentMode = mode;
+
+            if (mode === 'words') {
+                modeWordsBtn.className = 'rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition cursor-pointer';
+                modeParagraphsBtn.className = 'rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer';
+                inputLabel.textContent = 'Skriv inn én eller flere setninger (én per linje)';
+                sentenceInput.placeholder = 'Katten sitter på taket.';
+            } else {
+                modeParagraphsBtn.className = 'rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition cursor-pointer';
+                modeWordsBtn.className = 'rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition cursor-pointer';
+                inputLabel.textContent = 'Lim inn eller skriv en tekst (nytt avsnitt ved linjeskift)';
+                sentenceInput.placeholder = 'Første avsnitt skrives her.\n\nAndre avsnitt på ny linje.';
+            }
+
+            if (cardsContainer.children.length > 0) {
+                generatePuzzle();
+            }
+        }
+
+        modeWordsBtn.addEventListener('click', () => setMode('words'));
+        modeParagraphsBtn.addEventListener('click', () => setMode('paragraphs'));
+
+        // Hent og del opp tekst basert på valgt modus
         function generatePuzzle() {
             const rawText = sentenceInput.value.trim();
             
@@ -148,26 +190,49 @@
             printBtn.classList.remove('hidden');
             cardsContainer.innerHTML = '';
 
-            // Del opp på linjeskift slik at brukeren kan lage flere setninger samtidig
             const lines = rawText.split(/\n+/).map(line => line.trim()).filter(line => line.length > 0);
-            const selectedSize = fontSizeSelect.value;
+            const sizeSetting = fontSizeSelect.value;
 
-            lines.forEach((line) => {
-                // Del opp på mellomrom, beholder tegnsetting sammen med ordet (f.eks. "taket.")
-                const words = line.split(/\s+/).filter(word => word.length > 0);
+            if (currentMode === 'words') {
+                const wordSizeClass = {
+                    normal: 'text-3xl',
+                    large: 'text-4xl',
+                    xlarge: 'text-5xl'
+                }[sizeSetting];
 
-                const sentenceGroup = document.createElement('div');
-                sentenceGroup.className = 'sentence-group flex flex-wrap gap-4 items-center';
+                cardsContainer.className = 'space-y-8';
 
-                words.forEach((word) => {
-                    const card = document.createElement('div');
-                    card.className = `word-card border-2 border-dashed border-slate-400 rounded-xl px-7 py-5 bg-white text-slate-900 font-semibold tracking-wide select-none ${selectedSize}`;
-                    card.textContent = word;
-                    sentenceGroup.appendChild(card);
+                lines.forEach((line) => {
+                    const words = line.split(/\s+/).filter(word => word.length > 0);
+
+                    const sentenceGroup = document.createElement('div');
+                    sentenceGroup.className = 'sentence-group flex flex-wrap gap-4 items-center';
+
+                    words.forEach((word) => {
+                        const card = document.createElement('div');
+                        card.className = `word-card border-2 border-dashed border-slate-400 rounded-xl px-7 py-5 bg-white text-slate-900 font-semibold tracking-wide select-none ${wordSizeClass}`;
+                        card.textContent = word;
+                        sentenceGroup.appendChild(card);
+                    });
+
+                    cardsContainer.appendChild(sentenceGroup);
                 });
+            } else {
+                const paragraphSizeClass = {
+                    normal: 'text-lg leading-relaxed',
+                    large: 'text-xl leading-relaxed',
+                    xlarge: 'text-2xl leading-relaxed'
+                }[sizeSetting];
 
-                cardsContainer.appendChild(sentenceGroup);
-            });
+                cardsContainer.className = 'space-y-5';
+
+                lines.forEach((paragraph) => {
+                    const card = document.createElement('div');
+                    card.className = `word-card border-2 border-dashed border-slate-400 rounded-xl px-7 py-6 bg-white text-slate-900 font-normal select-none w-full ${paragraphSizeClass}`;
+                    card.textContent = paragraph;
+                    cardsContainer.appendChild(card);
+                });
+            }
         }
 
         // Oppdater størrelse umiddelbart hvis kort allerede er laget
