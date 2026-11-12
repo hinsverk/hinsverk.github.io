@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tysk 8. trinn: Freizeitaktivitäten (Fritidsaktiviteter)</title>
+    <!-- Laster inn Tailwind CSS for moderne og responsiv styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Laster inn Google Font 'Inter' for god lesbarhet -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        /* 3D-animasjon for digitale flashcards */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Spesialregler for utskrift (A4-vennlig oppsett) */
+        @media print {
+            body {
+                background-color: #ffffff !important;
+                margin: 0;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            #print-container {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 8mm !important;
+                padding: 5mm !important;
+            }
+            .cut-card {
+                border: 2px dashed #64748b !important;
+                border-radius: 12px !important;
+                height: 55mm !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-align: center !important;
+                background: #ffffff !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Toppbanner og navigasjon (skjules ved utskrift) -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm flex items-center gap-1.5 transition-colors shadow-sm" title="Tilbake til hovedsiden">
+                    ← Zurück
+                </a>
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md">
+                    DE
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">Freizeitaktivitäten</h1>
+                    <p class="text-xs text-slate-500 font-medium">Tysk 8. trinn • Øvingskort og utskrift</p>
+                </div>
+            </div>
+
+            <!-- Fanemeny for å bytte mellom elevmodus og lærermodus/utskrift -->
+            <nav class="flex flex-wrap justify-center gap-2 bg-slate-100 p-1.5 rounded-xl">
+                <button onclick="switchTab('flashcards')" id="tab-flashcards" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-indigo-700 shadow-sm">
+                    🗂️ Digitale Flashcards
+                </button>
+                <button onclick="switchTab('matching')" id="tab-matching" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:text-slate-900">
+                    🧩 Koblingsspill
+                </button>
+                <button onclick="switchTab('print')" id="tab-print" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:text-slate-900">
+                    🖨️ Utskriftskort (Ord og bilde)
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hovedinnhold -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-8">
+
+        <!-- ========================================================= -->
+        <!-- SEKSJON 1: DIGITALE FLASHCARDS (FOR DELING MED ELEVER)    -->
+        <!-- ========================================================= -->
+        <section id="view-flashcards" class="no-print flex flex-col items-center">
+            <div class="text-center max-w-xl mb-6">
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Øv med Flashcards</h2>
+                <p class="text-slate-600 text-sm">Klikk på kortet for å snu det. Bruk knappene under eller piltastene på tastaturet for å bla mellom de 18 aktivitetene.</p>
+            </div>
+
+            <!-- Fremdriftsindikator -->
+            <div class="w-full max-w-md flex items-center justify-between text-xs font-semibold text-slate-500 mb-2 px-1">
+                <span id="card-counter">Kort 1 av 18</span>
+                <button onclick="shuffleFlashcards()" class="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors">
+                    🔀 Stokke kortene
+                </button>
+            </div>
+            <div class="w-full max-w-md bg-slate-200 h-2 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-indigo-600 h-full transition-all duration-300" style="width: 5.55%;"></div>
+            </div>
+
+            <!-- Flashcard-beholder med 3D-flip -->
+            <div class="w-full max-w-md h-80 perspective-1000 cursor-pointer mb-6" onclick="flipCard()">
+                <div id="flashcard-inner" class="relative w-full h-full transform-style-3d shadow-xl rounded-3xl">
+                    
+                    <!-- Forside (Tysk ord + Bilde/Ikon) -->
+                    <div class="absolute inset-0 backface-hidden bg-white border-2 border-indigo-100 rounded-3xl p-8 flex flex-col items-center justify-between text-center">
+                        <span class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wider">Tysk</span>
+                        
+                        <div class="my-auto flex flex-col items-center">
+                            <div id="fc-icon" class="w-24 h-24 mb-4 flex items-center justify-center text-6xl select-none">
+                                ⚽
+                            </div>
+                            <h3 id="fc-german" class="text-3xl font-extrabold text-slate-900 tracking-tight">Fußball spielen</h3>
+                        </div>
+
+                        <p class="text-xs text-slate-400 font-medium">Klikk for å se oversettelse ↻</p>
+                    </div>
+
+                    <!-- Bakside (Norsk oversettelse + Husketips) -->
+                    <div class="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 text-white rounded-3xl p-8 flex flex-col items-center justify-between text-center">
+                        <span class="px-3 py-1 bg-indigo-500 text-indigo-100 rounded-full text-xs font-bold uppercase tracking-wider">Norsk</span>
+                        
+                        <div class="my-auto">
+                            <h3 id="fc-norwegian" class="text-3xl font-extrabold mb-4">spille fotball</h3>
+                            <div class="bg-indigo-700/60 border border-indigo-400/30 rounded-2xl p-4 text-sm text-indigo-100">
+                                <span class="font-bold text-amber-300 block mb-1">💡 Husketips:</span>
+                                <span id="fc-hint">Legg merke til bokstaven ß (dobbel-s) i ordet for fot.</span>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-indigo-200 font-medium">Klikk for å snu tilbake ↻</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigasjonsknapper -->
+            <div class="flex items-center gap-4">
+                <button onclick="prevCard()" class="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 active:scale-95 transition-all shadow-sm">
+                    ← Forrige
+                </button>
+                <button onclick="flipCard()" class="px-6 py-3 rounded-xl bg-indigo-100 text-indigo-700 font-semibold hover:bg-indigo-200 active:scale-95 transition-all">
+                    Snu kort
+                </button>
+                <button onclick="nextCard()" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 active:scale-95 transition-all shadow-md">
+                    Neste →
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- SEKSJON 2: DIGITALT KOBLINGSSPILL (ORD MOT BILDE)         -->
+        <!-- ========================================================= -->
+        <section id="view-matching" class="hidden no-print">
+            <div class="flex flex-col md:flex-row items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6 gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Digitalt Koblingsspill</h2>
+                    <p class="text-sm text-slate-600">Klikk på et tysk ordkort og deretter på bildet som passer (6 tilfeldige par per runde).</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <span class="text-xs text-slate-500 block font-semibold uppercase">Riktige par</span>
+                        <span id="match-score" class="text-xl font-extrabold text-emerald-600">0 / 6</span>
+                    </div>
+                    <button onclick="initMatchingGame()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all">
+                        🔄 Ny runde
+                    </button>
+                </div>
+            </div>
+
+            <!-- Melding når spillet er fullført -->
+            <div id="match-win-banner" class="hidden bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-6 text-center mb-6">
+                <h3 class="text-2xl font-extrabold text-emerald-800 mb-1">🎉 Sehr gut! Du klarte alle!</h3>
+                <p class="text-emerald-700 text-sm mb-4">Vil du øve på 6 nye fritidsaktiviteter?</p>
+                <button onclick="initMatchingGame()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm">
+                    Spill en runde til
+                </button>
+            </div>
+
+            <!-- Spillbrett: Ord til venstre, Bilder til høyre -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-100/70 p-4 rounded-2xl border border-slate-200">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 px-1">1. Velg tysk uttrykk</h3>
+                    <div id="match-words-col" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </div>
+                <div class="bg-slate-100/70 p-4 rounded-2xl border border-slate-200">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 px-1">2. Velg riktig bilde</h3>
+                    <div id="match-images-col" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- SEKSJON 3: UTSKRIFTSVERSJON (ORDKORT + BILDEKORT)         -->
+        <!-- ========================================================= -->
+        <section id="view-print" class="hidden">
+            <!-- Kontrollpanel for læreren (skjules automatisk når man trykker Skriv ut) -->
+            <div class="no-print bg-white border border-slate-200 rounded-2xl p-6 mb-8 shadow-sm">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-5">
+                    <div>
+                        <span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-md text-xs font-bold uppercase">Klar for klipp og lim</span>
+                        <h2 class="text-2xl font-bold text-slate-900 mt-1">Utskriftskort til klasserommet</h2>
+                        <p class="text-sm text-slate-600 mt-1">Totalt <strong>36 kort</strong> (18 ordkort + 18 bildekort) tilpasset A4-ark med stiplede klippelinjer.</p>
+                    </div>
+                    <button onclick="window.print()" class="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md flex items-center gap-2 transition-all shrink-0">
+                        🖨️ Skriv ut / Lagre som PDF
+                    </button>
+                </div>
+
+                <!-- Valg for sortering før utskrift -->
+                <div class="flex flex-wrap items-center gap-3 text-sm">
+                    <span class="font-semibold text-slate-700">Sortering på arket:</span>
+                    <button onclick="renderPrintCards('paired')" id="btn-sort-paired" class="px-3.5 py-1.5 rounded-lg bg-indigo-100 text-indigo-800 font-semibold">
+                        Parvis (Ord ved siden av bilde)
+                    </button>
+                    <button onclick="renderPrintCards('grouped')" id="btn-sort-grouped" class="px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold">
+                        Gruppert (Alle ord først, så alle bilder)
+                    </button>
+                    <button onclick="renderPrintCards('shuffled')" id="btn-sort-shuffled" class="px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold">
+                        🔀 Tilfeldig rekkefølge
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selve rutenettet med kort som vises på skjerm og skrives ut -->
+            <div id="print-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <!-- Kortene genereres dynamisk med JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bunntekst (skjules ved utskrift) -->
+    <footer class="no-print text-center py-6 text-xs text-slate-400 border-t border-slate-200 mt-auto">
+        Laget for tyskundervisning på 8. trinn • Klar til deling og utskrift
+    </footer>
+
+    <script>
+        /**
+         * Komplett datasett med alle de 18 fritidsaktivitetene.
+         * Hvert objekt har tysk uttrykk, norsk oversettelse, husketips og en tydelig illustrasjon (SVG/Emoji).
+         */
+        const activities = [
+            {
+                id: 1,
+                de: "Fußball spielen",
+                no: "spille fotball",
+                hint: "Legg merke til bokstaven ß (dobbel-s) i ordet for fot.",
+                visual: `<svg viewBox="0 0 100 100" class="w-20 h-20"><circle cx="50" cy="50" r="42" fill="#ffffff" stroke="#1e293b" stroke-width="5"/><polygon points="50,28 66,40 60,59 40,59 34,40" fill="#1e293b"/><line x1="50" y1="28" x2="50" y2="8" stroke="#1e293b" stroke-width="4"/><line x1="66" y1="40" x2="88" y2="33" stroke="#1e293b" stroke-width="4"/><line x1="60" y1="59" x2="75" y2="82" stroke="#1e293b" stroke-width="4"/><line x1="40" y1="59" x2="25" y2="82" stroke="#1e293b" stroke-width="4"/><line x1="34" y1="40" x2="12" y2="33" stroke="#1e293b" stroke-width="4"/></svg>`,
+                labelNo: "Fotball"
+            },
+            {
+                id: 2,
+                de: "singen",
+                no: "synge",
+                hint: "Ligner veldig på det engelske ordet 'sing'.",
+                visual: `<svg viewBox="0 0 100 100" class="w-20 h-20"><rect x="42" y="15" width="16" height="36" rx="8" fill="#6366f1" stroke="#1e293b" stroke-width="4"/><path d="M30 42 C30 58, 70 58, 70 42" fill="none" stroke="#1e293b" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="56" x2="50" y2="78" stroke="#1e293b" stroke-width="4"/><line x1="36" y1="78" x2="64" y2="78" stroke="#1e293b" stroke-width="4" stroke-linecap="round"/><path d="M76 22 L86 18 L86 34" fill="none" stroke="#ec4899" stroke-width="3.5" stroke-linecap="round"/><circle cx="73" cy="36" r="4" fill="#ec4899"/></svg>`,
+                labelNo: "Mikrofon / sang"
+            },
+            {
+                id: 3,
+                de: "tanzen",
+                no: "danse",
+                hint: "Uttales med en skarp z-lyd (som 'ts').",
+                visual: `<div class="text-6xl leading-none">💃</div>`,
+                labelNo: "Dans"
+            },
+            {
+                id: 4,
+                de: "lesen",
+                no: "lese",
+                hint: "Nesten helt likt som på norsk, bare med en -n på slutten.",
+                visual: `<svg viewBox="0 0 100 100" class="w-20 h-20"><path d="M14 26 Q32 20 50 30 Q68 20 86 26 L86 76 Q68 70 50 80 Q32 70 14 76 Z" fill="#fef3c7" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"/><line x1="50" y1="30" x2="50" y2="80" stroke="#1e293b" stroke-width="4"/><line x1="22" y1="40" x2="42" y2="43" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="52" x2="42" y2="55" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/><line x1="58" y1="43" x2="78" y2="40" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/><line x1="58" y1="55" x2="78" y2="52" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/></svg>`,
+                labelNo: "Åpen bok"
+            },
+            {
+                id: 5,
+                de: "zeichnen",
+                no: "tegne",
+                hint: "Tenk på ordet 'tegn' – på tysk heter et tegn 'ein Zeichen'.",
+                visual: `<svg viewBox="0 0 100 100" class="w-20 h-20"><path d="M22 78 L30 56 L68 18 L82 32 L44 70 Z" fill="#fbbf24" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"/><polygon points="22,78 30,56 44,70" fill="#fed7aa" stroke="#1e293b" stroke-width="3"/><polygon points="22,78 25,69 31,75" fill="#1e293b"/><path d="M48 82 Q65 72 82 82" fill="none" stroke="#6366f1" stroke-width="4" stroke-linecap="round"/></svg>`,
+                labelNo: "Blyant / tegning"
+            },
+            {
+                id: 6,
+                de: "ein Instrument spielen",
+                no: "spille et instrument",
+                hint: "Substantivet skrives alltid med stor forbokstav på tysk.",
+                visual: `<div class="text-6xl leading-none">🎸</div>`,
+                labelNo: "Gitar / instrument"
+            },
+            {
+                id: 7,
+                de: "Computerspiele spielen",
+                no: "spille dataspill",
+                hint: "Sammensatt av ordet for datamaskin og flertallsformen for spill.",
+                visual: `<div class="text-6xl leading-none">🎮</div>`,
+                labelNo: "Spillkontroller"
+            },
+            {
+                id: 8,
+                de: "Rad fahren",
+                no: "sykle",
+                hint: "Betyr direkte oversatt 'å kjøre hjul'.",
+                visual: `<div class="text-6xl leading-none">🚴</div>`,
+                labelNo: "Sykkel"
+            },
+            {
+                id: 9,
+                de: "Ski fahren",
+                no: "stå på ski",
+                hint: "På tysk bruker man verbet 'fahren' (å kjøre/fare) sammen med ski.",
+                visual: `<div class="text-6xl leading-none">⛷️</div>`,
+                labelNo: "Alpint / ski"
+            },
+            {
+                id: 10,
+                de: "reiten",
+                no: "ri",
+                hint: "Ligner på det engelske ordet 'ride'.",
+                visual: `<div class="text-6xl leading-none">🏇</div>`,
+                labelNo: "Hest / ridning"
+            },
+            {
+                id: 11,
+                de: "schwimmen",
+                no: "svømme",
+                hint: "Starter med 'schw-' som gir en sj-lyd på tysk.",
+                visual: `<div class="text-6xl leading-none">🏊</div>`,
+                labelNo: "Svømming"
+            },
+            {
+                id: 12,
+                de: "trainieren",
+                no: "trene",
+                hint: "Et internasjonalt lånord som slutter på -ieren.",
+                visual: `<div class="text-6xl leading-none">🏋️</div>`,
+                labelNo: "Styrketrening"
+            },
+            {
+                id: 13,
+                de: "Filme / Serien sehen",
+                no: "se film / serier",
+                hint: "Man kan også bruke verbet 'schauen' eller 'gucken' (se/titte på).",
+                visual: `<div class="text-6xl leading-none">🎬</div>`,
+                labelNo: "Film / TV"
+            },
+            {
+                id: 14,
+                de: "schreiben",
+                no: "skrive",
+                hint: "Husk at 'ei' uttales som 'ai' på tysk.",
+                visual: `<div class="text-6xl leading-none">✍️</div>`,
+                labelNo: "Skrive"
+            },
+            {
+                id: 15,
+                de: "spazieren gehen / wandern",
+                no: "gå tur",
+                hint: "'Spazieren gehen' er en rolig spasertur, mens 'wandern' er å gå en lengre tur i skog og mark.",
+                visual: `<div class="text-6xl leading-none">🚶‍♂️🌲</div>`,
+                labelNo: "Gå tur i naturen"
+            },
+            {
+                id: 16,
+                de: "Freunde treffen",
+                no: "være med venner",
+                hint: "På tysk sier man ofte 'treffe venner' (Freunde treffen).",
+                visual: `<div class="text-6xl leading-none">🧑‍🤝‍🧑</div>`,
+                labelNo: "Venner sammen"
+            },
+            {
+                id: 17,
+                de: "reisen",
+                no: "reise",
+                hint: "Helt likt som på norsk, bare med en -n på slutten.",
+                visual: `<div class="text-6xl leading-none">✈️🧳</div>`,
+                labelNo: "Fly og koffert"
+            },
+            {
+                id: 18,
+                de: "Sport machen",
+                no: "drive med sport",
+                hint: "På tysk bruker man ofte det enkle verbet 'machen' (å gjøre/drive med) sammen med Sport.",
+                visual: `<div class="text-6xl leading-none">🏅</div>`,
+                labelNo: "Idrett / medalje"
+            }
+        ];
+
+        // =========================================================
+        // LOGIKK FOR FANENAVIGASJON
+        // =========================================================
+        function switchTab(tabName) {
+            const views = ['flashcards', 'matching', 'print'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const btn = document.getElementById(`tab-${v}`);
+                if (v === tabName) {
+                    el.classList.remove('hidden');
+                    btn.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    el.classList.add('hidden');
+                    btn.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+
+            if (tabName === 'matching') {
+                initMatchingGame();
+            } else if (tabName === 'print') {
+                renderPrintCards('paired');
+            }
+        }
+
+        // =========================================================
+        // LOGIKK FOR DIGITALE FLASHCARDS
+        // =========================================================
+        let deck = [...activities];
+        let currentIndex = 0;
+        let isFlipped = false;
+
+        function updateFlashcardUI() {
+            const card = deck[currentIndex];
+            const inner = document.getElementById('flashcard-inner');
+            
+            // Nullstill rotasjon hvis kortet var snudd
+            if (isFlipped) {
+                inner.classList.remove('rotate-y-180');
+                isFlipped = false;
+            }
+
+            // Oppdater innhold med en liten forsinkelse hvis det nettopp ble snudd
+            setTimeout(() => {
+                document.getElementById('fc-icon').innerHTML = card.visual;
+                document.getElementById('fc-german').textContent = card.de;
+                document.getElementById('fc-norwegian').textContent = card.no;
+                document.getElementById('fc-hint').textContent = card.hint;
+            }, 100);
+
+            // Oppdater teller og fremdriftslinje
+            document.getElementById('card-counter').textContent = `Kort ${currentIndex + 1} av ${deck.length}`;
+            const pct = ((currentIndex + 1) / deck.length) * 100;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+        }
+
+        function flipCard() {
+            const inner = document.getElementById('flashcard-inner');
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                inner.classList.add('rotate-y-180');
+            } else {
+                inner.classList.remove('rotate-y-180');
+            }
+        }
+
+        function nextCard() {
+            currentIndex = (currentIndex + 1) % deck.length;
+            updateFlashcardUI();
+        }
+
+        function prevCard() {
+            currentIndex = (currentIndex - 1 + deck.length) % deck.length;
+            updateFlashcardUI();
+        }
+
+        function shuffleFlashcards() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            currentIndex = 0;
+            updateFlashcardUI();
+        }
+
+        // Tastaturnavigasjon for flashcards
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('view-flashcards').classList.contains('hidden')) {
+                if (e.key === 'ArrowRight') nextCard();
+                if (e.key === 'ArrowLeft') prevCard();
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    flipCard();
+                }
+            }
+        });
+
+        // =========================================================
+        // LOGIKK FOR DIGITALT KOBLINGSSPILL
+        // =========================================================
+        let selectedWordId = null;
+        let selectedImageId = null;
+        let matchedCount = 0;
+
+        function initMatchingGame() {
+            selectedWordId = null;
+            selectedImageId = null;
+            matchedCount = 0;
+            document.getElementById('match-score').textContent = '0 / 6';
+            document.getElementById('match-win-banner').classList.add('hidden');
+
+            // Velg 6 tilfeldige aktiviteter for runden
+            const shuffled = [...activities].sort(() => Math.random() - 0.5).slice(0, 6);
+            const wordsOrder = [...shuffled].sort(() => Math.random() - 0.5);
+            const imagesOrder = [...shuffled].sort(() => Math.random() - 0.5);
+
+            const wordsCol = document.getElementById('match-words-col');
+            const imagesCol = document.getElementById('match-images-col');
+            wordsCol.innerHTML = '';
+            imagesCol.innerHTML = '';
+
+            // Lag ordkort
+            wordsOrder.forEach(item => {
+                const btn = document.createElement('button');
+                btn.id = `m-word-${item.id}`;
+                btn.className = 'p-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-slate-800 text-sm hover:border-indigo-400 transition-all shadow-sm text-center min-h-[72px] flex items-center justify-center';
+                btn.textContent = item.de;
+                btn.onclick = () => selectMatchWord(item.id);
+                wordsCol.appendChild(btn);
+            });
+
+            // Lag bildekort
+            imagesOrder.forEach(item => {
+                const btn = document.createElement('button');
+                btn.id = `m-img-${item.id}`;
+                btn.className = 'p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-indigo-400 transition-all shadow-sm flex flex-col items-center justify-center min-h-[100px]';
+                btn.innerHTML = `<div class="scale-90 pointer-events-none">${item.visual}</div>`;
+                btn.onclick = () => selectMatchImage(item.id);
+                imagesCol.appendChild(btn);
+            });
+        }
+
+        function selectMatchWord(id) {
+            // Fjern tidligere markering
+            document.querySelectorAll('[id^="m-word-"]').forEach(el => {
+                if (!el.disabled) el.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+            });
+            selectedWordId = id;
+            const el = document.getElementById(`m-word-${id}`);
+            el.classList.add('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+            checkMatchPair();
+        }
+
+        function selectMatchImage(id) {
+            document.querySelectorAll('[id^="m-img-"]').forEach(el => {
+                if (!el.disabled) el.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+            });
+            selectedImageId = id;
+            const el = document.getElementById(`m-img-${id}`);
+            el.classList.add('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+            checkMatchPair();
+        }
+
+        function checkMatchPair() {
+            if (selectedWordId === null || selectedImageId === null) return;
+
+            const wordEl = document.getElementById(`m-word-${selectedWordId}`);
+            const imgEl = document.getElementById(`m-img-${selectedImageId}`);
+
+            if (selectedWordId === selectedImageId) {
+                // Riktig par!
+                [wordEl, imgEl].forEach(el => {
+                    el.disabled = true;
+                    el.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300', 'border-slate-200');
+                    el.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-800', 'opacity-75');
+                });
+                matchedCount++;
+                document.getElementById('match-score').textContent = `${matchedCount} / 6`;
+                if (matchedCount === 6) {
+                    document.getElementById('match-win-banner').classList.remove('hidden');
+                }
+            } else {
+                // Feil par – vis rød tilbakemelding kort
+                [wordEl, imgEl].forEach(el => {
+                    el.classList.add('border-rose-500', 'bg-rose-50');
+                    setTimeout(() => {
+                        el.classList.remove('border-rose-500', 'bg-rose-50', 'border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+                    }, 500);
+                });
+            }
+
+            selectedWordId = null;
+            selectedImageId = null;
+        }
+
+        // =========================================================
+        // LOGIKK FOR UTSKRIFTSKORT (ORDKORT + BILDEKORT)
+        // =========================================================
+        function renderPrintCards(mode) {
+            // Oppdater aktiv knappestil
+            ['paired', 'grouped', 'shuffled'].forEach(m => {
+                const btn = document.getElementById(`btn-sort-${m}`);
+                if (m === mode) {
+                    btn.className = 'px-3.5 py-1.5 rounded-lg bg-indigo-100 text-indigo-800 font-semibold';
+                } else {
+                    btn.className = 'px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold';
+                }
+            });
+
+            const container = document.getElementById('print-container');
+            container.innerHTML = '';
+
+            let cardsToRender = [];
+
+            if (mode === 'paired') {
+                // Legger ordkort og tilhørende bildekort rett etter hverandre
+                activities.forEach(item => {
+                    cardsToRender.push({ type: 'word', item });
+                    cardsToRender.push({ type: 'image', item });
+                });
+            } else if (mode === 'grouped') {
+                // Alle ordkort først, deretter alle bildekort
+                activities.forEach(item => cardsToRender.push({ type: 'word', item }));
+                activities.forEach(item => cardsToRender.push({ type: 'image', item }));
+            } else if (mode === 'shuffled') {
+                // Blander alle 36 kort tilfeldig
+                activities.forEach(item => {
+                    cardsToRender.push({ type: 'word', item });
+                    cardsToRender.push({ type: 'image', item });
+                });
+                cardsToRender.sort(() => Math.random() - 0.5);
+            }
+
+            cardsToRender.forEach(cardObj => {
+                const div = document.createElement('div');
+                div.className = 'cut-card bg-white border-2 border-dashed border-slate-400 rounded-2xl p-4 h-48 flex flex-col items-center justify-center text-center shadow-sm relative';
+                
+                if (cardObj.type === 'word') {
+                    div.innerHTML = `
+                        <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-2">Freizeitaktivität</span>
+                        <p class="text-xl font-extrabold text-slate-900 leading-snug px-2">${cardObj.item.de}</p>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="my-auto flex items-center justify-center scale-110">
+                            ${cardObj.item.visual}
+                        </div>
+                    `;
+                }
+                container.appendChild(div);
+            });
+        }
+
+        // Initialiser visningen ved oppstart
+        window.onload = function() {
+            updateFlashcardUI();
+            renderPrintCards('paired');
+        };
+    </script>
+</body>
+</html>
