@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Øving til tentamen i matematikk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- MathJax for fin matematisk utforming -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1f2937;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white;
+                color: black;
+                font-size: 11pt;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .card {
+                border: 1px solid #e5e7eb !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+        }
+        .figure-bg {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8">
+
+    <!-- Utskriftsknapp i toppen -->
+    <div class="max-w-4xl mx-auto mb-6 flex justify-between items-center no-print">
+        <h1 class="text-xl font-bold text-slate-800">Tentamenssett i matematikk</h1>
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition duration-150 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Skriv ut / Lagre som PDF
+        </button>
+    </div>
+
+    <!-- Hovedark -->
+    <div class="max-w-4xl mx-auto bg-white p-8 md:p-12 rounded-xl shadow-md border border-slate-200">
+        
+        <!-- Topptekst / Elevinfo -->
+        <header class="border-b-2 border-slate-800 pb-6 mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Øving til tentamen i matematikk</h1>
+                    <p class="text-sm text-slate-500 mt-1">Forberedende oppgavesett – Ungdomstrinnet</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-sm font-medium border-t border-slate-200">
+                <div class="flex items-center">
+                    <span class="text-slate-500 mr-2">Navn:</span>
+                    <div class="border-b-2 border-dotted border-slate-400 flex-grow h-6"></div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-slate-500 mr-2">Klasse:</span>
+                    <div class="border-b-2 border-dotted border-slate-400 flex-grow h-6"></div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-slate-500 mr-2">Dato:</span>
+                    <div class="border-b-2 border-dotted border-slate-400 flex-grow h-6"></div>
+                </div>
+            </div>
+
+            <!-- Instruksjoner -->
+            <div class="mt-6 bg-slate-50 rounded-lg p-4 text-xs text-slate-600 space-y-1">
+                <p><strong>Instruksjoner:</strong></p>
+                <p>• <strong>Del 1 (oppgave 1–16):</strong> Ingenting annet enn skrivesaker, linjal og passer er tillatt. Ingen kalkulator eller regneark.</p>
+                <p>• <strong>Del 2 (oppgave 17–30):</strong> Alle hjelpemidler er tillatt (kalkulator, regneark, programmeringsverktøy osv.).</p>
+                <p>• Husk å vise utregning og forklaring der det kreves for å få full uttelling.</p>
+            </div>
+        </header>
+
+        <!-- DEL 1 -->
+        <section class="mb-12">
+            <div class="bg-slate-800 text-white px-4 py-2 rounded-md font-bold text-lg mb-6 tracking-wide">
+                DEL 1 – Uten hjelpemidler
+            </div>
+
+            <!-- Tema 1 -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Sannsynlighet</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 1</p>
+                    <p class="text-sm mb-2">Du kaster en vanlig, sekssidet terning én gang.</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Hva er sannsynligheten for å få en 5-er?</li>
+                        <li>Hva er sannsynligheten for å få et partall?</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 2</p>
+                    <p class="text-sm mb-2">I en pose ligger det 4 røde, 3 blå og 5 grønne kuler. Du trekker én kule tilfeldig.</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Hva er sannsynligheten for å trekke en blå kule? Svar som en forkortet brøk.</li>
+                        <li>Hva er sannsynligheten for <em>ikke</em> å trekke en rød kule?</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200 md:col-span-2">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 3</p>
+                    <p class="text-sm mb-2">Du kaster to vanlige mynter samtidig.</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Skriv opp utfallsrommet (alle de mulige utfallene).</li>
+                        <li>Hva er sannsynligheten for å få minst én kron?</li>
+                    </ol>
+                </div>
+
+            </div>
+
+            <!-- Tema 2 -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Statistikk</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 4</p>
+                    <p class="text-sm mb-2">En elev fikk følgende karakterer på fem ukesprøver:</p>
+                    <p class="text-center font-mono text-sm bg-slate-50 py-1 rounded border mb-2">3, 5, 4, 2, 6</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Regn ut gjennomsnittskarakteren.</li>
+                        <li>Finn medianen til datamaterialet.</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 5</p>
+                    <p class="text-sm mb-2">Skostørrelsene til sju elever er:</p>
+                    <p class="text-center font-mono text-sm bg-slate-50 py-1 rounded border mb-2">37, 39, 38, 41, 38, 40, 38</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Hva er typetallet (modus)?</li>
+                        <li>Hva er variasjonsbredden?</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 6</p>
+                    <p class="text-sm mb-2">En undersøkelse viser at i en klasse på 20 elever har 5 elever hund.</p>
+                    <p class="text-sm text-slate-700">Hvor mange prosent av klassen har hund? Vis utregningen din.</p>
+                </div>
+
+            </div>
+
+            <!-- Tema 3 -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Vinkler og geometri</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 7</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Hva kalles en vinkel som er nøyaktig \(90^\circ\)?</li>
+                        <li>Hva kalles en vinkel som er mellom \(90^\circ\) og \(180^\circ\)?</li>
+                        <li>To vinkler danner til sammen en rett linje (\(180^\circ\)). Hvis den ene vinkelen er \(65^\circ\), hvor stor er den andre?</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <p class="font-bold text-slate-800 mb-2">Oppgave 8</p>
+                        <p class="text-sm mb-2">I en trekant \(ABC\) er vinkel \(A = 50^\circ\) og vinkel \(B = 70^\circ\).</p>
+                        <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                            <li>Hvor stor er vinkel \(C\)?</li>
+                            <li>Hvilken type trekant er dette (spissvinklet, rettvinklet eller stumpvinklet)?</li>
+                        </ol>
+                    </div>
+                    <!-- SVG figur trekant med justert padding/viewBox -->
+                    <div class="mt-2 flex justify-center">
+                        <svg width="220" height="95" viewBox="0 0 220 95" class="figure-bg rounded">
+                            <polygon points="45,70 175,70 110,18" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+                            <text x="40" y="86" font-size="10" text-anchor="end" class="fill-slate-700">A (50°)</text>
+                            <text x="180" y="86" font-size="10" text-anchor="start" class="fill-slate-700">B (70°)</text>
+                            <text x="110" y="12" font-size="10" text-anchor="middle" class="fill-slate-700">C</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200 md:col-span-2">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 9</p>
+                    <p class="text-sm text-slate-700">I en rettvinklet trekant kalles de to spisse vinklene for \(u\) og \(v\). Hva må summen \(u + v\) alltid være? Begrunn svaret kort.</p>
+                </div>
+
+            </div>
+
+            <!-- Tema 4 -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Areal og omkrets</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-2">Oppgave 10</p>
+                            <p class="text-sm mb-2">Et rektangel har lengde \(8\text{ cm}\) og bredde \(5\text{ cm}\).</p>
+                            <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                                <li>Regn ut omkretsen til rektangelet.</li>
+                                <li>Regn ut arealet til rektangelet.</li>
+                            </ol>
+                        </div>
+                        <svg width="110" height="75" viewBox="0 0 110 75" class="figure-bg rounded flex-shrink-0">
+                            <rect x="20" y="15" width="70" height="40" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+                            <text x="55" y="67" text-anchor="middle" font-size="10" class="fill-slate-600">8 cm</text>
+                            <text x="12" y="38" text-anchor="end" font-size="10" class="fill-slate-600">5 cm</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-2">Oppgave 11</p>
+                            <p class="text-sm mb-2">En trekant har grunnlinje \(g = 6\text{ cm}\) og høyde \(h = 7\text{ cm}\).</p>
+                            <p class="text-sm text-slate-700">Regn ut arealet av trekanten.</p>
+                        </div>
+                        <svg width="110" height="75" viewBox="0 0 110 75" class="figure-bg rounded flex-shrink-0">
+                            <polygon points="20,55 90,55 65,12" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+                            <line x1="65" y1="12" x2="65" y2="55" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="1.5"/>
+                            <text x="55" y="68" text-anchor="middle" font-size="9" class="fill-slate-600">g = 6 cm</text>
+                            <text x="70" y="35" font-size="9" class="fill-slate-600">h=7</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 12</p>
+                    <p class="text-sm mb-2">Et kvadrat har et areal på \(49\text{ cm}^2\).</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Hvor lange er sidene i kvadratet?</li>
+                        <li>Hva er omkretsen til kvadratet?</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-2">Oppgave 13</p>
+                            <p class="text-sm mb-2">Et parallellogram har grunnlinje \(10\text{ cm}\) og høyde \(4\text{ cm}\).</p>
+                            <p class="text-sm text-slate-700">Regn ut arealet av parallellogrammet.</p>
+                        </div>
+                        <svg width="110" height="70" viewBox="0 0 110 70" class="figure-bg rounded flex-shrink-0">
+                            <polygon points="30,48 95,48 80,15 15,15" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+                            <line x1="30" y1="15" x2="30" y2="48" stroke="#94a3b8" stroke-dasharray="2,2"/>
+                            <text x="55" y="62" text-anchor="middle" font-size="9" class="fill-slate-600">10 cm</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-2">Oppgave 14</p>
+                            <p class="text-sm mb-2">En sirkel har radius \(r = 3\text{ cm}\).</p>
+                            <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                                <li>Hva er diameteren til sirkelen?</li>
+                                <li>Bruk \(\pi \approx 3\), og finn en tilnærmet verdi for omkretsen.</li>
+                            </ol>
+                        </div>
+                        <svg width="85" height="85" viewBox="0 0 85 85" class="figure-bg rounded flex-shrink-0">
+                            <circle cx="42.5" cy="42.5" r="30" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+                            <line x1="42.5" y1="42.5" x2="72.5" y2="42.5" stroke="#0284c7" stroke-width="2"/>
+                            <circle cx="42.5" cy="42.5" r="2.5" fill="#0284c7"/>
+                            <text x="55" y="37" font-size="9" fill="#0284c7">r=3</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-2">Oppgave 15</p>
+                            <p class="text-sm mb-2">Et trapes har parallelle sider \(a = 4\text{ cm}\) og \(b = 8\text{ cm}\). Høyden er \(h = 5\text{ cm}\).</p>
+                            <p class="text-xs text-slate-500 mb-1">Formel: \(A = \frac{(a + b) \cdot h}{2}\)</p>
+                            <p class="text-sm text-slate-700">Regn ut arealet av trapeset.</p>
+                        </div>
+                        <svg width="110" height="75" viewBox="0 0 110 75" class="figure-bg rounded flex-shrink-0">
+                            <polygon points="15,55 95,55 75,18 35,18" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+                            <text x="55" y="14" text-anchor="middle" font-size="8" class="fill-slate-600">a = 4 cm</text>
+                            <text x="55" y="67" text-anchor="middle" font-size="8" class="fill-slate-600">b = 8 cm</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 16</p>
+                    <p class="text-sm mb-2">Gjør om til oppgitt arealenhet:</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>\(3\text{ m}^2 = \text{_________ dm}^2\)</li>
+                        <li>\(450\text{ cm}^2 = \text{_________ dm}^2\)</li>
+                        <li>\(0,8\text{ dm}^2 = \text{_________ cm}^2\)</li>
+                        <li>\(25\,000\text{ cm}^2 = \text{_________ m}^2\)</li>
+                    </ol>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Sidemerkør for utskrift -->
+        <div class="page-break"></div>
+
+        <!-- DEL 2 -->
+        <section class="mb-12">
+            <div class="bg-blue-800 text-white px-4 py-2 rounded-md font-bold text-lg mb-6 tracking-wide">
+                DEL 2 – Med hjelpemidler
+            </div>
+            <p class="text-xs text-slate-500 italic mb-6">For oppgaver som krever regneark eller programmering: Legg ved utskrift eller forklaring på fremgangsmåte og kode/formler du har brukt.</p>
+
+            <!-- Tema 1: Regneark og statistikk -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Statistikk og regneark</h3>
+            <div class="grid grid-cols-1 gap-4 mb-8">
+                
+                <div class="card p-4 rounded-lg border border-slate-200 bg-blue-50/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded font-semibold">REGNEARK</span>
+                        <p class="font-bold text-slate-800">Oppgave 17</p>
+                    </div>
+                    <p class="text-sm mb-2">En klasse kartla hvor mange timer skjermtid de hadde per dag. Resultatene var:</p>
+                    <p class="font-mono text-xs bg-white p-2 rounded border border-slate-200 mb-3 text-center">
+                        2, 4, 3, 5, 1, 6, 4, 3, 2, 5, 4, 4, 3, 2, 6, 5, 4, 3, 2, 1
+                    </p>
+                    <ol class="list-alpha list-inside text-sm space-y-1.5 text-slate-700">
+                        <li>Legg tallene inn i et regneark og lag en frekvenstabell som viser observasjoner, frekvens og relativ frekvens.</li>
+                        <li>Bruk regnearkformler til å finne gjennomsnitt, median og variasjonsbredde.</li>
+                        <li>Lag et passende diagram (f.eks. et søylediagram) som viser fordelingen.</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200 bg-blue-50/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded font-semibold">REGNEARK</span>
+                        <p class="font-bold text-slate-800">Oppgave 18</p>
+                    </div>
+                    <p class="text-sm mb-2">Tabellen nedenfor viser antall solgte is i en kiosk i løpet av en uke:</p>
+                    <div class="overflow-x-auto mb-3">
+                        <table class="min-w-full text-xs text-center border border-slate-300 bg-white">
+                            <tr class="bg-slate-100 font-semibold border-b">
+                                <th class="p-1.5 border-r">Dag</th>
+                                <th class="p-1.5">Man</th>
+                                <th class="p-1.5">Tir</th>
+                                <th class="p-1.5">Ons</th>
+                                <th class="p-1.5">Tor</th>
+                                <th class="p-1.5">Fre</th>
+                                <th class="p-1.5">Lør</th>
+                                <th class="p-1.5">Søn</th>
+                            </tr>
+                            <tr>
+                                <td class="p-1.5 font-semibold border-r bg-slate-50">Antall is</td>
+                                <td class="p-1.5">45</td>
+                                <td class="p-1.5">52</td>
+                                <td class="p-1.5">60</td>
+                                <td class="p-1.5">48</td>
+                                <td class="p-1.5">95</td>
+                                <td class="p-1.5">130</td>
+                                <td class="p-1.5">110</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <ol class="list-alpha list-inside text-sm space-y-1.5 text-slate-700">
+                        <li>Skriv tabellen inn i et regneark og regn ut det totale antall solgte is i uken.</li>
+                        <li>Finn den relative frekvensen (i prosent) av issalget for hver enkelt dag.</li>
+                        <li>Lag et linjediagram eller søylediagram i regnearket som viser salgsutviklingen gjennom uken.</li>
+                    </ol>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card p-4 rounded-lg border border-slate-200">
+                        <p class="font-bold text-slate-800 mb-2">Oppgave 19</p>
+                        <p class="text-sm mb-2">I en spørreundersøkelse blant 150 elever svarte 36 elever at de går til skolen.</p>
+                        <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                            <li>Hva er den relative frekvensen for elever som går til skolen, uttrykt som desimaltall og som prosent?</li>
+                            <li>Hvor mange grader vil sektoren for «går til skolen» utgjøre i et sirkeldiagram?</li>
+                        </ol>
+                    </div>
+
+                    <div class="card p-4 rounded-lg border border-slate-200">
+                        <p class="font-bold text-slate-800 mb-2">Oppgave 20</p>
+                        <p class="text-sm mb-2">Et datamateriale består av sju observasjoner:</p>
+                        <p class="text-center font-mono text-xs bg-slate-50 py-1 rounded border mb-2">12, 15, 18, x, 22, 25, 30</p>
+                        <p class="text-sm text-slate-700">Gjennomsnittet av de sju tallene skal være nøyaktig \(20\). Regn ut hva tallet \(x\) må være.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Tema 2: Sannsynlighet og programmering -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Sannsynlighet og programmering</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 21</p>
+                    <p class="text-sm mb-2">Fra en standard kortstokk med 52 kort trekker du ett kort tilfeldig.</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Sannsynligheten for et ess (oppgi i % med én desimal)?</li>
+                        <li>Sannsynligheten for et hjerterkort?</li>
+                        <li>Sannsynligheten for et bildekort (knekt, dame, konge)?</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 22</p>
+                    <p class="text-sm mb-2">En digital terning kastes 500 ganger. En 6-er dukker opp 95 ganger.</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Hva er den eksperimentelle (relative) frekvensen for å få en 6-er?</li>
+                        <li>Hva er den teoretiske sannsynligheten for å få en 6-er?</li>
+                        <li>Forklar kort hvorfor resultatene kan avvike fra hverandre.</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 23</p>
+                    <p class="text-sm mb-2">Et lykkehjul er delt inn i tre sektorer:</p>
+                    <ul class="text-xs text-slate-600 mb-2 list-disc list-inside">
+                        <li>Rød sektor: \(180^\circ\)</li>
+                        <li>Blå sektor: \(120^\circ\)</li>
+                        <li>Grønn sektor: resten</li>
+                    </ul>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Hvor mange grader utgjør den grønne sektoren?</li>
+                        <li>Finn sannsynligheten for rød, blå og grønn sektor (som brøk og prosent).</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200 md:col-span-3 bg-indigo-50/30">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded font-semibold">PYTHON</span>
+                        <p class="font-bold text-slate-800">Oppgave 24</p>
+                    </div>
+                    <p class="text-sm mb-3">Se på Python-programmet nedenfor, som simulerer myntkast der <code class="bg-white px-1 py-0.5 rounded border text-xs">1</code> betyr kron og <code class="bg-white px-1 py-0.5 rounded border text-xs">2</code> betyr mynt:</p>
+                    <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-lg text-xs font-mono overflow-x-auto mb-3 leading-relaxed">from random import randint
+
+antall_kast = 100
+kron = 0
+mynt = 0
+
+for i in range(antall_kast):
+    kast = randint(1, 2)
+    if kast == 1:
+        kron = kron + 1
+    else:
+        mynt = mynt + 1
+
+print("Relativ frekvens kron:", kron / antall_kast)
+print("Relativ frekvens mynt:", mynt / antall_kast)</pre>
+                    <ol class="list-alpha list-inside text-sm space-y-1.5 text-slate-700">
+                        <li>Forklar kort hva programmet gjør i løkka <code class="bg-white px-1 py-0.5 rounded border text-xs">for i in range(antall_kast):</code> og hva som skrives ut til slutt.</li>
+                        <li>Hva forventer du at den relative frekvensen skal bli for de to utfallene?</li>
+                        <li>Hvordan kan du endre programmet slik at det simulerer \(10\,000\) myntkast? Blir de relative frekvensene nærmere det du forventer nå? Forklar hvorfor.</li>
+                    </ol>
+                </div>
+
+            </div>
+
+            <!-- Tema 3: Sammensatte figurer -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Areal og omkrets av sammensatte figurer</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-1">Oppgave 25</p>
+                            <p class="text-sm">En idrettsplass består av et rektangel med en halv sirkel i hver ende.</p>
+                        </div>
+                        <!-- SVG Løpebane -->
+                        <svg width="110" height="60" viewBox="0 0 110 60" class="figure-bg rounded flex-shrink-0">
+                            <path d="M 30,10 L 80,10 A 20,20 0 0,1 80,50 L 30,50 A 20,20 0 0,1 30,10 Z" fill="#fecdd3" stroke="#e11d48" stroke-width="2"/>
+                            <line x1="30" y1="10" x2="30" y2="50" stroke="#e11d48" stroke-dasharray="2,2"/>
+                            <line x1="80" y1="10" x2="80" y2="50" stroke="#e11d48" stroke-dasharray="2,2"/>
+                            <text x="55" y="33" text-anchor="middle" font-size="8" fill="#9f1239">80 m</text>
+                            <text x="32" y="27" font-size="7" fill="#9f1239">40 m</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">Rektangelet har lengde \(L = 80\text{ m}\) og bredde \(B = 40\text{ m}\).</p>
+                    <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                        <li>Regn ut hele omkretsen til løpebanen.</li>
+                        <li>Regn ut det totale arealet av idrettsplassen.</li>
+                    </ol>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-1">Oppgave 26</p>
+                            <p class="text-sm">En husvegg har form som et rektangel med en trekantet gavl øverst.</p>
+                        </div>
+                        <!-- SVG Husvegg -->
+                        <svg width="90" height="75" viewBox="0 0 90 75" class="figure-bg rounded flex-shrink-0">
+                            <polygon points="15,40 75,40 45,10" fill="#fef08a" stroke="#ca8a04" stroke-width="1.5"/>
+                            <rect x="15" y="40" width="60" height="30" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+                            <text x="45" y="58" text-anchor="middle" font-size="8" class="fill-slate-700">6 m</text>
+                            <text x="8" y="58" font-size="8" class="fill-slate-700">3 m</text>
+                            <text x="45" y="32" text-anchor="middle" font-size="7" class="fill-slate-700">h=2 m</text>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">Rektangelet har bredde \(6\text{ m}\) og høyde \(3\text{ m}\). Trekanten har høyde \(2\text{ m}\).</p>
+                    <p class="text-sm text-slate-700">Hva er det totale arealet av husveggen som skal males?</p>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-1">Oppgave 27</p>
+                            <p class="text-sm">En kvadratisk hage (side \(12\text{ m}\)) har et sirkulært blomsterbed i midten (\(r = 2,5\text{ m}\)).</p>
+                        </div>
+                        <!-- SVG Hagen -->
+                        <svg width="75" height="75" viewBox="0 0 75 75" class="figure-bg rounded flex-shrink-0">
+                            <rect x="10" y="10" width="55" height="55" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+                            <circle cx="37.5" cy="37.5" r="14" fill="#fbcfe8" stroke="#db2777" stroke-width="1.5"/>
+                            <text x="37.5" y="72" text-anchor="middle" font-size="8" class="fill-slate-700">12 m</text>
+                        </svg>
+                    </div>
+                    <p class="text-sm text-slate-700">Hvor stort areal skal sås med gress? Oppgi svaret med én desimal.</p>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-1">Oppgave 28</p>
+                            <p class="text-sm">En metallplate er formet som et trapes der et sirkulært hull med diameter \(4\text{ cm}\) er boret ut.</p>
+                        </div>
+                        <!-- SVG Metallplate -->
+                        <svg width="95" height="65" viewBox="0 0 95 65" class="figure-bg rounded flex-shrink-0">
+                            <polygon points="10,50 85,50 70,15 25,15" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+                            <circle cx="47.5" cy="32.5" r="10" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">Trapesets parallelle sider er \(10\text{ cm}\) og \(14\text{ cm}\), og høyden er \(8\text{ cm}\).</p>
+                    <p class="text-sm text-slate-700">Hva er gjenstående areal av metallplaten?</p>
+                </div>
+
+            </div>
+
+            <!-- Tema 4: Vinkler og geometri -->
+            <h3 class="text-md font-semibold text-slate-500 uppercase tracking-wider mb-4 border-b pb-1">Geometri og beregninger</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-800 mb-2">Oppgave 29</p>
+                    <p class="text-sm mb-2">I en likebeint trekant \(ABC\) er side \(AB = AC\). Toppvinkelen \(A\) er \(44^\circ\).</p>
+                    <p class="text-sm text-slate-700">Regn ut hvor store vinklene \(B\) og \(C\) må være.</p>
+                </div>
+
+                <div class="card p-4 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-slate-800 mb-2">Oppgave 30</p>
+                            <p class="text-sm mb-2">To parallelle linjer skjæres av en tredje linje. En av vinklene er \(115^\circ\).</p>
+                            <ol class="list-alpha list-inside text-sm space-y-1 text-slate-700">
+                                <li>Forklar hvordan du kan bestemme de resterende sju vinklene.</li>
+                                <li>Hva kalles vinkelparene som er like store?</li>
+                            </ol>
+                        </div>
+                        <!-- SVG Parallelle linjer med mer rom for tekst -->
+                        <svg width="100" height="80" viewBox="0 0 100 80" class="figure-bg rounded flex-shrink-0">
+                            <line x1="5" y1="25" x2="95" y2="25" stroke="#334155" stroke-width="1.5"/>
+                            <line x1="5" y1="60" x2="95" y2="60" stroke="#334155" stroke-width="1.5"/>
+                            <line x1="20" y1="75" x2="75" y2="5" stroke="#0284c7" stroke-width="1.5"/>
+                            <text x="52" y="20" font-size="8" fill="#0284c7">115°</text>
+                        </svg>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Sidemerkør for utskrift -->
+        <div class="page-break"></div>
+
+        <!-- LØSNINGSFORSLAG -->
+        <section class="mt-12 pt-8 border-t-2 border-slate-800">
+            <div class="bg-emerald-800 text-white px-4 py-2 rounded-md font-bold text-lg mb-6 tracking-wide">
+                LØSNINGSFORSLAG / FASIT
+            </div>
+
+            <div class="space-y-6 text-sm text-slate-800">
+                <!-- Del 1 fasit -->
+                <div class="bg-emerald-50/50 p-4 rounded-lg border border-emerald-200">
+                    <h4 class="font-bold text-emerald-900 text-md mb-3 border-b border-emerald-200 pb-1">DEL 1 – Uten hjelpemidler</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-xs">
+                        <div><strong>Oppgave 1:</strong> a) \(P(5) = \frac{1}{6}\) &nbsp; b) \(P(\text{partall}) = \frac{3}{6} = \frac{1}{2}\)</div>
+                        <div><strong>Oppgave 2:</strong> Totalt 12 kuler. a) \(P(\text{blå}) = \frac{3}{12} = \frac{1}{4}\) &nbsp; b) \(P(\text{ikke rød}) = \frac{8}{12} = \frac{2}{3}\)</div>
+                        <div><strong>Oppgave 3:</strong> a) \(U = \{(\text{K,K}), (\text{K,M}), (\text{M,K}), (\text{M,M})\}\) &nbsp; b) \(P(\text{minst 1 K}) = \frac{3}{4}\)</div>
+                        <div><strong>Oppgave 4:</strong> a) \(\text{Gjennomsnitt} = \frac{3+5+4+2+6}{5} = \frac{20}{5} = 4\) &nbsp; b) Sortert: 2, 3, 4, 5, 6 \(\Rightarrow\) Median = 4</div>
+                        <div><strong>Oppgave 5:</strong> a) Typetall = 38 (forekommer flest ganger) &nbsp; b) Variasjonsbredde = \(41 - 37 = 4\)</div>
+                        <div><strong>Oppgave 6:</strong> \(\frac{5}{20} = \frac{1}{4} = 25\%\)</div>
+                        <div><strong>Oppgave 7:</strong> a) Rett vinkel &nbsp; b) Stump vinkel &nbsp; c) \(180^\circ - 65^\circ = 115^\circ\)</div>
+                        <div><strong>Oppgave 8:</strong> a) \(C = 180^\circ - (50^\circ + 70^\circ) = 60^\circ\) &nbsp; b) Spissvinklet trekant (alle vinkler \(< 90^\circ\))</div>
+                        <div><strong>Oppgave 9:</strong> \(u + v = 90^\circ\), fordi den rette vinkelen utgjør \(90^\circ\) av den totale vinkelsummen på \(180^\circ\).</div>
+                        <div><strong>Oppgave 10:</strong> a) Omkrets = \(2 \cdot (8 + 5) = 26\text{ cm}\) &nbsp; b) Areal = \(8 \cdot 5 = 40\text{ cm}^2\)</div>
+                        <div><strong>Oppgave 11:</strong> \(A = \frac{6 \cdot 7}{2} = 21\text{ cm}^2\)</div>
+                        <div><strong>Oppgave 12:</strong> a) Side \(s = \sqrt{49} = 7\text{ cm}\) &nbsp; b) Omkrets = \(4 \cdot 7 = 28\text{ cm}\)</div>
+                        <div><strong>Oppgave 13:</strong> \(A = g \cdot h = 10 \cdot 4 = 40\text{ cm}^2\)</div>
+                        <div><strong>Oppgave 14:</strong> a) Diameter = \(2 \cdot 3 = 6\text{ cm}\) &nbsp; b) Omkrets \(\approx \pi \cdot d = 3 \cdot 6 = 18\text{ cm}\)</div>
+                        <div><strong>Oppgave 15:</strong> \(A = \frac{(4 + 8) \cdot 5}{2} = \frac{12 \cdot 5}{2} = 30\text{ cm}^2\)</div>
+                        <div><strong>Oppgave 16:</strong> a) \(300\text{ dm}^2\) &nbsp; b) \(4,5\text{ dm}^2\) &nbsp; c) \(80\text{ cm}^2\) &nbsp; d) \(2,5\text{ m}^2\)</div>
+                    </div>
+                </div>
+
+                <!-- Del 2 fasit -->
+                <div class="bg-blue-50/50 p-4 rounded-lg border border-blue-200">
+                    <h4 class="font-bold text-blue-900 text-md mb-3 border-b border-blue-200 pb-1">DEL 2 – Med hjelpemidler</h4>
+                    <div class="space-y-2 text-xs">
+                        <p><strong>Oppgave 17:</strong> Totalt 20 observasjoner. Sum = 68.<br>
+                        a) Frekvenstabell: 1 (2 stk, 10%), 2 (4 stk, 20%), 3 (4 stk, 20%), 4 (5 stk, 25%), 5 (3 stk, 15%), 6 (2 stk, 10%).<br>
+                        b) Gjennomsnitt: \(68 / 20 = 3,4\) timer. Median: 3,5. Variasjonsbredde: \(6 - 1 = 5\).</p>
+                        
+                        <p><strong>Oppgave 18:</strong> a) Totalt solgte is: \(45+52+60+48+95+130+110 = 570\text{ is}\).<br>
+                        b) Relativ frekvens: Man (7,9%), Tir (9,1%), Ons (10,5%), Tor (8,4%), Fre (16,7%), Lør (22,8%), Søn (19,3%).</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 pt-1">
+                            <div><strong>Oppgave 19:</strong> a) Relativ frekvens: \(\frac{36}{150} = 0,24 = 24\%\). &nbsp; b) Sirkelgrader: \(0,24 \cdot 360^\circ = 86,4^\circ\).</div>
+                            <div><strong>Oppgave 20:</strong> Sum av 7 tall må være \(7 \cdot 20 = 140\). Summen av kjente er 122. \(x = 140 - 122 = 18\).</div>
+                            <div><strong>Oppgave 21:</strong> a) \(P(\text{ess}) = \frac{4}{52} \approx 7,7\%\) &nbsp; b) \(P(\text{hjerter}) = \frac{13}{52} = 25\%\) &nbsp; c) \(P(\text{bilde}) = \frac{12}{52} \approx 23,1\%\)</div>
+                            <div><strong>Oppgave 22:</strong> a) Eksperimentell frekvens: \(\frac{95}{500} = 0,19 = 19\%\). &nbsp; b) Teoretisk: \(\frac{1}{6} \approx 16,7\%\). &nbsp; c) Avvik skyldes tilfeldigheter ved få kast (store talls lov).</div>
+                            <div><strong>Oppgave 23:</strong> a) Grønn: \(360^\circ - (180^\circ + 120^\circ) = 60^\circ\). &nbsp; b) Rød: \(\frac{1}{2} (50\%)\), Blå: \(\frac{1}{3} (33,3\%)\), Grønn: \(\frac{1}{6} (16,7\%)\).</div>
+                            <div><strong>Oppgave 24:</strong> a) Løkka gjentar et tilfeldig trekk mellom 1 og 2 hundre ganger, teller antall kron og mynt, og skriver ut den relative frekvensen for begge.<br>
+                            b) Vi forventer ca. \(0,5\) (\(50\%\)) for både kron og mynt.<br>
+                            c) Endre linje 3 til <code class="bg-white px-1 rounded border">antall_kast = 10000</code>. Ja, med flere forsøk vil de relative frekvensene komme nærmere den teoretiske sannsynligheten på \(0,5\) (store talls lov).</div>
+                            <div><strong>Oppgave 25:</strong> a) Omkrets: 2 langsider + sirkelomkrets = \(2 \cdot 80 + \pi \cdot 40 \approx 160 + 125,66 = 285,7\text{ m}\).<br>
+                            b) Areal: Rektangel + sirkelareal = \((80 \cdot 40) + (\pi \cdot 20^2) \approx 3200 + 1256,6 = 4456,6\text{ m}^2\).</div>
+                            <div><strong>Oppgave 26:</strong> Areal rektangel = \(6 \cdot 3 = 18\text{ m}^2\). Areal trekant = \(\frac{6 \cdot 2}{2} = 6\text{ m}^2\). Totalt areal = \(24\text{ m}^2\).</div>
+                            <div><strong>Oppgave 27:</strong> Hagen = \(12 \cdot 12 = 144\text{ m}^2\). Bed = \(\pi \cdot 2,5^2 \approx 19,63\text{ m}^2\). Gressareal = \(144 - 19,63 \approx 124,4\text{ m}^2\).</div>
+                            <div><strong>Oppgave 28:</strong> Trapes = \(\frac{(10 + 14) \cdot 8}{2} = 96\text{ cm}^2\). Hull (\(r=2\text{ cm}\)) = \(\pi \cdot 2^2 \approx 12,57\text{ cm}^2\). Gjenstående = \(96 - 12,57 = 83,4\text{ cm}^2\).</div>
+                            <div><strong>Oppgave 29:</strong> Restvinkler = \(180^\circ - 44^\circ = 136^\circ\). Vinkel B og C er like: \(B = C = \frac{136^\circ}{2} = 68^\circ\).</div>
+                            <div><strong>Oppgave 30:</strong> a) Nabovinkler danner \(180^\circ\) (\(180^\circ - 115^\circ = 65^\circ\)). Toppvinkler og samsvarende vinkler overføres til det andre skjæringspunktet.<br>
+                            b) Vinkelparene kalles toppvinkler, samsvarende vinkler eller vekselvinkler.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bunntekst -->
+        <footer class="mt-12 pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
+            <p>Lykke til på tentamen!</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
