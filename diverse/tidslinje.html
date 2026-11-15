@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tidslinjeverkstedet – Interaktiv tidslinje</title>
+  <!-- Tailwind CSS for responsiv og moderne styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter (standard), Merriweather (klassisk), JetBrains Mono (teknisk) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Grunnleggende font-klasser */
+    .font-theme-sans { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .font-theme-serif { font-family: 'Merriweather', Georgia, serif; }
+    .font-theme-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Profesjonelle, duse bakgrunnsfarger for arbeidsflaten */
+    .bg-theme-soft {
+      background-color: #f3f5f8;
+    }
+    .bg-theme-warm {
+      background-color: #f7f5f0;
+    }
+    .bg-theme-white {
+      background-color: #ffffff;
+    }
+
+    /* Jevne overganger når man ikke drar aktivt */
+    .timeline-item-smooth {
+      transition: left 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  top 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  right 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  bottom 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  box-shadow 0.15s ease,
+                  border-color 0.15s ease;
+    }
+    .is-dragging {
+      transition: none !important;
+      z-index: 50 !important;
+      cursor: grabbing !important;
+      user-select: none;
+    }
+
+    /* Tilpasset rullefelt for bedre brukeropplevelse */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+      border: 2px solid #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Utskrifts- og PDF-stil (@media print) */
+    @media print {
+      body {
+        background: #ffffff !important;
+        overflow: visible !important;
+        height: auto !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #workspace-scroll {
+        overflow: visible !important;
+        height: auto !important;
+        width: auto !important;
+        position: static !important;
+        background: #ffffff !important;
+      }
+      #timeline-canvas {
+        background: #ffffff !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        transform-origin: top left;
+      }
+      .event-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-theme-sans h-screen flex flex-col overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+
+  <!-- TOPPMENY: Tittel og filhandlinger -->
+  <header class="no-print bg-white border-b border-slate-200 px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2 z-30 shadow-xs">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+        <!-- Tidslinje-ikon -->
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16M8 12V7m0 0a2 2 0 100-4 2 2 0 000 4zm8 5v5m0 0a2 2 0 100 4 2 2 0 000-4z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-sm sm:text-base font-bold text-slate-900 leading-tight">Tidslinjeverkstedet</h1>
+        <p class="text-xs text-slate-500 hidden sm:block">Lag, tilpass og del interaktive tidslinjer</p>
+      </div>
+    </div>
+
+    <!-- Fil- og eksportknapper -->
+    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+      <button onclick="confirmResetTimeline()" class="px-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer" title="Start med en tom tidslinje">
+        Blank
+      </button>
+      <button onclick="loadSampleTimeline(true)" class="px-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer" title="Last inn eksempel på tidslinje">
+        Eksempel
+      </button>
+
+      <div class="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block"></div>
+
+      <!-- Åpne prosjektfil -->
+      <label class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs" title="Åpne en lagret .tidslinje-fil">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+        <span>Åpne fil</span>
+        <input type="file" id="open-file-input" accept=".tidslinje,.json" class="hidden" onchange="handleOpenFile(event)" />
+      </label>
+
+      <!-- Lagre prosjektfil -->
+      <button onclick="saveTimelineFile()" class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs" title="Lagre tidslinjen som en fil du kan dele med andre">
+        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span>Lagre fil</span>
+      </button>
+
+      <!-- Eksporter frittstående visnings-HTML -->
+      <button onclick="exportStandaloneHTML()" class="hidden md:inline-flex px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition cursor-pointer items-center gap-1.5 shadow-2xs" title="Lagre en ferdig nettsidefil som hvem som helst kan åpne i nettleseren">
+        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+        <span>Delbar HTML</span>
+      </button>
+
+      <!-- Skriv ut / Lagre som PDF -->
+      <button onclick="prepareAndPrint()" class="px-3 py-1.5 text-xs sm:text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs" title="Skriv ut eller lagre tidslinjen som PDF">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        <span>Skriv ut / PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- VERKTØYLINJE: Retning, legg til hendelse, forskyvning og visning -->
+  <div class="no-print bg-slate-50/90 backdrop-blur-xs border-b border-slate-200 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2 z-20">
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Ny hendelse-knapp -->
+      <button id="btn-add-event" onclick="openInsertModal()" class="px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5 shadow-xs">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>Ny hendelse</span>
+      </button>
+
+      <!-- Velger for Horisontal / Vertikal -->
+      <div class="inline-flex rounded-xl bg-slate-200/80 p-1" role="group" aria-label="Tidslinjeretning">
+        <button id="btn-orient-horizontal" onclick="setOrientation('horizontal')" class="px-3 py-1 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer flex items-center gap-1.5 bg-white text-slate-900 shadow-2xs">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16M8 8l-4 4 4 4m8-8l4 4-4 4" />
+          </svg>
+          <span>Horisontal</span>
+        </button>
+        <button id="btn-orient-vertical" onclick="setOrientation('vertical')" class="px-3 py-1 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m-4-12l4-4 4 4m-8 8l4 4 4-4" />
+          </svg>
+          <span>Vertikal</span>
+        </button>
+      </div>
+
+      <!-- Av/på-bryter for forskyvning av etterfølgende objekter -->
+      <label class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-slate-300 transition select-none" title="Når denne er aktivert, skyves etterfølgende hendelser automatisk bortover når du setter inn nye eller drar i en hendelse">
+        <input type="checkbox" id="toggle-shift-mode" checked onchange="toggleShiftMode(this.checked)" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" />
+        <span class="text-xs sm:text-sm font-medium text-slate-700">Forskyv etterfølgende</span>
+      </label>
+
+      <!-- Fordel jevnt -->
+      <button onclick="distributeEventsEvenly()" class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5" title="Fordeler alle hendelsene med lik avstand langs tidslinjen">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <span class="hidden sm:inline">Fordel jevnt</span>
+      </button>
+
+      <!-- Årstall / skala på tidslinje-streken -->
+      <div class="relative">
+        <button onclick="toggleScaleMenu()" id="btn-scale" class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5" title="Velg om årstall skal vises langs selve tidslinjen (f.eks. hvert 10. eller 100. år)">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span>Årstall på linjen</span>
+        </button>
+
+        <!-- Nedtrekksmeny for årstall og intervall på linjen -->
+        <div id="scale-popover" class="hidden absolute left-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-40">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-slate-900">Årstall på tidslinje-streken</h3>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+              <input type="checkbox" id="toggle-year-ticks" checked onchange="updateScaleSetting('showYearTicks', this.checked)" class="w-4 h-4 text-blue-600 rounded border-slate-300 cursor-pointer" />
+              <span class="text-xs font-semibold text-slate-700">Vis</span>
+            </label>
+          </div>
+
+          <div id="scale-controls-body" class="space-y-3 text-xs">
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Startår</label>
+                <input type="number" id="input-start-year" value="1900" onchange="updateScaleSetting('startYear', parseInt(this.value, 10))" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Sluttår</label>
+                <input type="number" id="input-end-year" value="2000" onchange="updateScaleSetting('endYear', parseInt(this.value, 10))" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1.5">Markeringsintervall</label>
+              <div class="grid grid-cols-3 gap-1.5 mb-2">
+                <button type="button" onclick="updateScaleSetting('yearInterval', 1)" class="interval-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-interval="1">Hvert år</button>
+                <button type="button" onclick="updateScaleSetting('yearInterval', 5)" class="interval-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-interval="5">Hvert 5. år</button>
+                <button type="button" onclick="updateScaleSetting('yearInterval', 10)" class="interval-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-interval="10">Hvert 10. år</button>
+                <button type="button" onclick="updateScaleSetting('yearInterval', 50)" class="interval-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-interval="50">Hvert 50. år</button>
+                <button type="button" onclick="updateScaleSetting('yearInterval', 100)" class="interval-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-interval="100">Hvert 100. år</button>
+                <button type="button" onclick="updateScaleSetting('yearInterval', 1000)" class="interval-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-interval="1000">Hvert 1000. år</button>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-600">Eget intervall (år):</span>
+                <input type="number" id="input-custom-interval" min="1" value="10" onchange="updateScaleSetting('yearInterval', Math.max(1, parseInt(this.value, 10) || 10))" class="w-24 px-2.5 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+
+            <p class="text-[11px] text-slate-500 leading-relaxed pt-1 border-t border-slate-100">
+              Tips: Når du drar i et kort langs linjen, vises det tilhørende årstallet automatisk.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Høyre side av verktøylinjen: Utseende og visningsmodus -->
+    <div class="flex items-center gap-2">
+      <!-- Utseende-knapp -->
+      <div class="relative">
+        <button onclick="toggleAppearanceMenu()" id="btn-appearance" class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+          <span>Utseende</span>
+        </button>
+
+        <!-- Nedtrekksmeny for tidslinjens utseende -->
+        <div id="appearance-popover" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-40">
+          <h3 class="text-sm font-bold text-slate-900 mb-3">Tilpass tidslinjen</h3>
+
+          <div class="space-y-3.5 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1.5">Farge på hovedlinjen</label>
+              <div class="flex items-center gap-2" id="line-color-swatches"></div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1.5">Bakgrunnsfarge</label>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button onclick="setBgPattern('soft')" class="bg-pattern-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-pattern="soft">Dus gråblå</button>
+                <button onclick="setBgPattern('warm')" class="bg-pattern-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-pattern="warm">Varm krem</button>
+                <button onclick="setBgPattern('white')" class="bg-pattern-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-pattern="white">Ren hvit</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1.5">Skrifttype</label>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button onclick="setFontFamily('sans')" class="font-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer" data-font="sans">Moderne</button>
+                <button onclick="setFontFamily('serif')" class="font-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-serif font-medium cursor-pointer" data-font="serif">Klassisk</button>
+                <button onclick="setFontFamily('mono')" class="font-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-mono font-medium cursor-pointer" data-font="mono">Teknisk</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visningsmodus (lesemodus for presentasjon/deling) -->
+      <button id="btn-view-mode" onclick="toggleViewMode()" class="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5" title="Skjul redigeringsverktøy for å se eller presentere tidslinjen">
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        <span id="view-mode-label">Visningsmodus</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- HOVEDOMRÅDE: Arbeidsflate (venstre/senter) + Egenskapspanel (høyre) -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Rullbar arbeidsflate for tidslinjen -->
+    <main id="workspace-scroll" class="flex-1 overflow-auto relative bg-theme-soft" onclick="handleCanvasBackgroundClick(event)">
+
+      <!-- Selve lerretet som også skrives ut til PDF -->
+      <div id="timeline-canvas" class="relative min-w-full min-h-full p-6 sm:p-10">
+
+        <!-- Redigerbar tittel og undertittel øverst på tidslinjen -->
+        <div class="max-w-3xl mb-6 relative z-10" onclick="event.stopPropagation()">
+          <input
+            type="text"
+            id="timeline-title-input"
+            value="Min tidslinje"
+            placeholder="Skriv tittel på tidslinjen her..."
+            oninput="updateTimelineMeta('title', this.value)"
+            class="w-full text-2xl sm:text-3xl font-bold text-slate-900 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none pb-1 transition"
+          />
+          <input
+            type="text"
+            id="timeline-subtitle-input"
+            value="Skriv navn eller undertittel her..."
+            placeholder="Valgfri undertittel eller elevnavn..."
+            oninput="updateTimelineMeta('subtitle', this.value)"
+            class="w-full text-sm sm:text-base text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none pt-1 transition"
+          />
+        </div>
+
+        <!-- Container for selve linjen og alle hendelseskortene -->
+        <div id="timeline-stage" class="relative select-none">
+          <!-- Hovedlinjen tegnes her via JS -->
+          <div id="timeline-axis" class="absolute rounded-full transition-colors cursor-crosshair group" title="Klikk på linjen for å legge til en ny hendelse her">
+            <!-- Svevende '+' indikator når man holder musepekeren over linjen -->
+            <div id="axis-hover-marker" class="no-print hidden absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-blue-600 text-white shadow-md flex items-center justify-center pointer-events-none z-30">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Årstallsmarkeringer langs linjen tegnes her -->
+          <div id="timeline-ticks-layer" class="pointer-events-none"></div>
+
+          <!-- Alle hendelser (noder, koblingsstreker og tekst/bildebokser) rendres her -->
+          <div id="timeline-items-layer"></div>
+        </div>
+      </div>
+
+      <!-- Hjelpetips nederst i hjørnet (skjules ved utskrift) -->
+      <div id="helper-hint" class="no-print fixed bottom-4 left-4 bg-white/95 backdrop-blur-xs border border-slate-200 shadow-md rounded-xl px-3.5 py-2 text-xs text-slate-600 flex items-center gap-2 z-20 max-w-md">
+        <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+        <span><strong>Tips:</strong> Dra et kort langs linjen for å flytte det, eller dra det over på andre siden av linjen. Klikk på linjen for å sette inn en ny hendelse.</span>
+        <button onclick="document.getElementById('helper-hint').remove()" class="text-slate-400 hover:text-slate-700 ml-1 cursor-pointer" title="Lukk tips">&times;</button>
+      </div>
+    </main>
+
+    <!-- SIDEBAR / INSPEKTØR: Redigering av valgt hendelse -->
+    <aside id="editor-sidebar" class="no-print hidden w-full sm:w-96 bg-white border-l border-slate-200 shadow-xl z-30 flex flex-col max-h-full overflow-hidden absolute sm:static inset-x-0 bottom-0 h-[72vh] sm:h-auto rounded-t-2xl sm:rounded-none">
+      <!-- Topptekst i sidepanelet -->
+      <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center gap-2">
+          <span id="sidebar-color-dot" class="w-3.5 h-3.5 rounded-full bg-blue-600"></span>
+          <h2 class="text-sm font-bold text-slate-900">Rediger hendelse</h2>
+        </div>
+        <button onclick="deselectEvent()" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-lg transition cursor-pointer" title="Lukk panel">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Skjemafelter for valgt hendelse -->
+      <div class="p-4 overflow-y-auto space-y-4 flex-1 text-sm">
+
+        <!-- Dato / Årstall -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Dato / Årstall / Periode</label>
+          <input type="text" id="field-date" oninput="updateSelectedEvent('date', this.value)" placeholder="F.eks. 17. mai 1814" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" />
+        </div>
+
+        <!-- Tittel -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Overskrift</label>
+          <input type="text" id="field-title" oninput="updateSelectedEvent('title', this.value)" placeholder="Skriv overskrift..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium" />
+        </div>
+
+        <!-- Beskrivelse (boksen vokser dynamisk i takt med teksten) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Tekst / Beskrivelse</label>
+          <textarea id="field-description" rows="4" oninput="updateSelectedEvent('description', this.value)" placeholder="Skriv tekst her. Tekstboksen på tidslinjen tilpasser høyden automatisk..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white leading-relaxed"></textarea>
+        </div>
+
+        <!-- Bilde (URL eller opplasting fra enhet) -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-700">Bilde (valgfritt)</label>
+            <button id="btn-remove-image" onclick="removeSelectedImage()" class="hidden text-xs text-rose-600 hover:text-rose-700 font-medium cursor-pointer">Fjern bilde</button>
+          </div>
+
+          <div class="flex gap-2">
+            <label class="flex-1 py-2 px-3 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-medium text-slate-700 text-center cursor-pointer transition inline-flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Last opp bilde</span>
+              <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
+            </label>
+          </div>
+
+          <div>
+            <input type="url" id="field-image-url" oninput="updateSelectedEvent('imageUrl', this.value)" placeholder="Eller lim inn bilde-URL (https://...)" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+          </div>
+
+          <div id="image-caption-wrapper" class="hidden">
+            <input type="text" id="field-image-caption" oninput="updateSelectedEvent('imageCaption', this.value)" placeholder="Bildetekst (valgfritt)..." class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+          </div>
+        </div>
+
+        <!-- Plassering: Over/Under linjen (eller Venstre/Høyre i vertikal modus) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Plassering i forhold til linjen</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-side-before" onclick="updateSelectedEvent('side', 'before')" class="py-2 px-3 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5">
+              <span id="label-side-before">Over linjen</span>
+            </button>
+            <button id="btn-side-after" onclick="updateSelectedEvent('side', 'after')" class="py-2 px-3 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5">
+              <span id="label-side-after">Under linjen</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Avstand fra linjen (nyttig for å unngå overlapp mellom tette kort) -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Avstand fra linjen (for å unngå overlapp)</label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick="updateSelectedEvent('stemOffset', 42)" class="stem-btn py-1.5 px-2 rounded-lg border text-xs font-medium cursor-pointer" data-stem="42">Nær</button>
+            <button onclick="updateSelectedEvent('stemOffset', 110)" class="stem-btn py-1.5 px-2 rounded-lg border text-xs font-medium cursor-pointer" data-stem="110">Middels</button>
+            <button onclick="updateSelectedEvent('stemOffset', 190)" class="stem-btn py-1.5 px-2 rounded-lg border text-xs font-medium cursor-pointer" data-stem="190">Lang</button>
+          </div>
+        </div>
+
+        <!-- Bredde på tekstboksen -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-semibold text-slate-700">Bredde på tekstboks</label>
+            <span id="width-value-label" class="text-xs text-slate-500">260 px</span>
+          </div>
+          <input type="range" id="field-width" min="180" max="460" step="10" value="260" oninput="updateSelectedEvent('width', parseInt(this.value, 10))" class="w-full accent-blue-600 cursor-pointer" />
+        </div>
+
+        <!-- Fargevalg for kortet -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Farge på kort og punkt</label>
+          <div class="flex items-center flex-wrap gap-2" id="card-color-swatches"></div>
+        </div>
+
+        <!-- Hurtighandlinger for kortet -->
+        <div class="pt-3 border-t border-slate-200 space-y-2">
+          <button onclick="insertAfterSelected()" class="w-full py-2 px-3 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Sett inn ny etter denne (forskyv resten)</span>
+          </button>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="duplicateSelectedEvent()" class="py-2 px-3 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Dupliser
+            </button>
+            <button onclick="deleteSelectedEvent()" class="py-2 px-3 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-semibold transition cursor-pointer">
+              Slett hendelse
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MODAL: Sett inn ny hendelse med valg for plassering og forskyvning -->
+  <div id="insert-modal" class="no-print hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900">Legg til ny hendelse</h3>
+        <button onclick="closeInsertModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none cursor-pointer">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Dato / Årstall</label>
+            <input type="text" id="new-event-date" placeholder="F.eks. 1905" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Plassering</label>
+            <select id="new-event-side" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              <option value="auto">Annenhver (automatisk)</option>
+              <option value="before">Over / Venstre for linjen</option>
+              <option value="after">Under / Høyre for linjen</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Overskrift</label>
+          <input type="text" id="new-event-title" placeholder="Hva skjedde?" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Hvor på tidslinjen skal den settes inn?</label>
+          <select id="new-event-position-mode" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option value="end">På slutten av tidslinjen</option>
+            <option value="start">Helt i starten (forskyver alle eksisterende)</option>
+          </select>
+        </div>
+
+        <label class="flex items-center gap-2 pt-1 cursor-pointer select-none">
+          <input type="checkbox" id="new-event-shift" checked class="w-4 h-4 text-blue-600 rounded border-slate-300" />
+          <span class="text-xs text-slate-700 font-medium">Forskyv etterfølgende hendelser automatisk</span>
+        </label>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeInsertModal()" class="px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer">Avbryt</button>
+        <button onclick="confirmInsertModal()" class="px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer">Legg til på tidslinjen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Bekreftelsesdialog (erstatter nettleserens confirm()) -->
+  <div id="confirm-modal" class="no-print hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-5 space-y-4">
+      <h3 id="confirm-title" class="text-base font-bold text-slate-900">Bekreft handling</h3>
+      <p id="confirm-message" class="text-sm text-slate-600 leading-relaxed">Er du sikker?</p>
+      <div class="flex justify-end gap-2 pt-1">
+        <button onclick="closeConfirmModal()" class="px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer">Avbryt</button>
+        <button id="confirm-ok-btn" class="px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer">Ja, fortsett</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VARSLING / TOAST (erstatter nettleserens alert()) -->
+  <div id="toast-container" class="no-print fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Skjult filvelger for opplasting av bilde direkte inne i en boks -->
+  <input type="file" id="card-direct-image-input" accept="image/*" class="hidden" onchange="handleDirectCardImageUpload(event)" />
+
+  <script>
+    // Nøkkel for automatisk lokal lagring i nettleseren
+    const STORAGE_KEY = 'tidslinjeverkstedet_v2_state';
+
+    // Fargepalett tilpasset lyst skole- og presentasjonstema
+    const CARD_COLORS = [
+      { name: 'Blå', hex: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+      { name: 'Smaragd', hex: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+      { name: 'Lilla', hex: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+      { name: 'Rav', hex: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+      { name: 'Korall', hex: '#e11d48', bg: '#fff1f2', border: '#fecdd3' },
+      { name: 'Turkis', hex: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+      { name: 'Skifer', hex: '#475569', bg: '#f8fafc', border: '#cbd5e1' }
+    ];
+
+    const LINE_COLORS = [
+      { name: 'Skifergrå', hex: '#334155' },
+      { name: 'Kongeblå', hex: '#2563eb' },
+      { name: 'Smaragdgrønn', hex: '#059669' },
+      { name: 'Plomme', hex: '#7c3aed' },
+      { name: 'Terrakotta', hex: '#c2410c' }
+    ];
+
+    // Applikasjonens hovedtilstand
+    let state = {
+      title: 'Min tidslinje',
+      subtitle: 'Skriv navn eller undertittel her...',
+      orientation: 'horizontal', // 'horizontal' | 'vertical'
+      shiftMode: true,
+      viewMode: false,
+      lineColor: '#334155',
+      bgPattern: 'soft', // 'soft' | 'warm' | 'white'
+      fontFamily: 'sans', // 'sans' | 'serif' | 'mono'
+      showYearTicks: true,
+      startYear: 1900,
+      endYear: 2000,
+      yearInterval: 10,
+      selectedId: null,
+      events: []
+    };
+
+    // Tilstand for aktiv dra-og-slipp, breddejustering og dialoger
+    let dragContext = null;
+    let resizeContext = null;
+    let pendingConfirmCallback = null;
+    let pendingImageTargetId = null;
+
+    // Generer unik ID for hver hendelse
+    function generateId() {
+      return 'ev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    // Opprett én enkelt aktiv boks ved oppstart eller nullstilling
+    function createSingleStarterEvent() {
+      return {
+        id: generateId(),
+        date: '1900',
+        title: 'Første hendelse',
+        description: 'Klikk her for å skrive tekst, eller legg til et bilde direkte i boksen.',
+        imageUrl: '',
+        imageCaption: '',
+        pos: 220,
+        side: 'before',
+        stemOffset: 46,
+        width: 260,
+        color: '#2563eb'
+      };
+    }
+
+    // Initialiser applikasjonen ved oppstart
+    window.addEventListener('DOMContentLoaded', () => {
+      initColorSwatches();
+      setupAxisHoverAndClick();
+      setupGlobalPointerListeners();
+      setupOutsidePopoverClose();
+
+      const loaded = loadFromLocalStorage();
+      if (!loaded || !Array.isArray(state.events) || state.events.length === 0) {
+        const starter = createSingleStarterEvent();
+        state.events = [starter];
+        state.selectedId = starter.id;
+        saveToLocalStorage();
+      } else if (!state.selectedId && state.events.length > 0) {
+        state.selectedId = state.events[0].id;
+      }
+
+      renderAll();
+    });
+
+    // Lagre og hent tilstand fra localStorage
+    function saveToLocalStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        // Ignorer lagringsfeil dersom nettleseren har full lokal lagring
+      }
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          state = {
+            ...state,
+            ...parsed,
+            viewMode: false
+          };
+          return true;
+        }
+      } catch (err) {
+        return false;
+      }
+      return false;
+    }
+
+    // Nullstill til én blank aktiv boks
+    function confirmResetTimeline() {
+      openConfirmModal(
+        'Start med ny tidslinje?',
+        'Dette fjerner eksisterende bokser og starter på nytt med én aktiv boks.',
+        () => {
+          const starter = createSingleStarterEvent();
+          state.title = 'Min tidslinje';
+          state.subtitle = 'Skriv navn eller undertittel her...';
+          state.orientation = 'horizontal';
+          state.showYearTicks = true;
+          state.startYear = 1900;
+          state.endYear = 2000;
+          state.yearInterval = 10;
+          state.events = [starter];
+          state.selectedId = starter.id;
+          saveToLocalStorage();
+          renderAll();
+          showToast('Ny tidslinje klar med én aktiv boks');
+        }
+      );
+    }
+
+    // Last inn en ferdig eksempeltidslinje
+    function loadSampleTimeline(askConfirm = false) {
+      const applySample = () => {
+        const sampleEvents = [
+          {
+            id: generateId(),
+            date: '1814',
+            title: 'Grunnloven på Eidsvoll',
+            description: 'Riksforsamlingen vedtar Norges grunnlov 17. mai 1814.',
+            imageUrl: '',
+            imageCaption: '',
+            pos: 180,
+            side: 'before',
+            stemOffset: 46,
+            width: 250,
+            color: '#2563eb'
+          },
+          {
+            id: generateId(),
+            date: '1905',
+            title: 'Unionsoppløsningen',
+            description: 'Unionen med Sverige oppløses, og Norge blir en selvstendig stat.',
+            imageUrl: '',
+            imageCaption: '',
+            pos: 470,
+            side: 'after',
+            stemOffset: 46,
+            width: 250,
+            color: '#059669'
+          },
+          {
+            id: generateId(),
+            date: '1913',
+            title: 'Allmenn stemmerett',
+            description: 'Kvinner får allmenn stemmerett på lik linje med menn ved stortingsvalg.',
+            imageUrl: '',
+            imageCaption: '',
+            pos: 760,
+            side: 'before',
+            stemOffset: 46,
+            width: 250,
+            color: '#7c3aed'
+          },
+          {
+            id: generateId(),
+            date: '1969',
+            title: 'Oljefunnet i Nordsjøen',
+            description: 'Ekofisk-feltet oppdages lille julaften 1969 og innleder den norske oljealderen.',
+            imageUrl: '',
+            imageCaption: '',
+            pos: 1050,
+            side: 'after',
+            stemOffset: 46,
+            width: 250,
+            color: '#d97706'
+          }
+        ];
+
+        state.title = 'Viktige årstall i nyere norsk historie';
+        state.subtitle = 'Eksempel på tidslinje (1800–2000)';
+        state.orientation = 'horizontal';
+        state.showYearTicks = true;
+        state.startYear = 1800;
+        state.endYear = 2000;
+        state.yearInterval = 20;
+        state.events = sampleEvents;
+        state.selectedId = sampleEvents[0].id;
+        saveToLocalStorage();
+        renderAll();
+        showToast('Eksempeltidslinje lastet inn');
+      };
+
+      if (askConfirm && state.events.length > 0) {
+        openConfirmModal(
+          'Last inn eksempeltidslinje?',
+          'Dette erstatter innholdet du har på tidslinjen nå med et ferdig eksempel.',
+          applySample
+        );
+      } else {
+        applySample();
+      }
+    }
+
+    // Tegn fargeknapper for kort og hovedlinje
+    function initColorSwatches() {
+      const cardContainer = document.getElementById('card-color-swatches');
+      if (cardContainer) {
+        cardContainer.innerHTML = '';
+        CARD_COLORS.forEach(c => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'w-7 h-7 rounded-full border-2 border-white shadow-xs transition transform hover:scale-110 cursor-pointer focus:outline-none';
+          btn.style.backgroundColor = c.hex;
+          btn.title = c.name;
+          btn.dataset.colorHex = c.hex;
+          btn.onclick = () => updateSelectedEvent('color', c.hex);
+          cardContainer.appendChild(btn);
+        });
+      }
+
+      const lineContainer = document.getElementById('line-color-swatches');
+      if (lineContainer) {
+        lineContainer.innerHTML = '';
+        LINE_COLORS.forEach(c => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'w-6 h-6 rounded-full border-2 border-white shadow-xs transition transform hover:scale-110 cursor-pointer focus:outline-none';
+          btn.style.backgroundColor = c.hex;
+          btn.title = c.name;
+          btn.dataset.lineHex = c.hex;
+          btn.onclick = () => {
+            state.lineColor = c.hex;
+            saveToLocalStorage();
+            renderAll();
+          };
+          lineContainer.appendChild(btn);
+        });
+      }
+    }
+
+    function getColorPalette(hex) {
+      return CARD_COLORS.find(c => c.hex === hex) || CARD_COLORS[0];
+    }
+
+    // --- HOVEDRENDERING AV HELE TIDSLINJEN ---
+
+    function renderAll() {
+      updateToolbarUI();
+      renderTimelineStage();
+      renderSidebar();
+    }
+
+    function updateToolbarUI() {
+      const titleInput = document.getElementById('timeline-title-input');
+      const subtitleInput = document.getElementById('timeline-subtitle-input');
+      if (titleInput && titleInput.value !== state.title) titleInput.value = state.title;
+      if (subtitleInput && subtitleInput.value !== state.subtitle) subtitleInput.value = state.subtitle;
+
+      if (titleInput) titleInput.readOnly = state.viewMode;
+      if (subtitleInput) subtitleInput.readOnly = state.viewMode;
+
+      // Retningsknapper
+      const btnH = document.getElementById('btn-orient-horizontal');
+      const btnV = document.getElementById('btn-orient-vertical');
+      if (btnH && btnV) {
+        if (state.orientation === 'horizontal') {
+          btnH.className = 'px-3 py-1 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer flex items-center gap-1.5 bg-white text-slate-900 shadow-2xs';
+          btnV.className = 'px-3 py-1 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+        } else {
+          btnV.className = 'px-3 py-1 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer flex items-center gap-1.5 bg-white text-slate-900 shadow-2xs';
+          btnH.className = 'px-3 py-1 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+        }
+      }
+
+      // Forskyvningsmodus
+      const shiftCheckbox = document.getElementById('toggle-shift-mode');
+      if (shiftCheckbox) shiftCheckbox.checked = !!state.shiftMode;
+
+      // Årstallsskala-innstillinger
+      const ticksToggle = document.getElementById('toggle-year-ticks');
+      const startYearInput = document.getElementById('input-start-year');
+      const endYearInput = document.getElementById('input-end-year');
+      const customIntInput = document.getElementById('input-custom-interval');
+      const scaleBody = document.getElementById('scale-controls-body');
+
+      if (ticksToggle) ticksToggle.checked = !!state.showYearTicks;
+      if (startYearInput && document.activeElement !== startYearInput) startYearInput.value = state.startYear;
+      if (endYearInput && document.activeElement !== endYearInput) endYearInput.value = state.endYear;
+      if (customIntInput && document.activeElement !== customIntInput) customIntInput.value = state.yearInterval;
+      if (scaleBody) {
+        scaleBody.style.opacity = state.showYearTicks ? '1' : '0.45';
+        scaleBody.style.pointerEvents = state.showYearTicks ? 'auto' : 'none';
+      }
+
+      document.querySelectorAll('.interval-btn').forEach(btn => {
+        const val = parseInt(btn.dataset.interval, 10);
+        const active = state.yearInterval === val;
+        btn.className = active
+          ? 'interval-btn px-2 py-1.5 rounded-lg border border-blue-500 bg-blue-50 text-blue-700 font-semibold cursor-pointer'
+          : 'interval-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer';
+      });
+
+      // Bakgrunn og skrifttype
+      const workspace = document.getElementById('workspace-scroll');
+      if (workspace) {
+        workspace.classList.remove('bg-theme-soft', 'bg-theme-warm', 'bg-theme-white');
+        workspace.classList.add(`bg-theme-${state.bgPattern || 'soft'}`);
+      }
+
+      document.body.classList.remove('font-theme-sans', 'font-theme-serif', 'font-theme-mono');
+      document.body.classList.add(`font-theme-${state.fontFamily || 'sans'}`);
+
+      document.querySelectorAll('.bg-pattern-btn').forEach(btn => {
+        const active = btn.dataset.pattern === state.bgPattern;
+        btn.className = active
+          ? 'bg-pattern-btn px-2 py-1.5 rounded-lg border border-blue-500 bg-blue-50 text-blue-700 font-semibold cursor-pointer'
+          : 'bg-pattern-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-medium cursor-pointer';
+      });
+
+      document.querySelectorAll('.font-btn').forEach(btn => {
+        const active = btn.dataset.font === state.fontFamily;
+        const extra = btn.dataset.font === 'serif' ? 'font-serif' : btn.dataset.font === 'mono' ? 'font-mono' : '';
+        btn.className = active
+          ? `font-btn px-2 py-1.5 rounded-lg border border-blue-500 bg-blue-50 text-blue-700 ${extra} font-semibold cursor-pointer`
+          : `font-btn px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 ${extra} font-medium cursor-pointer`;
+      });
+
+      document.querySelectorAll('#line-color-swatches button').forEach(btn => {
+        const active = btn.dataset.lineHex === state.lineColor;
+        btn.style.boxShadow = active ? `0 0 0 2px #fff, 0 0 0 4px ${state.lineColor}` : '';
+      });
+
+      // Visningsmodus-knapp
+      const viewLabel = document.getElementById('view-mode-label');
+      const btnView = document.getElementById('btn-view-mode');
+      const btnAdd = document.getElementById('btn-add-event');
+      if (viewLabel && btnView) {
+        if (state.viewMode) {
+          viewLabel.textContent = 'Redigeringsmodus';
+          btnView.className = 'px-3 py-1.5 text-xs sm:text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5';
+        } else {
+          viewLabel.textContent = 'Visningsmodus';
+          btnView.className = 'px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5';
+        }
+      }
+      if (btnAdd) {
+        btnAdd.classList.toggle('hidden', state.viewMode);
+      }
+    }
+
+    // Beregn posisjonsområdet for tidslinjen
+    function getAxisBounds() {
+      const startOffset = 100;
+      const maxEventPos = state.events.reduce((max, ev) => Math.max(max, ev.pos + (ev.width || 260)), 960);
+      const axisLength = Math.max(1040, maxEventPos + 180);
+      return {
+        startOffset,
+        endOffset: axisLength - 60,
+        axisLength
+      };
+    }
+
+    // Beregn årstall ut fra pikselposisjon langs linjen
+    function posToYear(pos) {
+      const bounds = getAxisBounds();
+      const span = Math.max(1, bounds.endOffset - bounds.startOffset);
+      const ratio = Math.max(0, Math.min(1, (pos - bounds.startOffset) / span));
+      const sYear = Number.isFinite(state.startYear) ? state.startYear : 1900;
+      const eYear = Number.isFinite(state.endYear) ? state.endYear : 2000;
+      return Math.round(sYear + ratio * (eYear - sYear));
+    }
+
+    // Beregn pikselposisjon ut fra årstall
+    function yearToPos(year) {
+      const bounds = getAxisBounds();
+      const sYear = Number.isFinite(state.startYear) ? state.startYear : 1900;
+      const eYear = Number.isFinite(state.endYear) ? state.endYear : 2000;
+      const yearSpan = eYear - sYear;
+      if (yearSpan === 0) return bounds.startOffset;
+      const ratio = (year - sYear) / yearSpan;
+      return Math.round(bounds.startOffset + ratio * (bounds.endOffset - bounds.startOffset));
+    }
+
+    // Tegn selve tidslinjen, årstallsmarkeringene og alle kortene
+    function renderTimelineStage() {
+      const stage = document.getElementById('timeline-stage');
+      const axis = document.getElementById('timeline-axis');
+      const ticksLayer = document.getElementById('timeline-ticks-layer');
+      const itemsLayer = document.getElementById('timeline-items-layer');
+      if (!stage || !axis || !ticksLayer || !itemsLayer) return;
+
+      const bounds = getAxisBounds();
+      const isHoriz = state.orientation === 'horizontal';
+
+      // Beregn hvor mye plass kortene på "before"-siden trenger (spesielt når kort har bilder)
+      let maxBeforeExtent = 340;
+      let maxAfterExtent = 340;
+      state.events.forEach(ev => {
+        const stemLen = ev.stemOffset || 46;
+        const estImageH = ev.imageUrl ? 210 : 0;
+        const estTextLines = Math.ceil(((ev.description || '').length + 30) / 34);
+        const estCardH = 110 + estImageH + estTextLines * 20;
+        const estCardW = ev.width || 260;
+
+        if (isHoriz) {
+          if (ev.side === 'before') {
+            maxBeforeExtent = Math.max(maxBeforeExtent, stemLen + estCardH + 36);
+          } else {
+            maxAfterExtent = Math.max(maxAfterExtent, stemLen + estCardH + 36);
+          }
+        } else {
+          if (ev.side === 'before') {
+            maxBeforeExtent = Math.max(maxBeforeExtent, stemLen + estCardW + 36);
+          } else {
+            maxAfterExtent = Math.max(maxAfterExtent, stemLen + estCardW + 36);
+          }
+        }
+      });
+
+      const axisCrossPos = isHoriz ? maxBeforeExtent : Math.max(360, maxBeforeExtent);
+
+      if (isHoriz) {
+        stage.style.width = `${bounds.axisLength + 80}px`;
+        stage.style.height = `${axisCrossPos + maxAfterExtent}px`;
+
+        axis.style.left = '40px';
+        axis.style.top = `${axisCrossPos - 2}px`;
+        axis.style.width = `${bounds.axisLength}px`;
+        axis.style.height = '4px';
+        axis.style.backgroundColor = state.lineColor;
+      } else {
+        stage.style.width = `${axisCrossPos + maxAfterExtent}px`;
+        stage.style.height = `${bounds.axisLength + 80}px`;
+
+        axis.style.left = `${axisCrossPos - 2}px`;
+        axis.style.top = '30px';
+        axis.style.width = '4px';
+        axis.style.height = `${bounds.axisLength}px`;
+        axis.style.backgroundColor = state.lineColor;
+      }
+
+      axis.style.cursor = state.viewMode ? 'default' : 'crosshair';
+
+      // Tegn årstall langs selve tidslinje-streken
+      renderYearTicks(ticksLayer, bounds, axisCrossPos, isHoriz);
+
+      // Tegn alle hendelseskortene
+      itemsLayer.innerHTML = '';
+      const sortedEvents = [...state.events].sort((a, b) => a.pos - b.pos);
+
+      sortedEvents.forEach(ev => {
+        const palette = getColorPalette(ev.color);
+        const isSelected = !state.viewMode && state.selectedId === ev.id;
+        const stemLen = ev.stemOffset || 46;
+        const cardWidth = ev.width || 260;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'timeline-item-wrapper';
+        wrapper.dataset.eventId = ev.id;
+
+        // 1. Punktet (noden) på hovedlinjen
+        const dot = document.createElement('div');
+        dot.className = 'timeline-item-smooth absolute rounded-full border-4 border-white shadow-md z-20';
+        dot.style.width = isSelected ? '20px' : '16px';
+        dot.style.height = isSelected ? '20px' : '16px';
+        dot.style.backgroundColor = palette.hex;
+        dot.style.cursor = state.viewMode ? 'default' : 'grab';
+        if (isSelected) {
+          dot.style.boxShadow = `0 0 0 3px ${palette.hex}44, 0 4px 10px rgba(0,0,0,0.15)`;
+        }
+
+        // 2. Koblingsstrek mellom punktet og tekstboksen
+        const stem = document.createElement('div');
+        stem.className = 'timeline-item-smooth absolute z-10 pointer-events-none';
+        stem.style.backgroundColor = palette.hex;
+        stem.style.opacity = '0.55';
+
+        // 3. Selve tekst- og bildeboksen
+        const card = document.createElement('div');
+        card.className = `event-card timeline-item-smooth absolute bg-white rounded-2xl border shadow-sm overflow-hidden z-20 ${
+          isSelected ? 'ring-2 shadow-lg' : 'hover:shadow-md'
+        }`;
+        card.style.width = `${cardWidth}px`;
+        card.style.borderColor = isSelected ? palette.hex : '#e2e8f0';
+        if (isSelected) {
+          card.style.setProperty('--tw-ring-color', palette.hex);
+        }
+        card.style.cursor = state.viewMode ? 'default' : 'grab';
+
+        // Plasser punkt, koblingsstrek og boks ut fra retning (horisontal/vertikal) og side (before/after)
+        if (isHoriz) {
+          dot.style.left = `${ev.pos}px`;
+          dot.style.top = `${axisCrossPos}px`;
+          dot.style.transform = 'translate(-50%, -50%)';
+
+          stem.style.left = `${ev.pos - 1}px`;
+          stem.style.width = '2px';
+          stem.style.height = `${stemLen}px`;
+
+          card.style.left = `${ev.pos}px`;
+          card.style.transform = 'translateX(-50%)';
+
+          if (ev.side === 'before') {
+            stem.style.top = `${axisCrossPos - stemLen}px`;
+            card.style.top = 'auto';
+            card.style.bottom = `${stage.offsetHeight ? (parseInt(stage.style.height, 10) - (axisCrossPos - stemLen)) : (maxAfterExtent + stemLen)}px`;
+          } else {
+            stem.style.top = `${axisCrossPos}px`;
+            card.style.bottom = 'auto';
+            card.style.top = `${axisCrossPos + stemLen}px`;
+          }
+        } else {
+          dot.style.left = `${axisCrossPos}px`;
+          dot.style.top = `${ev.pos}px`;
+          dot.style.transform = 'translate(-50%, -50%)';
+
+          stem.style.top = `${ev.pos - 1}px`;
+          stem.style.height = '2px';
+          stem.style.width = `${stemLen}px`;
+
+          card.style.top = `${ev.pos}px`;
+          card.style.transform = 'translateY(-50%)';
+
+          if (ev.side === 'before') {
+            stem.style.left = `${axisCrossPos - stemLen}px`;
+            card.style.left = 'auto';
+            card.style.right = `${parseInt(stage.style.width, 10) - (axisCrossPos - stemLen)}px`;
+          } else {
+            stem.style.left = `${axisCrossPos}px`;
+            card.style.right = 'auto';
+            card.style.left = `${axisCrossPos + stemLen}px`;
+          }
+        }
+
+        // Bygg innholdet inne i kortet
+        let cardHTML = `
+          <div class="h-1.5 w-full" style="background-color: ${palette.hex}"></div>
+          <div class="p-3.5 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="inline-block px-2 py-0.5 rounded-md text-xs font-bold tracking-tight" style="background-color: ${palette.bg}; color: ${palette.hex};">
+                ${escapeHTML(ev.date || 'Uten dato')}
+              </span>
+              ${!state.viewMode ? `
+                <div class="no-print flex items-center gap-0.5">
+                  <button type="button" data-image-upload-id="${ev.id}" class="text-slate-400 hover:text-blue-600 p-1 rounded-md hover:bg-blue-50 transition cursor-pointer" title="Legg til eller bytt bilde i boksen">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  <button type="button" data-flip-id="${ev.id}" class="text-slate-400 hover:text-slate-700 p-1 rounded-md hover:bg-slate-100 transition cursor-pointer" title="Bytt side av linjen">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-900 leading-snug break-words">
+              ${escapeHTML(ev.title || 'Ny hendelse')}
+            </h3>
+        `;
+
+        // Bilde hvis lagt til, eller knapp for å legge til bilde direkte inne i boksen
+        if (ev.imageUrl) {
+          cardHTML += `
+            <div class="pt-0.5 relative group/img">
+              <img
+                src="${escapeHTML(ev.imageUrl)}"
+                alt="${escapeHTML(ev.title || 'Tidslinjebilde')}"
+                class="w-full max-h-52 object-cover rounded-xl border border-slate-100 bg-slate-50"
+                onerror="this.onerror=null; this.src='https://placehold.co/400x220/f1f5f9/64748b?text=Bilde+ikke+tilgjengelig';"
+              />
+              ${!state.viewMode ? `
+                <div class="no-print absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/img:opacity-100 focus-within:opacity-100 transition">
+                  <button type="button" data-image-upload-id="${ev.id}" class="px-2 py-1 text-[11px] font-semibold bg-white/95 text-slate-700 hover:text-blue-600 rounded-lg shadow-sm border border-slate-200 cursor-pointer">
+                    Bytt
+                  </button>
+                  <button type="button" data-image-remove-id="${ev.id}" class="px-2 py-1 text-[11px] font-semibold bg-white/95 text-rose-600 hover:bg-rose-50 rounded-lg shadow-sm border border-slate-200 cursor-pointer">
+                    Fjern
+                  </button>
+                </div>
+              ` : ''}
+              ${ev.imageCaption ? `<p class="text-[11px] text-slate-500 italic mt-1 leading-tight">${escapeHTML(ev.imageCaption)}</p>` : ''}
+            </div>
+          `;
+        } else if (!state.viewMode) {
+          cardHTML += `
+            <div class="no-print flex items-center gap-1.5 pt-0.5">
+              <button type="button" data-image-upload-id="${ev.id}" class="flex-1 py-1.5 px-2.5 rounded-xl border border-dashed border-slate-300 hover:border-blue-400 bg-slate-50/70 hover:bg-blue-50/60 text-slate-600 hover:text-blue-700 text-xs font-medium transition cursor-pointer inline-flex items-center justify-center gap-1.5" title="Last opp eller dra et bilde hit">
+                <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>+ Legg til bilde</span>
+              </button>
+              <button type="button" data-image-url-id="${ev.id}" class="py-1.5 px-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 text-[11px] font-medium transition cursor-pointer" title="Lim inn bilde-URL">
+                URL
+              </button>
+            </div>
+          `;
+        }
+
+        // Beskrivelsestekst (dynamisk høyde)
+        if (ev.description) {
+          cardHTML += `
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line break-words">${escapeHTML(ev.description)}</p>
+          `;
+        }
+
+        cardHTML += `</div>`;
+
+        // Håndtak nederst til høyre for å dra bredden på tekstboksen dynamisk
+        if (!state.viewMode) {
+          cardHTML += `
+            <div data-resize-id="${ev.id}" class="no-print absolute bottom-0 right-0 w-4 h-4 cursor-ew-resize flex items-end justify-end p-0.5 text-slate-300 hover:text-blue-500" title="Dra for å endre bredde på tekstboksen">
+              <svg class="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
+                <path d="M9 1v8H1L9 1z" />
+              </svg>
+            </div>
+          `;
+        }
+
+        card.innerHTML = cardHTML;
+
+        // Koble hendelser for klikk, dra-og-slipp og breddejustering
+        if (!state.viewMode) {
+          const startDragHandler = (e) => {
+            if (e.target.closest('[data-image-upload-id]')) {
+              e.stopPropagation();
+              triggerCardImageUpload(ev.id);
+              return;
+            }
+            if (e.target.closest('[data-image-url-id]')) {
+              e.stopPropagation();
+              focusImageUrlForEvent(ev.id);
+              return;
+            }
+            if (e.target.closest('[data-image-remove-id]')) {
+              e.stopPropagation();
+              removeImageForEvent(ev.id);
+              return;
+            }
+            if (e.target.closest('[data-flip-id]')) {
+              e.stopPropagation();
+              flipEventSide(ev.id);
+              return;
+            }
+            if (e.target.closest('[data-resize-id]')) {
+              e.stopPropagation();
+              startResizeCard(e, ev);
+              return;
+            }
+            startDragEvent(e, ev, dot, card, stem);
+          };
+
+          dot.addEventListener('pointerdown', startDragHandler);
+          card.addEventListener('pointerdown', startDragHandler);
+
+          // Støtt dra-og-slipp av bildefiler fra datamaskinen direkte inn i boksen
+          card.addEventListener('dragover', (e) => {
+            if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) {
+              e.preventDefault();
+              card.style.borderColor = '#2563eb';
+              card.style.backgroundColor = '#eff6ff';
+            }
+          });
+          card.addEventListener('dragleave', () => {
+            card.style.borderColor = isSelected ? palette.hex : '#e2e8f0';
+            card.style.backgroundColor = '#ffffff';
+          });
+          card.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              e.preventDefault();
+              e.stopPropagation();
+              card.style.borderColor = isSelected ? palette.hex : '#e2e8f0';
+              card.style.backgroundColor = '#ffffff';
+              const file = e.dataTransfer.files[0];
+              if (file && file.type.startsWith('image/')) {
+                compressAndApplyImage(file, ev.id);
+              }
+            }
+          });
+        }
+
+        wrapper.appendChild(stem);
+        wrapper.appendChild(dot);
+        wrapper.appendChild(card);
+        itemsLayer.appendChild(wrapper);
+      });
+    }
+
+    // Tegn årstall og merker langs selve tidslinje-streken
+    function renderYearTicks(ticksLayer, bounds, axisCrossPos, isHoriz) {
+      ticksLayer.innerHTML = '';
+      if (!state.showYearTicks) return;
+
+      const sYear = Number.isFinite(state.startYear) ? state.startYear : 1900;
+      const eYear = Number.isFinite(state.endYear) ? state.endYear : 2000;
+      const interval = Math.max(1, parseInt(state.yearInterval, 10) || 10);
+
+      if (eYear <= sYear) return;
+
+      // Begrens antall merker slik at det alltid ser ryddig ut selv ved stort spenn
+      const totalSpan = eYear - sYear;
+      const maxTicks = 120;
+      const effectiveStep = Math.max(interval, Math.ceil(totalSpan / maxTicks / interval) * interval);
+
+      const firstTick = Math.ceil(sYear / effectiveStep) * effectiveStep;
+      const years = [sYear];
+      for (let y = firstTick; y <= eYear; y += effectiveStep) {
+        if (y !== sYear && y !== eYear) {
+          years.push(y);
+        }
+      }
+      if (eYear !== sYear) years.push(eYear);
+
+      years.forEach((yr, idx) => {
+        const pos = yearToPos(yr);
+        const isEndpoint = idx === 0 || idx === years.length - 1;
+
+        const tick = document.createElement('div');
+        tick.className = 'absolute z-10 flex items-center justify-center';
+
+        const line = document.createElement('div');
+        line.style.backgroundColor = state.lineColor;
+        line.style.opacity = isEndpoint ? '0.9' : '0.55';
+
+        const label = document.createElement('span');
+        label.textContent = String(yr);
+        label.className = `text-[11px] font-semibold px-1.5 py-0.5 rounded bg-white/85 text-slate-700 border border-slate-200/80 shadow-2xs whitespace-nowrap`;
+
+        if (isHoriz) {
+          tick.style.left = `${pos}px`;
+          tick.style.top = `${axisCrossPos}px`;
+          tick.style.transform = 'translate(-50%, -50%)';
+
+          line.style.width = isEndpoint ? '3px' : '2px';
+          line.style.height = isEndpoint ? '16px' : '11px';
+
+          label.style.position = 'absolute';
+          label.style.top = '12px';
+          label.style.left = '50%';
+          label.style.transform = 'translateX(-50%)';
+        } else {
+          tick.style.left = `${axisCrossPos}px`;
+          tick.style.top = `${pos}px`;
+          tick.style.transform = 'translate(-50%, -50%)';
+
+          line.style.height = isEndpoint ? '3px' : '2px';
+          line.style.width = isEndpoint ? '16px' : '11px';
+
+          label.style.position = 'absolute';
+          label.style.left = '14px';
+          label.style.top = '50%';
+          label.style.transform = 'translateY(-50%)';
+        }
+
+        tick.appendChild(line);
+        tick.appendChild(label);
+        ticksLayer.appendChild(tick);
+      });
+    }
+
+    // --- SIDEPANEL FOR REDIGERING ---
+
+    function renderSidebar() {
+      const sidebar = document.getElementById('editor-sidebar');
+      if (!sidebar) return;
+
+      const selected = state.events.find(e => e.id === state.selectedId);
+      if (!selected || state.viewMode) {
+        sidebar.classList.add('hidden');
+        return;
+      }
+
+      sidebar.classList.remove('hidden');
+
+      const palette = getColorPalette(selected.color);
+      const colorDot = document.getElementById('sidebar-color-dot');
+      if (colorDot) colorDot.style.backgroundColor = palette.hex;
+
+      const fieldDate = document.getElementById('field-date');
+      const fieldTitle = document.getElementById('field-title');
+      const fieldDesc = document.getElementById('field-description');
+      const fieldImgUrl = document.getElementById('field-image-url');
+      const fieldImgCaption = document.getElementById('field-image-caption');
+      const btnRemoveImg = document.getElementById('btn-remove-image');
+      const captionWrap = document.getElementById('image-caption-wrapper');
+
+      if (fieldDate && document.activeElement !== fieldDate) fieldDate.value = selected.date || '';
+      if (fieldTitle && document.activeElement !== fieldTitle) fieldTitle.value = selected.title || '';
+      if (fieldDesc && document.activeElement !== fieldDesc) fieldDesc.value = selected.description || '';
+
+      const isDataUrl = (selected.imageUrl || '').startsWith('data:');
+      if (fieldImgUrl && document.activeElement !== fieldImgUrl) {
+        fieldImgUrl.value = isDataUrl ? '' : (selected.imageUrl || '');
+        fieldImgUrl.placeholder = isDataUrl ? 'Opplastet bilde er aktivt (lim inn URL for å bytte)' : 'Eller lim inn bilde-URL (https://...)';
+      }
+      if (fieldImgCaption && document.activeElement !== fieldImgCaption) {
+        fieldImgCaption.value = selected.imageCaption || '';
+      }
+      if (btnRemoveImg) btnRemoveImg.classList.toggle('hidden', !selected.imageUrl);
+      if (captionWrap) captionWrap.classList.toggle('hidden', !selected.imageUrl);
+
+      // Plasseringsknapper (Over/Under eller Venstre/Høyre)
+      const labelBefore = document.getElementById('label-side-before');
+      const labelAfter = document.getElementById('label-side-after');
+      const btnBefore = document.getElementById('btn-side-before');
+      const btnAfter = document.getElementById('btn-side-after');
+
+      if (labelBefore && labelAfter) {
+        if (state.orientation === 'horizontal') {
+          labelBefore.textContent = 'Over linjen';
+          labelAfter.textContent = 'Under linjen';
+        } else {
+          labelBefore.textContent = 'Venstre for linjen';
+          labelAfter.textContent = 'Høyre for linjen';
+        }
+      }
+
+      if (btnBefore && btnAfter) {
+        const isBefore = selected.side === 'before';
+        btnBefore.className = isBefore
+          ? 'py-2 px-3 rounded-xl border border-blue-500 bg-blue-50 text-blue-700 text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5'
+          : 'py-2 px-3 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5';
+        btnAfter.className = !isBefore
+          ? 'py-2 px-3 rounded-xl border border-blue-500 bg-blue-50 text-blue-700 text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5'
+          : 'py-2 px-3 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5';
+      }
+
+      // Avstand fra linjen
+      const currentStem = selected.stemOffset || 46;
+      document.querySelectorAll('.stem-btn').forEach(btn => {
+        const val = parseInt(btn.dataset.stem, 10);
+        const active = Math.abs(currentStem - val) < 20;
+        btn.className = active
+          ? 'stem-btn py-1.5 px-2 rounded-lg border border-blue-500 bg-blue-50 text-blue-700 text-xs font-semibold cursor-pointer'
+          : 'stem-btn py-1.5 px-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-medium cursor-pointer';
+      });
+
+      // Bredde
+      const widthSlider = document.getElementById('field-width');
+      const widthLabel = document.getElementById('width-value-label');
+      const currentWidth = selected.width || 260;
+      if (widthSlider) widthSlider.value = currentWidth;
+      if (widthLabel) widthLabel.textContent = `${currentWidth} px`;
+
+      // Fargevalg
+      document.querySelectorAll('#card-color-swatches button').forEach(btn => {
+        const active = btn.dataset.colorHex === selected.color;
+        btn.style.boxShadow = active ? `0 0 0 2px #fff, 0 0 0 4px ${selected.color}` : '';
+      });
+    }
+
+    function updateSelectedEvent(field, value) {
+      const ev = state.events.find(item => item.id === state.selectedId);
+      if (!ev) return;
+      ev[field] = value;
+      saveToLocalStorage();
+      renderTimelineStage();
+      renderSidebar();
+    }
+
+    function deselectEvent() {
+      state.selectedId = null;
+      renderAll();
+    }
+
+    function flipEventSide(eventId) {
+      const ev = state.events.find(item => item.id === eventId);
+      if (!ev) return;
+      ev.side = ev.side === 'before' ? 'after' : 'before';
+      state.selectedId = ev.id;
+      saveToLocalStorage();
+      renderAll();
+    }
+
+    // --- DRA-OG-SLIPP OG BREDDEJUSTERING ---
+
+    function startDragEvent(e, ev, dot, card, stem) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      e.stopPropagation();
+
+      state.selectedId = ev.id;
+      renderSidebar();
+
+      const isHoriz = state.orientation === 'horizontal';
+      const startPointerPrimary = isHoriz ? e.clientX : e.clientY;
+      const startPointerCross = isHoriz ? e.clientY : e.clientX;
+      const initialPos = ev.pos;
+      const initialSide = ev.side;
+
+      // Snapshot av etterfølgende hendelser for sanntids forskyvning
+      const subsequentSnapshot = state.events
+        .filter(other => other.id !== ev.id && other.pos > initialPos)
+        .map(other => ({ id: other.id, initialPos: other.pos }));
+
+      card.classList.add('is-dragging');
+      dot.classList.add('is-dragging');
+
+      dragContext = {
+        eventId: ev.id,
+        isHoriz,
+        startPointerPrimary,
+        startPointerCross,
+        initialPos,
+        initialSide,
+        subsequentSnapshot,
+        moved: false
+      };
+    }
+
+    function startResizeCard(e, ev) {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      e.stopPropagation();
+
+      state.selectedId = ev.id;
+      renderSidebar();
+
+      resizeContext = {
+        eventId: ev.id,
+        startX: e.clientX,
+        initialWidth: ev.width || 260
+      };
+    }
+
+    function setupGlobalPointerListeners() {
+      window.addEventListener('pointermove', (e) => {
+        if (resizeContext) {
+          const ev = state.events.find(item => item.id === resizeContext.eventId);
+          if (!ev) return;
+          const deltaX = e.clientX - resizeContext.startX;
+          const nextWidth = Math.max(180, Math.min(460, Math.round((resizeContext.initialWidth + deltaX) / 5) * 5));
+          if (ev.width !== nextWidth) {
+            ev.width = nextWidth;
+            renderTimelineStage();
+            renderSidebar();
+          }
+          return;
+        }
+
+        if (!dragContext) return;
+        const ev = state.events.find(item => item.id === dragContext.eventId);
+        if (!ev) return;
+
+        const currentPrimary = dragContext.isHoriz ? e.clientX : e.clientY;
+        const currentCross = dragContext.isHoriz ? e.clientY : e.clientX;
+        const deltaPrimary = currentPrimary - dragContext.startPointerPrimary;
+        const deltaCross = currentCross - dragContext.startPointerCross;
+
+        if (Math.abs(deltaPrimary) > 3 || Math.abs(deltaCross) > 3) {
+          dragContext.moved = true;
+        }
+
+        if (!dragContext.moved) return;
+
+        const newPos = Math.max(90, Math.round(dragContext.initialPos + deltaPrimary));
+        const appliedDelta = newPos - dragContext.initialPos;
+        ev.pos = newPos;
+
+        // Dersom brukeren drar kortet langt nok på tvers av hovedlinjen, bytt side automatisk
+        if (dragContext.initialSide === 'before' && deltaCross > 75) {
+          ev.side = 'after';
+        } else if (dragContext.initialSide === 'after' && deltaCross < -75) {
+          ev.side = 'before';
+        }
+
+        // Dersom "Forskyv etterfølgende" er på, skyv kortene etterpå tilsvarende
+        if (state.shiftMode && dragContext.subsequentSnapshot.length > 0) {
+          dragContext.subsequentSnapshot.forEach(snap => {
+            const target = state.events.find(item => item.id === snap.id);
+            if (target) {
+              target.pos = Math.max(110, snap.initialPos + appliedDelta);
+            }
+          });
+        }
+
+        // Oppdater dato automatisk hvis årstallsskala er aktiv og datoen kun er et rent årstall
+        if (state.showYearTicks && /^-?\d{1,4}$/.test((ev.date || '').trim())) {
+          ev.date = String(posToYear(ev.pos));
+        }
+
+        renderTimelineStage();
+        renderSidebar();
+      });
+
+      window.addEventListener('pointerup', () => {
+        if (resizeContext) {
+          resizeContext = null;
+          saveToLocalStorage();
+          renderAll();
+        }
+        if (dragContext) {
+          const wasMoved = dragContext.moved;
+          dragContext = null;
+          saveToLocalStorage();
+          renderAll();
+          if (wasMoved && state.shiftMode) {
+            showToast('Hendelse flyttet');
+          }
+        }
+      });
+    }
+
+    // --- KLIKK PÅ SELVE TIDSLINJE-STREKEN FOR Å LEGGE TIL NY HENDELSE ---
+
+    function setupAxisHoverAndClick() {
+      const axis = document.getElementById('timeline-axis');
+      const marker = document.getElementById('axis-hover-marker');
+      if (!axis || !marker) return;
+
+      axis.addEventListener('pointermove', (e) => {
+        if (state.viewMode || dragContext) {
+          marker.classList.add('hidden');
+          return;
+        }
+        const rect = axis.getBoundingClientRect();
+        marker.classList.remove('hidden');
+        if (state.orientation === 'horizontal') {
+          const localX = Math.max(20, Math.min(rect.width - 20, e.clientX - rect.left));
+          marker.style.left = `${localX}px`;
+          marker.style.top = '50%';
+        } else {
+          const localY = Math.max(20, Math.min(rect.height - 20, e.clientY - rect.top));
+          marker.style.left = '50%';
+          marker.style.top = `${localY}px`;
+        }
+      });
+
+      axis.addEventListener('pointerleave', () => {
+        marker.classList.add('hidden');
+      });
+
+      axis.addEventListener('click', (e) => {
+        if (state.viewMode) return;
+        e.stopPropagation();
+        const stage = document.getElementById('timeline-stage');
+        const stageRect = stage.getBoundingClientRect();
+        const clickPos = state.orientation === 'horizontal'
+          ? Math.max(100, Math.round(e.clientX - stageRect.left))
+          : Math.max(100, Math.round(e.clientY - stageRect.top));
+
+        const suggestedYear = state.showYearTicks ? String(posToYear(clickPos)) : 'Nytt år';
+        insertEventAtPosition({
+          pos: clickPos,
+          date: suggestedYear,
+          title: 'Ny hendelse',
+          side: 'auto',
+          shiftFollowing: state.shiftMode
+        });
+      });
+    }
+
+    // --- INNSETTING OG FORSKYVNING AV HENDELSER ---
+
+    function insertEventAtPosition({ pos, date, title, side = 'auto', shiftFollowing = true }) {
+      const spacing = 290;
+      const targetPos = Math.max(110, Math.round(pos));
+
+      // Velg side automatisk (annenhver over/under) dersom 'auto'
+      let resolvedSide = side;
+      if (resolvedSide === 'auto') {
+        const previousEvents = state.events.filter(ev => ev.pos <= targetPos).sort((a, b) => b.pos - a.pos);
+        if (previousEvents.length > 0) {
+          resolvedSide = previousEvents[0].side === 'before' ? 'after' : 'before';
+        } else {
+          resolvedSide = 'before';
+        }
+      }
+
+      // Forskyv etterfølgende hendelser dersom de ligger i veien eller forskyvning er valgt
+      const shouldShift = Boolean(shiftFollowing);
+      if (shouldShift) {
+        state.events.forEach(ev => {
+          if (ev.pos >= targetPos - 40) {
+            ev.pos += spacing;
+          }
+        });
+      }
+
+      const colorObj = CARD_COLORS[state.events.length % CARD_COLORS.length];
+      const newEv = {
+        id: generateId(),
+        date: (date || '').trim() || (state.showYearTicks ? String(posToYear(targetPos)) : 'Dato'),
+        title: (title || '').trim() || 'Ny hendelse',
+        description: '',
+        imageUrl: '',
+        imageCaption: '',
+        pos: targetPos,
+        side: resolvedSide,
+        stemOffset: 46,
+        width: 260,
+        color: colorObj.hex
+      };
+
+      state.events.push(newEv);
+      state.selectedId = newEv.id;
+      saveToLocalStorage();
+      renderAll();
+      scrollToTimelinePosition(targetPos);
+
+      if (shouldShift) {
+        showToast('Ny hendelse satt inn og etterfølgende forskjøvet');
+      } else {
+        showToast('Ny hendelse lagt til');
+      }
+    }
+
+    // Rull arbeidsflaten mykt slik at den nye hendelsen alltid er synlig på skjermen
+    function scrollToTimelinePosition(pos) {
+      const workspace = document.getElementById('workspace-scroll');
+      if (!workspace) return;
+      if (state.orientation === 'horizontal') {
+        const targetScrollLeft = Math.max(0, pos - workspace.clientWidth / 2);
+        workspace.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+      } else {
+        const targetScrollTop = Math.max(0, pos - workspace.clientHeight / 2);
+        workspace.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+      }
+    }
+
+    // Sett inn ny hendelse rett etter den som er valgt nå
+    function insertAfterSelected() {
+      const selected = state.events.find(e => e.id === state.selectedId);
+      const basePos = selected ? selected.pos + 290 : 220;
+      const nextSide = selected ? (selected.side === 'before' ? 'after' : 'before') : 'before';
+
+      insertEventAtPosition({
+        pos: basePos,
+        date: state.showYearTicks ? String(posToYear(basePos)) : 'Nytt år',
+        title: 'Ny hendelse',
+        side: nextSide,
+        shiftFollowing: true
+      });
+    }
+
+    function duplicateSelectedEvent() {
+      const selected = state.events.find(e => e.id === state.selectedId);
+      if (!selected) return;
+
+      const newPos = selected.pos + 290;
+      if (state.shiftMode) {
+        state.events.forEach(ev => {
+          if (ev.pos >= newPos - 40) {
+            ev.pos += 290;
+          }
+        });
+      }
+
+      const copy = {
+        ...selected,
+        id: generateId(),
+        title: `${selected.title} (kopi)`,
+        pos: newPos,
+        side: selected.side === 'before' ? 'after' : 'before'
+      };
+
+      state.events.push(copy);
+      state.selectedId = copy.id;
+      saveToLocalStorage();
+      renderAll();
+      scrollToTimelinePosition(newPos);
+      showToast('Hendelse duplisert');
+    }
+
+    function deleteSelectedEvent() {
+      if (!state.selectedId) return;
+      state.events = state.events.filter(ev => ev.id !== state.selectedId);
+      state.selectedId = state.events.length > 0 ? state.events[0].id : null;
+      saveToLocalStorage();
+      renderAll();
+      showToast('Hendelse slettet');
+    }
+
+    function distributeEventsEvenly() {
+      if (state.events.length === 0) return;
+      const sorted = [...state.events].sort((a, b) => a.pos - b.pos);
+      sorted.forEach((ev, idx) => {
+        ev.pos = 180 + idx * 300;
+      });
+      saveToLocalStorage();
+      renderAll();
+      showToast('Alle hendelsene er fordelt med lik avstand');
+    }
+
+    // --- BILDEOPPLASTING OG KOMPRIMERING ---
+
+    function triggerCardImageUpload(eventId) {
+      pendingImageTargetId = eventId;
+      state.selectedId = eventId;
+      renderAll();
+      const input = document.getElementById('card-direct-image-input');
+      if (input) input.click();
+    }
+
+    function handleDirectCardImageUpload(event) {
+      const file = event.target.files[0];
+      const targetId = pendingImageTargetId || state.selectedId;
+      event.target.value = '';
+      if (!file || !targetId) return;
+      compressAndApplyImage(file, targetId);
+    }
+
+    function focusImageUrlForEvent(eventId) {
+      state.selectedId = eventId;
+      renderAll();
+      const urlInput = document.getElementById('field-image-url');
+      if (urlInput) {
+        urlInput.focus();
+        urlInput.select();
+      }
+    }
+
+    function removeImageForEvent(eventId) {
+      const ev = state.events.find(item => item.id === eventId);
+      if (!ev) return;
+      ev.imageUrl = '';
+      ev.imageCaption = '';
+      saveToLocalStorage();
+      renderAll();
+      showToast('Bilde fjernet');
+    }
+
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file || !state.selectedId) return;
+      compressAndApplyImage(file, state.selectedId);
+    }
+
+    function compressAndApplyImage(file, targetEventId) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const offscreen = document.createElement('canvas');
+          offscreen.width = width;
+          offscreen.height = height;
+          const ctx = offscreen.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = offscreen.toDataURL('image/jpeg', 0.82);
+          const ev = state.events.find(item => item.id === targetEventId);
+          if (ev) {
+            ev.imageUrl = compressedDataUrl;
+            state.selectedId = targetEventId;
+            saveToLocalStorage();
+            renderAll();
+            showToast('Bilde lagt til i boksen');
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeSelectedImage() {
+      if (!state.selectedId) return;
+      removeImageForEvent(state.selectedId);
+    }
+
+    // --- MODAL FOR NY HENDELSE ---
+
+    function openInsertModal() {
+      const modal = document.getElementById('insert-modal');
+      const dateInput = document.getElementById('new-event-date');
+      const titleInput = document.getElementById('new-event-title');
+      const shiftInput = document.getElementById('new-event-shift');
+
+      if (dateInput) {
+        const maxPos = state.events.reduce((m, e) => Math.max(m, e.pos), 140);
+        dateInput.value = state.showYearTicks ? String(posToYear(maxPos + 280)) : '';
+      }
+      if (titleInput) titleInput.value = '';
+      if (shiftInput) shiftInput.checked = state.shiftMode;
+
+      if (modal) modal.classList.remove('hidden');
+      if (titleInput) setTimeout(() => titleInput.focus(), 40);
+    }
+
+    function closeInsertModal() {
+      const modal = document.getElementById('insert-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function confirmInsertModal() {
+      const dateVal = document.getElementById('new-event-date')?.value || '';
+      const titleVal = document.getElementById('new-event-title')?.value || 'Ny hendelse';
+      const sideVal = document.getElementById('new-event-side')?.value || 'auto';
+      const modeVal = document.getElementById('new-event-position-mode')?.value || 'end';
+      const shiftVal = Boolean(document.getElementById('new-event-shift')?.checked);
+
+      closeInsertModal();
+
+      let targetPos = 180;
+      if (modeVal === 'start') {
+        targetPos = 180;
+        insertEventAtPosition({
+          pos: targetPos,
+          date: dateVal,
+          title: titleVal,
+          side: sideVal,
+          shiftFollowing: true
+        });
+      } else {
+        const maxPos = state.events.reduce((max, ev) => Math.max(max, ev.pos), -120);
+        targetPos = maxPos + 300;
+        insertEventAtPosition({
+          pos: targetPos,
+          date: dateVal,
+          title: titleVal,
+          side: sideVal,
+          shiftFollowing: shiftVal
+        });
+      }
+    }
+
+    // --- VERKTØYLINJE-KONTROLLER OG MENYER ---
+
+    function updateTimelineMeta(key, value) {
+      state[key] = value;
+      saveToLocalStorage();
+    }
+
+    function setOrientation(orientation) {
+      state.orientation = orientation;
+      saveToLocalStorage();
+      renderAll();
+    }
+
+    function toggleShiftMode(checked) {
+      state.shiftMode = Boolean(checked);
+      saveToLocalStorage();
+    }
+
+    function toggleViewMode() {
+      state.viewMode = !state.viewMode;
+      renderAll();
+    }
+
+    function setBgPattern(pattern) {
+      state.bgPattern = pattern;
+      saveToLocalStorage();
+      renderAll();
+    }
+
+    function setFontFamily(font) {
+      state.fontFamily = font;
+      saveToLocalStorage();
+      renderAll();
+    }
+
+    function updateScaleSetting(key, value) {
+      state[key] = value;
+      saveToLocalStorage();
+      renderAll();
+    }
+
+    function toggleScaleMenu() {
+      const pop = document.getElementById('scale-popover');
+      const appPop = document.getElementById('appearance-popover');
+      if (appPop) appPop.classList.add('hidden');
+      if (pop) pop.classList.toggle('hidden');
+    }
+
+    function toggleAppearanceMenu() {
+      const pop = document.getElementById('appearance-popover');
+      const scalePop = document.getElementById('scale-popover');
+      if (scalePop) scalePop.classList.add('hidden');
+      if (pop) pop.classList.toggle('hidden');
+    }
+
+    function setupOutsidePopoverClose() {
+      document.addEventListener('click', (e) => {
+        const scalePop = document.getElementById('scale-popover');
+        const btnScale = document.getElementById('btn-scale');
+        if (scalePop && !scalePop.classList.contains('hidden')) {
+          if (!scalePop.contains(e.target) && !btnScale?.contains(e.target)) {
+            scalePop.classList.add('hidden');
+          }
+        }
+
+        const appPop = document.getElementById('appearance-popover');
+        const btnApp = document.getElementById('btn-appearance');
+        if (appPop && !appPop.classList.contains('hidden')) {
+          if (!appPop.contains(e.target) && !btnApp?.contains(e.target)) {
+            appPop.classList.add('hidden');
+          }
+        }
+      });
+    }
+
+    function handleCanvasBackgroundClick(e) {
+      if (e.target.id === 'workspace-scroll' || e.target.id === 'timeline-canvas' || e.target.id === 'timeline-stage') {
+        deselectEvent();
+      }
+    }
+
+    // --- LAGRING, ÅPNING, DELBAR HTML OG PDF-UTSKRIFT ---
+
+    function slugifyFilename(text) {
+      return (text || 'tidslinje')
+        .toLowerCase()
+        .replace(/[æ]/g, 'ae')
+        .replace(/[ø]/g, 'o')
+        .replace(/[å]/g, 'a')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'tidslinje';
+    }
+
+    function saveTimelineFile() {
+      const payload = {
+        app: 'Tidslinjeverkstedet',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        data: state
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slugifyFilename(state.title)}.tidslinje`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Tidslinjefil lagret (.tidslinje)');
+    }
+
+    function handleOpenFile(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const imported = parsed.data && Array.isArray(parsed.data.events) ? parsed.data : parsed;
+          if (!imported || !Array.isArray(imported.events)) {
+            throw new Error('Ugyldig filformat');
+          }
+
+          state = {
+            ...state,
+            ...imported,
+            viewMode: false,
+            selectedId: imported.events.length > 0 ? imported.events[0].id : null
+          };
+          saveToLocalStorage();
+          renderAll();
+          showToast('Tidslinjefil åpnet');
+        } catch (err) {
+          showToast('Kunne ikke lese filen. Velg en gyldig .tidslinje-fil.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportStandaloneHTML() {
+      const sorted = [...state.events].sort((a, b) => a.pos - b.pos);
+      const cardsMarkup = sorted.map(ev => {
+        const pal = getColorPalette(ev.color);
+        const imgTag = ev.imageUrl
+          ? `<img src="${escapeHTML(ev.imageUrl)}" alt="${escapeHTML(ev.title)}" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin:10px 0;" />`
+          : '';
+        const capTag = ev.imageCaption
+          ? `<p style="font-size:12px;color:#64748b;font-style:italic;margin:0 0 8px 0;">${escapeHTML(ev.imageCaption)}</p>`
+          : '';
+        return `
+          <article style="background:#fff;border:1px solid #e2e8f0;border-top:5px solid ${pal.hex};border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(15,23,42,0.05);">
+            <span style="display:inline-block;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:700;background:${pal.bg};color:${pal.hex};">${escapeHTML(ev.date)}</span>
+            <h2 style="margin:8px 0 6px 0;font-size:18px;color:#0f172a;">${escapeHTML(ev.title)}</h2>
+            ${imgTag}
+            ${capTag}
+            <p style="margin:0;font-size:14px;line-height:1.6;color:#475569;white-space:pre-line;">${escapeHTML(ev.description || '')}</p>
+          </article>
+        `;
+      }).join('\n');
+
+      const docLines = [
+        '<!DOCTYPE html>',
+        '<html lang="nb">',
+        '<head>',
+        '<meta charset="UTF-8" />',
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+        `<title>${escapeHTML(state.title || 'Tidslinje')}</title>`,
+        '<style>',
+        'body{font-family:system-ui,-apple-system,sans-serif;background:#f3f5f8;color:#1e293b;margin:0;padding:32px 16px;}',
+        '.wrap{max-width:920px;margin:0 auto;}',
+        '.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-top:24px;}',
+        '</style>',
+        '</head>',
+        '<body>',
+        '<div class="wrap">',
+        `<h1 style="margin:0;font-size:30px;color:#0f172a;">${escapeHTML(state.title || 'Min tidslinje')}</h1>`,
+        `<p style="margin:6px 0 0 0;color:#64748b;font-size:16px;">${escapeHTML(state.subtitle || '')}</p>`,
+        `<div class="grid">${cardsMarkup}</div>`,
+        '</div>',
+        '</body>',
+        '</html>'
+      ];
+
+      const blob = new Blob([docLines.join('\n')], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slugifyFilename(state.title)}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Delbar HTML-fil lastet ned');
+    }
+
+    function prepareAndPrint() {
+      const prevSelected = state.selectedId;
+      state.selectedId = null;
+      renderAll();
+
+      setTimeout(() => {
+        window.print();
+        state.selectedId = prevSelected;
+        renderAll();
+      }, 120);
+    }
+
+    // --- BEKREFTELSESDIALOG, TOAST OG HJELPEFUNKSJONER ---
+
+    function openConfirmModal(title, message, onConfirm) {
+      const modal = document.getElementById('confirm-modal');
+      const titleEl = document.getElementById('confirm-title');
+      const msgEl = document.getElementById('confirm-message');
+      const okBtn = document.getElementById('confirm-ok-btn');
+
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      pendingConfirmCallback = onConfirm;
+
+      if (okBtn) {
+        okBtn.onclick = () => {
+          const cb = pendingConfirmCallback;
+          closeConfirmModal();
+          if (typeof cb === 'function') cb();
+        };
+      }
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      if (modal) modal.classList.add('hidden');
+      pendingConfirmCallback = null;
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'bg-slate-900 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg border border-slate-700/60 transition-opacity duration-300';
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2800);
+    }
+
+    function escapeHTML(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
