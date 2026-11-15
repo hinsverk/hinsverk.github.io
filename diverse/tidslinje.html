@@ -98,6 +98,15 @@
   <!-- TOPPMENY: Tittel og filhandlinger -->
   <header class="no-print bg-white border-b border-slate-200 px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2 z-30 shadow-xs">
     <div class="flex items-center gap-2.5">
+      <a href="../index.html" onclick="handleBackNavigation(event)" class="px-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition inline-flex items-center gap-1.5 shrink-0" title="Gå tilbake til oversiktssiden">
+        <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>Tilbake</span>
+      </a>
+
+      <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+
       <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
         <!-- Tidslinje-ikon -->
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -2113,57 +2122,94 @@
       }, 120);
     }
 
+    function handleBackNavigation(event) {
+      try {
+        if (document.referrer) {
+          const refUrl = new URL(document.referrer);
+          if (refUrl.origin === window.location.origin && (refUrl.pathname.endsWith('/') || refUrl.pathname.endsWith('/index.html'))) {
+            event.preventDefault();
+            window.location.href = refUrl.href;
+          }
+        }
+      } catch (err) {
+        // Fall tilbake til standard lenke (../index.html)
+      }
+    }
+
     // --- BEKREFTELSESDIALOG, TOAST OG HJELPEFUNKSJONER ---
 
-    function openConfirmModal(title, message, onConfirm) {
-      const modal = document.getElementById('confirm-modal');
-      const titleEl = document.getElementById('confirm-title');
-      const msgEl = document.getElementById('confirm-message');
-      const okBtn = document.getElementById('confirm-ok-btn');
-
-      if (titleEl) titleEl.textContent = title;
-      if (msgEl) msgEl.textContent = message;
-      pendingConfirmCallback = onConfirm;
-
-      if (okBtn) {
-        okBtn.onclick = () => {
-          const cb = pendingConfirmCallback;
-          closeConfirmModal();
-          if (typeof cb === 'function') cb();
-        };
-      }
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeConfirmModal() {
-      const modal = document.getElementById('confirm-modal');
-      if (modal) modal.classList.add('hidden');
-      pendingConfirmCallback = null;
-    }
-
-    function showToast(message) {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-
-      const toast = document.createElement('div');
-      toast.className = 'bg-slate-900 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg border border-slate-700/60 transition-opacity duration-300';
-      toast.textContent = message;
-      container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-      }, 2800);
-    }
-
+    // Sikker HTML-escaping av brukertekst
     function escapeHTML(str) {
-      return String(str ?? '')
+      if (str === null || str === undefined) return '';
+      return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+
+    // Åpne bekreftelsesdialog
+    function openConfirmModal(title, message, onConfirm) {
+      const modal = document.getElementById('confirm-modal');
+      const titleEl = document.getElementById('confirm-title');
+      const msgEl = document.getElementById('confirm-message');
+      const okBtn = document.getElementById('confirm-ok-btn');
+
+      if (titleEl) titleEl.textContent = title || 'Bekreft handling';
+      if (msgEl) msgEl.textContent = message || 'Er du sikker?';
+      pendingConfirmCallback = typeof onConfirm === 'function' ? onConfirm : null;
+
+      if (okBtn) {
+        okBtn.onclick = () => {
+          const cb = pendingConfirmCallback;
+          closeConfirmModal();
+          if (cb) cb();
+        };
+      }
+
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    // Lukk bekreftelsesdialog
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      if (modal) modal.classList.add('hidden');
+      pendingConfirmCallback = null;
+    }
+
+    // Vis en diskret varsling nederst til høyre
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      if (!container || !message) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto bg-slate-900/95 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg border border-slate-700/60 flex items-center gap-2 transition-all duration-200 opacity-0 translate-y-2';
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
+        <span>${escapeHTML(message)}</span>
+      `;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => {
+          toast.remove();
+        }, 220);
+      }, 2800);
+    }
+
+    // Lukk åpne dialoger med Escape-tasten
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeInsertModal();
+        closeConfirmModal();
+      }
+    });
   </script>
 </body>
 </html>
