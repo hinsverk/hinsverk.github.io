@@ -79,7 +79,7 @@
             <!-- Left: Back button + Brand -->
             <div class="flex items-center space-x-3 w-full lg:w-auto justify-between lg:justify-start">
                 <div class="flex items-center space-x-3">
-                    <a href="index.html" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition text-xs font-semibold whitespace-nowrap" title="Tilbake til Lærerverktøy">
+                    <a href="index.html" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition text-xs font-semibold whitespace-nowrap" title="Tilbake">
                         <i class="fa-solid fa-arrow-left"></i>
                         <span class="hidden sm:inline">Lærerverktøy</span>
                     </a>
@@ -88,7 +88,7 @@
                     </div>
                     <div>
                         <h1 class="font-bold text-slate-900 text-lg sm:text-xl leading-tight">Begrepsbyggeren</h1>
-                        <p class="text-xs text-slate-500 hidden sm:block">Norsk forsterket opplæring • Tilpasset nivåer</p>
+                        <p class="text-xs text-slate-500 hidden sm:block">Norsk forsterket opplæring • Tilpassede nivåer</p>
                     </div>
                 </div>
             </div>
@@ -99,6 +99,11 @@
                 <div class="flex items-center space-x-1.5">
                     <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="handleJSONImport(event)">
                     
+                    <button onclick="syncFromGitHubGist(true)" id="gist-sync-btn" class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition flex items-center whitespace-nowrap" title="Hent oppdatert ordliste fra GitHub Gist">
+                        <i id="gist-sync-icon" class="fa-solid fa-cloud-arrow-down sm:mr-1.5 text-sky-600"></i>
+                        <span class="hidden sm:inline">Synk Gist</span>
+                    </button>
+
                     <button onclick="triggerJSONImport()" class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition flex items-center whitespace-nowrap" title="Importer begrepsdatabase fra JSON-fil">
                         <i class="fa-solid fa-file-import sm:mr-1.5 text-indigo-600"></i>
                         <span class="hidden sm:inline">Importer</span>
@@ -173,7 +178,7 @@
         <section id="view-flashcards" class="space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-2 bg-sky-50 p-4 rounded-xl border border-sky-100">
                 <div>
-                    <h2 class="text-lg font-bold text-sky-950">Interaktive Begrepskort</h2>
+                    <h2 class="text-lg font-bold text-sky-950">Interaktive begrepskort</h2>
                     <p class="text-xs text-sky-700">Klikk på kortet (eller trykk <kbd class="px-1.5 py-0.5 bg-white border border-sky-200 rounded text-[10px] font-mono">Mellomrom</kbd>) for å snu det. Bruk piltastene for å bla.</p>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -354,7 +359,7 @@
         <section id="view-worksheet" class="hidden space-y-6">
             <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 class="text-lg font-bold text-amber-950">Utskriftsklart Oppgaveark</h2>
+                    <h2 class="text-lg font-bold text-amber-950">Utskriftsklart oppgaveark</h2>
                     <p class="text-xs text-amber-800">Generer oppgaver du kan skrive ut til eleven for papirarbeid eller lekse.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
@@ -362,7 +367,7 @@
                         <i class="fa-solid fa-arrows-rotate mr-1"></i> Nye oppgaver
                     </button>
                     <button onclick="toggleFasit()" id="fasit-btn" class="px-3 py-2 bg-white text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-50 transition">
-                        <i class="fa-solid fa-eye mr-1"></i> Vis Fasit
+                        <i class="fa-solid fa-eye mr-1"></i> Vis fasit
                     </button>
                     <button onclick="window.print()" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 shadow transition">
                         <i class="fa-solid fa-print mr-1.5"></i> Skriv ut oppgaveark
@@ -373,7 +378,7 @@
             <div id="printable-area" class="bg-white border border-slate-300 p-8 sm:p-12 rounded-xl shadow-sm text-slate-900 space-y-8">
                 <div class="border-b-2 border-slate-800 pb-4 flex justify-between items-end">
                     <div>
-                        <h1 class="text-2xl font-black uppercase tracking-wide text-slate-900">Arbeidsark: Norske Begreper & Ord</h1>
+                        <h1 class="text-2xl font-black uppercase tracking-wide text-slate-900">Arbeidsark: Norske begreper & ord</h1>
                         <p class="text-xs text-slate-600" id="worksheet-subtitle">Forsterket norskopplæring • Tema: Alle begreper</p>
                     </div>
                     <div class="text-right space-y-1 text-xs text-slate-700">
@@ -488,6 +493,7 @@
     </div>
 
     <script>
+        const REMOTE_GIST_URL = 'https://gist.githubusercontent.com/hinsverk/82a47a1bc5666e961b4ce14a1aef9e22/raw/fon.json';
         const STORAGE_KEY_VOCAB = 'begrepsbyggeren_vocab_v1';
         const STORAGE_KEY_HARD = 'begrepsbyggeren_hard_ids_v1';
 
@@ -774,6 +780,7 @@
             'ov_mer': 'Øv mer',
             'begynner': 'Begynnerord (A1)',
             'hverdag_lett': 'Hverdagsord (A2)',
+            'hverdag': 'Hverdagsord',
             'fagspråk': 'Skole & Fagspråk',
             'idiomer': 'Idiomer & Uttrykk',
             'samfunn': 'Samfunn & Kultur',
@@ -805,7 +812,69 @@
             initMatchingGame();
             nextQuizQuestion();
             renderWorksheet();
+            syncFromGitHubGist(false);
         };
+
+        async function syncFromGitHubGist(isManual = false) {
+            const syncIcon = document.getElementById('gist-sync-icon');
+            if (syncIcon) {
+                syncIcon.className = 'fa-solid fa-rotate fa-spin sm:mr-1.5 text-sky-600';
+            }
+
+            try {
+                const urlWithBust = `${REMOTE_GIST_URL}?t=${Date.now()}`;
+                const response = await fetch(urlWithBust, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`HTTP-feil: ${response.status}`);
+                }
+
+                const remoteData = await response.json();
+                if (!Array.isArray(remoteData)) {
+                    throw new Error("Ugyldig JSON-format fra Gist (må være en liste).");
+                }
+
+                // Hent ut kun brukerens egne tilføyelser (som ikke finnes i standard eller Gist) og kombiner med Gist + standard
+                const gistMap = new Map();
+                remoteData.forEach(item => {
+                    if (item && item.term) {
+                        gistMap.set(item.term.trim().toLowerCase(), item);
+                    }
+                });
+
+                // Oppdater eksisterende ord med ferske verdier fra Gist, behold egne ord som ikke er i Gist
+                const updatedExisting = vocabulary.map(localItem => {
+                    const key = localItem.term.trim().toLowerCase();
+                    if (gistMap.has(key)) {
+                        return { ...localItem, ...gistMap.get(key) };
+                    }
+                    return localItem;
+                });
+
+                const beforeCount = vocabulary.length;
+                const merged = deduplicateVocabulary([...updatedExisting, ...remoteData]);
+                const addedCount = merged.length - beforeCount;
+
+                vocabulary = merged;
+                saveVocabularyToStorage();
+                renderCategoryFilterButtons();
+                applyFilters();
+
+                if (isManual) {
+                    showToast(`Synkronisert med GitHub Gist! (${remoteData.length} ord hentet, ${addedCount} nye).`);
+                } else if (addedCount > 0) {
+                    showToast(`Lastet inn ${addedCount} nye ord fra GitHub Gist!`);
+                }
+            } catch (err) {
+                console.warn("Klarte ikke å hente fra GitHub Gist:", err);
+                if (isManual) {
+                    showToast("Kunne ikke hente fra GitHub Gist. Sjekk internettforbindelsen.", false);
+                }
+            } finally {
+                if (syncIcon) {
+                    syncIcon.className = 'fa-solid fa-cloud-arrow-down sm:mr-1.5 text-sky-600';
+                }
+            }
+        }
 
         // Keyboard shortcuts for Flashcards
         document.addEventListener('keydown', function(e) {
@@ -848,7 +917,7 @@
         function renderCategoryFilterButtons() {
             const bar = document.getElementById('category-bar');
             
-            const preferredOrder = ['alle', 'ov_mer', 'begynner', 'hverdag_lett', 'fagspråk', 'idiomer', 'samfunn', 'medier', 'nyanser'];
+            const preferredOrder = ['alle', 'ov_mer', 'begynner', 'hverdag_lett', 'hverdag', 'fagspråk', 'idiomer', 'samfunn', 'medier', 'nyanser'];
             const categoriesInUse = Array.from(new Set(vocabulary.map(v => v.category)));
             
             let sortedCats = preferredOrder.filter(cat => cat === 'alle' || cat === 'ov_mer' || categoriesInUse.includes(cat));
@@ -983,7 +1052,6 @@
                 document.getElementById('card-hint').innerText = item.hint || 'Ingen oversettelse satt';
                 document.getElementById('card-counter').innerText = `${currentCardIndex + 1} / ${filteredVocab.length}`;
 
-                // Visual / Emoji
                 if (item.visual) {
                     visualEl.innerText = item.visual;
                     visualEl.classList.remove('hidden');
@@ -991,7 +1059,6 @@
                     visualEl.classList.add('hidden');
                 }
 
-                // Grammar / Inflection
                 if (item.grammar) {
                     grammarFrontEl.innerText = item.grammar;
                     grammarFrontEl.classList.remove('hidden');
@@ -1002,7 +1069,6 @@
                     grammarBoxEl.classList.add('hidden');
                 }
 
-                // Update "Øv mer" button appearance
                 const practiceBtn = document.getElementById('btn-practice-more');
                 if (hardWordIds.has(item.id)) {
                     practiceBtn.className = "px-4 py-2 rounded-xl bg-amber-500 text-white border border-amber-600 font-semibold text-xs sm:text-sm transition flex items-center shadow-sm";
@@ -1018,7 +1084,7 @@
 
                 if (item.category === 'begynner') {
                     badge.className = 'px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full uppercase tracking-wider';
-                } else if (item.category === 'hverdag_lett') {
+                } else if (item.category === 'hverdag_lett' || item.category === 'hverdag') {
                     badge.className = 'px-3 py-1 bg-teal-100 text-teal-800 text-xs font-semibold rounded-full uppercase tracking-wider';
                 } else if (item.category === 'idiomer') {
                     badge.className = 'px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full uppercase tracking-wider';
@@ -1377,7 +1443,7 @@
         }
 
         function resetToDefaultVocabulary() {
-            if (!confirm("Vil du tilbakestille ordlisten til standardordene? Egne innlagte ord og «Øv mer»-markeringer vil bli fjernet.")) {
+            if (!confirm("Vil du tilbakestille ordlisten og hente fersk liste fra GitHub Gist? Egne innlagte ord og «Øv mer»-markeringer vil bli fjernet.")) {
                 return;
             }
             localStorage.removeItem(STORAGE_KEY_VOCAB);
@@ -1388,7 +1454,7 @@
             clearSearch();
             renderCategoryFilterButtons();
             applyFilters();
-            showToast("Ordlisten er tilbakestilt til standard.");
+            syncFromGitHubGist(true);
         }
 
         function exportVocabularyJSON() {
