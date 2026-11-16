@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Øveark til tentamen i matematikk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1f2937;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white;
+                color: black;
+                font-size: 10.5pt;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .card {
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8">
+
+    <!-- Utskriftsknapp -->
+    <div class="max-w-4xl mx-auto mb-6 flex justify-between items-center no-print">
+        <h1 class="text-xl font-bold text-slate-800">Øveark og huskeliste til tentamen</h1>
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition duration-150 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Skriv ut / Lagre som PDF
+        </button>
+    </div>
+
+    <!-- Hoveddokument -->
+    <div class="max-w-4xl mx-auto bg-white p-8 md:p-12 rounded-xl shadow-md border border-slate-200">
+        
+        <!-- Topptekst -->
+        <header class="border-b-2 border-slate-800 pb-5 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded uppercase tracking-wider">Pensumoversikt &amp; Formelsamling</span>
+                    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 mt-2">Dette må du kunne til tentamen</h1>
+                    <p class="text-sm text-slate-600 mt-1">Bruk dette arket sammen med øvingsoppgavene når du forbereder deg.</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sjekkliste-oversikt -->
+        <section class="mb-8 bg-slate-50 p-5 rounded-xl border border-slate-200">
+            <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
+                Sjekkliste – Hva kommer på tentamen?
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-white p-3.5 rounded-lg border border-slate-200">
+                    <p class="font-bold text-slate-900 mb-2 border-b pb-1">Del 1 – Uten hjelpemidler</p>
+                    <ul class="space-y-1.5 text-slate-700 text-xs">
+                        <li class="flex items-start gap-2"><span class="text-slate-400">☐</span> Regne ut enkel sannsynlighet som brøk, desimaltall og prosent</li>
+                        <li class="flex items-start gap-2"><span class="text-slate-400">☐</span> Sette opp utfallsrom (f.eks. ved kast med to mynter)</li>
+                        <li class="flex items-start gap-2"><span class="text-slate-400">☐</span> Finne gjennomsnitt, median, typetall og variasjonsbredde</li>
+                          <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Tolke og endre enkel Python-kode som simulerer tilfeldige forsøk</li>
+                            <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Tolke diagrammer og tabeller</li>
+                        <li class="flex items-start gap-2"><span class="text-slate-400">☐</span> Kjenne vinkeltyper og vinkelsum i trekant og dermed kunne regne vinkelsum i andre figurer</li>
+                        <li class="flex items-start gap-2"><span class="text-slate-400">☐</span> Beregne areal og omkrets av rektangel, kvadrat, trekant, parallellogram, trapes og sirkel</li>
+                        <li class="flex items-start gap-2"><span class="text-slate-400">☐</span> Gjøre om mellom arealenhetene \(\text{m}^2\), \(\text{dm}^2\), \(\text{cm}^2\) og \(\text{mm}^2\)</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-3.5 rounded-lg border border-slate-200">
+                    <p class="font-bold text-blue-900 mb-2 border-b pb-1">Del 2 – Med hjelpemidler</p>
+                    <ul class="space-y-1.5 text-slate-700 text-xs">
+                        <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Lage frekvenstabell, beregne relativ frekvens og lage diagram i regneark</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Bruke regnearkformler for gjennomsnitt, median, typetall (modus), maks og min</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Regne ut vinkelgrader i et sirkeldiagram</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Forstå forskjellen på teoretisk sannsynlighet og relativ frekvens (store talls lov)</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Beregne areal og omkrets av mangekanter, sammensatte figurer og utskjæringer</li>
+                        <li class="flex items-start gap-2"><span class="text-blue-400">☐</span> Bruke egenskaper ved likebeinte trekanter og parallelle linjer</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- TEMA 1 & 2 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Sannsynlighet -->
+            <div class="card p-5 rounded-xl border border-slate-200">
+                <div class="bg-purple-800 text-white text-xs font-bold px-3 py-1 rounded inline-block mb-3">1. SANNSYNLIGHET</div>
+                <div class="space-y-3 text-xs text-slate-700 leading-relaxed">
+                    <div>
+                        <p class="font-bold text-slate-900">Grunnformel (uniform sannsynlighet):</p>
+                        <div class="bg-purple-50 p-2 rounded border border-purple-100 my-1 text-center font-medium">
+                            \(P(\text{hendelse}) = \frac{\text{antall gunstige utfall}}{\text{antall mulige utfall}}\)
+                        </div>
+                        <p class="text-slate-600">Sannsynlighet er alltid et tall mellom \(0\) (\(0\%\)) og \(1\) (\(100\%\)). Husk å forkorte brøker!</p>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-900">Utfallsrom og mothendelse:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong>Utfallsrom (\(U\)):</strong> Alle mulige utfall i et forsøk. Ved to mynter er \(U = \{(\text{K,K}), (\text{K,M}), (\text{M,K}), (\text{M,M})\}\).</li>
+                            <li><strong>Ikke-hendelse:</strong> \(P(\text{ikke } A) = 1 - P(A)\).</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-900">Relativ frekvens og store talls lov:</p>
+                        <p>\(\text{Relativ frekvens} = \frac{\text{antall ganger hendelsen skjer}}{\text{totalt antall forsøk}}\).</p>
+                        <p class="text-slate-600 mt-0.5">Jo flere ganger vi gjentar et forsøk (f.eks. \(10\,000\) myntkast i Python), desto nærmere kommer den relative frekvensen den <em>teoretiske sannsynligheten</em> (\(0,5\)).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistikk -->
+            <div class="card p-5 rounded-xl border border-slate-200">
+                <div class="bg-amber-700 text-white text-xs font-bold px-3 py-1 rounded inline-block mb-3">2. STATISTIKK &amp; REGNEARK</div>
+                <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
+                    <div>
+                        <p class="font-bold text-slate-900">Sentralmål og spredningsmål:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong>Gjennomsnitt:</strong> Summen av alle tallene delt på antallet tall.</li>
+                            <li><strong>Median:</strong> Det midterste tallet når tallene er sortert i stigende rekkefølge. (Ved partall antall tall: gjennomsnittet av de to midterste).</li>
+                            <li><strong>Typetall:</strong> Observasjonen som forekommer flest ganger.</li>
+                            <li><strong>Variasjonsbredde:</strong> \(\text{Største verdi} - \text{minste verdi}\).</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-900">Sirkeldiagram:</p>
+                        <div class="bg-amber-50 p-2 rounded border border-amber-100 my-1 text-center font-medium">
+                            \(\text{Antall grader} = \text{relativ frekvens} \cdot 360^\circ\)
+                        </div>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-900">Nyttige formler i regneark (norsk):</p>
+                        <div class="bg-slate-900 text-slate-100 p-2 rounded font-mono text-[11px] space-y-0.5">
+                            <p>=SUMMER(A1:A20)</p>
+                            <p>=GJENNOMSNITT(A1:A20)</p>
+                            <p>=MEDIAN(A1:A20)</p>
+                            <p>=MAKS(A1:A20) - MIN(A1:A20)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TEMA 3 & 4 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Vinkler og geometri -->
+            <div class="card p-5 rounded-xl border border-slate-200">
+                <div class="bg-teal-800 text-white text-xs font-bold px-3 py-1 rounded inline-block mb-3">3. VINKLER OG GEOMETRI</div>
+                <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
+                    <div>
+                        <p class="font-bold text-slate-900">Vinkeltyper:</p>
+                        <ul class="list-disc list-inside space-y-0.5">
+                            <li><strong>Spiss vinkel:</strong> Mindre enn \(90^\circ\)</li>
+                            <li><strong>Rett vinkel:</strong> Nøyaktig \(90^\circ\)</li>
+                            <li><strong>Stump vinkel:</strong> Mellom \(90^\circ\) og \(180^\circ\)</li>
+                            <li><strong>Rett linje:</strong> \(180^\circ\) &nbsp;|&nbsp; <strong>Hel sirkel:</strong> \(360^\circ\)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-900">Trekanter:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Vinkelsummen i enhver trekant er alltid <strong>\(180^\circ\)</strong>.</li>
+                            <li><strong>Likebeint trekant:</strong> To like lange sider og to like store grunnvinkler.</li>
+                            <li><strong>Likesidet trekant:</strong> Tre like lange sider, alle vinkler er \(60^\circ\).</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-900">Parallelle linjer og vinkelpar:</p>
+                        <p>Når en linje skjærer to parallelle linjer, oppstår det vinkelpar som er <strong>like store</strong>: <em>toppvinkler</em>, <em>samsvarende vinkler</em> og <em>vekselvinkler</em>. Nabovinkler har sum \(180^\circ\).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Areal, omkrets og enheter -->
+            <div class="card p-5 rounded-xl border border-slate-200">
+                <div class="bg-blue-800 text-white text-xs font-bold px-3 py-1 rounded inline-block mb-3">4. AREAL, OMKRETS &amp; ENHETER</div>
+                <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
+                    <div class="grid grid-cols-2 gap-2 bg-blue-50/70 p-2.5 rounded border border-blue-100">
+                        <div>
+                            <p class="font-bold text-slate-900">Rektangel:</p>
+                            <p>\(A = l \cdot b\)</p>
+                            <p>\(O = 2l + 2b\)</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-900">Trekant:</p>
+                            <p>\(A = \frac{g \cdot h}{2}\)</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-900">Parallellogram:</p>
+                            <p>\(A = g \cdot h\)</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-900">Trapes:</p>
+                            <p>\(A = \frac{(a + b) \cdot h}{2}\)</p>
+                        </div>
+                        <div class="col-span-2 border-t border-blue-200 pt-1.5">
+                            <p class="font-bold text-slate-900">Sirkel (diameter \(d = 2r\)):</p>
+                            <p>\(O = \pi \cdot d = 2 \cdot \pi \cdot r\) &nbsp;&nbsp;|&nbsp;&nbsp; \(A = \pi \cdot r^2\)</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="font-bold text-slate-900">Omgjøring av arealenheter (faktor \(100\)):</p>
+                        <div class="bg-slate-100 p-2 rounded text-center font-mono text-[11px] font-semibold">
+                            \(\text{m}^2 \underset{: 100}{\overset{\cdot 100}{\rightleftharpoons}} \text{dm}^2 \underset{: 100}{\overset{\cdot 100}{\rightleftharpoons}} \text{cm}^2\)
+                        </div>
+                        <p class="text-slate-600 mt-1">Eksempel: \(1\text{ m}^2 = 100\text{ dm}^2\) og \(1\text{ dm}^2 = 100\text{ cm}^2\).</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Tips til sammensatte figurer og Python -->
+        <section class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-200 text-xs text-slate-700">
+            <h3 class="font-bold text-indigo-950 text-sm mb-2">Smart strategi på Del 2</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="font-bold text-slate-900">Sammensatte figurer:</p>
+                    <p>Del figuren opp i kjente deler (rektangel, trekant, halvsirkel). Husk at to like halvsirkler blir én hel sirkel! Når noe er skåret ut (f.eks. et hull eller et blomsterbed), trekker du arealet fra. Når du regner <strong>omkrets</strong>, skal du kun ta med ytterkantene.</p>
+                </div>
+                <div>
+                    <p class="font-bold text-slate-900">Python-kode:</p>
+                    <p>Les koden linje for linje. <code class="bg-white px-1 rounded border">randint(1, 2)</code> trekker tilfeldig heltall fra og med 1 til og med 2. <code class="bg-white px-1 rounded border">for i in range(N):</code> gjentar koden inni løkka \(N\) ganger.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bunntekst -->
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400">
+            <p>Øveark til tentamen i matematikk – Lykke til med øvingen!</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
