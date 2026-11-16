@@ -81,7 +81,7 @@
                 <div class="flex items-center space-x-3">
                     <a href="index.html" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition text-xs font-semibold whitespace-nowrap" title="Tilbake">
                         <i class="fa-solid fa-arrow-left"></i>
-                        <span class="hidden sm:inline">Lærerverktøy</span>
+                        <span class="hidden sm:inline">Tilbake</span>
                     </a>
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md flex-shrink-0">
                         <i class="fa-solid font-bold fa-book-open text-lg"></i>
@@ -444,11 +444,11 @@
                 <div class="grid grid-cols-3 gap-2">
                     <div class="col-span-2">
                         <label class="block font-semibold text-slate-700 mb-1">Begrep / Ord *</label>
-                        <input type="text" id="new-term" required placeholder="f.eks. Å hjelpe" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm">
+                        <input type="text" id="new-term" required placeholder="f.eks. Fotosyntese" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Emoji / Ikon</label>
-                        <input type="text" id="new-visual" placeholder="f.eks. 🤝" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm text-center">
+                        <input type="text" id="new-visual" placeholder="f.eks. 🌱" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm text-center">
                     </div>
                 </div>
 
@@ -457,6 +457,7 @@
                     <select id="new-cat" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
                         <option value="begynner">Begynnerord (A1)</option>
                         <option value="hverdag_lett">Lettere Hverdagsord (A2)</option>
+                        <option value="naturfag">Naturfag</option>
                         <option value="fagspråk">Skole & Fagspråk (B1/B2)</option>
                         <option value="idiomer">Idiomer & Uttrykk (B2)</option>
                         <option value="samfunn">Samfunn & Kultur</option>
@@ -466,7 +467,7 @@
 
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Bøyning / Grammatikk (valgfritt)</label>
-                    <input type="text" id="new-grammar" placeholder="f.eks. hjelper – hjalp – har hjulpet" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                    <input type="text" id="new-grammar" placeholder="f.eks. fotosyntesen" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
                 </div>
 
                 <div>
@@ -476,7 +477,7 @@
 
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Eksempel i setning</label>
-                    <input type="text" id="new-ex" placeholder="f.eks. Jeg vil hjelpe deg." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                    <input type="text" id="new-ex" placeholder="f.eks. Planter bruker fotosyntese til å lage sukker og oksygen." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
                 </div>
 
                 <div>
@@ -494,7 +495,7 @@
 
     <script>
         const REMOTE_GIST_URL = 'https://gist.githubusercontent.com/hinsverk/82a47a1bc5666e961b4ce14a1aef9e22/raw/fon.json';
-        const STORAGE_KEY_VOCAB = 'begrepsbyggeren_vocab_v1';
+        const STORAGE_KEY_VOCAB = 'begrepsbyggeren_vocab_v2';
         const STORAGE_KEY_HARD = 'begrepsbyggeren_hard_ids_v1';
 
         function escapeRegExp(string) {
@@ -662,6 +663,28 @@
             { id: 249, term: "Sammen", category: "hverdag_lett", definition: "Å være to eller flere folk i lag.", example: "Vi kan gjøre leksene sammen.", hint: "معاً" },
             { id: 250, term: "Alene", category: "hverdag_lett", definition: "Uten noen andre til stede.", example: "Han sitter alene og leser.", hint: "بمفرده" },
 
+            // ==================== NATURFAG ====================
+            { id: 301, term: "Fotosyntese", category: "naturfag", visual: "🌱", grammar: "fotosyntesen", definition: "Prosessen der grønne planter bruker sollys, vann og karbondioksid til å lage druesukker og oksygen.", example: "Uten fotosyntese ville det ikke vært oksygen for oss å puste inn.", hint: "التمثيل الضوئي" },
+            { id: 302, term: "Fordampning", category: "naturfag", visual: "💨", grammar: "fordampningen", definition: "Når en væske (for eksempel vann) blir varmet opp og går over til gass (vanndamp).", example: "Når sola varmer opp havet, skjer det fordampning av vann.", hint: "التبخر" },
+            { id: 303, term: "Kondensering", category: "naturfag", visual: "☁️", grammar: "kondenseringen", definition: "Når en gass (for eksempel vanndamp) blir avkjølt og går tilbake til flytende form (vanndråper).", example: "Skyer på himmelen dannes ved kondensering av vanndamp.", hint: "التكثف" },
+            { id: 304, term: "Et økosystem", category: "naturfag", visual: "🌲", grammar: "økosystemet – økosystemer – økosystemene", definition: "Et avgrenset område i naturen der dyr, planter og miljøet rundt påvirker hverandre.", example: "En skog, en innsjø og en fjære er eksempler på ulike økosystemer.", hint: "نظام بيئي" },
+            { id: 305, term: "En næringskjede", category: "naturfag", visual: "🦊", grammar: "næringskjeden – næringskjeder – næringskjedene", definition: "En rekke som viser hvem som spiser hvem i naturen, fra planter til planteetere og rovdyr.", example: "Gress → hare → rev er et enkelt eksempel på en næringskjede.", hint: "سلسلة غذائية" },
+            { id: 306, term: "Et grunnstoff", category: "naturfag", visual: "⚛️", grammar: "grunnstoffet – grunnstoffer – grunnstoffene", definition: "Et rent stoff som består av bare én type atomer, for eksempel oksygen, jern eller gull.", example: "I periodesystemet finner vi en oversikt over alle grunnstoffene.", hint: "عنصر كيميائي" },
+            { id: 307, term: "Et atom", category: "naturfag", visual: "🔬", grammar: "atomet – atomer – atomene", definition: "Den minste byggesteinen som alt stoff rundt oss er laget av.", example: "Alt rundt oss, både luft, vann og kroppen vår, består av atomer.", hint: "ذرة" },
+            { id: 308, term: "Et molekyl", category: "naturfag", visual: "🧬", grammar: "molekylet – molekyler – molekylene", definition: "To eller flere atomer som sitter fast sammen med kjemiske bindinger.", example: "Et vannmolekyl består av to hydrogenatomer og ett oksygenatom (H2O).", hint: "جزيء" },
+            { id: 309, term: "Å observere", category: "naturfag", visual: "🔭", grammar: "observerer – observerte – har observert", definition: "Å følge nøye med på og legge merke til hva som skjer i naturen eller i et forsøk.", example: "Under forsøket skulle elevene observere om væsken skiftet farge.", hint: "يلاحظ / يراقب بدقة" },
+            { id: 310, term: "En variabel", category: "naturfag", visual: "📊", grammar: "variabelen – variabler – variablene", definition: "En faktor som kan endre seg eller som vi endrer på i et naturfaglig forsøk (for eksempel temperatur).", example: "Når vi tester hvor fort sukker løser seg opp, er vanntemperaturen en variabel.", hint: "متغير (في تجربة علمية)" },
+            { id: 311, term: "Fornybar energi", category: "naturfag", visual: "🌬️", grammar: "den fornybare energien", definition: "Energikilder som ikke tar slutt fordi naturen hele tiden lager mer, som sol, vind og vannkraft.", example: "Norge får nesten all strømmen sin fra vannkraft, som er fornybar energi.", hint: "طاقة متجددة" },
+            { id: 312, term: "Drivhuseffekt", category: "naturfag", visual: "🌍", grammar: "drivhuseffekten", definition: "At gasser i atmosfæren holder på varmen fra sola slik at jorda blir varmere.", example: "Økt utslipp av klimagasser forsterker drivhuseffekten og gir global oppvarming.", hint: "الاحتباس الحراري / تأثير الدفيئة" },
+            { id: 313, term: "Fordøyelse", category: "naturfag", visual: "🫀", grammar: "fordøyelsen", definition: "Prosessen der kroppen bryter ned maten vi spiser til små næringsstoffer som blodet kan ta opp.", example: "Fordøyelsen starter allerede i munnen når vi tygger maten.", hint: "عملية الهضم" },
+            { id: 314, term: "En celle", category: "naturfag", visual: "🦠", grammar: "cella / cellen – celler – cellene", definition: "Den minste levende byggesteinen i alle planter, dyr og mennesker.", example: "Kroppen vår består av mange milliarder små celler.", hint: "خلية حية" },
+            { id: 315, term: "Friksjon", category: "naturfag", visual: "⛸️", grammar: "friksjonen", definition: "Motstanden som oppstår når to flater gnis eller glir mot hverandre.", example: "På glatt is er det lite friksjon, så det er lett å skli.", hint: "الاحتكاك" },
+            { id: 316, term: "Tyngdekraft", category: "naturfag", visual: "🍎", grammar: "tyngdekraften", definition: "Kraften som trekker alle gjenstander ned mot sentrum av jorda.", example: "Når du mister et eple, faller det ned mot bakken på grunn av tyngdekraften.", hint: "الجاذبية الأرضية" },
+            { id: 317, term: "Kretsløp", category: "naturfag", visual: "♻️", grammar: "kretsløpet – kretsløp – kretsløpene", definition: "En bevegelse eller prosess som går i ring og kommer tilbake til startpunktet, som vannets kretsløp.", example: "I vannets kretsløp fordamper vann fra havet, blir til skyer og faller ned som regn.", hint: "دورة (مثل دورة الماء في الطبيعة)" },
+            { id: 318, term: "Biologisk mangfold", category: "naturfag", visual: "🦋", grammar: "det biologiske mangfoldet", definition: "Variasjonen av alle levende organismer (dyr, planter, sopp og mikroorganismer) i naturen.", example: "Å ta vare på regnskogen er viktig for å bevare det biologiske mangfoldet.", hint: "التنوع البيولوجي" },
+            { id: 319, term: "En løsning", category: "naturfag", visual: "🥤", grammar: "løsningen – løsninger – løsningene", definition: "En blanding der ett stoff er helt oppløst i en væske, slik at blandingen er gjennomsiktig.", example: "Når vi rører salt ut i vann, får vi en saltvannsløsning.", hint: "محلول كيميائي" },
+            { id: 320, term: "Sur og basisk", category: "naturfag", visual: "🍋", grammar: "surt – basisk – nøytralt", definition: "Egenskaper ved væsker som måles med pH-skalaen (lav pH er surt som sitron, høy pH er basisk som såpe).", example: "Vi brukte indikatorpapir for å teste om væsken var sur eller basisk.", hint: "حمضي وقاعدي" },
+
             // ==================== VIDEREKOMMENT / FAGSPRÅK / IDIOMER ====================
             { id: 1, term: "Å slå to fluer i én smekk", category: "idiomer", definition: "Å oppnå to mål eller løse to oppgaver samtidig med én enkelt handling.", example: "Når jeg sykler til skolen får jeg både mosjon og gratis transport – da slår jeg to fluer i én smekk!", hint: "ضرب عصفورين بحجر" },
             { id: 2, term: "Å ha mange jern i ilden", category: "idiomer", definition: "Å drive med mange aktiviteter, prosjekter eller oppgaver på samme tid.", example: "Hun spiller fotball, jobber deltid og går på kurs, så hun har virkelig mange jern i ilden.", hint: "لديه العديد من المشاريع في وقت واحد" },
@@ -689,7 +712,7 @@
             { id: 28, term: "Et argument", category: "samfunn", grammar: "argumentet – argumenter – argumentene", definition: "En begrunnelse eller et poeng som skal støtte eller minke støtten til en påstand.", example: "Hun kom med et veldig godt argument for hvorfor vi bør kildesortere.", hint: "حجة أو دليل" },
             { id: 29, term: "Kildekritikk", category: "fagspråk", grammar: "kildekritikken", definition: "Å undersøke om informasjonen man finner er til å stole på og hvem som står bak den.", example: "Vi må bruke kildekritikk når vi søker etter nyheter på internett.", hint: "نقد المصادر" },
             { id: 30, term: "Plagiat", category: "skole", grammar: "plagiatet – plagiat – plagiatene", definition: "Å kopiere andres tekst eller ideer uten å oppgi kilden, slik at det ser ut som ditt eget arbeid.", example: "Å kopiere rett fra Wikipedia regnes som plagiat på skolen.", hint: "السرقة الأدبية" },
-            { id: 31, term: "En hypotese", category: "fagspråk", grammar: "hypotesen – hypoteser – hypotesene", definition: "En antakelse eller kvalifisert gjetning om noe som man må teste for å se om stemmer.", example: "I naturfag leste vi at en hypotese må kunne testes gjennom forsøk.", hint: "فرضية علمية" },
+            { id: 31, term: "En hypotese", category: "naturfag", visual: "🧪", grammar: "hypotesen – hypoteser – hypotesene", definition: "En kvalifisert gjetning eller antakelse om hvordan noe henger sammen, som man tester i et forsøk.", example: "Før vi startet forsøket i naturfag, skrev vi ned en hypotese om hva som ville skje.", hint: "فرضية علمية" },
             { id: 32, term: "Et begrep", category: "fagspråk", grammar: "begrepet – begreper – begrepene", definition: "Et ord som uttrykker en bestemt idé eller et faglig konsept.", example: "Demokrati er et sentralt begrep i samfunnsfag.", hint: "مفهوم أو مصطلح" },
             { id: 33, term: "En konsekvens", category: "samfunn", grammar: "konsekvensen – konsekvenser – konsekvensene", definition: "Noe som skjer som en følge eller et resultat av en tidligere handling.", example: "En konsekvens av for lite søvn kan være dårlig konsentrasjon.", hint: "نتيجة أو عاقبة" },
             { id: 34, term: "En kontekst", category: "fagspråk", grammar: "konteksten – kontekster – kontekstene", definition: "Sammenhengen et ord, en situasjon eller en hendelse står i.", example: "Det er lettere å forstå ordet når du ser det i en kontekst.", hint: "سياق الكلام" },
@@ -741,7 +764,7 @@
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        return deduplicateVocabulary(parsed);
+                        return deduplicateVocabulary([...parsed, ...baseVocabulary]);
                     }
                 }
             } catch (e) {
@@ -781,6 +804,7 @@
             'begynner': 'Begynnerord (A1)',
             'hverdag_lett': 'Hverdagsord (A2)',
             'hverdag': 'Hverdagsord',
+            'naturfag': 'Naturfag',
             'fagspråk': 'Skole & Fagspråk',
             'idiomer': 'Idiomer & Uttrykk',
             'samfunn': 'Samfunn & Kultur',
@@ -833,7 +857,6 @@
                     throw new Error("Ugyldig JSON-format fra Gist (må være en liste).");
                 }
 
-                // Hent ut kun brukerens egne tilføyelser (som ikke finnes i standard eller Gist) og kombiner med Gist + standard
                 const gistMap = new Map();
                 remoteData.forEach(item => {
                     if (item && item.term) {
@@ -841,7 +864,6 @@
                     }
                 });
 
-                // Oppdater eksisterende ord med ferske verdier fra Gist, behold egne ord som ikke er i Gist
                 const updatedExisting = vocabulary.map(localItem => {
                     const key = localItem.term.trim().toLowerCase();
                     if (gistMap.has(key)) {
@@ -917,7 +939,7 @@
         function renderCategoryFilterButtons() {
             const bar = document.getElementById('category-bar');
             
-            const preferredOrder = ['alle', 'ov_mer', 'begynner', 'hverdag_lett', 'hverdag', 'fagspråk', 'idiomer', 'samfunn', 'medier', 'nyanser'];
+            const preferredOrder = ['alle', 'ov_mer', 'begynner', 'hverdag_lett', 'hverdag', 'naturfag', 'fagspråk', 'idiomer', 'samfunn', 'medier', 'nyanser'];
             const categoriesInUse = Array.from(new Set(vocabulary.map(v => v.category)));
             
             let sortedCats = preferredOrder.filter(cat => cat === 'alle' || cat === 'ov_mer' || categoriesInUse.includes(cat));
@@ -931,6 +953,8 @@
                 let label = categoryLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
                 if (cat === 'ov_mer') {
                     label = `⭐ Øv mer (${hardWordIds.size})`;
+                } else if (cat === 'naturfag') {
+                    label = `🔬 Naturfag`;
                 }
                 html += `
                     <button onclick="filterCategory('${cat}')" class="cat-btn px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition flex-shrink-0" data-cat="${cat}">
@@ -1086,6 +1110,8 @@
                     badge.className = 'px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full uppercase tracking-wider';
                 } else if (item.category === 'hverdag_lett' || item.category === 'hverdag') {
                     badge.className = 'px-3 py-1 bg-teal-100 text-teal-800 text-xs font-semibold rounded-full uppercase tracking-wider';
+                } else if (item.category === 'naturfag') {
+                    badge.className = 'px-3 py-1 bg-lime-100 text-lime-800 text-xs font-semibold rounded-full uppercase tracking-wider';
                 } else if (item.category === 'idiomer') {
                     badge.className = 'px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full uppercase tracking-wider';
                 } else if (item.category === 'fagspråk' || item.category === 'skole') {
