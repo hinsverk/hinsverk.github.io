@@ -27,16 +27,28 @@
     <!-- Topptekst / Header -->
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
-                    <!-- Kamera-ikon (Inline SVG) -->
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <!-- Tilbake-knapp til index.html -->
+                <a href="index.html" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 text-xs sm:text-sm font-medium transition shadow-sm" title="Tilbake til forsiden">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                </div>
-                <div>
-                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Skjermopptaker</h1>
-                    <p class="text-xs text-slate-400 hidden sm:block">Uavhengig opptaksverktøy rett i nettleseren</p>
+                    <span>Tilbake</span>
+                </a>
+
+                <div class="h-6 w-px bg-slate-800 hidden sm:block"></div>
+
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+                        <!-- Kamera-ikon (Inline SVG) -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Skjermopptaker</h1>
+                        <p class="text-xs text-slate-400 hidden sm:block">Uavhengig opptaksverktøy rett i nettleseren</p>
+                    </div>
                 </div>
             </div>
 
