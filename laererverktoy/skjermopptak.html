@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettleserbasert Skjermopptaker</title>
+    <!-- Laster inn Tailwind CSS for moderne og responsivt design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Laster inn Google Font 'Inter' for god lesbarhet -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Egendefinert pulserende animasjon for opptaksindikator */
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .recording-dot {
+            animation: pulse-red 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Topptekst / Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <!-- Kamera-ikon (Inline SVG) -->
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Skjermopptaker</h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Uavhengig opptaksverktøy rett i nettleseren</p>
+                </div>
+            </div>
+
+            <!-- Status-indikator -->
+            <div id="statusBadge" class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-xs sm:text-sm font-medium text-slate-300">
+                <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                <span id="statusText">Klar til opptak</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hovedinnhold -->
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6">
+
+        <!-- Meldingsboks for feil eller informasjon (erstatter alert()) -->
+        <div id="messageBox" class="hidden rounded-xl p-4 border flex items-start justify-between transition-all duration-300">
+            <div class="flex items-center space-x-3">
+                <svg id="messageIcon" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p id="messageText" class="text-sm font-medium"></p>
+            </div>
+            <button onclick="hideMessage()" class="text-current opacity-70 hover:opacity-100 p-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Videovisning (Forhåndsvisning / Avspilling) -->
+        <div class="relative w-full aspect-video bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center">
+            
+            <!-- Plassholder når ingen video vises -->
+            <div id="placeholderView" class="text-center px-6 max-w-md">
+                <div class="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-400">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-lg font-semibold text-slate-200 mb-2">Ingen aktiv skjermdeling</h2>
+                <p class="text-sm text-slate-400 leading-relaxed">
+                    Klikk på <span class="text-indigo-400 font-medium">Velg skjerm & start</span> nedenfor. Etter at du har valgt fane eller vindu, starter en 5 sekunders nedtelling slik at du rekker å bytte over før opptaket starter.
+                </p>
+            </div>
+
+            <!-- Video-element for både direkte forhåndsvisning og avspilling av ferdig opptak -->
+            <video id="videoPreview" class="hidden w-full h-full object-contain bg-black" playsinline></video>
+
+            <!-- Tidtaker-overlegg under opptak -->
+            <div id="timerOverlay" class="hidden absolute top-4 right-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 px-3.5 py-1.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500 recording-dot"></span>
+                <span id="timerDisplay" class="font-mono text-sm font-semibold tracking-wider text-white">00:00</span>
+            </div>
+
+            <!-- Nedtellingsoverlegg (5-4-3-2-1) -->
+            <div id="countdownOverlay" class="hidden absolute inset-0 bg-slate-950/75 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+                <span id="countdownNumber" class="text-7xl sm:text-8xl font-extrabold text-indigo-400 animate-bounce">5</span>
+                <p class="text-sm sm:text-base text-slate-300 mt-3 font-medium">Gjør deg klar...</p>
+            </div>
+        </div>
+
+        <!-- Redigeringspanel (Trimming av start, slutt og kutt i midten) - Vises når opptaket er ferdig -->
+        <div id="trimPanel" class="hidden bg-slate-800/80 border border-slate-700 rounded-2xl p-4 sm:p-6 shadow-xl transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"></path>
+                    </svg>
+                    <h3 class="font-semibold text-white text-base">Rediger & klipp video</h3>
+                </div>
+                <span id="trimDurationInfo" class="text-xs font-mono bg-slate-900 text-indigo-300 px-3 py-1 rounded-lg border border-slate-700">
+                    Valgt lengde: 00:00.0
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Startpunkt-velger -->
+                <div class="bg-slate-900/70 p-3.5 rounded-xl border border-slate-700/70">
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="trimStartRange" class="text-xs font-medium text-slate-300">Startpunkt (kutt bort start)</label>
+                        <span id="trimStartLabel" class="text-xs font-mono font-bold text-indigo-400">00:00.0</span>
+                    </div>
+                    <input type="range" id="trimStartRange" min="0" max="100" step="0.1" value="0" class="w-full accent-indigo-500 cursor-pointer">
+                    <button type="button" onclick="setTrimStartFromCurrent()" class="mt-2 text-xs text-slate-400 hover:text-white underline">
+                        Bruk nåværende videoposisjon
+                    </button>
+                </div>
+
+                <!-- Sluttpunkt-velger -->
+                <div class="bg-slate-900/70 p-3.5 rounded-xl border border-slate-700/70">
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="trimEndRange" class="text-xs font-medium text-slate-300">Sluttpunkt (kutt bort slutt)</label>
+                        <span id="trimEndLabel" class="text-xs font-mono font-bold text-indigo-400">00:00.0</span>
+                    </div>
+                    <input type="range" id="trimEndRange" min="0" max="100" step="0.1" value="100" class="w-full accent-indigo-500 cursor-pointer">
+                    <button type="button" onclick="setTrimEndFromCurrent()" class="mt-2 text-xs text-slate-400 hover:text-white underline">
+                        Bruk nåværende videoposisjon
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kutt ut deler midt inne i videoen -->
+            <div class="bg-slate-900/70 p-3.5 rounded-xl border border-slate-700/70 mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-200">Fjern deler midt i opptaket (valgfritt)</h4>
+                        <p class="text-[11px] text-slate-400">Spill av videoen og marker start og slutt på et parti du vil hoppe over.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" id="markCutStartBtn" onclick="markMiddleCutStart()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                            1. Marker kutt-start
+                        </button>
+                        <button type="button" id="markCutEndBtn" onclick="markMiddleCutEnd()" disabled class="text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-emerald-300 border border-slate-600 px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                            2. Marker kutt-slutt & legg til
+                        </button>
+                    </div>
+                </div>
+                <!-- Liste over aktive kutt i midten -->
+                <div id="middleCutsList" class="flex flex-wrap gap-2 text-xs text-slate-400">
+                    <span>Ingen midtkutt lagt til enda.</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-700/60">
+                <button type="button" onclick="previewTrimmedRange()" class="flex items-center space-x-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Forhåndsvis utvalg</span>
+                </button>
+
+                <button id="exportTrimBtn" type="button" onclick="exportTrimmedVideo()" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Bruk klipp & oppdater nedlasting</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Kontrollpanel -->
+        <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-xl">
+            <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                
+                <!-- Innstillinger (Lydvalg) -->
+                <div class="flex flex-wrap items-center gap-4">
+                    <label class="flex items-center space-x-3 cursor-pointer bg-slate-900/70 hover:bg-slate-900 px-4 py-2.5 rounded-xl border border-slate-700/70 transition select-none">
+                        <input type="checkbox" id="micToggle" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-600">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-slate-200">Inkluder mikrofon</span>
+                        </div>
+                    </label>
+
+                    <div class="text-xs text-slate-400 hidden lg:block max-w-xs">
+                        Tips: Huk av for "Del systemlyd" i nettleserens popup-vindu hvis du vil ta opp lyd fra PC-en.
+                    </div>
+                </div>
+
+                <!-- Handlingsknapper -->
+                <div class="flex flex-wrap items-center gap-3 justify-end">
+                    
+                    <!-- Start-knapp -->
+                    <button id="startBtn" onclick="startRecording()" class="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition cursor-pointer">
+                        <span class="w-3 h-3 rounded-full bg-white"></span>
+                        <span>Velg skjerm & start</span>
+                    </button>
+
+                    <!-- Flytende kontrollpanel-knapp (hvis lukket under opptak) -->
+                    <button id="pipBtn" onclick="openFloatingControls()" class="hidden flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-3 rounded-xl transition cursor-pointer" title="Åpne flytende kontrollpanel">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        <span>Flytende kontroller</span>
+                    </button>
+
+                    <!-- Stopp-knapp -->
+                    <button id="stopBtn" onclick="stopRecording()" disabled class="hidden flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-red-600/20 transition cursor-pointer">
+                        <span class="w-3 h-3 rounded-sm bg-white"></span>
+                        <span>Stopp opptak</span>
+                    </button>
+
+                    <!-- Last ned-knapp -->
+                    <a id="downloadBtn" class="hidden flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold px-5 py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        <span id="downloadBtnText">Last ned video</span>
+                    </a>
+
+                    <!-- Tilbakestill / Nytt opptak-knapp -->
+                    <button id="resetBtn" onclick="resetApp()" class="hidden flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-4 py-3 rounded-xl transition cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Nytt opptak</span>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bunntekst -->
+    <footer class="border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+        <p>Alt prosesseres lokalt i din nettleser. Ingen videoer lastes opp til noen server.</p>
+    </footer>
+
+    <script>
+        // Globale variabler for tilstand og medier
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let combinedStream = null;
+        let screenStream = null;
+        let micStream = null;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        let recordedBlobUrl = null;
+        let originalBlobUrl = null; // Tar vare på originalopptaket ved redigering
+        let pipWindow = null; // Referanse til det flytende kontrollvinduet
+        let isRecordingActive = false;
+        let isCountingDown = false;
+        let countdownInterval = null;
+        let trimStart = 0;
+        let trimEnd = 0;
+        let videoDuration = 0;
+        let middleCuts = []; // Liste med { start, end } for deler midt i videoen som skal fjernes
+        let pendingCutStart = null;
+
+        // DOM-elementer
+        const videoPreview = document.getElementById('videoPreview');
+        const placeholderView = document.getElementById('placeholderView');
+        const startBtn = document.getElementById('startBtn');
+        const pipBtn = document.getElementById('pipBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadBtnText = document.getElementById('downloadBtnText');
+        const resetBtn = document.getElementById('resetBtn');
+        const micToggle = document.getElementById('micToggle');
+        const timerOverlay = document.getElementById('timerOverlay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const countdownOverlay = document.getElementById('countdownOverlay');
+        const countdownNumber = document.getElementById('countdownNumber');
+        const trimPanel = document.getElementById('trimPanel');
+        const trimStartRange = document.getElementById('trimStartRange');
+        const trimEndRange = document.getElementById('trimEndRange');
+        const trimStartLabel = document.getElementById('trimStartLabel');
+        const trimEndLabel = document.getElementById('trimEndLabel');
+        const trimDurationInfo = document.getElementById('trimDurationInfo');
+        const exportTrimBtn = document.getElementById('exportTrimBtn');
+        const markCutStartBtn = document.getElementById('markCutStartBtn');
+        const markCutEndBtn = document.getElementById('markCutEndBtn');
+        const middleCutsList = document.getElementById('middleCutsList');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+
+        /**
+         * Steg 1: Lar brukeren velge skjerm/fane, åpner flytende kontrollpanel og starter 5 sekunders nedtelling
+         */
+        async function startRecording() {
+            hideMessage();
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                showMessage('Nettleseren din støtter dessverre ikke skjermopptak (Screen Capture API). Prøv en oppdatert versjon av Chrome, Edge eller Firefox.', 'error');
+                return;
+            }
+
+            try {
+                // Be brukeren velge skjerm, vindu eller fane
+                screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: 'always',
+                        frameRate: { ideal: 30, max: 60 }
+                    },
+                    audio: true
+                });
+
+                const tracks = [...screenStream.getVideoTracks()];
+
+                // Håndter lyd (mikrofon og/eller systemlyd)
+                const includeMic = micToggle.checked;
+                const systemAudioTracks = screenStream.getAudioTracks();
+
+                if (includeMic) {
+                    try {
+                        micStream = await navigator.mediaDevices.getUserMedia({
+                            audio: {
+                                echoCancellation: true,
+                                noiseSuppression: true
+                            },
+                            video: false
+                        });
+
+                        if (systemAudioTracks.length > 0 && micStream.getAudioTracks().length > 0) {
+                            const audioContext = new AudioContext();
+                            const dest = audioContext.createMediaStreamDestination();
+                            audioContext.createMediaStreamSource(new MediaStream(systemAudioTracks)).connect(dest);
+                            audioContext.createMediaStreamSource(micStream).connect(dest);
+                            tracks.push(...dest.stream.getAudioTracks());
+                        } else {
+                            tracks.push(...micStream.getAudioTracks());
+                        }
+                    } catch (micErr) {
+                        console.warn('Mikrofontilgang avslått:', micErr);
+                        showMessage('Kunne ikke få tilgang til mikrofonen. Fortsetter opptaket uten mikrofonlyd.', 'info');
+                        if (systemAudioTracks.length > 0) {
+                            tracks.push(...systemAudioTracks);
+                        }
+                    }
+                } else if (systemAudioTracks.length > 0) {
+                    tracks.push(...systemAudioTracks);
+                }
+
+                combinedStream = new MediaStream(tracks);
+
+                // Vis direkte forhåndsvisning i hovedvinduet
+                placeholderView.classList.add('hidden');
+                videoPreview.classList.remove('hidden');
+                videoPreview.srcObject = combinedStream;
+                videoPreview.muted = true;
+                videoPreview.controls = false;
+                await videoPreview.play();
+
+                // Lytt etter om brukeren stopper delingen via nettleserens innebygde "Stopp deling"-knapp
+                screenStream.getVideoTracks()[0].onended = () => {
+                    stopRecording();
+                };
+
+                // Åpne flytende kontrollpanel (Document Picture-in-Picture) hvis støttet
+                await openFloatingControls();
+
+                // Start 5-sekunders nedtelling før opptaket faktisk starter
+                startCountdownAndRecord();
+
+            } catch (err) {
+                console.error('Feil ved oppstart av skjermdeling:', err);
+                cleanupStreams();
+                if (err.name === 'NotAllowedError') {
+                    showMessage('Skjermdeling ble avbrutt eller ikke tillatt.', 'info');
+                } else {
+                    showMessage('Det oppstod en feil under oppstart: ' + err.message, 'error');
+                }
+            }
+        }
+
+        /**
+         * Åpner et flytende minivindu (Always-on-top) slik at brukeren kan starte/stoppe fra siden som tas opp
+         */
+        async function openFloatingControls() {
+            if (!('documentPictureInPicture' in window)) {
+                return;
+            }
+            if (pipWindow && !pipWindow.closed) {
+                return;
+            }
+
+            try {
+                pipWindow = await window.documentPictureInPicture.requestWindow({
+                    width: 320,
+                    height: 110
+                });
+
+                pipWindow.document.body.innerHTML = `
+                    <div style="font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #f8fafc; height: 100vh; margin: 0; padding: 12px 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #334155;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="pipDot" style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                                <span id="pipStatus" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Gjør deg klar</span>
+                            </div>
+                            <span id="pipTimer" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #818cf8;">Starter om 5...</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <button id="pipStopBtn" style="flex: 1; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                ⏹ Stopp opptak
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                const pipStopBtn = pipWindow.document.getElementById('pipStopBtn');
+                if (pipStopBtn) {
+                    pipStopBtn.addEventListener('click', () => {
+                        stopRecording();
+                    });
+                }
+
+                updatePipUI();
+
+                pipWindow.addEventListener('pagehide', () => {
+                    pipWindow = null;
+                });
+            } catch (err) {
+                console.warn('Kunne ikke åpne flytende vindu:', err);
+            }
+        }
+
+        /**
+         * Oppdaterer tekst og farger i det flytende kontrollvinduet
+         */
+        function updatePipUI() {
+            if (!pipWindow || pipWindow.closed) return;
+            const pipStatus = pipWindow.document.getElementById('pipStatus');
+            const pipDot = pipWindow.document.getElementById('pipDot');
+            if (isRecordingActive) {
+                if (pipStatus) pipStatus.textContent = 'Tar opp skjerm';
+                if (pipDot) pipDot.style.background = '#ef4444';
+            } else if (isCountingDown) {
+                if (pipStatus) pipStatus.textContent = 'Gjør deg klar';
+                if (pipDot) pipDot.style.background = '#6366f1';
+            }
+        }
+
+        /**
+         * Teller ned 5 - 4 - 3 - 2 - 1 både i hovedvinduet og i det flytende kontrollpanelet
+         */
+        function startCountdownAndRecord() {
+            if (isCountingDown || isRecordingActive) return;
+            isCountingDown = true;
+            let count = 5;
+
+            startBtn.classList.add('hidden');
+            micToggle.disabled = true;
+            if ('documentPictureInPicture' in window) {
+                pipBtn.classList.remove('hidden');
+            }
+
+            countdownOverlay.classList.remove('hidden');
+            countdownNumber.textContent = count;
+            updateStatus('countdown');
+
+            if (pipWindow && !pipWindow.closed) {
+                const pipTimer = pipWindow.document.getElementById('pipTimer');
+                if (pipTimer) pipTimer.textContent = `Starter om ${count}...`;
+            }
+
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownNumber.textContent = count;
+                    if (pipWindow && !pipWindow.closed) {
+                        const pipTimer = pipWindow.document.getElementById('pipTimer');
+                        if (pipTimer) pipTimer.textContent = `Starter om ${count}...`;
+                    }
+                } else {
+                    clearInterval(countdownInterval);
+                    isCountingDown = false;
+                    countdownOverlay.classList.add('hidden');
+                    beginMediaRecording();
+                }
+            }, 1000);
+        }
+
+        /**
+         * Steg 2: Starter selve opptaksprosessen
+         */
+        function beginMediaRecording() {
+            if (!combinedStream) return;
+
+            recordedChunks = [];
+            const mimeType = getSupportedMimeType();
+            mediaRecorder = new MediaRecorder(combinedStream, mimeType ? { mimeType } : {});
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = finalizeRecording;
+
+            mediaRecorder.start(200);
+            isRecordingActive = true;
+            startTimer();
+            updateStatus('recording');
+
+            // Oppdater knapper i hovedvinduet
+            startBtn.classList.add('hidden');
+            micToggle.disabled = true;
+            if ('documentPictureInPicture' in window) {
+                pipBtn.classList.remove('hidden');
+            }
+            stopBtn.classList.remove('hidden');
+            stopBtn.disabled = false;
+            downloadBtn.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+        }
+
+        /**
+         * Finner beste støttede videoformat i nettleseren (prioriterer MP4 for bredest kompatibilitet)
+         */
+        function getSupportedMimeType() {
+            const types = [
+                'video/mp4;codecs=avc1,mp4a.40.2',
+                'video/mp4',
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp8,opus',
+                'video/webm'
+            ];
+            for (const type of types) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    return type;
+                }
+            }
+            return '';
+        }
+
+        /**
+         * Stopper et pågående opptak
+         */
+        function stopRecording() {
+            clearInterval(countdownInterval);
+            isCountingDown = false;
+            countdownOverlay.classList.add('hidden');
+            isRecordingActive = false;
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            stopTimer();
+            cleanupStreams();
+            
+            // Lukk det flytende kontrollvinduet når opptaket er ferdig
+            if (pipWindow && !pipWindow.closed) {
+                pipWindow.close();
+                pipWindow = null;
+            }
+        }
+
+        /**
+         * Behandler det ferdige opptaket og gjør det klart for avspilling, redigering og nedlasting
+         */
+        function finalizeRecording() {
+            const mimeType = mediaRecorder ? (mediaRecorder.mimeType || 'video/webm') : 'video/webm';
+            const blob = new Blob(recordedChunks, { type: mimeType });
+            
+            if (recordedBlobUrl) {
+                URL.revokeObjectURL(recordedBlobUrl);
+            }
+            if (originalBlobUrl) {
+                URL.revokeObjectURL(originalBlobUrl);
+            }
+            originalBlobUrl = URL.createObjectURL(blob);
+            recordedBlobUrl = originalBlobUrl;
+
+            // Bytt video-elementet fra live-strøm til avspilling av den ferdige filen
+            videoPreview.srcObject = null;
+            videoPreview.src = recordedBlobUrl;
+            videoPreview.muted = false;
+            videoPreview.controls = true;
+
+            // Initialiser redigeringsverktøyet når videometadata (lengde) er lastet
+            videoPreview.onloadedmetadata = () => {
+                // Håndter Nettleser-quirk der WebM av og til rapporterer Infinity før den spoles
+                if (videoPreview.duration === Infinity) {
+                    videoPreview.currentTime = 1e101;
+                    videoPreview.ontimeupdate = () => {
+                        videoPreview.ontimeupdate = null;
+                        videoPreview.currentTime = 0;
+                        setupTrimControls(videoPreview.duration);
+                    };
+                } else {
+                    setupTrimControls(videoPreview.duration);
+                }
+            };
+
+            // Generer filnavn med dato og klokkeslett
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0, 19).replace(/[:T]/g, '-');
+            const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+            
+            downloadBtn.href = recordedBlobUrl;
+            downloadBtn.download = `skjermopptak-${timestamp}.${extension}`;
+            downloadBtnText.textContent = 'Last ned video';
+
+            // Oppdater UI
+            updateStatus('completed');
+            stopBtn.classList.add('hidden');
+            pipBtn.classList.add('hidden');
+            downloadBtn.classList.remove('hidden');
+            resetBtn.classList.remove('hidden');
+            micToggle.disabled = false;
+
+            showMessage('Opptaket er ferdig! Du kan nå se gjennom videoen, klippe bort uønskede deler, eller laste den ned.', 'success');
+        }
+
+        /**
+         * Setter opp glidebryterne for klipping (trimming) av videoen
+         */
+        function setupTrimControls(duration) {
+            if (!duration || isNaN(duration) || duration <= 0) return;
+            videoDuration = duration;
+            trimStart = 0;
+            trimEnd = duration;
+            middleCuts = [];
+            pendingCutStart = null;
+            markCutStartBtn.textContent = '1. Marker kutt-start';
+            markCutEndBtn.disabled = true;
+            renderMiddleCuts();
+
+            trimStartRange.min = 0;
+            trimStartRange.max = duration;
+            trimStartRange.value = 0;
+
+            trimEndRange.min = 0;
+            trimEndRange.max = duration;
+            trimEndRange.value = duration;
+
+            updateTrimLabels();
+            trimPanel.classList.remove('hidden');
+        }
+
+        function formatSecondsWithDecimal(sec) {
+            const mins = Math.floor(sec / 60).toString().padStart(2, '0');
+            const secs = (sec % 60).toFixed(1).padStart(4, '0');
+            return `${mins}:${secs}`;
+        }
+
+        /**
+         * Beregner hvilke segmenter av videoen som skal beholdes etter start/slutt-trim og midtkutt
+         */
+        function getKeptSegments() {
+            let segments = [{ start: trimStart, end: trimEnd }];
+            const sortedCuts = [...middleCuts].sort((a, b) => a.start - b.start);
+
+            for (const cut of sortedCuts) {
+                const nextSegments = [];
+                for (const seg of segments) {
+                    if (cut.end <= seg.start || cut.start >= seg.end) {
+                        nextSegments.push(seg);
+                    } else {
+                        if (cut.start > seg.start) {
+                            nextSegments.push({ start: seg.start, end: cut.start });
+                        }
+                        if (cut.end < seg.end) {
+                            nextSegments.push({ start: cut.end, end: seg.end });
+                        }
+                    }
+                }
+                segments = nextSegments;
+            }
+            return segments.filter(s => s.end - s.start > 0.05);
+        }
+
+        function updateTrimLabels() {
+            trimStartLabel.textContent = formatSecondsWithDecimal(trimStart);
+            trimEndLabel.textContent = formatSecondsWithDecimal(trimEnd);
+            const keptSegments = getKeptSegments();
+            const totalSelected = keptSegments.reduce((acc, seg) => acc + (seg.end - seg.start), 0);
+            trimDurationInfo.textContent = `Valgt lengde: ${formatSecondsWithDecimal(totalSelected)}`;
+        }
+
+        function markMiddleCutStart() {
+            const cur = videoPreview.currentTime;
+            if (cur <= trimStart || cur >= trimEnd) {
+                showMessage('Plasser videoen mellom startpunktet og sluttpunktet før du markerer kutt.', 'info');
+                return;
+            }
+            pendingCutStart = cur;
+            markCutStartBtn.textContent = `Kutt-start: ${formatSecondsWithDecimal(cur)}`;
+            markCutEndBtn.disabled = false;
+        }
+
+        function markMiddleCutEnd() {
+            if (pendingCutStart === null) return;
+            const cur = videoPreview.currentTime;
+            if (cur <= pendingCutStart + 0.1) {
+                showMessage('Kutt-slutt må være etter kutt-start.', 'error');
+                return;
+            }
+            const cutEnd = Math.min(cur, trimEnd);
+            middleCuts.push({ start: pendingCutStart, end: cutEnd });
+            pendingCutStart = null;
+            markCutStartBtn.textContent = '1. Marker kutt-start';
+            markCutEndBtn.disabled = true;
+            renderMiddleCuts();
+            updateTrimLabels();
+        }
+
+        function removeMiddleCut(index) {
+            middleCuts.splice(index, 1);
+            renderMiddleCuts();
+            updateTrimLabels();
+        }
+
+        function renderMiddleCuts() {
+            if (middleCuts.length === 0) {
+                middleCutsList.innerHTML = '<span>Ingen midtkutt lagt til enda.</span>';
+                return;
+            }
+            middleCutsList.innerHTML = middleCuts.map((cut, idx) => `
+                <span class="inline-flex items-center gap-1.5 bg-red-950/70 text-red-200 border border-red-800/80 px-2.5 py-1 rounded-lg font-mono text-xs">
+                    <span>Fjern: ${formatSecondsWithDecimal(cut.start)} – ${formatSecondsWithDecimal(cut.end)}</span>
+                    <button type="button" onclick="removeMiddleCut(${idx})" class="hover:text-white font-bold ml-1 cursor-pointer" title="Angre dette kuttet">✕</button>
+                </span>
+            `).join('');
+        }
+
+        trimStartRange.addEventListener('input', () => {
+            let val = parseFloat(trimStartRange.value);
+            if (val >= trimEnd - 0.2) {
+                val = Math.max(0, trimEnd - 0.2);
+                trimStartRange.value = val;
+            }
+            trimStart = val;
+            videoPreview.currentTime = trimStart;
+            updateTrimLabels();
+        });
+
+        trimEndRange.addEventListener('input', () => {
+            let val = parseFloat(trimEndRange.value);
+            if (val <= trimStart + 0.2) {
+                val = Math.min(videoDuration, trimStart + 0.2);
+                trimEndRange.value = val;
+            }
+            trimEnd = val;
+            videoPreview.currentTime = trimEnd;
+            updateTrimLabels();
+        });
+
+        function setTrimStartFromCurrent() {
+            const cur = videoPreview.currentTime;
+            if (cur < trimEnd - 0.2) {
+                trimStart = cur;
+                trimStartRange.value = cur;
+                updateTrimLabels();
+            }
+        }
+
+        function setTrimEndFromCurrent() {
+            const cur = videoPreview.currentTime;
+            if (cur > trimStart + 0.2) {
+                trimEnd = cur;
+                trimEndRange.value = cur;
+                updateTrimLabels();
+            }
+        }
+
+        /**
+         * Spiller av kun de valgte utsnittene og hopper automatisk over midtkutt
+         */
+        function previewTrimmedRange() {
+            const segments = getKeptSegments();
+            if (segments.length === 0) return;
+
+            let currentSegIndex = 0;
+            videoPreview.currentTime = segments[0].start;
+            videoPreview.play();
+
+            const checkSegments = () => {
+                const seg = segments[currentSegIndex];
+                if (!seg) {
+                    videoPreview.pause();
+                    videoPreview.removeEventListener('timeupdate', checkSegments);
+                    return;
+                }
+                if (videoPreview.currentTime >= seg.end) {
+                    currentSegIndex++;
+                    if (currentSegIndex < segments.length) {
+                        videoPreview.currentTime = segments[currentSegIndex].start;
+                    } else {
+                        videoPreview.pause();
+                        videoPreview.removeEventListener('timeupdate', checkSegments);
+                    }
+                }
+            };
+            videoPreview.addEventListener('timeupdate', checkSegments);
+        }
+
+        /**
+         * Kutter ut de valgte tidsrommene (og hopper over midtkutt) i et skjult videostream-opptak
+         */
+        async function exportTrimmedVideo() {
+            const segments = getKeptSegments();
+            const totalDuration = segments.reduce((acc, s) => acc + (s.end - s.start), 0);
+
+            if (totalDuration <= 0.2) {
+                showMessage('Utvalget er for kort til å klippes.', 'error');
+                return;
+            }
+
+            exportTrimBtn.disabled = true;
+            exportTrimBtn.innerHTML = '<span>Klipper video... (ikke lukk fanen)</span>';
+            showMessage('Behandler klippet... Videoen spilles av i bakgrunnen og hopper over bortklippede deler.', 'info');
+
+            try {
+                const tempVideo = document.createElement('video');
+                tempVideo.src = originalBlobUrl;
+                tempVideo.muted = false;
+                tempVideo.volume = 1.0;
+                tempVideo.playsInline = true;
+
+                await new Promise((resolve) => {
+                    tempVideo.onloadedmetadata = resolve;
+                });
+
+                tempVideo.currentTime = segments[0].start;
+                await new Promise((resolve) => {
+                    tempVideo.onseeked = resolve;
+                });
+
+                const stream = tempVideo.captureStream ? tempVideo.captureStream() : tempVideo.mozCaptureStream();
+                const mimeType = getSupportedMimeType();
+                const trimRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+                const chunks = [];
+
+                trimRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) chunks.push(e.data);
+                };
+
+                const recordingFinished = new Promise((resolve) => {
+                    trimRecorder.onstop = resolve;
+                });
+
+                trimRecorder.start(100);
+                await tempVideo.play();
+
+                for (let i = 0; i < segments.length; i++) {
+                    const seg = segments[i];
+                    if (i > 0) {
+                        trimRecorder.pause();
+                        tempVideo.pause();
+                        tempVideo.currentTime = seg.start;
+                        await new Promise((resolve) => {
+                            tempVideo.onseeked = resolve;
+                        });
+                        trimRecorder.resume();
+                        await tempVideo.play();
+                    }
+
+                    await new Promise((resolve) => {
+                        const interval = setInterval(() => {
+                            if (tempVideo.currentTime >= seg.end || tempVideo.ended) {
+                                clearInterval(interval);
+                                resolve();
+                            }
+                        }, 30);
+                    });
+                }
+
+                tempVideo.pause();
+                trimRecorder.stop();
+                await recordingFinished;
+
+                const trimmedBlob = new Blob(chunks, { type: trimRecorder.mimeType || 'video/webm' });
+                if (recordedBlobUrl && recordedBlobUrl !== originalBlobUrl) {
+                    URL.revokeObjectURL(recordedBlobUrl);
+                }
+                recordedBlobUrl = URL.createObjectURL(trimmedBlob);
+
+                videoPreview.onloadedmetadata = null;
+                videoPreview.src = recordedBlobUrl;
+                downloadBtn.href = recordedBlobUrl;
+                const now = new Date();
+                const timestamp = now.toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                const extension = (trimRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+                downloadBtn.download = `skjermopptak-klippet-${timestamp}.${extension}`;
+                downloadBtnText.textContent = 'Last ned klippet video';
+
+                showMessage('Videoen er klippet til! Klikk på "Last ned klippet video" for å lagre den.', 'success');
+            } catch (err) {
+                console.error('Feil under klipping:', err);
+                showMessage('Kunne ikke klippe videoen i denne nettleseren: ' + err.message, 'error');
+            } finally {
+                exportTrimBtn.disabled = false;
+                exportTrimBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Bruk klipp & oppdater nedlasting</span>
+                `;
+            }
+        }
+
+        /**
+         * Tilbakestiller appen slik at brukeren kan ta et nytt opptak
+         */
+        function resetApp() {
+            hideMessage();
+            clearInterval(countdownInterval);
+            isCountingDown = false;
+            countdownOverlay.classList.add('hidden');
+            isRecordingActive = false;
+            cleanupStreams();
+
+            if (pipWindow && !pipWindow.closed) {
+                pipWindow.close();
+                pipWindow = null;
+            }
+            
+            if (recordedBlobUrl) {
+                URL.revokeObjectURL(recordedBlobUrl);
+                recordedBlobUrl = null;
+            }
+            if (originalBlobUrl) {
+                URL.revokeObjectURL(originalBlobUrl);
+                originalBlobUrl = null;
+            }
+
+            videoPreview.onloadedmetadata = null;
+            videoPreview.srcObject = null;
+            videoPreview.src = '';
+            videoPreview.classList.add('hidden');
+            placeholderView.classList.remove('hidden');
+            trimPanel.classList.add('hidden');
+
+            downloadBtn.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+            stopBtn.classList.add('hidden');
+            pipBtn.classList.add('hidden');
+            startBtn.classList.remove('hidden');
+            micToggle.disabled = false;
+
+            timerDisplay.textContent = '00:00';
+            updateStatus('ready');
+        }
+
+        /**
+         * Håndterer opptakstidtakeren
+         */
+        function startTimer() {
+            secondsElapsed = 0;
+            timerDisplay.textContent = '00:00';
+            timerOverlay.classList.remove('hidden');
+            updatePipUI();
+            
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+                const formatted = `${mins}:${secs}`;
+                timerDisplay.textContent = formatted;
+                
+                if (pipWindow && !pipWindow.closed) {
+                    const pipTimer = pipWindow.document.getElementById('pipTimer');
+                    if (pipTimer) pipTimer.textContent = formatted;
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerOverlay.classList.add('hidden');
+        }
+
+        /**
+         * Oppdaterer status-indikatoren øverst i høyre hjørne
+         */
+        function updateStatus(state) {
+            if (state === 'countdown') {
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping';
+                statusText.textContent = 'Gjør deg klar...';
+                statusText.className = 'text-indigo-300 font-semibold';
+            } else if (state === 'recording') {
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 recording-dot';
+                statusText.textContent = 'Tar opp skjerm';
+                statusText.className = 'text-red-400 font-semibold';
+            } else if (state === 'completed') {
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+                statusText.textContent = 'Opptak fullført';
+                statusText.className = 'text-emerald-400 font-semibold';
+            } else {
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-500';
+                statusText.textContent = 'Klar til opptak';
+                statusText.className = 'text-slate-300 font-medium';
+            }
+        }
+
+        /**
+         * Viser meldingsboks i brukergrensesnittet
+         */
+        function showMessage(text, type = 'info') {
+            messageText.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-red-950/60', 'border-red-800', 'text-red-200', 'bg-emerald-950/60', 'border-emerald-800', 'text-emerald-200', 'bg-slate-800', 'border-slate-700', 'text-slate-200');
+            
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-950/60', 'border-red-800', 'text-red-200');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-emerald-950/60', 'border-emerald-800', 'text-emerald-200');
+            } else {
+                messageBox.classList.add('bg-slate-800', 'border-slate-700', 'text-slate-200');
+            }
+        }
+
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        /**
+         * Stopper alle aktive medie- og lydstrømmer for å frigjøre maskinvare
+         */
+        function cleanupStreams() {
+            if (screenStream) {
+                screenStream.getTracks().forEach(track => track.stop());
+                screenStream = null;
+            }
+            if (micStream) {
+                micStream.getTracks().forEach(track => track.stop());
+                micStream = null;
+            }
+            combinedStream = null;
+        }
+    </script>
+</body>
+</html>
