@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tegnsettingsmesteren – Norsk 9. trinn</title>
+    <!-- Laster inn Tailwind CSS for moderne og responsiv styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Laster inn Google Font 'Inter' for god lesbarhet -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        /* Tilpassede animasjoner for tilbakemeldinger */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        /* Interaktive ord og mellomrom uten forhåndsbokser */
+        .first-letter-btn {
+            transition: all 0.15s ease;
+            border-radius: 3px;
+            padding: 0 1px;
+        }
+        .first-letter-btn:hover {
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+        .space-punct-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0.42rem;
+            height: 1.5rem;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            vertical-align: baseline;
+        }
+        .space-punct-btn:hover {
+            background-color: #e0e7ff;
+            min-width: 0.85rem;
+        }
+        .space-punct-btn.has-punct {
+            min-width: auto;
+            padding: 0 2px;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+        /* Interaktive avsnittsskift i sammenhengende tekstblokk */
+        .para-break-inline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            margin: 0 2px;
+            border-radius: 4px;
+            color: #94a3b8;
+            font-size: 0.85em;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            vertical-align: baseline;
+        }
+        .para-break-inline:hover {
+            background-color: #e0e7ff;
+            color: #4338ca;
+        }
+        .para-break-active {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 1.1rem;
+            margin-bottom: 0.45rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #eef2ff;
+            border-left: 4px solid #4f46e5;
+            color: #3730a3;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .para-break-active:hover {
+            background-color: #e0e7ff;
+        }
+        /* Skjuler rullefelt men beholder funksjonalitet */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+
+    <!-- Toppbar / Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <a href="index.html" onclick="if (window.history.length > 1 && document.referrer && document.referrer.includes(window.location.host)) { event.preventDefault(); window.history.back(); }" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold transition shadow-2xs" title="Tilbake til forsiden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Tilbake</span>
+                </a>
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-sm">
+                    «.»
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg sm:text-xl text-slate-900 leading-tight">Tegnsettingsmesteren</h1>
+                    <p class="text-xs text-slate-500 font-medium">Norsk 9. trinn • Punktum, komma & avsnitt</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Poengteller -->
+                <div class="bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Poeng:</span>
+                    <span id="score-display" class="font-bold text-indigo-900 text-sm sm:text-base">0 / 12</span>
+                </div>
+
+                <!-- Knapp for regelbok -->
+                <button onclick="toggleRulesModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span>Regelbok</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigasjonsfaner for de 4 modulene -->
+        <nav class="bg-slate-100/80 border-t border-slate-200 overflow-x-auto no-scrollbar">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 flex space-x-2 py-2" id="nav-tabs">
+                <button onclick="switchModule(0)" id="tab-0" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition bg-indigo-600 text-white shadow-sm">
+                    1. Punktum & stor bokstav
+                </button>
+                <button onclick="switchModule(1)" id="tab-1" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-600 hover:bg-white hover:text-slate-900">
+                    2. Komma & direkte tale
+                </button>
+                <button onclick="switchModule(2)" id="tab-2" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-600 hover:bg-white hover:text-slate-900">
+                    3. Avsnittsinndeling
+                </button>
+                <button onclick="switchModule(3)" id="tab-3" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-600 hover:bg-white hover:text-slate-900">
+                    4. Mesterprøven (Redaktøren)
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hovedinnhold -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        
+        <!-- Introduksjonsboks for aktiv modul -->
+        <div id="module-header" class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm mb-6 animate-fade-in">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <span id="module-badge" class="inline-block w-fit text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700">
+                    Del 1 av 4
+                </span>
+                <span id="task-counter" class="text-xs font-semibold text-slate-500">
+                    Oppgave 1 av 3
+                </span>
+            </div>
+            <h2 id="module-title" class="text-xl sm:text-2xl font-bold text-slate-900 mb-1">Punktum og stor forbokstav</h2>
+            <p id="module-desc" class="text-sm sm:text-base text-slate-600 leading-relaxed">
+                En helsetning uttrykker en fullstendig tanke og avsluttes med punktum. Husk at vi på norsk bruker liten forbokstav i vanlige substantiv, ukedager og måneder, men stor forbokstav etter punktum og i egennavn.
+            </p>
+        </div>
+
+        <!-- Oppgavecontainer (dynamisk innhold rendres her) -->
+        <div id="task-container" class="bg-white rounded-2xl p-5 sm:p-8 border border-slate-200 shadow-sm animate-fade-in">
+            <!-- Fylles av JavaScript -->
+        </div>
+
+        <!-- Tilbakemeldingsboks -->
+        <div id="feedback-box" class="hidden mt-6 rounded-2xl p-5 border shadow-sm animate-fade-in">
+            <div class="flex items-start gap-3">
+                <div id="feedback-icon" class="mt-0.5 flex-shrink-0"></div>
+                <div class="flex-grow">
+                    <h3 id="feedback-title" class="font-bold text-base mb-1"></h3>
+                    <p id="feedback-text" class="text-sm leading-relaxed"></p>
+                    <div id="feedback-explanation" class="mt-3 pt-3 border-t border-black/10 text-xs sm:text-sm space-y-1.5"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Handlingsknapper nederst -->
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+            <button onclick="resetCurrentTask()" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm transition">
+                Nullstill oppgave
+            </button>
+
+            <div class="flex items-center gap-3">
+                <button id="check-btn" onclick="checkAnswer()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition">
+                    Sjekk svar
+                </button>
+                <button id="next-btn" onclick="nextTask()" class="hidden px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-1.5">
+                    <span>Neste oppgave</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bunntekst -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-12">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-slate-500">
+            Utviklet for norskundervisning på 9. trinn • Følger Språkrådets gjeldende rettskrivingsregler.
+        </div>
+    </footer>
+
+    <!-- Modal: Regelbok (Norsk rettskriving) -->
+    <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-fade-in">
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-300 text-lg">📖</span>
+                    <h3 class="font-bold text-lg">Kortfattet regelbok (Norsk 9. trinn)</h3>
+                </div>
+                <button onclick="toggleRulesModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-700 leading-relaxed">
+                <!-- Regel 1 -->
+                <section>
+                    <h4 class="font-bold text-base text-indigo-700 mb-1.5">1. Stor og liten forbokstav</h4>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Stor forbokstav:</strong> I første ord i en setning (etter punktum, spørsmålstegn eller utropstegn) og i egennavn (f.eks. <em>Norge, Oslo, Sofie, Glomma</em>).</li>
+                        <li><strong>Liten forbokstav:</strong> I ukedager, måneder, høytider og nasjonaliteter (f.eks. <em>mandag, november, jul, norsk, engelsk</em>).</li>
+                    </ul>
+                </section>
+
+                <!-- Regel 2 -->
+                <section>
+                    <h4 class="font-bold text-base text-indigo-700 mb-1.5">2. De viktigste kommareglene</h4>
+                    <ul class="list-disc pl-5 space-y-1.5">
+                        <li><strong>Mellom to helsetninger</strong> som bindes sammen med <em>og, men, for, så, eller</em>:<br>
+                            <span class="text-slate-500 italic">Eksempel: Vi gikk ut i regnet, men vi glemte paraplyen.</span>
+                        </li>
+                        <li><strong>Etter leddsetning som står først</strong> i setningen:<br>
+                            <span class="text-slate-500 italic">Eksempel: Da klokka ringte, løp alle elevene ut.</span>
+                        </li>
+                        <li><strong>Ved oppramsing</strong> (når det ikke står <em>og</em> eller <em>eller</em>):<br>
+                            <span class="text-slate-500 italic">Eksempel: Hun pakket sekken med matpakke, drikkeflaske, blyant og bøker.</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Regel 3: Direkte tale -->
+                <section class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <h4 class="font-bold text-base text-amber-900 mb-1.5">3. Direkte tale og anførselstegn (Språkrådets regel)</h4>
+                    <p class="mb-2 text-amber-950">
+                        Mellom anførselstegn skal det <strong>ikke</strong> stå andre tegn enn dem som hører til i selve replikken. Når replikken etterfølges av et utsagn (f.eks. <em>sa han</em>), skal kommaet stå <strong>etter</strong> det siste anførselstegnet:
+                    </p>
+                    <div class="bg-white p-3 rounded-lg border border-amber-200 font-mono text-xs sm:text-sm space-y-1">
+                        <p class="text-emerald-700 font-semibold">✓ Riktig: «Jeg kommer snart», ropte Henrik.</p>
+                        <p class="text-rose-600 line-through">✗ Feil: «Jeg kommer snart,» ropte Henrik.</p>
+                        <p class="text-emerald-700 font-semibold mt-2">✓ Riktig (ved spørsmål/utrop): «Kommer du nå?» spurte Astrid.</p>
+                    </div>
+                </section>
+
+                <!-- Regel 4: Avsnitt -->
+                <section>
+                    <h4 class="font-bold text-base text-indigo-700 mb-1.5">4. Når skal vi lage nytt avsnitt?</h4>
+                    <p class="mb-1">Avsnitt gjør teksten oversiktlig og gir leseren en tenkepause. Lag nytt avsnitt når:</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Teksten skifter <strong>tema</strong> eller tar opp et nytt poeng.</li>
+                        <li>Handlingen flytter seg i <strong>tid eller sted</strong>.</li>
+                        <li>En <strong>ny person</strong> begynner å snakke i en dialog.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 text-right">
+                <button onclick="toggleRulesModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition">
+                    Lukk regelbok
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript: Oppgavedata og applikasjonslogikk -->
+    <script>
+        /**
+         * Oppgavedatabase strukturert i 4 pedagogiske moduler.
+         * Alle tekster følger strengt norske rettskrivingsregler:
+         * - Liten forbokstav i vanlige ord, ukedager, måneder og språk.
+         * - Stor forbokstav i egennavn og etter punktum/spørsmålstegn/utropstegn.
+         * - Komma ETTER siste anførselstegn i direkte tale («...», sa hun).
+         */
+        const modules = [
+            {
+                id: 0,
+                badge: "Del 1 av 4",
+                title: "Punktum og stor forbokstav",
+                description: "Hele teksten er skrevet med små bokstaver og mangler punktum. Klikk på forbokstaven i et ord for å endre til STOR bokstav, og klikk rett bak et ord (i mellomrommet) for å sette inn punktum (.).",
+                type: "interactive-text",
+                punctChar: ".",
+                tasks: [
+                    {
+                        instruction: "Sett inn store bokstaver (først i setning og egennavn) og punktum i teksten om skoleturen:",
+                        // Hver oppgave er en ren tekst med fasit (correctText).
+                        // Koden fjerner automatisk store bokstaver og punktum når oppgaven vises til eleven!
+                        correctText: "På fredag dro hele trinnet på tur til Besseggen i Jotunheimen. Vi måtte stå opp klokken fem om morgenen. Alle var trøtte på bussen, men stemningen steg da vi så fjellene. Læreren vår heter Marte, og hun gikk først i løypa.",
+                        explanations: [
+                            "«På» har stor P fordi det er første ord i teksten. «fredag» skrives med liten f.",
+                            "«Besseggen» og «Jotunheimen» er egennavn og skal ha stor forbokstav. Etter «Jotunheimen» er helsetningen slutt, så vi setter punktum.",
+                            "«Vi» og «Alle» får stor forbokstav fordi de står først i hver sin nye setning.",
+                            "Etter «fjellene» slutter setningen (punktum), og vi starter ny setning med «Læreren».",
+                            "«Marte» er et egennavn (stor M), og setningen avsluttes med punktum etter «løypa»."
+                        ]
+                    },
+                    {
+                        instruction: "Rydd opp i dette avsnittet fra en bokanmeldelse. Husk stor forbokstav og punktum:",
+                        correctText: "Romanen handler om seksten år gamle Lukas som bor i Bergen. En tirsdag i november finner han et gammelt brev på loftet. Brevet er skrevet på tysk, og det avslører en familiehemmelighet. Forfatteren skaper høy spenning fra første side.",
+                        explanations: [
+                            "«Romanen» starter teksten (stor R). «Lukas» og «Bergen» er egennavn.",
+                            "Etter «Bergen» er første helsetning slutt – her setter vi punktum! Deretter kommer «En» med stor E, mens «tirsdag» og «november» har liten forbokstav.",
+                            "Etter «loftet» setter vi punktum, og starter ny setning med «Brevet» (husk liten t i «tysk»).",
+                            "Etter «familiehemmelighet» setter vi punktum, og starter siste setning med «Forfatteren». Husk også punktum til slutt etter «side»."
+                        ]
+                    },
+                    {
+                        instruction: "Siste øvelse i del 1: Pass på små og store bokstaver samt punktum:",
+                        correctText: "I sommerferien reiste familien min til Danmark med ferge fra Larvik. Vi badet i havet hver eneste dag, selv om vannet var ganske kaldt. På kveldene spilte vi kort og spiste jordbær.",
+                        explanations: [
+                            "«I» starter teksten. «Danmark» og «Larvik» er stedsnavn (egennavn). Etter «Larvik» slutter første helsetning (punktum).",
+                            "«Vi» starter neste setning. Etter «kaldt» slutter setningen (punktum).",
+                            "«På» starter den siste setningen, som avsluttes med punktum etter «jordbær»."
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 1,
+                badge: "Del 2 av 4",
+                title: "Komma og direkte tale",
+                description: "Klikk i mellomrommet rett bak et ord for å sette inn eller fjerne komma (,). Her er punktum og store bokstaver allerede på plass, så du kan konsentrere deg om kommareglene – inkludert direkte tale!",
+                type: "interactive-text",
+                punctChar: ",",
+                tasks: [
+                    {
+                        instruction: "Sett inn komma der reglene krever det (legg ekstra merke til replikken):",
+                        correctText: "«Jeg tror vi har gått oss vill», sa Jonas mens han så på kartet. Da mørket begynte å senke seg, ble alle litt nervøse, men Sofie fant heldigvis stien igjen.",
+                        explanations: [
+                            "Direkte tale: Komma skal stå ETTER det siste anførselstegnet («...», sa Jonas).",
+                            "Foranstilt leddsetning: «Da mørket begynte å senke seg» står først i setningen, derfor må vi ha komma før hovedsetningen («ble alle litt nervøse»).",
+                            "Komma mellom to helsetninger som bindes sammen med «men»."
+                        ]
+                    },
+                    {
+                        instruction: "Øv på oppramsing, leddsetninger og replikker med spørsmålstegn:",
+                        correctText: "På kjøkkenbordet lå det epler, bananer, druer og en kurv med ferske rundstykker. «Kan noen sende meg smøret?» spurte Henrik før han tok en bit.",
+                        explanations: [
+                            "Oppramsing: Komma mellom leddene («epler, bananer, druer»), men IKKE foran «og».",
+                            "Når replikken avsluttes med spørsmålstegn inne i anførselstegnet, skal det IKKE stå komma etter anførselstegnet («... ?» spurte Henrik).",
+                            "Når leddsetningen («før han tok en bit») står sist i setningen, skal det normalt ikke være komma foran."
+                        ]
+                    },
+                    {
+                        instruction: "Kombiner kommareglene i en lengre sammenheng:",
+                        correctText: "Hvis du vil rekke bussen, må du skynde deg nå, for den går om fem minutter. «Jeg finner ikke nøklene mine», svarte Maja og lette febrilsk i sekken.",
+                        explanations: [
+                            "Foranstilt leddsetning: «Hvis du vil rekke bussen, må du skynde deg nå».",
+                            "Komma foran «for» når det binder sammen to helsetninger.",
+                            "Direkte tale: Komma etter siste anførselstegn («...», svarte Maja).",
+                            "Ikke komma foran «og» her, fordi «lette febrilsk i sekken» ikke har eget subjekt."
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 2,
+                badge: "Del 3 av 4",
+                title: "Avsnittsinndeling",
+                description: "Her ser du en sammenhengende tekstblokk uten avsnitt. Klikk på avsnittstegnet (¶) mellom setningene der du mener det er naturlig å dele teksten inn i et nytt avsnitt (ved nytt tema, ny tid/sted eller ny taler).",
+                type: "paragraph-breaks",
+                tasks: [
+                    {
+                        instruction: "Del denne lengre fagteksten om sosiale medier og ungdom inn i 4 naturlige avsnitt (sett inn 3 avsnittsskift):",
+                        sentences: [
+                            "Sosiale medier har på få år endret måten ungdom kommuniserer og holder kontakt på i hverdagen.",
+                            "Gjennom apper som Snapchat, TikTok og Instagram deler vi øyeblikk fra både fritid og skole, og mange opplever at det skaper et sterkt fellesskap.",
+                            "For elever som bor langt unna vennene sine, kan digitale møteplasser gjøre det mye enklere å være sosial etter skoletid.",
+                            "Samtidig peker stadig flere forskere og leger på at høy skjermbruk kan gå ut over både søvnkvaliteten og konsentrasjonen.",
+                            "Når man ligger med mobilen i senga rett før leggetid, blir hjernen aktivert av både sterkt lys og stadig nye inntrykk.",
+                            "Dette fører til at mange sovner senere enn de burde, noe som igjen gjør det tyngre å følge med i undervisningen dagen etter.",
+                            "En annen utfordring handler om det sosiale presset som ofte oppstår i digitale kanaler.",
+                            "Mange ungdommer forteller at de føler seg tvunget til å være tilgjengelige hele døgnet for å ikke gå glipp av noe viktig.",
+                            "I tillegg kan redigerte bilder og perfekte fasader skape urealistiske forventninger til både utseende og fritidsaktiviteter.",
+                            "For å få en sunnere balanse anbefaler helsesykepleiere å innføre faste skjermfrie soner i løpet av dagen.",
+                            "Et enkelt og effektivt grep er å legge bort mobilen minst en time før man skal sove, og heller bruke en vanlig vekkerklokke om morgenen.",
+                            "Ved å skru av unødvendige varsler når man gjør lekser, blir det også langt lettere å jobbe konsentrert og effektivt."
+                        ],
+                        // Indeksene etter setningene hvor det skal være nytt avsnitt (etter setning 2, 5 og 8)
+                        correctBreaks: [2, 5, 8],
+                        explanations: [
+                            "Avsnitt 1 (setning 1–3): Innledning som tar for seg de positive sidene ved sosiale medier og fellesskap.",
+                            "Avsnitt 2 (setning 4–6): Skifter tema til søvn og konsentrasjon (innledes med «Samtidig peker stadig flere forskere...»).",
+                            "Avsnitt 3 (setning 7–9): Tar opp et nytt poeng om sosialt press og fasader («En annen utfordring handler om...»).",
+                            "Avsnitt 4 (setning 10–12): Avslutning med konkrete råd og løsninger («For å få en sunnere balanse...»)."
+                        ]
+                    },
+                    {
+                        instruction: "Del denne fortellingen inn i 4 avsnitt basert på skifte i tid, sted og handling (3 avsnittsskift):",
+                        sentences: [
+                            "Regnet trommet tungt mot klasseromsvinduet mens klokka på veggen nærmet seg halv tre på ettermiddagen.",
+                            "De fleste elevene i 9B hadde allerede pakket sammen bøkene sine og ventet utålmodig på at siste time skulle ta slutt.",
+                            "Ute i gangen kunne man høre lyden av regndråper som dryppet ned i en bøtte ved inngangsdøra.",
+                            "Morgenen etter skinte sola fra en helt skyfri himmel over skolegården.",
+                            "Vanndammene fra gårsdagen dampet i varmen, og lufta var frisk og klar.",
+                            "Hele skolen samlet seg rundt kunstgressbanen for å se den avgjørende finalen i elevturneringen.",
+                            "Da dommeren blåste i fløyta for andre omgang, sto det fortsatt uavgjort mellom niende og tiende trinn.",
+                            "Plutselig brøt Frida gjennom forsvaret på høyrekanten og la et presist innlegg mot bakerste stolpe.",
+                            "Med et kraftig vristspark sendte hun ballen rett i krysset, og hele sidelinja eksploderte i vill jubel."
+                        ],
+                        correctBreaks: [2, 5, 6],
+                        explanations: [
+                            "Avsnitt 1 (setning 1–3): Beskriver den regntunge ettermiddagen inne i klasserommet.",
+                            "Avsnitt 2 (setning 4–6): Tidshopp og stedsskifte til neste morgen ute i skolegården («Morgenen etter...»).",
+                            "Avsnitt 3 (setning 7): Skifter fokus til selve kampstarten i andre omgang («Da dommeren blåste...»).",
+                            "Avsnitt 4 (setning 8–9): Vendepunkt og dramatisk høydepunkt i kampen («Plutselig brøt Frida gjennom...»)."
+                        ]
+                    },
+                    {
+                        instruction: "Del denne fortellingen inn i 4 naturlige avsnitt. Legg merke til hvordan replikkene her er vevd sammen med skildring og handling (3 avsnittsskift):",
+                        sentences: [
+                            "Vinden ulte rundt hjørnene på den gamle trehytta mens Kasper prøvde å få fyr i den fuktige veden.",
+                            "Røyken sved i øynene hans, og ute i mørket knaket det tungt i de gamle furutrærne.",
+                            "«Jeg tror ikke denne veden tar fyr uten mer bjørkenever», mumlet han og tørket sot av panna.",
+                            "Borte ved vinduet sto Nora og kikket ut mot stien der de hadde kommet opp tidligere på kvelden.",
+                            "Lommelykta hennes kastet en smal lysstråle ut i snøfokket, men det var umulig å se mer enn noen få meter framfor seg.",
+                            "«Det snør enda tettere nå, så vi blir nødt til å bli her til i morgen tidlig», sa hun rolig og la fra seg lykta på bordet.",
+                            "Beskjeden fikk skuldrene til Kasper til å senke seg, for nå slapp de i det minste å ta sjansen på å gå ned i mørket.",
+                            "Han fant fram to ulltepper fra skapet og la dem over benken ved ovnen slik at de skulle bli varme.",
+                            "«Da får vi heller dele den siste boksen med lapskaus og gjøre det beste ut av kvelden», svarte han med et svakt smil.",
+                            "Litt senere spraket det endelig godt i ovnen, og den kalde hytta fyltes sakte av varme og lukten av middag.",
+                            "Utenfor fortsatte stormen å herje gjennom natten, men inne i lyset fra stearinlysene følte de seg trygge."
+                        ],
+                        correctBreaks: [2, 5, 8],
+                        explanations: [
+                            "Avsnitt 1 (setning 1–3): Fokus på Kasper ved ovnen. Replikken hans hører naturlig hjemme i samme avsnitt fordi den beskriver det samme forsøket på å tenne opp.",
+                            "Avsnitt 2 (setning 4–6): Skifter fokus til Nora ved vinduet og været utenfor, avsluttet med hennes replikk som oppsummerer situasjonen.",
+                            "Avsnitt 3 (setning 7–9): Skifter tilbake til Kaspers reaksjon, handling (henter ulltepper) og svarreplikk.",
+                            "Avsnitt 4 (setning 10–11): Tidshopp («Litt senere...») som runder av stemningen i hytta."
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 3,
+                badge: "Del 4 av 4",
+                title: "Mesterprøven: Redaktøren",
+                description: "Nå skal du kombinere alt du har lært! Velg riktig tegnsetting og avsnittsskift for å gjøre denne teksten klar til publisering i skoleavisa.",
+                type: "editor-challenge",
+                tasks: [
+                    {
+                        instruction: "Velg riktig alternativ i hver nedtrekksmeny for å fullføre teksten:",
+                        parts: [
+                            { type: "text", content: "Da vi ankom leirplassen i " },
+                            { type: "select", options: ["trondheim", "Trondheim"], answer: "Trondheim", hint: "Egennavn" },
+                            { type: "text", content: " på " },
+                            { type: "select", options: ["lørdag", "Lørdag"], answer: "lørdag", hint: "Ukedag" },
+                            { type: "select", options: [",", "."], answer: ",", hint: "Foranstilt leddsetning («Da vi ankom...»)" },
+                            { type: "text", content: " hadde det allerede begynt å snø. Vi satte opp teltet i full fart" },
+                            { type: "select", options: [", men", " men"], answer: ", men", hint: "To helsetninger med «men»" },
+                            { type: "text", content: " vinden gjorde det vanskelig å feste pluggene." },
+                            { type: "select", options: [" [Nytt avsnitt] ", " "], answer: " [Nytt avsnitt] ", hint: "Ny person tar ordet" },
+                            { type: "select", options: ["«Vi må tenne bål før det blir mørkt»,", "«Vi må tenne bål før det blir mørkt,»"], answer: "«Vi må tenne bål før det blir mørkt»,", hint: "Komma etter anførselstegn" },
+                            { type: "text", content: " sa turlederen vår." }
+                        ],
+                        explanations: [
+                            "«Trondheim» skrives med stor T fordi det er et egennavn, mens «lørdag» skrives med liten l.",
+                            "Komma etter leddsetningen «Da vi ankom leirplassen i Trondheim på lørdag,».",
+                            "Komma foran «men» mellom to helsetninger.",
+                            "Nytt avsnitt når en person bryter inn med direkte tale.",
+                            "«Vi må tenne bål før det blir mørkt», sa turlederen – kommaet står etter siste anførselstegn."
+                        ]
+                    },
+                    {
+                        instruction: "Siste utfordring! Rydd opp i dette leserinnlegget om lekser:",
+                        parts: [
+                            { type: "text", content: "Mange elever på ungdomstrinnet opplever at skoledagen blir for lang" },
+                            { type: "select", options: [", og", " og"], answer: ", og", hint: "To helsetninger med «og»" },
+                            { type: "text", content: " de mener at lekser skaper unødvendig stress på fritiden." },
+                            { type: "select", options: [" [Nytt avsnitt] ", " "], answer: " [Nytt avsnitt] ", hint: "Nytt poeng / motargument" },
+                            { type: "text", content: "På den andre siden hevder flere lærere at lekser er viktige for å lære gode arbeidsvaner" },
+                            { type: "select", options: [".", ","], answer: ".", hint: "Helsetningen er ferdig" },
+                            { type: "text", content: " " },
+                            { type: "select", options: ["når", "Når"], answer: "Når", hint: "Stor forbokstav etter punktum" },
+                            { type: "text", content: " man jobber selvstendig hjemme" },
+                            { type: "select", options: [",", ""], answer: ",", hint: "Foranstilt leddsetning" },
+                            { type: "text", content: " oppdager man lettere hva man faktisk trenger hjelp til i timen." }
+                        ],
+                        explanations: [
+                            "Komma foran «og» fordi «de mener at lekser skaper unødvendig stress» er en selvstendig helsetning med eget subjekt («de»).",
+                            "Nytt avsnitt fordi teksten skifter perspektiv («På den andre siden...»).",
+                            "Punktum etter «arbeidsvaner», etterfulgt av stor forbokstav i «Når».",
+                            "Komma etter den foranstilte leddsetningen «Når man jobber selvstendig hjemme,»."
+                        ]
+                    },
+                    {
+                        instruction: "Avsluttende mesterprøve: Språk, høytider og direkte tale:",
+                        parts: [
+                            { type: "text", content: "I " },
+                            { type: "select", options: ["desember", "Desember"], answer: "desember", hint: "Måned" },
+                            { type: "text", content: " feirer vi " },
+                            { type: "select", options: ["jul", "Jul"], answer: "jul", hint: "Høytid" },
+                            { type: "text", content: " med familien" },
+                            { type: "select", options: [", og", " og"], answer: ", og", hint: "To helsetninger" },
+                            { type: "text", content: " da ser vi ofte på gamle filmer med " },
+                            { type: "select", options: ["engelsk", "Engelsk"], answer: "engelsk", hint: "Språk" },
+                            { type: "text", content: " tale." },
+                            { type: "select", options: [" [Nytt avsnitt] ", " "], answer: " [Nytt avsnitt] ", hint: "Replikk starter" },
+                            { type: "select", options: ["«Hvilken film skal vi velge i år?»", "«Hvilken film skal vi velge i år?», "], answer: "«Hvilken film skal vi velge i år?»", hint: "Spørsmålstegn erstatter komma" },
+                            { type: "text", content: " spurte lillesøsteren min spent." }
+                        ],
+                        explanations: [
+                            "Måneder («desember»), høytider («jul») og språk («engelsk») skrives med liten forbokstav på norsk.",
+                            "Komma foran «og» mellom to helsetninger.",
+                            "Nytt avsnitt ved replikk.",
+                            "Når en replikk slutter med spørsmålstegn inni anførselstegnene, skal det IKKE være komma etterpå."
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // Tilstandsvariabler (State)
+        let currentModuleIdx = 0;
+        let currentTaskIdx = 0;
+        let userAnswers = [];
+        let completedTasks = new Set(); // Lagrer "modIdx-taskIdx" for poengberegning
+        let isTaskChecked = false;
+
+        // Initialiser appen ved oppstart
+        window.onload = function() {
+            renderTask();
+            updateScoreUI();
+        };
+
+        // Bytter mellom de 4 modulene i toppmenyen
+        function switchModule(modIdx) {
+            currentModuleIdx = modIdx;
+            currentTaskIdx = 0;
+            updateNavTabs();
+            renderTask();
+        }
+
+        // Oppdaterer visuell stil på fanene
+        function updateNavTabs() {
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                if (idx === currentModuleIdx) {
+                    btn.className = "tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition bg-indigo-600 text-white shadow-sm";
+                } else {
+                    btn.className = "tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-600 hover:bg-white hover:text-slate-900";
+                }
+            });
+        }
+
+        // Hovedfunksjon for å tegne aktiv oppgave
+        function renderTask() {
+            const mod = modules[currentModuleIdx];
+            const task = mod.tasks[currentTaskIdx];
+            isTaskChecked = false;
+
+            // Oppdater header-informasjon
+            document.getElementById('module-badge').textContent = mod.badge;
+            document.getElementById('task-counter').textContent = `Oppgave ${currentTaskIdx + 1} av ${mod.tasks.length}`;
+            document.getElementById('module-title').textContent = mod.title;
+            document.getElementById('module-desc').textContent = mod.description;
+
+            // Skjul tilbakemeldingsboks og tilbakestill knapper
+            const fbBox = document.getElementById('feedback-box');
+            fbBox.classList.add('hidden');
+            document.getElementById('check-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+
+            const container = document.getElementById('task-container');
+            container.innerHTML = '';
+
+            // Oppgaveinstruksjon
+            const instr = document.createElement('p');
+            instr.className = "text-sm font-semibold text-indigo-900 bg-indigo-50/70 border border-indigo-100 px-4 py-3 rounded-xl mb-6";
+            instr.textContent = task.instruction;
+            container.appendChild(instr);
+
+            // Rendre basert på oppgavetype
+            if (mod.type === "interactive-text") {
+                renderInteractiveText(container, mod, task);
+            } else if (mod.type === "paragraph-breaks") {
+                renderParagraphBreaks(container, task);
+            } else if (mod.type === "editor-challenge") {
+                renderEditorChallenge(container, task);
+            }
+        }
+
+        /**
+         * Renderer oppgaver av typen "interactive-text" (Del 1: Punktum & stor bokstav, Del 2: Komma)
+         * Ingen forhåndslagde bokser – eleven klikker på forbokstaver og mellomrom bak ord.
+         */
+        function renderInteractiveText(container, mod, task) {
+            const isPunctMode = mod.punctChar === ".";
+            const rawTokens = task.correctText.split(" ");
+
+            // Bygger opp strukturert data for hvert ord med fasit og brukerens nåværende valg
+            userAnswers = rawTokens.map((token) => {
+                // Sjekk om ordet slutter med tegnet vi øver på (. eller ,)
+                // Tar også høyde for anførselstegn som «...»,
+                let cleanWord = token;
+                let correctPunct = false;
+
+                if (token.endsWith(mod.punctChar)) {
+                    correctPunct = true;
+                    cleanWord = token.slice(0, -1);
+                }
+
+                // Finn første bokstav i ordet (hopp over evt. innledende anførselstegn «)
+                const letterMatch = cleanWord.match(/[a-zæøåA-ZÆØÅ]/);
+                const firstLetterIdx = letterMatch ? letterMatch.index : -1;
+                const firstChar = firstLetterIdx !== -1 ? cleanWord[firstLetterIdx] : "";
+                const correctUpper = firstChar !== "" && firstChar === firstChar.toUpperCase();
+
+                // I punktum-modulen starter ALLE ord med liten forbokstav så eleven må klikke selv
+                const initialUpper = isPunctMode ? false : correctUpper;
+
+                return {
+                    cleanWord,
+                    firstLetterIdx,
+                    correctUpper,
+                    userUpper: initialUpper,
+                    correctPunct,
+                    userPunct: false
+                };
+            });
+
+            // Hjelpetekst / forklaring av hvordan man klikker
+            const legend = document.createElement('div');
+            legend.className = "flex flex-wrap items-center gap-4 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 mb-6";
+            if (isPunctMode) {
+                legend.innerHTML = `
+                    <span class="flex items-center gap-1.5"><kbd class="px-1.5 py-0.5 bg-white border border-slate-300 rounded font-bold text-indigo-700">a → A</kbd> Klikk på første bokstav i et ord for stor bokstav</span>
+                    <span class="flex items-center gap-1.5"><kbd class="px-1.5 py-0.5 bg-white border border-slate-300 rounded font-bold text-indigo-700">ord .</kbd> Klikk i mellomrommet bak et ord for punktum</span>
+                `;
+            } else {
+                legend.innerHTML = `
+                    <span class="flex items-center gap-1.5"><kbd class="px-1.5 py-0.5 bg-white border border-slate-300 rounded font-bold text-indigo-700">ord ,</kbd> Klikk i mellomrommet rett bak et ord for å sette inn komma</span>
+                `;
+            }
+            container.appendChild(legend);
+
+            // Selve tekstområdet
+            const textWrapper = document.createElement('div');
+            textWrapper.className = "text-lg sm:text-xl leading-relaxed sm:leading-loose text-slate-800 select-none";
+
+            userAnswers.forEach((wordObj, idx) => {
+                const wordGroup = document.createElement('span');
+                wordGroup.className = "inline-block whitespace-nowrap";
+
+                const { cleanWord, firstLetterIdx } = wordObj;
+
+                if (isPunctMode && firstLetterIdx !== -1) {
+                    // Tegn før første bokstav (f.eks. «)
+                    if (firstLetterIdx > 0) {
+                        const prefixSpan = document.createElement('span');
+                        prefixSpan.textContent = cleanWord.slice(0, firstLetterIdx);
+                        wordGroup.appendChild(prefixSpan);
+                    }
+
+                    // Klikkbar forbokstav for å veksle mellom liten og stor bokstav
+                    const letterBtn = document.createElement('button');
+                    letterBtn.type = "button";
+                    letterBtn.id = `word-letter-${idx}`;
+                    letterBtn.className = "first-letter-btn font-medium cursor-pointer focus:outline-none";
+                    letterBtn.title = "Klikk for å endre mellom liten og stor bokstav";
+                    letterBtn.textContent = cleanWord[firstLetterIdx].toLowerCase();
+
+                    letterBtn.onclick = () => {
+                        if (isTaskChecked) return;
+                        wordObj.userUpper = !wordObj.userUpper;
+                        letterBtn.textContent = wordObj.userUpper
+                            ? cleanWord[firstLetterIdx].toUpperCase()
+                            : cleanWord[firstLetterIdx].toLowerCase();
+
+                        if (wordObj.userUpper) {
+                            letterBtn.classList.add("font-bold", "text-indigo-700", "bg-indigo-50");
+                        } else {
+                            letterBtn.classList.remove("font-bold", "text-indigo-700", "bg-indigo-50");
+                        }
+                    };
+                    wordGroup.appendChild(letterBtn);
+
+                    // Resten av ordet
+                    const restSpan = document.createElement('span');
+                    restSpan.textContent = cleanWord.slice(firstLetterIdx + 1);
+                    wordGroup.appendChild(restSpan);
+                } else {
+                    // I komm-modulen vises ordet som vanlig tekst
+                    const wordSpan = document.createElement('span');
+                    wordSpan.textContent = cleanWord;
+                    wordGroup.appendChild(wordSpan);
+                }
+
+                // Klikkbart mellomrom rett bak ordet for punktum eller komma (ingen synlig boks før man peker/klikker)
+                const punctBtn = document.createElement('button');
+                punctBtn.type = "button";
+                punctBtn.id = `word-punct-${idx}`;
+                punctBtn.className = "space-punct-btn mr-1 focus:outline-none";
+                punctBtn.title = `Klikk for å sette inn ${mod.punctChar}`;
+                punctBtn.setAttribute('aria-label', `Sett inn ${mod.punctChar} etter ${cleanWord}`);
+
+                punctBtn.onclick = () => {
+                    if (isTaskChecked) return;
+                    wordObj.userPunct = !wordObj.userPunct;
+                    if (wordObj.userPunct) {
+                        punctBtn.textContent = mod.punctChar;
+                        punctBtn.classList.add("has-punct");
+                    } else {
+                        punctBtn.textContent = "";
+                        punctBtn.classList.remove("has-punct");
+                    }
+                };
+
+                wordGroup.appendChild(punctBtn);
+                textWrapper.appendChild(wordGroup);
+            });
+
+            container.appendChild(textWrapper);
+        }
+
+        /**
+         * Renderer oppgaver av typen "paragraph-breaks" (Del 3) som én sammenhengende tekstblokk
+         */
+        function renderParagraphBreaks(container, task) {
+            // userAnswers lagrer booleans for hver mellomrom-posisjon mellom setninger
+            userAnswers = new Array(task.sentences.length - 1).fill(false);
+
+            // Forklaringslinje øverst
+            const legend = document.createElement('div');
+            legend.className = "flex flex-wrap items-center gap-4 text-xs text-slate-600 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 mb-6";
+            legend.innerHTML = `
+                <span class="flex items-center gap-1.5"><kbd class="px-1.5 py-0.5 bg-white border border-slate-300 rounded font-bold text-indigo-700">¶</kbd> Klikk på avsnittstegnet mellom to setninger for å dele teksten i et nytt avsnitt</span>
+            `;
+            container.appendChild(legend);
+
+            // Sammenhengende tekstblokk (ser ut som en bokside / artikkel)
+            const textBlock = document.createElement('div');
+            textBlock.className = "bg-slate-50/70 border border-slate-200/90 rounded-2xl p-5 sm:p-7 text-base sm:text-lg leading-relaxed text-slate-800 shadow-inner";
+
+            task.sentences.forEach((sentence, idx) => {
+                // Selve setningen som løpende tekst
+                const sentSpan = document.createElement('span');
+                sentSpan.textContent = sentence;
+                textBlock.appendChild(sentSpan);
+
+                // Klikkbart avsnittsskille mellom setningene
+                if (idx < task.sentences.length - 1) {
+                    const breakBtn = document.createElement('button');
+                    breakBtn.type = "button";
+                    breakBtn.id = `break-${idx}`;
+                    breakBtn.className = "para-break-inline focus:outline-none";
+                    breakBtn.title = "Klikk for å starte nytt avsnitt her";
+                    breakBtn.setAttribute('aria-label', 'Sett inn nytt avsnitt');
+                    breakBtn.textContent = "¶";
+
+                    breakBtn.onclick = () => {
+                        if (isTaskChecked) return;
+                        userAnswers[idx] = !userAnswers[idx];
+
+                        if (userAnswers[idx]) {
+                            breakBtn.className = "para-break-active focus:outline-none";
+                            breakBtn.innerHTML = `
+                                <span>↵ NYTT AVSNITT</span>
+                                <span class="font-normal opacity-80">(Klikk for å slå sammen igjen)</span>
+                            `;
+                        } else {
+                            breakBtn.className = "para-break-inline focus:outline-none";
+                            breakBtn.textContent = "¶";
+                        }
+                    };
+
+                    textBlock.appendChild(breakBtn);
+                }
+            });
+
+            container.appendChild(textBlock);
+        }
+
+        /**
+         * Renderer oppgaver av typen "editor-challenge" (Del 4)
+         */
+        function renderEditorChallenge(container, task) {
+            userAnswers = [];
+            let selectCounter = 0;
+
+            const textBox = document.createElement('div');
+            textBox.className = "text-lg sm:text-xl leading-loose text-slate-800";
+
+            task.parts.forEach((part) => {
+                if (part.type === "text") {
+                    const span = document.createElement('span');
+                    span.textContent = part.content;
+                    textBox.appendChild(span);
+                } else if (part.type === "select") {
+                    const currentSelectIdx = selectCounter++;
+                    userAnswers.push(""); // Tomt startvalg
+
+                    const select = document.createElement('select');
+                    select.id = `editor-select-${currentSelectIdx}`;
+                    select.className = "mx-1 px-2.5 py-1 rounded-lg border-2 border-indigo-300 bg-indigo-50/60 text-indigo-950 font-semibold text-base sm:text-lg focus:outline-none focus:border-indigo-600 cursor-pointer transition";
+
+                    // Standard velg-alternativ
+                    const defaultOpt = document.createElement('option');
+                    defaultOpt.value = "";
+                    defaultOpt.textContent = "Velg...";
+                    defaultOpt.disabled = true;
+                    defaultOpt.selected = true;
+                    select.appendChild(defaultOpt);
+
+                    part.options.forEach(optVal => {
+                        const opt = document.createElement('option');
+                        opt.value = optVal;
+                        opt.textContent = optVal === " " ? "[Ingen avsnitt]" : optVal;
+                        select.appendChild(opt);
+                    });
+
+                    select.onchange = (e) => {
+                        userAnswers[currentSelectIdx] = e.target.value;
+                    };
+
+                    textBox.appendChild(select);
+                }
+            });
+
+            container.appendChild(textBox);
+        }
+
+        /**
+         * Sjekker brukerens svar opp mot fasiten og gir pedagogisk tilbakemelding
+         */
+        function checkAnswer() {
+            const mod = modules[currentModuleIdx];
+            const task = mod.tasks[currentTaskIdx];
+            let isAllCorrect = true;
+
+            if (mod.type === "interactive-text") {
+                const isPunctMode = mod.punctChar === ".";
+                userAnswers.forEach((wordObj, idx) => {
+                    const letterEl = document.getElementById(`word-letter-${idx}`);
+                    const punctBtn = document.getElementById(`word-punct-${idx}`);
+
+                    // 1. Sjekk stor/liten bokstav (kun relevant i punktum-modulen)
+                    if (isPunctMode && letterEl) {
+                        if (wordObj.userUpper !== wordObj.correctUpper) {
+                            isAllCorrect = false;
+                            letterEl.className = "font-bold text-white bg-rose-600 rounded px-1";
+                            letterEl.title = wordObj.correctUpper ? "Her skulle det vært STOR bokstav" : "Her skulle det vært liten bokstav";
+                        } else if (wordObj.correctUpper) {
+                            letterEl.className = "font-bold text-emerald-800 bg-emerald-100 rounded px-0.5";
+                        }
+                    }
+
+                    // 2. Sjekk tegnsetting (punktum eller komma)
+                    if (punctBtn) {
+                        if (wordObj.userPunct === wordObj.correctPunct) {
+                            if (wordObj.correctPunct) {
+                                punctBtn.textContent = mod.punctChar;
+                                punctBtn.className = "inline-flex items-center justify-center bg-emerald-600 text-white font-bold rounded px-1.5 mr-1 text-base";
+                            }
+                        } else {
+                            isAllCorrect = false;
+                            if (wordObj.correctPunct) {
+                                // Manglet tegn her
+                                punctBtn.textContent = mod.punctChar;
+                                punctBtn.className = "inline-flex items-center justify-center bg-amber-500 text-white font-bold rounded px-1.5 mr-1 text-base ring-2 ring-rose-500";
+                                punctBtn.title = `Her manglet det ${mod.punctChar}`;
+                            } else {
+                                // Satt inn tegn på feil sted
+                                punctBtn.textContent = mod.punctChar;
+                                punctBtn.className = "inline-flex items-center justify-center bg-rose-600 text-white font-bold line-through rounded px-1.5 mr-1 text-base";
+                                punctBtn.title = `Her skulle det ikke være ${mod.punctChar}`;
+                            }
+                        }
+                    }
+                });
+            } else if (mod.type === "paragraph-breaks") {
+                userAnswers.forEach((hasBreak, idx) => {
+                    const shouldHaveBreak = task.correctBreaks.includes(idx);
+                    const breakBtn = document.getElementById(`break-${idx}`);
+
+                    if (hasBreak === shouldHaveBreak) {
+                        if (hasBreak) {
+                            breakBtn.className = "flex items-center justify-between w-full mt-4 mb-2 px-3 py-1.5 rounded-lg border border-emerald-500 bg-emerald-50 text-emerald-800 text-xs font-bold";
+                            breakBtn.innerHTML = `<span>✓ RIKTIG AVSNITT HER</span>`;
+                        } else {
+                            breakBtn.className = "inline-block mx-1 text-slate-300 text-xs";
+                            breakBtn.textContent = " ";
+                        }
+                    } else {
+                        isAllCorrect = false;
+                        if (shouldHaveBreak) {
+                            breakBtn.className = "flex items-center justify-between w-full mt-4 mb-2 px-3 py-1.5 rounded-lg border-2 border-amber-500 bg-amber-50 text-amber-900 text-xs font-bold";
+                            breakBtn.innerHTML = `<span>! HER BURDE DET VÆRT NYTT AVSNITT</span>`;
+                        } else {
+                            breakBtn.className = "flex items-center justify-between w-full mt-4 mb-2 px-3 py-1.5 rounded-lg border-2 border-rose-500 bg-rose-50 text-rose-800 text-xs font-bold";
+                            breakBtn.innerHTML = `<span>✗ IKKE NYTT AVSNITT HER (Disse setningene hører sammen i samme avsnitt)</span>`;
+                        }
+                    }
+                });
+            } else if (mod.type === "editor-challenge") {
+                let selectIdx = 0;
+                task.parts.forEach(part => {
+                    if (part.type === "select") {
+                        const selectEl = document.getElementById(`editor-select-${selectIdx}`);
+                        const userVal = userAnswers[selectIdx];
+                        selectEl.disabled = true;
+
+                        if (userVal === part.answer) {
+                            selectEl.className = "mx-1 px-2.5 py-1 rounded-lg border-2 border-emerald-600 bg-emerald-50 text-emerald-900 font-bold text-base sm:text-lg";
+                        } else {
+                            isAllCorrect = false;
+                            selectEl.className = "mx-1 px-2.5 py-1 rounded-lg border-2 border-rose-600 bg-rose-50 text-rose-900 font-bold text-base sm:text-lg";
+                        }
+                        selectIdx++;
+                    }
+                });
+            }
+
+            isTaskChecked = true;
+            showFeedback(isAllCorrect, task.explanations);
+
+            // Oppdater poeng hvis oppgaven er løst feilfritt
+            if (isAllCorrect) {
+                const taskKey = `${currentModuleIdx}-${currentTaskIdx}`;
+                completedTasks.add(taskKey);
+                updateScoreUI();
+            }
+
+            // Vis "Neste oppgave"-knapp og skjul "Sjekk svar"
+            document.getElementById('check-btn').classList.add('hidden');
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.classList.remove('hidden');
+
+            // Tilpass teksten på neste-knappen hvis vi er på siste oppgave i modulen
+            if (currentTaskIdx === mod.tasks.length - 1 && currentModuleIdx === modules.length - 1) {
+                nextBtn.querySelector('span').textContent = "Start på nytt";
+            } else if (currentTaskIdx === mod.tasks.length - 1) {
+                nextBtn.querySelector('span').textContent = "Neste del";
+            } else {
+                nextBtn.querySelector('span').textContent = "Neste oppgave";
+            }
+        }
+
+        // Viser tilbakemeldingsboks med faglig begrunnelse
+        function showFeedback(isCorrect, explanations) {
+            const fbBox = document.getElementById('feedback-box');
+            const fbIcon = document.getElementById('feedback-icon');
+            const fbTitle = document.getElementById('feedback-title');
+            const fbText = document.getElementById('feedback-text');
+            const fbExp = document.getElementById('feedback-explanation');
+
+            fbBox.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-900', 'bg-amber-50', 'border-amber-200', 'text-amber-900');
+
+            if (isCorrect) {
+                fbBox.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-900');
+                fbIcon.innerHTML = `<div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">✓</div>`;
+                fbTitle.textContent = "Helt riktig! Flott jobbet!";
+                fbText.textContent = "Du har løst oppgaven i tråd med norske rettskrivingsregler.";
+            } else {
+                fbBox.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-900');
+                fbIcon.innerHTML = `<div class="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold">!</div>`;
+                fbTitle.textContent = "Nesten! Se over markeringene i teksten.";
+                fbText.textContent = "Les forklaringene under, trykk «Nullstill oppgave» hvis du vil prøve igjen, eller gå videre.";
+            }
+
+            // Fyll inn regel-forklaringer
+            fbExp.innerHTML = `<p class="font-bold uppercase tracking-wider text-xs opacity-75 mb-1">Faglig begrunnelse:</p>`;
+            const ul = document.createElement('ul');
+            ul.className = "list-disc pl-5 space-y-1";
+            explanations.forEach(exp => {
+                const li = document.createElement('li');
+                li.textContent = exp;
+                ul.appendChild(li);
+            });
+            fbExp.appendChild(ul);
+        }
+
+        // Nullstiller nåværende oppgave slik at eleven kan prøve på nytt
+        function resetCurrentTask() {
+            renderTask();
+        }
+
+        // Går til neste oppgave eller neste modul
+        function nextTask() {
+            const mod = modules[currentModuleIdx];
+            if (currentTaskIdx < mod.tasks.length - 1) {
+                currentTaskIdx++;
+                renderTask();
+            } else if (currentModuleIdx < modules.length - 1) {
+                switchModule(currentModuleIdx + 1);
+            } else {
+                // Fullført hele appen – start fra del 1 igjen
+                switchModule(0);
+            }
+        }
+
+        // Oppdaterer poengsummen i toppfeltet
+        function updateScoreUI() {
+            const totalTasks = modules.reduce((acc, m) => acc + m.tasks.length, 0);
+            document.getElementById('score-display').textContent = `${completedTasks.size} / ${totalTasks}`;
+        }
+
+        // Åpner/lukker modalen med norsk regelbok
+        function toggleRulesModal() {
+            const modal = document.getElementById('rules-modal');
+            modal.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
