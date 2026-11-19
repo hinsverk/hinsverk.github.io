@@ -932,8 +932,13 @@
                     typingDirection = w.dir;
                     const startInput = document.getElementById(`c-${w.row}-${w.col}`);
                     if (startInput) {
-                        startInput.focus();
-                        highlightActiveWord(w.row, w.col, w.dir);
+                        startInput.focus({ preventScroll: true });
+                        startInput.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                        // Sikre at retning og utheving overstyrer eventuelle standard fokus-hendelser
+                        setTimeout(() => {
+                            typingDirection = w.dir;
+                            highlightActiveWord(w.row, w.col, w.dir);
+                        }, 0);
                     }
                 };
 
