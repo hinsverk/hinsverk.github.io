@@ -258,14 +258,6 @@
 
     <div id="game-container">
         
-        <!-- Knapper for innstillinger øverst til høyre -->
-        <div class="absolute top-4 right-4 flex gap-2 z-10">
-            <button onclick="openGistModal()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-200">
-                <i class="fa-brands fa-github text-sm"></i>
-                <span id="gist-btn-text">Gist Ordliste</span>
-            </button>
-        </div>
-
         <!-- Startskjerm -->
         <div id="start-screen" class="flex flex-col items-center text-center pt-2">
             <div class="mb-4 bg-blue-600 text-white p-4 rounded-3xl shadow-xl rotate-3">
@@ -406,65 +398,6 @@
             <div class="space-y-3 w-full max-w-[280px]">
                 <button id="replay-btn" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all text-lg uppercase tracking-wide">Spill igjen</button>
                 <button onclick="resetGame()" class="w-full bg-gray-100 text-gray-600 font-black py-3 rounded-2xl hover:bg-gray-200 active:scale-95 transition-all uppercase text-sm">Hovedmeny</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for Gist -->
-    <div id="gist-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-black text-gray-800 uppercase tracking-tight flex items-center gap-2">
-                    <i class="fa-brands fa-github"></i>
-                    <span>GitHub Gist Ordlister</span>
-                </h3>
-                <button onclick="closeGistModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
-            </div>
-            
-            <p class="text-xs text-gray-600 mb-4 leading-relaxed">
-                Appen henter automatisk fra din GitHub Gist. Endrer du på Gist-en på GitHub, vil oppdateringene vises her!
-            </p>
-
-            <div class="mb-4">
-                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">GitHub Gist URL (Overstyr standard)</label>
-                <input type="url" id="gist-url-input" placeholder="Lim inn for å bruke en annen Gist..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
-            </div>
-
-            <div class="flex gap-2 mb-6">
-                <button onclick="saveAndFetchGist()" class="flex-1 bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all text-xs uppercase shadow-md">
-                    Lagre & Hent ordliste
-                </button>
-                <button onclick="resetGistToDefault()" class="bg-gray-100 text-gray-600 font-bold px-3 py-3 rounded-xl hover:bg-gray-200 transition-all text-xs uppercase" title="Tilbakestill til standard">
-                    Nullstill
-                </button>
-            </div>
-
-            <div class="border-t border-gray-100 pt-4">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Påkrevd JSON-struktur i Gist</p>
-                    <button onclick="copyJsonTemplate()" class="text-blue-600 hover:text-blue-800 text-[10px] font-bold uppercase underline">Kopier JSON-skal</button>
-                </div>
-                <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-[10px] font-mono overflow-x-auto leading-normal"><code>{
-  "easy": [ ... ],
-  "medium": [ ... ],
-  "hard": [ ... ],
-  "tysk8": [
-    {
-      "word": "DER APFEL",
-      "de": "Eine Frucht.",
-      "no": "Eplet.",
-      "text": "Kapittel 1: Skolen min"
-    }
-  ],
-  "tysk10": [
-    {
-      "word": "ZUKUNFT",
-      "de": "Die Zeit, die kommt.",
-      "no": "Fremtid.",
-      "text": "Tekst 1: Fremtiden"
-    }
-  ]
-}</code></pre>
             </div>
         </div>
     </div>
@@ -646,11 +579,10 @@
         }
 
         async function fetchGistData(notify = false) {
-            const savedUrl = localStorage.getItem(`gist_url_${appId}`) || DEFAULT_GIST_URL;
             const statusDot = document.getElementById('gist-status-dot');
             const statusText = document.getElementById('gist-status-text');
 
-            const rawUrl = getRawGistUrl(savedUrl);
+            const rawUrl = getRawGistUrl(DEFAULT_GIST_URL);
 
             try {
                 statusText.innerText = "Laster ordliste fra Gist...";
@@ -687,66 +619,6 @@
                 if (notify) {
                     showToast("Kunne ikke laste ordlisten fra Gist-en. Sjekk URL og JSON-format.", true);
                 }
-            }
-        }
-
-        function openGistModal() {
-            const savedUrl = localStorage.getItem(`gist_url_${appId}`) || '';
-            document.getElementById('gist-url-input').value = savedUrl;
-            document.getElementById('gist-modal').classList.remove('hidden');
-        }
-
-        function closeGistModal() {
-            document.getElementById('gist-modal').classList.add('hidden');
-        }
-
-        async function saveAndFetchGist() {
-            const inputVal = document.getElementById('gist-url-input').value.trim();
-            if (inputVal) {
-                localStorage.setItem(`gist_url_${appId}`, inputVal);
-            } else {
-                localStorage.removeItem(`gist_url_${appId}`);
-            }
-            closeGistModal();
-            await fetchGistData(true);
-        }
-
-        function resetGistToDefault() {
-            localStorage.removeItem(`gist_url_${appId}`);
-            document.getElementById('gist-url-input').value = '';
-            closeGistModal();
-            fetchGistData(true);
-        }
-
-        function copyJsonTemplate() {
-            const template = JSON.stringify({
-                easy: [
-                    { word: "DER APFEL", de: "Eine Frucht", no: "Eplet" }
-                ],
-                medium: [
-                    { word: "FAHRRAD", de: "Fahrzeug mit zwei Rädern", no: "Sykkel" }
-                ],
-                hard: [
-                    { word: "ERFAHRUNG", de: "Wissen aus dem Leben", no: "Erfaring" }
-                ],
-                tysk8: [
-                    { word: "SCHULE", de: "Ort zum Lernen", no: "Skole", text: "Kapittel 1: Min Skole" }
-                ],
-                tysk10: [
-                    { word: "ZUKUNFT", de: "Zeit die kommt", no: "Fremtid", text: "Tekst 1: Fremtiden" }
-                ]
-            }, null, 2);
-
-            try {
-                const el = document.createElement('textarea');
-                el.value = template;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                showToast("JSON-skal kopiert til utklippstavlen!");
-            } catch(e) {
-                showToast("Kunne ikke kopiere automatisk.", true);
             }
         }
 
@@ -1118,7 +990,6 @@
         }
 
         document.body.addEventListener('click', (e) => {
-            if (e.target.closest('#gist-modal')) return;
             if(!playScreen.classList.contains('hidden')) wordInput.focus();
         });
 
