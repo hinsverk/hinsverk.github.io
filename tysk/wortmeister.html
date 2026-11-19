@@ -40,7 +40,7 @@
 
             list.innerHTML = `
                 <div class="mt-6 pt-6 border-t border-gray-100">
-                    <p class="text-[10px] text-gray-400 font-black uppercase mb-3 text-center tracking-wider">Dine Rekorder</p>
+                    <p class="text-[10px] text-gray-400 font-black uppercase mb-3 text-center tracking-wider">Dine Rekorder (60s modus)</p>
                     <div class="grid grid-cols-3 gap-2 mb-2">
                         <div class="text-center bg-green-50 px-2 py-2 rounded-xl border border-green-100">
                             <p class="text-[9px] text-green-600 font-bold uppercase">Enkel</p>
@@ -272,15 +272,31 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-1.9M3 21v-4.1m0 4.1h4.1M19 3l-1.9 1.9M19 3v4.1m0-4.1h-4.1M3 3l1.9 1.9M3 3v4.1m0-4.1h4.1M19 21l-1.9-1.9M19 21v-4.1m0 4.1h-4.1M12 8l-4 4 4 4 4-4-4-4Z"/></svg>
             </div>
             <h1 class="text-3xl font-[900] text-gray-800 mb-1 tracking-tighter italic uppercase">Wort-Meister</h1>
-            <p class="text-gray-500 text-xs mb-6 font-semibold tracking-wide uppercase">Tysk ord-utfordring</p>
+            <p class="text-gray-500 text-xs mb-5 font-semibold tracking-wide uppercase">Tysk ord-utfordring</p>
 
             <!-- Status for ordliste -->
-            <div id="gist-status-bar" class="w-full max-w-[400px] mb-5 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-left flex items-center justify-between text-xs">
+            <div id="gist-status-bar" class="w-full max-w-[400px] mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl text-left flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2 text-blue-800 font-semibold truncate">
                     <span id="gist-status-dot" class="h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
                     <span id="gist-status-text" class="truncate">Sjekker ordliste...</span>
                 </div>
                 <button onclick="fetchGistData(true)" class="text-blue-600 hover:text-blue-800 text-[11px] font-bold underline flex-shrink-0 ml-2">Oppdater</button>
+            </div>
+
+            <!-- Tidsvelger (Tilrettelegging for skrivehastighet / dysleksi) -->
+            <div class="w-full max-w-[380px] mb-5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <span class="text-[10px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-1.5">
+                        <i class="fa-regular fa-clock text-blue-600"></i> Tidsinnstilling
+                    </span>
+                    <span id="time-mode-hint" class="text-[10px] font-bold text-blue-600">Standard (Rekord-modus)</span>
+                </div>
+                <div class="grid grid-cols-4 gap-1.5" id="time-selector-group">
+                    <button type="button" onclick="selectTimeOption(60)" data-time="60" class="time-opt-btn bg-blue-600 text-white font-black py-2 rounded-xl text-xs shadow-sm transition-all">60 sek</button>
+                    <button type="button" onclick="selectTimeOption(90)" data-time="90" class="time-opt-btn bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 font-bold py-2 rounded-xl text-xs transition-all">90 sek</button>
+                    <button type="button" onclick="selectTimeOption(120)" data-time="120" class="time-opt-btn bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 font-bold py-2 rounded-xl text-xs transition-all">120 sek</button>
+                    <button type="button" onclick="selectTimeOption(0)" data-time="0" class="time-opt-btn bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 font-bold py-2 rounded-xl text-xs transition-all">Uten tid</button>
+                </div>
             </div>
             
             <div class="space-y-2.5 w-full max-w-[380px]">
@@ -329,7 +345,10 @@
                     <i class="fa-solid fa-xmark text-sm"></i>
                     <span>Avbryt spill</span>
                 </button>
-                <span id="mode-indicator-badge" class="text-[10px] font-black uppercase bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full"></span>
+                <div class="flex items-center gap-2">
+                    <span id="time-mode-badge" class="hidden text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">Øvingsmodus</span>
+                    <span id="mode-indicator-badge" class="text-[10px] font-black uppercase bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full"></span>
+                </div>
             </div>
 
             <div class="flex justify-between items-center mb-6 relative">
@@ -372,14 +391,18 @@
 
             <input type="text" id="word-input" autocomplete="off" class="absolute opacity-0 pointer-events-none" inputmode="text">
             
-            <button id="skip-btn" onclick="skipWord()" class="w-full bg-gray-100 py-4 rounded-2xl font-black text-gray-600 hover:bg-gray-200 active:scale-95 transition-all uppercase tracking-widest text-sm">Hopp over (Esc)</button>
+            <div class="flex gap-2">
+                <button id="skip-btn" onclick="skipWord()" class="flex-1 bg-gray-100 py-4 rounded-2xl font-black text-gray-600 hover:bg-gray-200 active:scale-95 transition-all uppercase tracking-widest text-sm">Hopp over (Esc)</button>
+                <button id="finish-practice-btn" onclick="endGame()" class="hidden bg-emerald-600 text-white px-5 py-4 rounded-2xl font-black hover:bg-emerald-700 active:scale-95 transition-all uppercase tracking-wider text-xs shadow-md">Avslutt & Se poeng</button>
+            </div>
         </div>
 
         <!-- Sluttskjerm -->
         <div id="end-screen" class="hidden flex flex-col items-center text-center">
             <h2 class="text-2xl font-black text-gray-800 mb-1 uppercase tracking-tight">Runden er over!</h2>
-            <p class="text-gray-400 text-xs mb-6 font-bold uppercase tracking-widest" id="end-difficulty-text"></p>
-            <div class="text-7xl font-[950] text-blue-600 mb-8 tracking-tighter" id="final-score">0</div>
+            <p class="text-gray-400 text-xs mb-2 font-bold uppercase tracking-widest" id="end-difficulty-text"></p>
+            <p id="end-practice-note" class="hidden text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full font-bold mb-4">Øvingsmodus – rekorder lagres kun på 60 sek</p>
+            <div class="text-7xl font-[950] text-blue-600 mb-8 mt-2 tracking-tighter" id="final-score">0</div>
             <div class="space-y-3 w-full max-w-[280px]">
                 <button id="replay-btn" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all text-lg uppercase tracking-wide">Spill igjen</button>
                 <button onclick="resetGame()" class="w-full bg-gray-100 text-gray-600 font-black py-3 rounded-2xl hover:bg-gray-200 active:scale-95 transition-all uppercase text-sm">Hovedmeny</button>
@@ -491,6 +514,7 @@
         // Aktive ordlister
         let activeWords = JSON.parse(JSON.stringify(defaultWords));
         
+        let selectedTimeLimit = 60; // 60, 90, 120 eller 0 (ubegrenset tid)
         let currentDifficulty = 'easy';
         let currentChapterFilter = 'all';
         let currentWordIndex = 0;
@@ -508,6 +532,33 @@
         const playScreen = document.getElementById('play-screen');
         const endScreen = document.getElementById('end-screen');
         const wordInput = document.getElementById('word-input');
+
+        // Håndter valg av tidsmodus på startskjermen
+        function selectTimeOption(seconds) {
+            selectedTimeLimit = seconds;
+            const buttons = document.querySelectorAll('.time-opt-btn');
+            const hint = document.getElementById('time-mode-hint');
+
+            buttons.forEach(btn => {
+                const btnTime = parseInt(btn.getAttribute('data-time'), 10);
+                if (btnTime === seconds) {
+                    btn.className = "time-opt-btn bg-blue-600 text-white font-black py-2 rounded-xl text-xs shadow-sm transition-all";
+                } else {
+                    btn.className = "time-opt-btn bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 font-bold py-2 rounded-xl text-xs transition-all";
+                }
+            });
+
+            if (seconds === 60) {
+                hint.innerText = "Standard (Rekord-modus)";
+                hint.className = "text-[10px] font-bold text-blue-600";
+            } else if (seconds === 0) {
+                hint.innerText = "Øvingsmodus (Ingen tidspress)";
+                hint.className = "text-[10px] font-bold text-emerald-600";
+            } else {
+                hint.innerText = `Ekstra tid (${seconds}s øving)`;
+                hint.className = "text-[10px] font-bold text-emerald-600";
+            }
+        }
 
         // Egendefinert melding i stedet for nettleserens alert()
         function showToast(message, isError = false) {
@@ -771,7 +822,7 @@
             currentWordIndex = 0;
             score = 0;
             streak = 0;
-            timeLeft = 60;
+            timeLeft = selectedTimeLimit;
             skipsLeft = 3;
             isRevealing = false;
             
@@ -783,6 +834,29 @@
                 tysk10: "Tysk 10."
             };
             document.getElementById('mode-indicator-badge').innerText = modeNames[difficulty] || difficulty;
+
+            // Oppdater visning basert på tidsmodus
+            const timerEl = document.getElementById('timer');
+            const timeModeBadge = document.getElementById('time-mode-badge');
+            const finishBtn = document.getElementById('finish-practice-btn');
+
+            if (selectedTimeLimit === 0) {
+                timerEl.innerHTML = '<i class="fa-solid fa-infinity text-lg"></i>';
+                timerEl.className = "text-2xl font-black text-emerald-700 bg-emerald-100 px-5 py-0.5 rounded-full min-w-[70px] text-center flex items-center justify-center h-[36px]";
+                timeModeBadge.innerText = "Uten tid";
+                timeModeBadge.classList.remove('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                timerEl.innerText = timeLeft;
+                timerEl.className = "text-2xl font-black text-gray-700 bg-gray-100 px-5 py-0.5 rounded-full min-w-[70px] text-center";
+                if (selectedTimeLimit !== 60) {
+                    timeModeBadge.innerText = `${selectedTimeLimit}s øving`;
+                    timeModeBadge.classList.remove('hidden');
+                } else {
+                    timeModeBadge.classList.add('hidden');
+                }
+                finishBtn.classList.add('hidden');
+            }
 
             startScreen.classList.add('hidden');
             chapterSelectScreen.classList.add('hidden');
@@ -799,6 +873,8 @@
 
         function startTimer() {
             clearInterval(timerInterval);
+            if (selectedTimeLimit === 0) return; // Ingen nedtelling i tidsfri modus
+
             timerInterval = setInterval(() => {
                 if (isRevealing) return;
                 timeLeft--;
@@ -808,6 +884,7 @@
         }
 
         function showTimeBonus(seconds) {
+            if (selectedTimeLimit === 0) return;
             const anchor = document.getElementById('bonus-anchor');
             const bonus = document.createElement('div');
             bonus.className = 'time-bonus';
@@ -933,9 +1010,11 @@
                 streak++;
                 score += (10 + Math.min(streak, 10));
                 
-                timeLeft = Math.min(timeLeft + 2, 60);
-                document.getElementById('timer').innerText = timeLeft;
-                showTimeBonus(2);
+                if (selectedTimeLimit > 0) {
+                    timeLeft = Math.min(timeLeft + 2, selectedTimeLimit);
+                    document.getElementById('timer').innerText = timeLeft;
+                    showTimeBonus(2);
+                }
 
                 updateScoreUI();
                 updateStreakUI();
@@ -1015,9 +1094,16 @@
                 tysk10: "Tysk 10. klasse"
             };
             
-            document.getElementById('end-difficulty-text').innerText = diffNames[currentDifficulty] || "Fullført";
+            const timeSuffix = selectedTimeLimit === 0 ? " (Uten tid)" : (selectedTimeLimit !== 60 ? ` (${selectedTimeLimit}s)` : "");
+            document.getElementById('end-difficulty-text').innerText = (diffNames[currentDifficulty] || "Fullført") + timeSuffix;
             
-            window.saveHighScore(currentDifficulty, score);
+            const practiceNote = document.getElementById('end-practice-note');
+            if (selectedTimeLimit === 60) {
+                window.saveHighScore(currentDifficulty, score);
+                practiceNote.classList.add('hidden');
+            } else {
+                practiceNote.classList.remove('hidden');
+            }
             
             document.getElementById('replay-btn').onclick = () => startGame(currentDifficulty, currentChapterFilter);
         }
