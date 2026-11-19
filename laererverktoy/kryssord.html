@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kryssordgenerator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .cell {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            position: relative;
+            background-color: white;
+        }
+        
+        .cell.black {
+            background-color: #1e293b;
+            border-color: #1e293b;
+        }
+        
+        .cell.solution-cell {
+            background-color: #fef08a;
+        }
+        
+        .cell-number {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 0.65rem;
+            color: #64748b;
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        input.cell-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            background: transparent;
+            outline: none;
+            font-size: 1.25rem;
+            color: #1e293b;
+            caret-color: #4f46e5;
+        }
+
+        input.cell-input:focus {
+            background-color: #e0f2fe;
+        }
+
+        input.correct {
+            color: #059669;
+            background-color: #f0fdf4;
+        }
+        
+        .cell.solution-cell input.correct {
+            background-color: #fef9c3;
+        }
+
+        input.hinted {
+            color: #7c3aed; 
+            background-color: #f5f3ff;
+        }
+
+        .solution-word-box {
+            width: 40px;
+            height: 50px;
+            border: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 900;
+            border-radius: 6px;
+            background: white;
+            color: #1e293b;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .solution-word-box.space {
+            border: none;
+            background: transparent;
+            width: 20px;
+            cursor: default;
+        }
+
+        .solution-word-box.filled {
+            border-color: #facc15;
+            background: #fefce8;
+        }
+
+        .letter-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: white;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.1s;
+            user-select: none;
+        }
+
+        .letter-pill:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        .letter-pill.used {
+            opacity: 0.3;
+            pointer-events: none;
+            background: #f1f5f9;
+        }
+
+        .warning-text {
+            color: #ef4444;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+
+    <div id="main-container" class="max-w-6xl mx-auto p-4 md:p-8">
+        <header class="bg-indigo-700 rounded-2xl p-6 text-white mb-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 id="title-text" class="text-3xl font-black tracking-tight">Kryssordgenerator</h1>
+                <p id="sub-text" class="text-indigo-100 italic">Lag pedagogiske kryssord med hemmelige løsningsord.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="hint-btn" onclick="giveHint()" class="hidden bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-xl font-bold text-sm transition shadow-md flex items-center gap-2">
+                    <span>💡</span>
+                    <span id="hint-text">Hjelp (3 igjen)</span>
+                </button>
+                <div id="student-badge" class="hidden bg-yellow-400 text-yellow-900 px-6 py-2 rounded-full font-black text-sm uppercase tracking-widest shadow-md">
+                    Løsemodus
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div id="admin-panel" class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="font-bold text-xl mb-4 text-slate-800">Innstillinger</h2>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Skjult løsningssetning</label>
+                        <input id="final-solution-input" type="text" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none uppercase" placeholder="F.eks. TYSKLAND ER GØY">
+                        <div id="solution-warning" class="warning-text hidden">⚠️ Rutenettet mangler bokstaver for å stave hele setningen!</div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Modus for løsningssetning</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setSolutionMode('direct')" id="mode-direct" class="py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs transition">DIREKTE</button>
+                            <button onclick="setSolutionMode('anagram')" id="mode-anagram" class="py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-bold text-xs transition">ANAGRAM</button>
+                        </div>
+                    </div>
+
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Ord og Hint (ORD: Hint)</label>
+                    <textarea id="word-list" rows="8" class="w-full p-4 text-sm border border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-mono transition-all" placeholder="EKSEMPEL: Dette er et hint"></textarea>
+                    
+                    <button onclick="generateMultipleTimes()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
+                        Generer Kryssord
+                    </button>
+                    <p id="stats" class="text-[10px] text-center mt-3 text-slate-400 font-bold uppercase tracking-widest"></p>
+                </div>
+
+                <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                    <h2 class="font-bold text-lg text-indigo-900 mb-4 text-center">Deling</h2>
+                    <button onclick="shareWithStudents()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold transition-all shadow-md">
+                        Last ned fil til elever
+                    </button>
+                </div>
+            </div>
+
+            <div id="grid-column" class="lg:col-span-8">
+                <div class="flex flex-col items-center bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200">
+                    <div id="grid-wrapper" class="p-2 bg-slate-200 rounded-lg overflow-auto max-w-full">
+                        <div id="grid" class="grid bg-slate-400 gap-[1px] border border-slate-400"></div>
+                    </div>
+
+                    <!-- Løsningssetning Seksjon -->
+                    <div id="solution-word-container" class="mt-8 hidden flex flex-col items-center w-full">
+                        <div class="flex items-center gap-3 mb-4">
+                            <h3 class="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Løsningssetning</h3>
+                            <button id="reset-anagram-btn" onclick="resetAnagram()" class="hidden text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 rounded font-bold uppercase transition">Nullstill</button>
+                        </div>
+                        
+                        <div id="solution-boxes" class="flex flex-wrap justify-center gap-2 max-w-2xl mb-6"></div>
+                        
+                        <!-- Bokstavbank for Anagram-modus -->
+                        <div id="anagram-bank-container" class="hidden w-full bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-300 text-center">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase mb-3">Klikk på bokstavene for å stave setningen</p>
+                            <div id="anagram-bank" class="flex flex-wrap justify-center gap-2"></div>
+                        </div>
+                    </div>
+
+                    <div id="clues-container" class="w-full mt-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div>
+                            <h3 class="text-lg font-black text-indigo-700 mb-4 border-b-4 border-indigo-100 pb-2 flex items-center gap-2">
+                                <span class="bg-indigo-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">→</span> Vannrett
+                            </h3>
+                            <ul id="across-list" class="space-y-3 text-sm text-slate-700"></ul>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-emerald-700 mb-4 border-b-4 border-emerald-100 pb-2 flex items-center gap-2">
+                                <span class="bg-emerald-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">↓</span> Loddrett
+                            </h3>
+                            <ul id="down-list" class="space-y-3 text-sm text-slate-700"></ul>
+                        </div>
+                    </div>
+
+                    <div id="solve-msg" class="hidden fixed inset-0 flex items-center justify-center z-[300] bg-slate-900/50 backdrop-blur-sm">
+                        <div class="bg-white p-8 rounded-3xl shadow-2xl border-4 border-emerald-500 text-center max-w-sm w-full mx-4">
+                            <div class="text-6xl mb-4">🏆</div>
+                            <h2 class="text-2xl font-black text-emerald-800 mb-2">ALT RIKTIG!</h2>
+                            <p class="text-slate-600 mb-6">Fantastisk jobba! Du har løst hele kryssordet og funnet løsningssetningen.</p>
+                            <button onclick="document.getElementById('solve-msg').classList.add('hidden')" class="bg-emerald-600 text-white px-8 py-3 rounded-full font-bold hover:bg-emerald-700 transition">Lukk</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-modal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-[200]">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full border border-indigo-100">
+            <h2 class="text-2xl font-black mb-4 text-slate-800">Klar til å deles!</h2>
+            <p class="text-slate-600 mb-8 leading-relaxed">Når du trykker på knappen under, lastes det ned en fil uten lærermenyene. Elevene må løse oppgaven i <span id="share-mode-text" class="font-bold text-indigo-600">direkte</span> modus.</p>
+            <div class="space-y-4">
+                <button onclick="downloadStudentFile()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg">
+                    Lagre elev-fil nå
+                </button>
+                <button onclick="closeShareModal()" class="w-full bg-slate-100 text-slate-500 py-3 rounded-2xl font-bold hover:bg-slate-200 transition">
+                    Gå tilbake
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let bestGrid = [];
+        let bestPlacedWords = [];
+        let solutionMap = []; 
+        let targetSolutionPhrase = "";
+        let currentSolutionMode = 'direct'; 
+        
+        let studentAnagramPicks = []; 
+
+        let isSolveMode = false;
+        let hintsLeft = 3; 
+        let currentFocus = null;
+        let lastFocus = null;
+        let typingDirection = 'across'; 
+        const GRID_SIZE = 50; 
+
+        window.addEventListener('load', () => {
+            if (window.STUDENT_DATA) {
+                isSolveMode = true;
+                loadSolveMode();
+            } else {
+                initDefault();
+            }
+            document.addEventListener('keydown', handleGlobalKey);
+            document.addEventListener('input', handleGlobalInput);
+            document.addEventListener('focusin', handleFocusIn);
+        });
+
+        function setSolutionMode(mode) {
+            currentSolutionMode = mode;
+            const dirBtn = document.getElementById('mode-direct');
+            const anaBtn = document.getElementById('mode-anagram');
+            if(mode === 'direct') {
+                dirBtn.className = "py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs transition";
+                anaBtn.className = "py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-bold text-xs transition";
+            } else {
+                anaBtn.className = "py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs transition";
+                dirBtn.className = "py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-bold text-xs transition";
+            }
+            renderSolutionBoxes();
+        }
+
+        function handleFocusIn(e) {
+            if(!e.target.classList.contains('cell-input')) return;
+            const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
+            if (lastFocus) {
+                const lr = parseInt(lastFocus.dataset.r), lc = parseInt(lastFocus.dataset.c);
+                if (lr === r && Math.abs(lc - c) === 1) typingDirection = 'across';
+                else if (lc === c && Math.abs(lr - r) === 1) typingDirection = 'down';
+                else guessDirection(r, c);
+            } else guessDirection(r, c);
+            currentFocus = e.target;
+            lastFocus = e.target;
+            e.target.select();
+        }
+
+        function guessDirection(r, c) {
+            const hasRight = document.getElementById(`c-${r}-${c+1}`);
+            const hasLeft = document.getElementById(`c-${r}-${c-1}`);
+            const hasDown = document.getElementById(`c-${r+1}-${c}`);
+            const hasUp = document.getElementById(`c-${r-1}-${c}`);
+            if ((hasRight || hasLeft) && !(hasDown || hasUp)) typingDirection = 'across';
+            else if (!(hasRight || hasLeft) && (hasDown || hasUp)) typingDirection = 'down';
+            else typingDirection = 'across';
+        }
+
+        function loadSolveMode() {
+            try {
+                // Dekoder UTF-8 Base64 korrekt
+                const binary = atob(window.STUDENT_DATA);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const jsonStr = new TextDecoder().decode(bytes);
+                const data = JSON.parse(jsonStr);
+
+                bestGrid = data.grid;
+                bestPlacedWords = data.words;
+                solutionMap = data.solutionMap || [];
+                targetSolutionPhrase = data.targetSolutionPhrase || "";
+                currentSolutionMode = data.solutionMode || 'direct';
+                
+                document.getElementById('student-badge').classList.remove('hidden');
+                document.getElementById('hint-btn').classList.remove('hidden');
+                document.getElementById('title-text').innerText = "Kryssord-oppgave";
+                document.getElementById('sub-text').innerText = "Fyll ut kryssordet og finn løsningssetningen!";
+                
+                if(currentSolutionMode === 'anagram') {
+                    document.getElementById('reset-anagram-btn').classList.remove('hidden');
+                    document.getElementById('anagram-bank-container').classList.remove('hidden');
+                    studentAnagramPicks = Array(targetSolutionPhrase.length).fill(null);
+                }
+
+                renderGrid();
+                renderSolutionBoxes();
+            } catch (e) {
+                console.error("Datafeil", e);
+            }
+        }
+
+        function renderSolutionBoxes() {
+            const container = document.getElementById('solution-word-container');
+            const boxContainer = document.getElementById('solution-boxes');
+            if (!targetSolutionPhrase) {
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            boxContainer.innerHTML = '';
+            
+            for (let i = 0; i < targetSolutionPhrase.length; i++) {
+                const char = targetSolutionPhrase[i];
+                const box = document.createElement('div');
+                if (char === " ") {
+                    box.className = 'solution-word-box space';
+                } else {
+                    box.className = 'solution-word-box';
+                    box.id = `sol-box-${i}`;
+                    if(currentSolutionMode === 'anagram' && isSolveMode) {
+                        box.onclick = () => removeAnagramLetter(i);
+                    }
+                }
+                boxContainer.appendChild(box);
+            }
+            updateSolutionBoxes();
+        }
+
+        function updateSolutionBoxes() {
+            if (!targetSolutionPhrase) return;
+
+            if (currentSolutionMode === 'direct') {
+                solutionMap.forEach((pos, idx) => {
+                    if (pos && pos.r !== -1) { 
+                        const input = document.getElementById(`c-${pos.r}-${pos.c}`);
+                        const box = document.getElementById(`sol-box-${idx}`);
+                        if (input && box) {
+                            box.innerText = input.value;
+                            if (input.value) box.classList.add('filled');
+                            else box.classList.remove('filled');
+                        }
+                    }
+                });
+            } else if (currentSolutionMode === 'anagram') {
+                renderAnagramBank();
+                studentAnagramPicks.forEach((letterObj, idx) => {
+                    const box = document.getElementById(`sol-box-${idx}`);
+                    if (box) {
+                        box.innerText = letterObj ? letterObj.char : '';
+                        if (letterObj) box.classList.add('filled');
+                        else box.classList.remove('filled');
+                    }
+                });
+            }
+        }
+
+        function renderAnagramBank() {
+            const bankEl = document.getElementById('anagram-bank');
+            if(!bankEl) return;
+            bankEl.innerHTML = '';
+
+            let availableLetters = [];
+            solutionMap.forEach((pos, idx) => {
+                if(pos && pos.r !== -1) {
+                    const input = document.getElementById(`c-${pos.r}-${pos.c}`);
+                    if(input && input.value) {
+                        availableLetters.push({
+                            id: `source-${pos.r}-${pos.c}`,
+                            char: input.value.toUpperCase()
+                        });
+                    }
+                }
+            });
+
+            availableLetters.sort((a,b) => a.id.localeCompare(b.id));
+
+            availableLetters.forEach(item => {
+                const isUsed = studentAnagramPicks.some(p => p && p.id === item.id);
+                const pill = document.createElement('div');
+                pill.className = `letter-pill ${isUsed ? 'used' : ''}`;
+                pill.innerText = item.char;
+                pill.onclick = () => { if(!isUsed) useAnagramLetter(item); };
+                bankEl.appendChild(pill);
+            });
+        }
+
+        function useAnagramLetter(item) {
+            const emptyIdx = studentAnagramPicks.findIndex((p, idx) => p === null && targetSolutionPhrase[idx] !== " ");
+            if(emptyIdx !== -1) {
+                studentAnagramPicks[emptyIdx] = item;
+                updateSolutionBoxes();
+                checkVictory();
+            }
+        }
+
+        function removeAnagramLetter(idx) {
+            if(studentAnagramPicks[idx]) {
+                studentAnagramPicks[idx] = null;
+                updateSolutionBoxes();
+            }
+        }
+
+        function resetAnagram() {
+            studentAnagramPicks = Array(targetSolutionPhrase.length).fill(null);
+            updateSolutionBoxes();
+        }
+
+        function giveHint() {
+            if (hintsLeft <= 0 || !currentFocus) return;
+            const r = currentFocus.dataset.r, c = currentFocus.dataset.c;
+            const correctChar = bestGrid[r][c];
+            if (currentFocus.value === correctChar) return;
+
+            currentFocus.value = correctChar;
+            currentFocus.classList.add('hinted', 'correct');
+            hintsLeft--;
+            document.getElementById('hint-text').innerText = `Hjelp (${hintsLeft} igjen)`;
+            if (hintsLeft === 0) document.getElementById('hint-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            updateSolutionBoxes();
+            checkVictory();
+        }
+
+        function initDefault() {
+            document.getElementById('final-solution-input').value = "LÆRING ER GØY";
+            document.getElementById('word-list').value = "BÅT: Noe som flyter på vannet\nØY: Land omgitt av vann\nÅS: En liten høyde i terrenget\nTRÆR: Grønne planter i skogen\nBØKER: Noe man leser i\nSØVN: Det man gjør om natta\nKÅL: En grønnsak";
+            generateMultipleTimes();
+        }
+
+        function generateMultipleTimes() {
+            const rawText = document.getElementById('word-list').value;
+            targetSolutionPhrase = document.getElementById('final-solution-input').value.trim().toUpperCase();
+            
+            const lines = rawText.split(/\r?\n/).filter(l => l.trim() !== "" && l.includes(':'));
+            const allWords = lines.map(l => {
+                const p = l.split(':');
+                return { answer: p[0].trim().toUpperCase().replace(/\s/g, ''), hint: p.slice(1).join(':').trim() };
+            }).filter(o => o.answer.length > 0);
+
+            if (allWords.length === 0) return;
+
+            let highest = -1;
+            let winnerG = [], winnerW = [];
+            const sortedWords = allWords.sort((a,b) => b.answer.length - a.answer.length);
+
+            for (let i = 0; i < 50; i++) {
+                const attemptWords = [...sortedWords].sort(() => Math.random() - 0.5);
+                const result = attemptGeneration(attemptWords);
+                if (result.placed.length > highest) {
+                    highest = result.placed.length;
+                    winnerG = result.grid;
+                    winnerW = result.placed;
+                }
+                if (highest === allWords.length) break;
+            }
+
+            bestGrid = winnerG;
+            bestPlacedWords = winnerW;
+            mapSolutionPhrase();
+            document.getElementById('stats').innerText = `${highest} av ${allWords.length} ord plassert`;
+            renderGrid();
+            renderSolutionBoxes();
+        }
+
+        function mapSolutionPhrase() {
+            solutionMap = [];
+            const warningEl = document.getElementById('solution-warning');
+            if (!targetSolutionPhrase) {
+                warningEl.classList.add('hidden');
+                return;
+            }
+            
+            let usedCells = new Set();
+            let missingLetter = false;
+
+            for (let i = 0; i < targetSolutionPhrase.length; i++) {
+                const char = targetSolutionPhrase[i];
+                if (char === " ") {
+                    solutionMap.push(null); 
+                    continue;
+                }
+                
+                let found = false;
+                for(let r=0; r<GRID_SIZE; r++) {
+                    for(let c=0; c<GRID_SIZE; c++) {
+                        if (bestGrid[r][c] === char && !usedCells.has(`${r},${c}`)) {
+                            solutionMap.push({r: r, c: c, char: char});
+                            usedCells.add(`${r},${c}`);
+                            found = true;
+                            break; 
+                        }
+                    }
+                    if (found) break;
+                }
+                if (!found) {
+                    solutionMap.push({r: -1, c: -1, char: char});
+                    missingLetter = true;
+                }
+            }
+            if (missingLetter) warningEl.classList.remove('hidden');
+            else warningEl.classList.add('hidden');
+        }
+
+        function attemptGeneration(words) {
+            let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+            let placed = [];
+            const first = words[0];
+            const r = 25, c = 25 - Math.floor(first.answer.length/2);
+            for(let i=0; i<first.answer.length; i++) grid[r][c+i] = first.answer[i];
+            placed.push({...first, row: r, col: c, dir: 'across'});
+
+            for(let i=1; i<words.length; i++) {
+                const word = words[i].answer;
+                let cands = [];
+                for(let row=0; row<GRID_SIZE; row++) {
+                    for(let col=0; col<GRID_SIZE; col++) {
+                        if(grid[row][col] && word.includes(grid[row][col])) {
+                            word.split('').forEach((char, idx) => {
+                                if(char === grid[row][col]) {
+                                    if(canPlace(word, row-idx, col, 'down', grid)) cands.push({r:row-idx, c:col, d:'down'});
+                                    if(canPlace(word, row, col-idx, 'across', grid)) cands.push({r:row, c:col-idx, d:'across'});
+                                }
+                            });
+                        }
+                    }
+                }
+                if(cands.length > 0) {
+                    const p = cands[Math.floor(Math.random()*cands.length)];
+                    for(let j=0; j<word.length; j++) {
+                        const rr = p.d === 'across' ? p.r : p.r+j, cc = p.d === 'across' ? p.c+j : p.c;
+                        grid[rr][cc] = word[j];
+                    }
+                    placed.push({...words[i], row: p.r, col: p.c, dir: p.d});
+                }
+            }
+            return {grid, placed};
+        }
+
+        function canPlace(w, r, c, d, g) {
+            if(r<0 || c<0 || (d==='across' && c+w.length>=GRID_SIZE) || (d==='down' && r+w.length>=GRID_SIZE)) return false;
+            let inters = 0;
+            for(let i=0; i<w.length; i++) {
+                const rr = d==='across'?r:r+i, cc = d==='across'?c+i:c;
+                if(g[rr][cc] && g[rr][cc] !== w[i]) return false;
+                if(g[rr][cc] === w[i]) inters++;
+                else {
+                    if(d==='across') { if(isOcc(rr-1,cc,g) || isOcc(rr+1,cc,g)) return false; }
+                    else { if(isOcc(rr,cc-1,g) || isOcc(rr,cc+1,g)) return false; }
+                }
+            }
+            if(d==='across') { if(isOcc(r,c-1,g) || isOcc(r,c+w.length,g)) return false; }
+            else { if(isOcc(r-1,c,g) || isOcc(r+w.length,c,g)) return false; }
+            return inters > 0;
+        }
+
+        function isOcc(r,c,g) { return r>=0 && r<GRID_SIZE && g[r][c] !== null; }
+
+        function renderGrid() {
+            let minR = 50, maxR = 0, minC = 50, maxC = 0;
+            bestGrid.forEach((row, r) => row.forEach((v, c) => { if(v) { minR=Math.min(minR,r); maxR=Math.max(maxR,r); minC=Math.min(minC,c); maxC=Math.max(maxC,c); }}));
+            minR=Math.max(0,minR-1); maxR=Math.min(49,maxR+1); minC=Math.max(0,minC-1); maxC=Math.min(49,maxC+1);
+
+            const gridEl = document.getElementById('grid');
+            gridEl.style.gridTemplateColumns = `repeat(${maxC-minC+1}, 40px)`;
+            gridEl.innerHTML = '';
+
+            let num = 1;
+            const nums = Array(50).fill().map(() => Array(50).fill(0));
+            const sorted = [...bestPlacedWords].sort((a,b) => (a.row*50+a.col)-(b.row*50+b.col));
+            sorted.forEach(w => { if(nums[w.row][w.col]===0) nums[w.row][w.col]=num++; w.n=nums[w.row][w.col]; });
+
+            for(let r=minR; r<=maxR; r++) {
+                for(let c=minC; c<=maxC; c++) {
+                    const isSolutionCell = solutionMap.some(p => p && p.r === r && p.c === c);
+                    const div = document.createElement('div');
+                    div.className = `cell ${bestGrid[r][c]?'':'black'} ${isSolutionCell ? 'solution-cell' : ''}`;
+                    if(bestGrid[r][c]) {
+                        if(nums[r][c]>0) {
+                            const s = document.createElement('span'); s.className='cell-number'; s.innerText=nums[r][c];
+                            div.appendChild(s);
+                        }
+                        const input = document.createElement('input');
+                        input.className = 'cell-input'; 
+                        input.maxLength = 1; 
+                        input.id = `c-${r}-${c}`;
+                        input.dataset.r = r; input.dataset.c = c;
+                        if(!isSolveMode) input.value = bestGrid[r][c];
+                        div.appendChild(input);
+                    }
+                    gridEl.appendChild(div);
+                }
+            }
+
+            const al = document.getElementById('across-list'), dl = document.getElementById('down-list');
+            al.innerHTML = ''; dl.innerHTML = '';
+            sorted.forEach(w => {
+                const li = document.createElement('li');
+                li.className = "p-3 bg-slate-100 rounded-xl flex items-start gap-3";
+                li.innerHTML = `<span class="bg-white px-2 py-0.5 rounded shadow-sm font-bold text-xs">${w.n}</span><span>${w.hint}</span>`;
+                if(w.dir==='across') al.appendChild(li); else dl.appendChild(li);
+            });
+        }
+
+        function handleGlobalKey(e) {
+            if (!e.target.classList.contains('cell-input')) return;
+            const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
+            if (e.key === 'ArrowRight') { moveFoc(r, c + 1); typingDirection = 'across'; }
+            else if (e.key === 'ArrowLeft') { moveFoc(r, c - 1); typingDirection = 'across'; }
+            else if (e.key === 'ArrowDown') { moveFoc(r + 1, c); typingDirection = 'down'; }
+            else if (e.key === 'ArrowUp') { moveFoc(r - 1, c); typingDirection = 'down'; }
+            else if (e.key === 'Backspace' && !e.target.value) {
+                if (typingDirection === 'across') moveFoc(r, c - 1);
+                else moveFoc(r - 1, c);
+            }
+        }
+
+        function handleGlobalInput(e) {
+            if (!e.target.classList.contains('cell-input')) return;
+            const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
+            const val = e.target.value.toUpperCase();
+            e.target.value = val;
+            if (val === bestGrid[r][c]) e.target.classList.add('correct');
+            else e.target.classList.remove('correct');
+
+            updateSolutionBoxes();
+            if (val.length > 0) {
+                setTimeout(() => {
+                    if (typingDirection === 'across') moveFoc(r, c + 1);
+                    else moveFoc(r + 1, c);
+                }, 0);
+            }
+            checkVictory();
+        }
+
+        function moveFoc(r, c) {
+            const next = document.getElementById(`c-${r}-${c}`);
+            if (next) { next.focus(); return true; }
+            return false;
+        }
+
+        function shareWithStudents() { 
+            document.getElementById('share-mode-text').innerText = currentSolutionMode === 'direct' ? 'direkte' : 'anagram';
+            document.getElementById('share-modal').classList.remove('hidden'); 
+        }
+        function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
+
+        function downloadStudentFile() {
+            const exportData = { 
+                grid: bestGrid, 
+                words: bestPlacedWords, 
+                solutionMap: solutionMap,
+                targetSolutionPhrase: targetSolutionPhrase,
+                solutionMode: currentSolutionMode
+            };
+
+            // UTF-8 vennlig Base64-koding
+            const jsonStr = JSON.stringify(exportData);
+            const bytes = new TextEncoder().encode(jsonStr);
+            let binary = "";
+            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+            const encoded = btoa(binary);
+
+            const docClone = document.documentElement.cloneNode(true);
+            const admin = docClone.querySelector('#admin-panel'); if (admin) admin.remove();
+            const modal = docClone.querySelector('#share-modal'); if (modal) modal.remove();
+            const gridCol = docClone.querySelector('#grid-column'); if (gridCol) gridCol.className = 'lg:col-span-12';
+            
+            const scriptStr = `<script>window.STUDENT_DATA = "${encoded}";<\/script>`;
+            const finalHTML = `<!DOCTYPE html>\n<html lang="no">${docClone.innerHTML}${scriptStr}</html>`;
+            const blob = new Blob([finalHTML], {type:'text/html'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'Kryssord_Oppgave.html'; a.click();
+            closeShareModal();
+        }
+
+        function checkVictory() {
+            const inputs = document.querySelectorAll('.cell-input');
+            let allCorrect = true;
+            inputs.forEach(input => {
+                if (input.value.toUpperCase() !== bestGrid[input.dataset.r][input.dataset.c]) allCorrect = false;
+            });
+            
+            let solCorrect = false;
+            if (currentSolutionMode === 'direct') {
+                solCorrect = true;
+                solutionMap.forEach((pos, idx) => {
+                    if (pos && pos.r !== -1) {
+                        const input = document.getElementById(`c-${pos.r}-${pos.c}`);
+                        if (!input || input.value.toUpperCase() !== targetSolutionPhrase[idx]) solCorrect = false;
+                    }
+                });
+            } else {
+                const currentStr = studentAnagramPicks.map(p => p ? p.char : ' ').join('');
+                if(currentStr === targetSolutionPhrase) solCorrect = true;
+            }
+
+            if (allCorrect && solCorrect) {
+                setTimeout(() => { document.getElementById('solve-msg').classList.remove('hidden'); }, 200);
+            }
+        }
+    </script>
+</body>
+</html>
