@@ -15,6 +15,7 @@
             text-transform: uppercase;
             position: relative;
             background-color: white;
+            transition: background-color 0.15s;
         }
         
         .cell.black {
@@ -25,6 +26,14 @@
         .cell.solution-cell {
             background-color: #fef08a;
         }
+
+        /* Utheving av aktivt ord */
+        .cell.active-word {
+            background-color: #e0e7ff;
+        }
+        .cell.solution-cell.active-word {
+            background-color: #fde047;
+        }
         
         .cell-number {
             position: absolute;
@@ -34,6 +43,7 @@
             color: #64748b;
             pointer-events: none;
             line-height: 1;
+            z-index: 10;
         }
 
         input.cell-input {
@@ -46,15 +56,22 @@
             font-size: 1.25rem;
             color: #1e293b;
             caret-color: #4f46e5;
+            position: relative;
+            z-index: 5;
         }
 
         input.cell-input:focus {
-            background-color: #e0f2fe;
+            background-color: #bae6fd !important;
         }
 
         input.correct {
             color: #059669;
-            background-color: #f0fdf4;
+            background-color: #dcfce7;
+        }
+
+        input.wrong {
+            color: #dc2626;
+            background-color: #fee2e2;
         }
         
         .cell.solution-cell input.correct {
@@ -63,7 +80,7 @@
 
         input.hinted {
             color: #7c3aed; 
-            background-color: #f5f3ff;
+            background-color: #f3e8ff;
         }
 
         .solution-word-box {
@@ -126,22 +143,128 @@
             font-weight: bold;
             margin-top: 0.5rem;
         }
+
+        /* Utheving av aktivt hint i listen */
+        .clue-item {
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 2px solid transparent;
+        }
+        .clue-item:hover {
+            background-color: #e2e8f0;
+        }
+        .clue-item.active-clue {
+            background-color: #e0e7ff;
+            border-color: #6366f1;
+        }
+
+        /* Utskriftsvennlig visning */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            #admin-panel, #hint-btn, #check-answers-btn, #print-btn, #back-btn, #student-badge, #anagram-bank-container, #reset-anagram-btn {
+                display: none !important;
+            }
+            #main-container {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            header {
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+                border-bottom: 2px solid black;
+                border-radius: 0 !important;
+                padding: 10px 0 !important;
+                margin-bottom: 20px !important;
+            }
+            header p {
+                color: #333 !important;
+            }
+            #grid-column {
+                grid-column: span 12 / span 12 !important;
+            }
+            #grid-column > div {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            #grid-wrapper {
+                background: transparent !important;
+                padding: 0 !important;
+            }
+            #grid {
+                background: black !important;
+                border: 2px solid black !important;
+            }
+            .cell {
+                border: 1px solid black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .cell.black {
+                background-color: black !important;
+            }
+            .cell.solution-cell {
+                background-color: #e5e7eb !important; /* Svak grå på utskrift */
+            }
+            .cell.active-word {
+                background-color: white !important;
+            }
+            .cell.solution-cell.active-word {
+                background-color: #e5e7eb !important;
+            }
+            /* Skjul fasit-bokstaver ved utskrift fra lærermodus */
+            input.cell-input {
+                color: transparent !important;
+                background: transparent !important;
+            }
+            .solution-word-box {
+                border: 2px solid black !important;
+                color: transparent !important;
+                background: white !important;
+            }
+            .solution-word-box.space {
+                border: none !important;
+            }
+            .clue-item {
+                background: transparent !important;
+                border: none !important;
+                padding: 4px 0 !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-20">
 
     <div id="main-container" class="max-w-6xl mx-auto p-4 md:p-8">
         <header class="bg-indigo-700 rounded-2xl p-6 text-white mb-8 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 id="title-text" class="text-3xl font-black tracking-tight">Kryssordgenerator</h1>
-                <p id="sub-text" class="text-indigo-100 italic">Lag pedagogiske kryssord med hemmelige løsningsord.</p>
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <a id="back-btn" href="../index.html" class="bg-white/15 hover:bg-white/25 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 shrink-0" title="Tilbake til oversikten">
+                    <span>←</span>
+                    <span>Tilbake</span>
+                </a>
+                <div>
+                    <h1 id="title-text" class="text-3xl font-black tracking-tight">Kryssordgenerator</h1>
+                    <p id="sub-text" class="text-indigo-100 italic">Lag pedagogiske kryssord med hemmelige løsningsord.</p>
+                </div>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <button id="print-btn" onclick="window.print()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2">
+                    <span>🖨️</span>
+                    <span>Skriv ut</span>
+                </button>
+                <button id="check-answers-btn" onclick="manualCheckAnswers()" class="hidden bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-2 rounded-xl font-bold text-sm transition shadow-md flex items-center gap-2">
+                    <span>✓</span>
+                    <span>Sjekk svar</span>
+                </button>
                 <button id="hint-btn" onclick="giveHint()" class="hidden bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-xl font-bold text-sm transition shadow-md flex items-center gap-2">
                     <span>💡</span>
                     <span id="hint-text">Hjelp (3 igjen)</span>
                 </button>
-                <div id="student-badge" class="hidden bg-yellow-400 text-yellow-900 px-6 py-2 rounded-full font-black text-sm uppercase tracking-widest shadow-md">
+                <div id="student-badge" class="hidden bg-yellow-400 text-yellow-900 px-5 py-2 rounded-full font-black text-xs uppercase tracking-widest shadow-md">
                     Løsemodus
                 </div>
             </div>
@@ -154,11 +277,11 @@
                     
                     <div class="mb-4">
                         <label class="block text-sm font-bold text-slate-700 mb-1">Skjult løsningssetning</label>
-                        <input id="final-solution-input" type="text" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none uppercase" placeholder="F.eks. TYSKLAND ER GØY">
+                        <input id="final-solution-input" type="text" oninput="saveDraft()" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none uppercase" placeholder="F.eks. TYSKLAND ER GØY">
                         <div id="solution-warning" class="warning-text hidden">⚠️ Rutenettet mangler bokstaver for å stave hele setningen!</div>
                     </div>
 
-                    <div class="mb-6">
+                    <div class="mb-4">
                         <label class="block text-sm font-bold text-slate-700 mb-2">Modus for løsningssetning</label>
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="setSolutionMode('direct')" id="mode-direct" class="py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs transition">DIREKTE</button>
@@ -166,18 +289,27 @@
                         </div>
                     </div>
 
+                    <div class="mb-5">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Retting for elever</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setFeedbackMode('instant')" id="fb-instant" class="py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs transition">UMIDDELBAR</button>
+                            <button onclick="setFeedbackMode('manual')" id="fb-manual" class="py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-bold text-xs transition">SJEKK-KNAPP</button>
+                        </div>
+                    </div>
+
                     <label class="block text-sm font-bold text-slate-700 mb-1">Ord og Hint (ORD: Hint)</label>
-                    <textarea id="word-list" rows="8" class="w-full p-4 text-sm border border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-mono transition-all" placeholder="EKSEMPEL: Dette er et hint"></textarea>
+                    <textarea id="word-list" rows="7" oninput="saveDraft()" class="w-full p-4 text-sm border border-slate-300 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-mono transition-all" placeholder="EKSEMPEL: Dette er et hint"></textarea>
                     
-                    <button onclick="generateMultipleTimes()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
+                    <button onclick="generateMultipleTimes()" class="w-full mt-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
                         Generer Kryssord
                     </button>
                     <p id="stats" class="text-[10px] text-center mt-3 text-slate-400 font-bold uppercase tracking-widest"></p>
                 </div>
 
                 <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
-                    <h2 class="font-bold text-lg text-indigo-900 mb-4 text-center">Deling</h2>
-                    <button onclick="shareWithStudents()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold transition-all shadow-md">
+                    <h2 class="font-bold text-lg text-indigo-900 mb-2 text-center">Deling</h2>
+                    <p id="share-warning" class="hidden text-xs text-red-600 font-bold text-center mb-3">⚠️ Fiks løsningssetningen før du eksporterer til elever.</p>
+                    <button id="share-btn" onclick="shareWithStudents()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
                         Last ned fil til elever
                     </button>
                 </div>
@@ -210,13 +342,13 @@
                             <h3 class="text-lg font-black text-indigo-700 mb-4 border-b-4 border-indigo-100 pb-2 flex items-center gap-2">
                                 <span class="bg-indigo-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">→</span> Vannrett
                             </h3>
-                            <ul id="across-list" class="space-y-3 text-sm text-slate-700"></ul>
+                            <ul id="across-list" class="space-y-2 text-sm text-slate-700"></ul>
                         </div>
                         <div>
                             <h3 class="text-lg font-black text-emerald-700 mb-4 border-b-4 border-emerald-100 pb-2 flex items-center gap-2">
                                 <span class="bg-emerald-700 text-white w-6 h-6 rounded flex items-center justify-center text-xs">↓</span> Loddrett
                             </h3>
-                            <ul id="down-list" class="space-y-3 text-sm text-slate-700"></ul>
+                            <ul id="down-list" class="space-y-2 text-sm text-slate-700"></ul>
                         </div>
                     </div>
 
@@ -233,10 +365,14 @@
         </div>
     </div>
 
-    <div id="share-modal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-[200]">
+    <div id="share-modal" class="hidden fixed inset-0 flex items-center justify-center p-4 z-[200] bg-slate-900/40 backdrop-blur-xs">
         <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full border border-indigo-100">
             <h2 class="text-2xl font-black mb-4 text-slate-800">Klar til å deles!</h2>
-            <p class="text-slate-600 mb-8 leading-relaxed">Når du trykker på knappen under, lastes det ned en fil uten lærermenyene. Elevene må løse oppgaven i <span id="share-mode-text" class="font-bold text-indigo-600">direkte</span> modus.</p>
+            <p class="text-slate-600 mb-8 leading-relaxed">
+                Når du trykker på knappen under, lastes det ned en ren elev-fil. 
+                Oppgaven bruker <span id="share-mode-text" class="font-bold text-indigo-600">direkte</span> løsningssetning og 
+                <span id="share-fb-text" class="font-bold text-indigo-600">umiddelbar</span> retting.
+            </p>
             <div class="space-y-4">
                 <button onclick="downloadStudentFile()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg">
                     Lagre elev-fil nå
@@ -254,15 +390,17 @@
         let solutionMap = []; 
         let targetSolutionPhrase = "";
         let currentSolutionMode = 'direct'; 
+        let currentFeedbackMode = 'instant'; // 'instant' eller 'manual'
+        let hasMissingSolutionLetters = false;
         
         let studentAnagramPicks = []; 
 
         let isSolveMode = false;
         let hintsLeft = 3; 
         let currentFocus = null;
-        let lastFocus = null;
         let typingDirection = 'across'; 
         const GRID_SIZE = 50; 
+        const CIPHER_KEY = "KRYSSORD_SKOLE_2026"; // Enkel obfuskering mot nysgjerrige elever
 
         window.addEventListener('load', () => {
             if (window.STUDENT_DATA) {
@@ -274,7 +412,33 @@
             document.addEventListener('keydown', handleGlobalKey);
             document.addEventListener('input', handleGlobalInput);
             document.addEventListener('focusin', handleFocusIn);
+            document.addEventListener('mousedown', handleGridMouseDown);
         });
+
+        // Enkel XOR-obfuskering slik at fasit ikke ligger i klartekst ved atob()
+        function obfuscateData(str) {
+            const bytes = new TextEncoder().encode(str);
+            const keyBytes = new TextEncoder().encode(CIPHER_KEY);
+            const xored = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) {
+                xored[i] = bytes[i] ^ keyBytes[i % keyBytes.length];
+            }
+            let binary = "";
+            for (let i = 0; i < xored.byteLength; i++) binary += String.fromCharCode(xored[i]);
+            return btoa(binary);
+        }
+
+        function deobfuscateData(base64) {
+            const binary = atob(base64);
+            const xored = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) xored[i] = binary.charCodeAt(i);
+            const keyBytes = new TextEncoder().encode(CIPHER_KEY);
+            const bytes = new Uint8Array(xored.length);
+            for (let i = 0; i < xored.length; i++) {
+                bytes[i] = xored[i] ^ keyBytes[i % keyBytes.length];
+            }
+            return new TextDecoder().decode(bytes);
+        }
 
         function setSolutionMode(mode) {
             currentSolutionMode = mode;
@@ -290,37 +454,84 @@
             renderSolutionBoxes();
         }
 
+        function setFeedbackMode(mode) {
+            currentFeedbackMode = mode;
+            const instBtn = document.getElementById('fb-instant');
+            const manBtn = document.getElementById('fb-manual');
+            if(mode === 'instant') {
+                instBtn.className = "py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs transition";
+                manBtn.className = "py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-bold text-xs transition";
+            } else {
+                manBtn.className = "py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold text-xs transition";
+                instBtn.className = "py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-bold text-xs transition";
+            }
+        }
+
+        // Klikk på allerede valgt rute bytter retning (vannrett <-> loddrett)
+        function handleGridMouseDown(e) {
+            if (!e.target.classList.contains('cell-input')) return;
+            if (document.activeElement === e.target) {
+                const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
+                const hasAcross = document.getElementById(`c-${r}-${c+1}`) || document.getElementById(`c-${r}-${c-1}`);
+                const hasDown = document.getElementById(`c-${r+1}-${c}`) || document.getElementById(`c-${r-1}-${c}`);
+                
+                if (typingDirection === 'across' && hasDown) {
+                    typingDirection = 'down';
+                } else if (typingDirection === 'down' && hasAcross) {
+                    typingDirection = 'across';
+                }
+                highlightActiveWord(r, c, typingDirection);
+            }
+        }
+
         function handleFocusIn(e) {
             if(!e.target.classList.contains('cell-input')) return;
             const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
-            if (lastFocus) {
-                const lr = parseInt(lastFocus.dataset.r), lc = parseInt(lastFocus.dataset.c);
-                if (lr === r && Math.abs(lc - c) === 1) typingDirection = 'across';
-                else if (lc === c && Math.abs(lr - r) === 1) typingDirection = 'down';
-                else guessDirection(r, c);
-            } else guessDirection(r, c);
+            
+            // Sjekk om nåværende retning er gyldig for denne ruten
+            const hasAcross = document.getElementById(`c-${r}-${c+1}`) || document.getElementById(`c-${r}-${c-1}`);
+            const hasDown = document.getElementById(`c-${r+1}-${c}`) || document.getElementById(`c-${r-1}-${c}`);
+            
+            if (typingDirection === 'across' && !hasAcross && hasDown) typingDirection = 'down';
+            else if (typingDirection === 'down' && !hasDown && hasAcross) typingDirection = 'across';
+
             currentFocus = e.target;
-            lastFocus = e.target;
             e.target.select();
+            highlightActiveWord(r, c, typingDirection);
         }
 
-        function guessDirection(r, c) {
-            const hasRight = document.getElementById(`c-${r}-${c+1}`);
-            const hasLeft = document.getElementById(`c-${r}-${c-1}`);
-            const hasDown = document.getElementById(`c-${r+1}-${c}`);
-            const hasUp = document.getElementById(`c-${r-1}-${c}`);
-            if ((hasRight || hasLeft) && !(hasDown || hasUp)) typingDirection = 'across';
-            else if (!(hasRight || hasLeft) && (hasDown || hasUp)) typingDirection = 'down';
-            else typingDirection = 'across';
+        // Uthever hele det aktive ordet i rutenettet og det tilhørende hintet i listen
+        function highlightActiveWord(r, c, dir) {
+            document.querySelectorAll('.cell.active-word').forEach(el => el.classList.remove('active-word'));
+            document.querySelectorAll('.clue-item.active-clue').forEach(el => el.classList.remove('active-clue'));
+
+            // Finn ordet som dekker (r, c) i retning `dir`
+            const activeWord = bestPlacedWords.find(w => {
+                if (w.dir !== dir) return false;
+                if (dir === 'across') return w.row === r && c >= w.col && c < w.col + w.answer.length;
+                if (dir === 'down') return w.col === c && r >= w.row && r < w.row + w.answer.length;
+                return false;
+            });
+
+            if (activeWord) {
+                for (let i = 0; i < activeWord.answer.length; i++) {
+                    const rr = dir === 'across' ? activeWord.row : activeWord.row + i;
+                    const cc = dir === 'across' ? activeWord.col + i : activeWord.col;
+                    const input = document.getElementById(`c-${rr}-${cc}`);
+                    if (input && input.parentElement) {
+                        input.parentElement.classList.add('active-word');
+                    }
+                }
+                const clueEl = document.getElementById(`clue-${activeWord.dir}-${activeWord.n}`);
+                if (clueEl) {
+                    clueEl.classList.add('active-clue');
+                }
+            }
         }
 
         function loadSolveMode() {
             try {
-                // Dekoder UTF-8 Base64 korrekt
-                const binary = atob(window.STUDENT_DATA);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                const jsonStr = new TextDecoder().decode(bytes);
+                const jsonStr = deobfuscateData(window.STUDENT_DATA);
                 const data = JSON.parse(jsonStr);
 
                 bestGrid = data.grid;
@@ -328,9 +539,14 @@
                 solutionMap = data.solutionMap || [];
                 targetSolutionPhrase = data.targetSolutionPhrase || "";
                 currentSolutionMode = data.solutionMode || 'direct';
+                currentFeedbackMode = data.feedbackMode || 'instant';
                 
                 document.getElementById('student-badge').classList.remove('hidden');
                 document.getElementById('hint-btn').classList.remove('hidden');
+                if (currentFeedbackMode === 'manual') {
+                    document.getElementById('check-answers-btn').classList.remove('hidden');
+                }
+
                 document.getElementById('title-text').innerText = "Kryssord-oppgave";
                 document.getElementById('sub-text').innerText = "Fyll ut kryssordet og finn løsningssetningen!";
                 
@@ -343,7 +559,7 @@
                 renderGrid();
                 renderSolutionBoxes();
             } catch (e) {
-                console.error("Datafeil", e);
+                console.error("Feil ved lasting av kryssorddata", e);
             }
         }
 
@@ -408,7 +624,7 @@
             bankEl.innerHTML = '';
 
             let availableLetters = [];
-            solutionMap.forEach((pos, idx) => {
+            solutionMap.forEach((pos) => {
                 if(pos && pos.r !== -1) {
                     const input = document.getElementById(`c-${pos.r}-${pos.c}`);
                     if(input && input.value) {
@@ -460,6 +676,7 @@
             if (currentFocus.value === correctChar) return;
 
             currentFocus.value = correctChar;
+            currentFocus.classList.remove('wrong');
             currentFocus.classList.add('hinted', 'correct');
             hintsLeft--;
             document.getElementById('hint-text').innerText = `Hjelp (${hintsLeft} igjen)`;
@@ -468,15 +685,45 @@
             checkVictory();
         }
 
+        function manualCheckAnswers() {
+            const inputs = document.querySelectorAll('.cell-input');
+            inputs.forEach(input => {
+                if (input.classList.contains('hinted')) return;
+                const val = input.value.toUpperCase();
+                const correctChar = bestGrid[input.dataset.r][input.dataset.c];
+                input.classList.remove('correct', 'wrong');
+                if (val !== "") {
+                    if (val === correctChar) input.classList.add('correct');
+                    else input.classList.add('wrong');
+                }
+            });
+            checkVictory();
+        }
+
+        function saveDraft() {
+            if (isSolveMode) return;
+            localStorage.setItem('kryssord_draft_words', document.getElementById('word-list').value);
+            localStorage.setItem('kryssord_draft_sol', document.getElementById('final-solution-input').value);
+        }
+
         function initDefault() {
-            document.getElementById('final-solution-input').value = "LÆRING ER GØY";
-            document.getElementById('word-list').value = "BÅT: Noe som flyter på vannet\nØY: Land omgitt av vann\nÅS: En liten høyde i terrenget\nTRÆR: Grønne planter i skogen\nBØKER: Noe man leser i\nSØVN: Det man gjør om natta\nKÅL: En grønnsak";
+            const savedWords = localStorage.getItem('kryssord_draft_words');
+            const savedSol = localStorage.getItem('kryssord_draft_sol');
+
+            if (savedWords !== null) {
+                document.getElementById('word-list').value = savedWords;
+                document.getElementById('final-solution-input').value = savedSol || "";
+            } else {
+                document.getElementById('final-solution-input').value = "LÆRING ER GØY";
+                document.getElementById('word-list').value = "BÅT: Noe som flyter på vannet\nØY: Land omgitt av vann\nÅS: En liten høyde i terrenget\nTRÆR: Grønne planter i skogen\nBØKER: Noe man leser i\nSØVN: Det man gjør om natta\nKÅL: En grønnsak";
+            }
             generateMultipleTimes();
         }
 
         function generateMultipleTimes() {
             const rawText = document.getElementById('word-list').value;
             targetSolutionPhrase = document.getElementById('final-solution-input').value.trim().toUpperCase();
+            saveDraft();
             
             const lines = rawText.split(/\r?\n/).filter(l => l.trim() !== "" && l.includes(':'));
             const allWords = lines.map(l => {
@@ -486,39 +733,49 @@
 
             if (allWords.length === 0) return;
 
-            let highest = -1;
+            let bestScore = -1;
+            let highestWordsPlaced = 0;
             let winnerG = [], winnerW = [];
-            const sortedWords = allWords.sort((a,b) => b.answer.length - a.answer.length);
+            const sortedWords = [...allWords].sort((a,b) => b.answer.length - a.answer.length);
 
-            for (let i = 0; i < 50; i++) {
-                const attemptWords = [...sortedWords].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < 60; i++) {
+                // Behold lengste ord først oftere, men bland resten for variasjon
+                const attemptWords = i === 0 ? sortedWords : [sortedWords[0], ...sortedWords.slice(1).sort(() => Math.random() - 0.5)];
                 const result = attemptGeneration(attemptWords);
-                if (result.placed.length > highest) {
-                    highest = result.placed.length;
+                
+                // Poengsystem: antall plasserte ord teller mest, deretter antall krysningspunkter
+                const totalScore = (result.placed.length * 100) + result.intersections;
+                if (totalScore > bestScore) {
+                    bestScore = totalScore;
+                    highestWordsPlaced = result.placed.length;
                     winnerG = result.grid;
                     winnerW = result.placed;
                 }
-                if (highest === allWords.length) break;
             }
 
             bestGrid = winnerG;
             bestPlacedWords = winnerW;
             mapSolutionPhrase();
-            document.getElementById('stats').innerText = `${highest} av ${allWords.length} ord plassert`;
+            document.getElementById('stats').innerText = `${highestWordsPlaced} av ${allWords.length} ord plassert`;
             renderGrid();
             renderSolutionBoxes();
         }
 
         function mapSolutionPhrase() {
             solutionMap = [];
+            hasMissingSolutionLetters = false;
             const warningEl = document.getElementById('solution-warning');
+            const shareWarningEl = document.getElementById('share-warning');
+            const shareBtn = document.getElementById('share-btn');
+
             if (!targetSolutionPhrase) {
                 warningEl.classList.add('hidden');
+                if (shareWarningEl) shareWarningEl.classList.add('hidden');
+                if (shareBtn) shareBtn.disabled = false;
                 return;
             }
             
             let usedCells = new Set();
-            let missingLetter = false;
 
             for (let i = 0; i < targetSolutionPhrase.length; i++) {
                 const char = targetSolutionPhrase[i];
@@ -541,16 +798,27 @@
                 }
                 if (!found) {
                     solutionMap.push({r: -1, c: -1, char: char});
-                    missingLetter = true;
+                    hasMissingSolutionLetters = true;
                 }
             }
-            if (missingLetter) warningEl.classList.remove('hidden');
-            else warningEl.classList.add('hidden');
+
+            if (hasMissingSolutionLetters) {
+                warningEl.classList.remove('hidden');
+                if (shareWarningEl) shareWarningEl.classList.remove('hidden');
+                if (shareBtn) shareBtn.disabled = true;
+            } else {
+                warningEl.classList.add('hidden');
+                if (shareWarningEl) shareWarningEl.classList.add('hidden');
+                if (shareBtn) shareBtn.disabled = false;
+            }
         }
 
+        // Forbedret algoritme som belønner tette krysningspunkter nær midten
         function attemptGeneration(words) {
             let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
             let placed = [];
+            let totalIntersections = 0;
+
             const first = words[0];
             const r = 25, c = 25 - Math.floor(first.answer.length/2);
             for(let i=0; i<first.answer.length; i++) grid[r][c+i] = first.answer[i];
@@ -564,40 +832,53 @@
                         if(grid[row][col] && word.includes(grid[row][col])) {
                             word.split('').forEach((char, idx) => {
                                 if(char === grid[row][col]) {
-                                    if(canPlace(word, row-idx, col, 'down', grid)) cands.push({r:row-idx, c:col, d:'down'});
-                                    if(canPlace(word, row, col-idx, 'across', grid)) cands.push({r:row, c:col-idx, d:'across'});
+                                    const downScore = scorePlacement(word, row-idx, col, 'down', grid);
+                                    if(downScore > 0) cands.push({r:row-idx, c:col, d:'down', score: downScore});
+                                    
+                                    const acrossScore = scorePlacement(word, row, col-idx, 'across', grid);
+                                    if(acrossScore > 0) cands.push({r:row, c:col-idx, d:'across', score: acrossScore});
                                 }
                             });
                         }
                     }
                 }
                 if(cands.length > 0) {
-                    const p = cands[Math.floor(Math.random()*cands.length)];
+                    // Sorter etter høyest poengsum (flest kryss + nærhet til sentrum), med litt tilfeldighet
+                    cands.sort((a, b) => (b.score + Math.random() * 2) - (a.score + Math.random() * 2));
+                    const p = cands[0];
+                    
                     for(let j=0; j<word.length; j++) {
                         const rr = p.d === 'across' ? p.r : p.r+j, cc = p.d === 'across' ? p.c+j : p.c;
+                        if (grid[rr][cc] === word[j]) totalIntersections++;
                         grid[rr][cc] = word[j];
                     }
                     placed.push({...words[i], row: p.r, col: p.c, dir: p.d});
                 }
             }
-            return {grid, placed};
+            return {grid, placed, intersections: totalIntersections};
         }
 
-        function canPlace(w, r, c, d, g) {
-            if(r<0 || c<0 || (d==='across' && c+w.length>=GRID_SIZE) || (d==='down' && r+w.length>=GRID_SIZE)) return false;
+        function scorePlacement(w, r, c, d, g) {
+            if(r<1 || c<1 || (d==='across' && c+w.length>=GRID_SIZE-1) || (d==='down' && r+w.length>=GRID_SIZE-1)) return 0;
             let inters = 0;
             for(let i=0; i<w.length; i++) {
                 const rr = d==='across'?r:r+i, cc = d==='across'?c+i:c;
-                if(g[rr][cc] && g[rr][cc] !== w[i]) return false;
-                if(g[rr][cc] === w[i]) inters++;
-                else {
-                    if(d==='across') { if(isOcc(rr-1,cc,g) || isOcc(rr+1,cc,g)) return false; }
-                    else { if(isOcc(rr,cc-1,g) || isOcc(rr,cc+1,g)) return false; }
+                if(g[rr][cc] && g[rr][cc] !== w[i]) return 0;
+                if(g[rr][cc] === w[i]) {
+                    inters++;
+                } else {
+                    if(d==='across') { if(isOcc(rr-1,cc,g) || isOcc(rr+1,cc,g)) return 0; }
+                    else { if(isOcc(rr,cc-1,g) || isOcc(rr,cc+1,g)) return 0; }
                 }
             }
-            if(d==='across') { if(isOcc(r,c-1,g) || isOcc(r,c+w.length,g)) return false; }
-            else { if(isOcc(r-1,c,g) || isOcc(r+w.length,c,g)) return false; }
-            return inters > 0;
+            if(d==='across') { if(isOcc(r,c-1,g) || isOcc(r,c+w.length,g)) return 0; }
+            else { if(isOcc(r-1,c,g) || isOcc(r+w.length,c,g)) return 0; }
+            
+            if (inters === 0) return 0;
+
+            // Gi poeng for flere krysningspunkter og nærhet til sentrum (25, 25)
+            const distFromCenter = Math.abs(r - 25) + Math.abs(c - 25);
+            return (inters * 10) - (distFromCenter * 0.2) + 5;
         }
 
         function isOcc(r,c,g) { return r>=0 && r<GRID_SIZE && g[r][c] !== null; }
@@ -642,8 +923,20 @@
             al.innerHTML = ''; dl.innerHTML = '';
             sorted.forEach(w => {
                 const li = document.createElement('li');
-                li.className = "p-3 bg-slate-100 rounded-xl flex items-start gap-3";
+                li.id = `clue-${w.dir}-${w.n}`;
+                li.className = "clue-item p-3 bg-slate-100 rounded-xl flex items-start gap-3";
                 li.innerHTML = `<span class="bg-white px-2 py-0.5 rounded shadow-sm font-bold text-xs">${w.n}</span><span>${w.hint}</span>`;
+                
+                // Klikk på hint hopper til ordet og setter riktig retning
+                li.onclick = () => {
+                    typingDirection = w.dir;
+                    const startInput = document.getElementById(`c-${w.row}-${w.col}`);
+                    if (startInput) {
+                        startInput.focus();
+                        highlightActiveWord(w.row, w.col, w.dir);
+                    }
+                };
+
                 if(w.dir==='across') al.appendChild(li); else dl.appendChild(li);
             });
         }
@@ -651,10 +944,10 @@
         function handleGlobalKey(e) {
             if (!e.target.classList.contains('cell-input')) return;
             const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
-            if (e.key === 'ArrowRight') { moveFoc(r, c + 1); typingDirection = 'across'; }
-            else if (e.key === 'ArrowLeft') { moveFoc(r, c - 1); typingDirection = 'across'; }
-            else if (e.key === 'ArrowDown') { moveFoc(r + 1, c); typingDirection = 'down'; }
-            else if (e.key === 'ArrowUp') { moveFoc(r - 1, c); typingDirection = 'down'; }
+            if (e.key === 'ArrowRight') { typingDirection = 'across'; moveFoc(r, c + 1); }
+            else if (e.key === 'ArrowLeft') { typingDirection = 'across'; moveFoc(r, c - 1); }
+            else if (e.key === 'ArrowDown') { typingDirection = 'down'; moveFoc(r + 1, c); }
+            else if (e.key === 'ArrowUp') { typingDirection = 'down'; moveFoc(r - 1, c); }
             else if (e.key === 'Backspace' && !e.target.value) {
                 if (typingDirection === 'across') moveFoc(r, c - 1);
                 else moveFoc(r - 1, c);
@@ -666,8 +959,14 @@
             const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
             const val = e.target.value.toUpperCase();
             e.target.value = val;
-            if (val === bestGrid[r][c]) e.target.classList.add('correct');
-            else e.target.classList.remove('correct');
+
+            e.target.classList.remove('wrong');
+            if (currentFeedbackMode === 'instant') {
+                if (val === bestGrid[r][c]) e.target.classList.add('correct');
+                else e.target.classList.remove('correct');
+            } else {
+                e.target.classList.remove('correct');
+            }
 
             updateSolutionBoxes();
             if (val.length > 0) {
@@ -686,7 +985,9 @@
         }
 
         function shareWithStudents() { 
+            if (hasMissingSolutionLetters) return;
             document.getElementById('share-mode-text').innerText = currentSolutionMode === 'direct' ? 'direkte' : 'anagram';
+            document.getElementById('share-fb-text').innerText = currentFeedbackMode === 'instant' ? 'umiddelbar' : 'manuell (sjekk-knapp)';
             document.getElementById('share-modal').classList.remove('hidden'); 
         }
         function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
@@ -697,23 +998,28 @@
                 words: bestPlacedWords, 
                 solutionMap: solutionMap,
                 targetSolutionPhrase: targetSolutionPhrase,
-                solutionMode: currentSolutionMode
+                solutionMode: currentSolutionMode,
+                feedbackMode: currentFeedbackMode
             };
 
-            // UTF-8 vennlig Base64-koding
-            const jsonStr = JSON.stringify(exportData);
-            const bytes = new TextEncoder().encode(jsonStr);
-            let binary = "";
-            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-            const encoded = btoa(binary);
+            const encoded = obfuscateData(JSON.stringify(exportData));
 
+            // Klon dokumentet og rydd bort alt lærer-innhold og forhåndsutfylte ruter
             const docClone = document.documentElement.cloneNode(true);
             const admin = docClone.querySelector('#admin-panel'); if (admin) admin.remove();
             const modal = docClone.querySelector('#share-modal'); if (modal) modal.remove();
+            const solveMsg = docClone.querySelector('#solve-msg'); if (solveMsg) solveMsg.classList.add('hidden');
+            
+            // Tøm rendret rutenett og lister i klonen slik at elev-filen bygger alt rent fra STUDENT_DATA
+            const gridEl = docClone.querySelector('#grid'); if (gridEl) gridEl.innerHTML = '';
+            const acrossEl = docClone.querySelector('#across-list'); if (acrossEl) acrossEl.innerHTML = '';
+            const downEl = docClone.querySelector('#down-list'); if (downEl) downEl.innerHTML = '';
+            const solBoxesEl = docClone.querySelector('#solution-boxes'); if (solBoxesEl) solBoxesEl.innerHTML = '';
+
             const gridCol = docClone.querySelector('#grid-column'); if (gridCol) gridCol.className = 'lg:col-span-12';
             
             const scriptStr = `<script>window.STUDENT_DATA = "${encoded}";<\/script>`;
-            const finalHTML = `<!DOCTYPE html>\n<html lang="no">${docClone.innerHTML}${scriptStr}</html>`;
+            const finalHTML = `<!DOCTYPE html>\n<html lang="no">${docClone.innerHTML}\n${scriptStr}\n</html>`;
             const blob = new Blob([finalHTML], {type:'text/html'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -728,21 +1034,24 @@
                 if (input.value.toUpperCase() !== bestGrid[input.dataset.r][input.dataset.c]) allCorrect = false;
             });
             
-            let solCorrect = false;
-            if (currentSolutionMode === 'direct') {
-                solCorrect = true;
-                solutionMap.forEach((pos, idx) => {
-                    if (pos && pos.r !== -1) {
-                        const input = document.getElementById(`c-${pos.r}-${pos.c}`);
-                        if (!input || input.value.toUpperCase() !== targetSolutionPhrase[idx]) solCorrect = false;
-                    }
-                });
-            } else {
-                const currentStr = studentAnagramPicks.map(p => p ? p.char : ' ').join('');
-                if(currentStr === targetSolutionPhrase) solCorrect = true;
+            let solCorrect = true;
+            if (targetSolutionPhrase.length > 0) {
+                if (currentSolutionMode === 'direct') {
+                    solutionMap.forEach((pos, idx) => {
+                        if (pos && pos.r !== -1) {
+                            const input = document.getElementById(`c-${pos.r}-${pos.c}`);
+                            if (!input || input.value.toUpperCase() !== targetSolutionPhrase[idx]) solCorrect = false;
+                        } else if (targetSolutionPhrase[idx] !== " ") {
+                            solCorrect = false;
+                        }
+                    });
+                } else {
+                    const currentStr = studentAnagramPicks.map(p => p ? p.char : ' ').join('');
+                    if (currentStr !== targetSolutionPhrase) solCorrect = false;
+                }
             }
 
-            if (allCorrect && solCorrect) {
+            if (allCorrect && solCorrect && inputs.length > 0) {
                 setTimeout(() => { document.getElementById('solve-msg').classList.remove('hidden'); }, 200);
             }
         }
