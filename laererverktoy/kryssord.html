@@ -1011,6 +1011,7 @@
 
             // Klon dokumentet og rydd bort alt lærer-innhold og forhåndsutfylte ruter
             const docClone = document.documentElement.cloneNode(true);
+            const titleTag = docClone.querySelector('title'); if (titleTag) titleTag.innerText = 'Kryssord';
             const admin = docClone.querySelector('#admin-panel'); if (admin) admin.remove();
             const modal = docClone.querySelector('#share-modal'); if (modal) modal.remove();
             const solveMsg = docClone.querySelector('#solve-msg'); if (solveMsg) solveMsg.classList.add('hidden');
