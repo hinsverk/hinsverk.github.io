@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Tekstredigerer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PDF.js for visning og tekstuthenting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- pdf-lib for generering og eksport av ny PDF -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Tilpasset rullefelt */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .canvas-container {
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- Toppbar -->
+    <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <!-- Tilbake-knapp til index-side -->
+            <a href="index.html" onclick="if (document.referrer && document.referrer.includes('index')) { event.preventDefault(); history.back(); }" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs sm:text-sm px-2.5 sm:px-3 py-2 rounded-xl transition flex items-center gap-1.5" title="Tilbake til forsiden">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Tilbake</span>
+            </a>
+
+            <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+
+            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
+                <i data-lucide="file-edit" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-slate-900 text-base sm:text-lg leading-tight">PDF Tekstredigerer</h1>
+                <p class="text-xs text-slate-500 hidden sm:block">100% privat – alt behandles lokalt i nettleseren din</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Last opp knapp -->
+            <label for="pdf-upload" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl transition flex items-center gap-2">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                <span>Åpne PDF</span>
+            </label>
+            <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" />
+
+            <!-- Last ned knapp -->
+            <button id="download-btn" disabled onclick="exportPDF()" class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Lagre ny PDF</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hovedområde -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- Venstre verktøypanel -->
+        <aside class="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 z-10 max-h-[45vh] md:max-h-full">
+            
+            <!-- Instruksjonsboks -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-900 space-y-1.5">
+                <p class="font-semibold flex items-center gap-1.5 text-indigo-700">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Smart-redigering:
+                </p>
+                <ol class="list-decimal list-inside space-y-1 text-indigo-800/90">
+                    <li><strong>Klikk eller dra</strong> over en setning – appen henter automatisk tekst, skrifttype og størrelse.</li>
+                    <li>Blir teksten lengre? Bruk <strong>«Flytt innhold»</strong> for å skyve resten av siden nedover.</li>
+                    <li>Klikk <strong>«Lagre ny PDF»</strong> når du er fornøyd.</li>
+                </ol>
+            </div>
+
+            <!-- Verktøyknapper -->
+            <div class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Verktøy</label>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <button id="tool-patch" onclick="setTool('patch')" disabled class="tool-btn flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-50/50 text-indigo-700 font-medium text-[11px] transition disabled:opacity-40 disabled:pointer-events-none cursor-pointer">
+                        <i data-lucide="replace" class="w-4 h-4"></i>
+                        <span>Erstatt tekst</span>
+                    </button>
+                    <button id="tool-shift" onclick="setTool('shift')" disabled class="tool-btn flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium text-[11px] transition disabled:opacity-40 disabled:pointer-events-none cursor-pointer" title="Skyv nedre del av siden nedover for å gi plass til mer tekst">
+                        <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i>
+                        <span>Flytt innhold</span>
+                    </button>
+                    <button id="tool-text" onclick="setTool('text')" disabled class="tool-btn flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium text-[11px] transition disabled:opacity-40 disabled:pointer-events-none cursor-pointer">
+                        <i data-lucide="type" class="w-4 h-4"></i>
+                        <span>Ny tekst</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Egenskaper for valgt element -->
+            <div id="properties-panel" class="space-y-4 border-t border-slate-200 pt-4 hidden">
+                <div class="flex items-center justify-between">
+                    <label id="prop-panel-title" class="text-xs font-semibold uppercase tracking-wider text-slate-400">Rediger valgt felt</label>
+                    <button onclick="deleteSelected()" class="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1 cursor-pointer">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Slett
+                    </button>
+                </div>
+
+                <!-- Kontroller for Tekst / Erstatt-boks -->
+                <div id="text-controls-group" class="space-y-3">
+                    <!-- Tekstinnhold -->
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-medium text-slate-700">Tekst (brytes automatisk i boksen)</label>
+                            <span id="detected-badge" class="hidden text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">Auto-gjenkjent</span>
+                        </div>
+                        <textarea id="prop-text" rows="3" oninput="updateSelectedProp('text', this.value)" placeholder="Skriv ny setning her..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    <!-- Skrifttype & Størrelse -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-slate-700">Skrifttype</label>
+                            <select id="prop-font" onchange="updateSelectedProp('font', this.value)" class="w-full rounded-lg border border-slate-300 px-2 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="Helvetica">Helvetica / Arial</option>
+                                <option value="HelveticaBold">Helvetica Fet</option>
+                                <option value="TimesRoman">Times New Roman</option>
+                                <option value="TimesRomanBold">Times Fet</option>
+                                <option value="Courier">Courier</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-slate-700">Størrelse (pt)</label>
+                            <input type="number" id="prop-size" value="12" min="5" max="72" step="0.5" oninput="updateSelectedProp('size', parseFloat(this.value))" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Farger -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-xs font-medium text-slate-700">Tekstfarge</label>
+                            <div class="flex items-center gap-2 border border-slate-300 rounded-lg px-2 py-1">
+                                <input type="color" id="prop-color" value="#000000" oninput="updateSelectedProp('color', this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                                <span id="color-hex" class="text-xs text-slate-500 font-mono">#000000</span>
+                            </div>
+                        </div>
+                        <div id="bg-color-group" class="space-y-1">
+                            <label class="text-xs font-medium text-slate-700">Bakgrunnsdekk</label>
+                            <div class="flex items-center gap-2 border border-slate-300 rounded-lg px-2 py-1">
+                                <input type="color" id="prop-bg" value="#ffffff" oninput="updateSelectedProp('bgColor', this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                                <span id="bg-hex" class="text-xs text-slate-500 font-mono">#ffffff</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Finjustering av posisjon -->
+                    <div class="space-y-1 pt-1">
+                        <label class="text-xs font-medium text-slate-700">Finjuster tekstposisjon & linjeavstand</label>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[11px] text-slate-400">X:</span>
+                                <input type="number" id="prop-offset-x" value="2" step="0.5" oninput="updateSelectedProp('offsetX', parseFloat(this.value))" class="w-full rounded border border-slate-300 px-1.5 py-1 text-xs">
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-[11px] text-slate-400">Y:</span>
+                                <input type="number" id="prop-offset-y" value="2" step="0.5" oninput="updateSelectedProp('offsetY', parseFloat(this.value))" class="w-full rounded border border-slate-300 px-1.5 py-1 text-xs">
+                            </div>
+                            <div class="flex items-center gap-1" title="Linjeavstand">
+                                <span class="text-[11px] text-slate-400">Linje:</span>
+                                <input type="number" id="prop-line-height" value="1.2" step="0.05" min="0.8" max="2.5" oninput="updateSelectedProp('lineHeight', parseFloat(this.value))" class="w-full rounded border border-slate-300 px-1.5 py-1 text-xs">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kontroller for "Flytt resten av siden" -->
+                <div id="shift-controls-group" class="space-y-3 hidden">
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-900">
+                        Alt innhold <strong>under den oransje linjen</strong> flyttes nedover (eller oppover) med valgt avstand.
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-700 flex justify-between">
+                            <span>Forskyvning nedover (pt)</span>
+                            <span id="shift-val-label" class="font-bold text-indigo-600">+20 pt</span>
+                        </label>
+                        <input type="range" id="prop-shift-range" min="-100" max="250" value="20" oninput="updateShiftValue(parseFloat(this.value))" class="w-full accent-indigo-600 cursor-pointer">
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="number" id="prop-shift-num" value="20" oninput="updateShiftValue(parseFloat(this.value))" class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+                            <span class="text-xs text-slate-500">punkter</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liste over endringer på gjeldende side -->
+            <div id="annotations-list-container" class="space-y-2 border-t border-slate-200 pt-4 hidden">
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Endringer på denne siden</label>
+                <div id="annotations-list" class="space-y-1.5"></div>
+            </div>
+        </aside>
+
+        <!-- Høyre lerretsområde -->
+        <main class="flex-1 flex flex-col bg-slate-200/70 relative overflow-hidden">
+            
+            <!-- Navigasjon og Zoom-bar -->
+            <div id="page-controls" class="bg-white/90 backdrop-blur-sm border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs hidden">
+                <div class="flex items-center gap-2">
+                    <button id="prev-page" onclick="changePage(-1)" class="p-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-30 cursor-pointer">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    </button>
+                    <span class="font-medium text-slate-700">Side <span id="current-page-num">1</span> av <span id="total-pages-num">1</span></span>
+                    <button id="next-page" onclick="changePage(1)" class="p-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-30 cursor-pointer">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <button onclick="changeZoom(-0.2)" class="p-1.5 rounded-lg hover:bg-slate-200 cursor-pointer" title="Zoom ut">
+                        <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                    </button>
+                    <span id="zoom-level" class="font-medium w-12 text-center">100%</span>
+                    <button onclick="changeZoom(0.2)" class="p-1.5 rounded-lg hover:bg-slate-200 cursor-pointer" title="Zoom inn">
+                        <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rullbar visning for PDF -->
+            <div id="viewer-scroll" class="flex-1 overflow-auto p-4 sm:p-8 flex justify-center items-start">
+                
+                <!-- Tom tilstand / Dra-og-slipp sone -->
+                <div id="empty-state" class="my-auto max-w-md w-full bg-white rounded-2xl border-2 border-dashed border-slate-300 p-8 text-center space-y-4 shadow-sm">
+                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
+                        <i data-lucide="file-up" class="w-7 h-7"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h2 class="text-lg font-bold text-slate-800">Last opp PDF-filen din</h2>
+                        <p class="text-sm text-slate-500">Dra og slipp filen hit, eller klikk på knappen under for å velge fra datamaskinen.</p>
+                    </div>
+                    <label for="pdf-upload" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-5 py-2.5 rounded-xl cursor-pointer transition shadow-sm">
+                        <i data-lucide="folder-open" class="w-4 h-4"></i>
+                        <span>Velg PDF-fil</span>
+                    </label>
+                </div>
+
+                <!-- Lerrets-container -->
+                <div id="canvas-wrapper" class="relative canvas-container bg-white hidden">
+                    <canvas id="pdf-canvas" class="block"></canvas>
+                    <canvas id="overlay-canvas" class="absolute top-0 left-0 cursor-crosshair touch-none"></canvas>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Meldingsboks (Toast) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-sm px-4 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
+        <span id="toast-msg">Melding</span>
+    </div>
+
+    <script>
+        // Konfigurer PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        lucide.createIcons();
+
+        // Applikasjonstilstand
+        let pdfBytes = null;
+        let pdfDoc = null;
+        let currentPage = 1;
+        let totalPages = 0;
+        let scale = 1.3;
+        let currentTool = 'patch'; // 'patch' | 'shift' | 'text'
+
+        // Lagrer alle endringer per side: { 1: [ { id, type, x, y, w, h, text, font, size, color, bgColor, offsetX, offsetY, lineHeight, shiftY } ] }
+        let annotations = {};
+        let selectedId = null;
+        let extractedTextItems = {}; // Lagrer tekstbiter med koordinater per side for auto-gjenkjenning
+        let basePageCanvas = document.createElement('canvas'); // Offscreen canvas for ren side uten forskyvning
+
+        // Interaksjonstilstand for musepeker/touch
+        let isDrawing = false;
+        let isDragging = false;
+        let isResizing = false;
+        let startX = 0, startY = 0;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        let tempBox = null;
+
+        const pdfCanvas = document.getElementById('pdf-canvas');
+        const pdfCtx = pdfCanvas.getContext('2d');
+        const overlayCanvas = document.getElementById('overlay-canvas');
+        const overlayCtx = overlayCanvas.getContext('2d');
+
+        // Vis varselmelding uten bruk av alert()
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+
+        // Filopplasting via input eller dra-og-slipp
+        document.getElementById('pdf-upload').addEventListener('change', (e) => {
+            if (e.target.files[0]) loadPDFFile(e.target.files[0]);
+        });
+
+        const viewerScroll = document.getElementById('viewer-scroll');
+        viewerScroll.addEventListener('dragover', (e) => e.preventDefault());
+        viewerScroll.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files[0] && e.dataTransfer.files[0].type === 'application/pdf') {
+                loadPDFFile(e.dataTransfer.files[0]);
+            } else {
+                showToast('Vennligst slipp en gyldig PDF-fil.');
+            }
+        });
+
+        // Last inn PDF-fil i minnet
+        async function loadPDFFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                pdfBytes = new Uint8Array(arrayBuffer);
+                
+                const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+                pdfDoc = await loadingTask.promise;
+                
+                totalPages = pdfDoc.numPages;
+                currentPage = 1;
+                annotations = {};
+                extractedTextItems = {};
+                selectedId = null;
+
+                // Oppdater UI
+                document.getElementById('empty-state').classList.add('hidden');
+                document.getElementById('canvas-wrapper').classList.remove('hidden');
+                document.getElementById('page-controls').classList.remove('hidden');
+                document.getElementById('download-btn').disabled = false;
+                document.querySelectorAll('.tool-btn').forEach(btn => btn.disabled = false);
+                document.getElementById('total-pages-num').textContent = totalPages;
+
+                await renderPage(currentPage);
+                showToast('PDF lastet inn! Klikk eller dra over en setning for å hente stil og tekst.');
+            } catch (err) {
+                console.error(err);
+                showToast('Kunne ikke åpne PDF-filen. Sjekk at den ikke er passordbeskyttet.');
+            }
+        }
+
+        // Hent og analyser tekstobjekter fra PDF-siden (for auto-gjenkjenning av font, størrelse og tekst)
+        async function extractPageTextData(page, pageNum) {
+            if (extractedTextItems[pageNum]) return extractedTextItems[pageNum];
+            
+            const textContent = await page.getTextContent();
+            const viewport = page.getViewport({ scale: 1.0 }); // Normalisert 1.0 skala
+            const styles = textContent.styles || {};
+
+            const items = textContent.items.map(item => {
+                // Transform-matrise: [scaleX, skewY, skewX, scaleY, translateX, translateY]
+                const tx = item.transform;
+                const fontSize = Math.hypot(tx[2], tx[3]); // Faktisk skriftstørrelse i PDF-punkter
+                const pdfX = tx[4];
+                const pdfY = tx[5];
+                
+                // Konverter til topp-venstre koordinatsystem (samme som canvas)
+                const topY = viewport.height - pdfY - (fontSize * 0.85);
+                const width = item.width || (item.str.length * fontSize * 0.5);
+                const height = fontSize * 1.15;
+
+                // Prøv å identifisere skrifttypefamilie og fet skrift
+                const styleObj = styles[item.fontName] || {};
+                const rawFont = (item.fontName + ' ' + (styleObj.fontFamily || '')).toLowerCase();
+                const isBold = rawFont.includes('bold') || rawFont.includes('black') || rawFont.includes('heavy');
+                
+                let matchedFont = isBold ? 'HelveticaBold' : 'Helvetica';
+                if (rawFont.includes('times') || rawFont.includes('serif') || rawFont.includes('georgia') || rawFont.includes('garamond')) {
+                    matchedFont = isBold ? 'TimesRomanBold' : 'TimesRoman';
+                } else if (rawFont.includes('courier') || rawFont.includes('mono') || rawFont.includes('consolas')) {
+                    matchedFont = 'Courier';
+                }
+
+                return {
+                    str: item.str,
+                    x: pdfX,
+                    y: topY,
+                    w: width,
+                    h: height,
+                    size: Math.round(fontSize * 10) / 10,
+                    font: matchedFont
+                };
+            }).filter(i => i.str.trim().length > 0);
+
+            extractedTextItems[pageNum] = items;
+            return items;
+        }
+
+        // Rendre gjeldende PDF-side
+        async function renderPage(pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: scale });
+
+            // Hent tekstdata for smart-gjenkjenning i bakgrunnen
+            await extractPageTextData(page, pageNum);
+
+            basePageCanvas.width = viewport.width;
+            basePageCanvas.height = viewport.height;
+            pdfCanvas.width = viewport.width;
+            pdfCanvas.height = viewport.height;
+            overlayCanvas.width = viewport.width;
+            overlayCanvas.height = viewport.height;
+
+            document.getElementById('current-page-num').textContent = pageNum;
+            document.getElementById('prev-page').disabled = pageNum <= 1;
+            document.getElementById('next-page').disabled = pageNum >= totalPages;
+            document.getElementById('zoom-level').textContent = Math.round((scale / 1.3) * 100) + '%';
+
+            await page.render({
+                canvasContext: basePageCanvas.getContext('2d'),
+                viewport: viewport
+            }).promise;
+
+            composePageWithShifts();
+            drawOverlay();
+            updateAnnotationsList();
+        }
+
+        // Tegner PDF-siden inkludert eventuelle "Flytt innhold"-forskyvninger i forhåndsvisningen
+        function composePageWithShifts() {
+            pdfCtx.fillStyle = '#ffffff';
+            pdfCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+
+            const pageAnns = annotations[currentPage] || [];
+            const shifts = pageAnns
+                .filter(a => a.type === 'shift')
+                .sort((a, b) => a.y - b.y);
+
+            if (shifts.length === 0) {
+                pdfCtx.drawImage(basePageCanvas, 0, 0);
+                return;
+            }
+
+            // Tegn siden bit for bit med forskyvninger
+            let lastSrcY = 0;
+            let cumulativeOffsetY = 0;
+
+            for (const s of shifts) {
+                const splitY = s.y * scale;
+                const shiftPx = (s.shiftY || 0) * scale;
+                const sliceHeight = splitY - lastSrcY;
+
+                if (sliceHeight > 0) {
+                    pdfCtx.drawImage(
+                        basePageCanvas,
+                        0, lastSrcY, pdfCanvas.width, sliceHeight,
+                        0, lastSrcY + cumulativeOffsetY, pdfCanvas.width, sliceHeight
+                    );
+                }
+
+                cumulativeOffsetY += shiftPx;
+                lastSrcY = splitY;
+            }
+
+            // Tegn gjenværende nederste del av siden
+            const remainingHeight = basePageCanvas.height - lastSrcY;
+            if (remainingHeight > 0) {
+                pdfCtx.drawImage(
+                    basePageCanvas,
+                    0, lastSrcY, pdfCanvas.width, remainingHeight,
+                    0, lastSrcY + cumulativeOffsetY, pdfCanvas.width, remainingHeight
+                );
+            }
+        }
+
+        // Bytt side
+        async function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                selectedId = null;
+                updatePropertiesPanel();
+                await renderPage(currentPage);
+            }
+        }
+
+        // Endre zoom
+        async function changeZoom(delta) {
+            const newScale = Math.max(0.5, Math.min(3.0, scale + delta));
+            if (newScale !== scale) {
+                scale = newScale;
+                await renderPage(currentPage);
+            }
+        }
+
+        // Velg verktøy
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.remove('border-2', 'border-indigo-600', 'bg-indigo-50/50', 'text-indigo-700');
+                btn.classList.add('border', 'border-slate-200', 'text-slate-600');
+            });
+            const activeBtn = document.getElementById('tool-' + tool);
+            activeBtn.classList.remove('border', 'border-slate-200', 'text-slate-600');
+            activeBtn.classList.add('border-2', 'border-indigo-600', 'bg-indigo-50/50', 'text-indigo-700');
+        }
+
+        // Hent normaliserte koordinater (i 1.0 PDF-skala) fra mus eller touch
+        function getPointerPos(e) {
+            const rect = overlayCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) / scale,
+                y: (clientY - rect.top) / scale
+            };
+        }
+
+        // Mus og touch lyttere på overleggslerretet
+        overlayCanvas.addEventListener('mousedown', handlePointerDown);
+        overlayCanvas.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+
+        overlayCanvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+        overlayCanvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+        window.addEventListener('touchend', handlePointerUp);
+
+        // Start interaksjon på lerretet
+        function handlePointerDown(e) {
+            if (!pdfDoc) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const pageAnns = annotations[currentPage] || [];
+
+            // 1. Sjekk om brukeren klikker på skaleringshåndtaket (nederst til høyre) på valgt boks
+            if (selectedId) {
+                const sel = pageAnns.find(a => a.id === selectedId);
+                if (sel && sel.type !== 'shift') {
+                    const handleSize = 10 / scale;
+                    if (Math.abs(pos.x - (sel.x + sel.w)) <= handleSize && Math.abs(pos.y - (sel.y + sel.h)) <= handleSize) {
+                        isResizing = true;
+                        return;
+                    }
+                }
+            }
+
+            // 2. Sjekk om brukeren klikker på en eksisterende boks eller forskyvningslinje
+            for (let i = pageAnns.length - 1; i >= 0; i--) {
+                const ann = pageAnns[i];
+                if (ann.type === 'shift') {
+                    if (Math.abs(pos.y - ann.y) <= 8 / scale) {
+                        selectedId = ann.id;
+                        isDragging = true;
+                        dragOffsetY = pos.y - ann.y;
+                        updatePropertiesPanel();
+                        drawOverlay();
+                        updateAnnotationsList();
+                        return;
+                    }
+                } else if (pos.x >= ann.x && pos.x <= ann.x + ann.w && pos.y >= ann.y && pos.y <= ann.y + ann.h) {
+                    selectedId = ann.id;
+                    isDragging = true;
+                    dragOffsetX = pos.x - ann.x;
+                    dragOffsetY = pos.y - ann.y;
+                    updatePropertiesPanel();
+                    drawOverlay();
+                    updateAnnotationsList();
+                    return;
+                }
+            }
+
+            // 3. Hvis verktøyet er "Flytt innhold" (shift), opprett delelinje direkte ved klikk
+            if (currentTool === 'shift') {
+                if (!annotations[currentPage]) annotations[currentPage] = [];
+                const newShift = {
+                    id: Date.now().toString(),
+                    type: 'shift',
+                    x: 0,
+                    y: pos.y,
+                    w: pdfCanvas.width / scale,
+                    h: 0,
+                    shiftY: 25
+                };
+                annotations[currentPage].push(newShift);
+                selectedId = newShift.id;
+                isDragging = true;
+                dragOffsetY = 0;
+                composePageWithShifts();
+                updatePropertiesPanel();
+                drawOverlay();
+                updateAnnotationsList();
+                showToast('Delelinje plassert! Juster forskyvningen i panelet til venstre.');
+                return;
+            }
+
+            // 4. Ellers: Start å tegne en ny boks (eller klikk på en setning for auto-valg)
+            selectedId = null;
+            updatePropertiesPanel();
+            isDrawing = true;
+            startX = pos.x;
+            startY = pos.y;
+            tempBox = { x: startX, y: startY, w: 0, h: 0 };
+            drawOverlay();
+        }
+
+        // Bevegelse på lerretet
+        function handlePointerMove(e) {
+            if (!pdfDoc) return;
+            const pos = getPointerPos(e);
+            const pageAnns = annotations[currentPage] || [];
+
+            // Oppdater musepeker ved hover over eksisterende bokser/linjer
+            if (!isDrawing && !isDragging && !isResizing) {
+                let cursor = currentTool === 'shift' ? 'row-resize' : 'crosshair';
+                for (let ann of pageAnns) {
+                    if (ann.type === 'shift') {
+                        if (Math.abs(pos.y - ann.y) <= 8 / scale) {
+                            cursor = 'ns-resize';
+                            break;
+                        }
+                    } else {
+                        const handleSize = 10 / scale;
+                        if (ann.id === selectedId && Math.abs(pos.x - (ann.x + ann.w)) <= handleSize && Math.abs(pos.y - (ann.y + ann.h)) <= handleSize) {
+                            cursor = 'nwse-resize';
+                            break;
+                        } else if (pos.x >= ann.x && pos.x <= ann.x + ann.w && pos.y >= ann.y && pos.y <= ann.y + ann.h) {
+                            cursor = 'move';
+                            break;
+                        }
+                    }
+                }
+                overlayCanvas.style.cursor = cursor;
+                return;
+            }
+
+            e.preventDefault();
+
+            if (isDrawing && tempBox) {
+                tempBox.x = Math.min(startX, pos.x);
+                tempBox.y = Math.min(startY, pos.y);
+                tempBox.w = Math.abs(pos.x - startX);
+                tempBox.h = Math.abs(pos.y - startY);
+                drawOverlay();
+            } else if (isDragging && selectedId) {
+                const sel = pageAnns.find(a => a.id === selectedId);
+                if (sel) {
+                    if (sel.type === 'shift') {
+                        sel.y = Math.max(10, Math.min((pdfCanvas.height / scale) - 10, pos.y - dragOffsetY));
+                        composePageWithShifts();
+                    } else {
+                        sel.x = pos.x - dragOffsetX;
+                        sel.y = pos.y - dragOffsetY;
+                    }
+                    drawOverlay();
+                }
+            } else if (isResizing && selectedId) {
+                const sel = pageAnns.find(a => a.id === selectedId);
+                if (sel) {
+                    sel.w = Math.max(20, pos.x - sel.x);
+                    sel.h = Math.max(12, pos.y - sel.y);
+                    drawOverlay();
+                }
+            }
+        }
+
+        // Finn eksisterende tekstbiter som overlapper med en boks eller et klikkpunkt
+        function detectUnderlyingText(box, isSingleClick) {
+            const items = extractedTextItems[currentPage] || [];
+            if (items.length === 0) return null;
+
+            let matched = [];
+            if (isSingleClick) {
+                // Finn tekstbiten brukeren klikket på, pluss resten av samme linje
+                const clickedItem = items.find(it => 
+                    box.x >= it.x - 4 && box.x <= it.x + it.w + 4 &&
+                    box.y >= it.y - 3 && box.y <= it.y + it.h + 3
+                );
+                if (clickedItem) {
+                    matched = items.filter(it => Math.abs(it.y - clickedItem.y) <= clickedItem.h * 0.6);
+                }
+            } else {
+                // Finn alle tekstbiter som overlapper med den opptegnede boksen
+                matched = items.filter(it => {
+                    const overlapX = Math.max(0, Math.min(box.x + box.w, it.x + it.w) - Math.max(box.x, it.x));
+                    const overlapY = Math.max(0, Math.min(box.y + box.h, it.y + it.h) - Math.max(box.y, it.y));
+                    return overlapX > it.w * 0.25 && overlapY > it.h * 0.35;
+                });
+            }
+
+            if (matched.length === 0) return null;
+
+            // Sorter fra topp til bunn, og venstre til høyre
+            matched.sort((a, b) => {
+                if (Math.abs(a.y - b.y) > Math.min(a.h, b.h) * 0.5) return a.y - b.y;
+                return a.x - b.x;
+            });
+
+            // Slå sammen tekst til linjer
+            let combinedText = '';
+            let lastY = matched[0].y;
+            let lastRight = matched[0].x;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            matched.forEach((it, idx) => {
+                minX = Math.min(minX, it.x);
+                minY = Math.min(minY, it.y);
+                maxX = Math.max(maxX, it.x + it.w);
+                maxY = Math.max(maxY, it.y + it.h);
+
+                if (idx === 0) {
+                    combinedText += it.str;
+                } else if (Math.abs(it.y - lastY) > it.h * 0.6) {
+                    combinedText += '\n' + it.str;
+                } else {
+                    const gap = it.x - lastRight;
+                    combinedText += (gap > it.size * 0.2 ? ' ' : '') + it.str;
+                }
+                lastY = it.y;
+                lastRight = it.x + it.w;
+            });
+
+            return {
+                text: combinedText.trim(),
+                size: matched[0].size,
+                font: matched[0].font,
+                bounds: {
+                    x: Math.max(0, minX - 2),
+                    y: Math.max(0, minY - 1),
+                    w: (maxX - minX) + 6,
+                    h: (maxY - minY) + 4
+                }
+            };
+        }
+
+        // Avslutt interaksjon
+        function handlePointerUp() {
+            if (isDrawing && tempBox) {
+                const isSingleClick = tempBox.w <= 8 && tempBox.h <= 8;
+                const detected = detectUnderlyingText(tempBox, isSingleClick);
+
+                if (!isSingleClick || detected) {
+                    if (!annotations[currentPage]) annotations[currentPage] = [];
+                    
+                    // Hvis vi fant underliggende tekst, bruk dens nøyaktige posisjon og stil!
+                    const boxX = (isSingleClick && detected) ? detected.bounds.x : tempBox.x;
+                    const boxY = (isSingleClick && detected) ? detected.bounds.y : tempBox.y;
+                    const boxW = (isSingleClick && detected) ? Math.max(detected.bounds.w, 120) : Math.max(tempBox.w, 40);
+                    const boxH = (isSingleClick && detected) ? detected.bounds.h : Math.max(tempBox.h, 16);
+
+                    const estimatedSize = detected ? detected.size : Math.max(8, Math.min(36, Math.round(boxH * 0.72)));
+                    
+                    const newAnn = {
+                        id: Date.now().toString(),
+                        type: currentTool,
+                        x: boxX,
+                        y: boxY,
+                        w: boxW,
+                        h: boxH,
+                        text: detected ? detected.text : '',
+                        font: detected ? detected.font : 'Helvetica',
+                        size: estimatedSize,
+                        color: '#000000',
+                        bgColor: '#ffffff',
+                        offsetX: detected ? 1 : 2,
+                        offsetY: detected ? 1 : 2,
+                        lineHeight: 1.2,
+                        autoDetected: !!detected
+                    };
+                    
+                    annotations[currentPage].push(newAnn);
+                    selectedId = newAnn.id;
+                    updatePropertiesPanel();
+                    updateAnnotationsList();
+                    
+                    if (detected) {
+                        showToast(`Gjenkjente tekst (${detected.font}, ${detected.size}pt) – rediger direkte!`);
+                    }
+
+                    setTimeout(() => {
+                        const textInput = document.getElementById('prop-text');
+                        textInput.focus();
+                        textInput.select();
+                    }, 50);
+                }
+                tempBox = null;
+            }
+            isDrawing = false;
+            isDragging = false;
+            isResizing = false;
+            drawOverlay();
+        }
+
+        // Hjelpefunksjon for automatisk linjebryting (word wrap) innenfor boksens bredde
+        function wrapTextLines(text, maxWidthPx, measureFn) {
+            if (!text) return [];
+            const paragraphs = text.split('\n');
+            const wrappedLines = [];
+
+            for (const para of paragraphs) {
+                if (para === '') {
+                    wrappedLines.push('');
+                    continue;
+                }
+                const words = para.split(' ');
+                let currentLine = words[0];
+
+                for (let i = 1; i < words.length; i++) {
+                    const testLine = currentLine + ' ' + words[i];
+                    if (measureFn(testLine) <= maxWidthPx || maxWidthPx <= 10) {
+                        currentLine = testLine;
+                    } else {
+                        wrappedLines.push(currentLine);
+                        currentLine = words[i];
+                    }
+                }
+                wrappedLines.push(currentLine);
+            }
+            return wrappedLines;
+        }
+
+        // Tegn alle endringer på overleggslerretet
+        function drawOverlay() {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            const pageAnns = annotations[currentPage] || [];
+
+            pageAnns.forEach(ann => {
+                // Tegn forskyvningslinje ("Flytt innhold")
+                if (ann.type === 'shift') {
+                    const sy = ann.y * scale;
+                    const isSel = ann.id === selectedId;
+                    overlayCtx.strokeStyle = isSel ? '#d97706' : 'rgba(217, 119, 6, 0.55)';
+                    overlayCtx.lineWidth = isSel ? 2.5 : 1.5;
+                    overlayCtx.setLineDash([6, 4]);
+                    overlayCtx.beginPath();
+                    overlayCtx.moveTo(0, sy);
+                    overlayCtx.lineTo(overlayCanvas.width, sy);
+                    overlayCtx.stroke();
+                    overlayCtx.setLineDash([]);
+
+                    // Merkeknapp på linjen
+                    overlayCtx.fillStyle = isSel ? '#d97706' : '#f59e0b';
+                    overlayCtx.fillRect(12, sy - 11, 145, 22);
+                    overlayCtx.fillStyle = '#ffffff';
+                    overlayCtx.font = 'bold 11px Inter, sans-serif';
+                    overlayCtx.textBaseline = 'middle';
+                    const sign = (ann.shiftY || 0) >= 0 ? '+' : '';
+                    overlayCtx.fillText(`↕ Flytt under: ${sign}${ann.shiftY || 0} pt`, 18, sy);
+                    return;
+                }
+
+                const sx = ann.x * scale;
+                const sy = ann.y * scale;
+                const sw = ann.w * scale;
+                const sh = ann.h * scale;
+
+                // Beregn linjer med automatisk linjebryting først for å se om boksen trenger ekstra høyde
+                let lines = [];
+                const fontSizePx = ann.size * scale;
+                const lhMult = ann.lineHeight || 1.2;
+                const lineHeightPx = fontSizePx * lhMult;
+
+                if (ann.text) {
+                    let cssFont = 'sans-serif';
+                    let weight = 'normal';
+                    if (ann.font === 'HelveticaBold') { cssFont = 'sans-serif'; weight = 'bold'; }
+                    if (ann.font === 'TimesRoman') cssFont = 'serif';
+                    if (ann.font === 'TimesRomanBold') { cssFont = 'serif'; weight = 'bold'; }
+                    if (ann.font === 'Courier') cssFont = 'monospace';
+
+                    overlayCtx.font = `${weight} ${fontSizePx}px ${cssFont}`;
+                    const availWidth = sw - (ann.offsetX * scale * 2);
+                    lines = wrapTextLines(ann.text, availWidth, (txt) => overlayCtx.measureText(txt).width);
+                }
+
+                // Utvid bakgrunnsdekket automatisk hvis teksten går over flere linjer enn boksens opprinnelige høyde
+                const neededHeight = lines.length > 0 
+                    ? Math.max(sh, (ann.offsetY * scale) + (lines.length * lineHeightPx) + 2)
+                    : sh;
+
+                // 1. Tegn bakgrunnsdekk hvis det er "Erstatt tekst"
+                if (ann.type === 'patch') {
+                    overlayCtx.fillStyle = ann.bgColor;
+                    overlayCtx.fillRect(sx, sy, sw, neededHeight);
+                }
+
+                // 2. Tegn ny tekst oppå
+                if (lines.length > 0) {
+                    overlayCtx.fillStyle = ann.color;
+                    overlayCtx.textBaseline = 'top';
+
+                    lines.forEach((line, idx) => {
+                        overlayCtx.fillText(
+                            line,
+                            sx + (ann.offsetX * scale),
+                            sy + (ann.offsetY * scale) + (idx * lineHeightPx)
+                        );
+                    });
+                }
+
+                // 3. Tegn markeringsramme rundt valgt element
+                if (ann.id === selectedId) {
+                    overlayCtx.strokeStyle = '#4f46e5';
+                    overlayCtx.lineWidth = 2;
+                    overlayCtx.setLineDash([]);
+                    overlayCtx.strokeRect(sx, sy, sw, neededHeight);
+
+                    // Skaleringshåndtak nederst til høyre
+                    overlayCtx.fillStyle = '#4f46e5';
+                    overlayCtx.fillRect(sx + sw - 5, sy + sh - 5, 10, 10);
+                } else {
+                    overlayCtx.strokeStyle = 'rgba(79, 70, 229, 0.35)';
+                    overlayCtx.lineWidth = 1;
+                    overlayCtx.setLineDash([4, 4]);
+                    overlayCtx.strokeRect(sx, sy, sw, neededHeight);
+                    overlayCtx.setLineDash([]);
+                }
+            });
+
+            // Tegn midlertidig boks mens brukeren drar
+            if (tempBox && tempBox.w > 2) {
+                overlayCtx.fillStyle = currentTool === 'patch' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(79, 70, 229, 0.1)';
+                overlayCtx.fillRect(tempBox.x * scale, tempBox.y * scale, tempBox.w * scale, tempBox.h * scale);
+                overlayCtx.strokeStyle = '#4f46e5';
+                overlayCtx.lineWidth = 1.5;
+                overlayCtx.setLineDash([4, 4]);
+                overlayCtx.strokeRect(tempBox.x * scale, tempBox.y * scale, tempBox.w * scale, tempBox.h * scale);
+                overlayCtx.setLineDash([]);
+            }
+        }
+
+        // Oppdater egenskapspanel basert på valgt boks eller forskyvningslinje
+        function updatePropertiesPanel() {
+            const panel = document.getElementById('properties-panel');
+            const textGroup = document.getElementById('text-controls-group');
+            const shiftGroup = document.getElementById('shift-controls-group');
+            const pageAnns = annotations[currentPage] || [];
+            const sel = pageAnns.find(a => a.id === selectedId);
+
+            if (!sel) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+
+            if (sel.type === 'shift') {
+                document.getElementById('prop-panel-title').textContent = 'Forskyv sideinnhold';
+                textGroup.classList.add('hidden');
+                shiftGroup.classList.remove('hidden');
+                const val = sel.shiftY || 0;
+                document.getElementById('prop-shift-range').value = val;
+                document.getElementById('prop-shift-num').value = val;
+                document.getElementById('shift-val-label').textContent = (val >= 0 ? '+' : '') + val + ' pt';
+                return;
+            }
+
+            document.getElementById('prop-panel-title').textContent = 'Rediger valgt felt';
+            shiftGroup.classList.add('hidden');
+            textGroup.classList.remove('hidden');
+
+            const badge = document.getElementById('detected-badge');
+            if (sel.autoDetected) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+
+            document.getElementById('prop-text').value = sel.text;
+            document.getElementById('prop-font').value = sel.font;
+            document.getElementById('prop-size').value = sel.size;
+            document.getElementById('prop-color').value = sel.color;
+            document.getElementById('color-hex').textContent = sel.color;
+            document.getElementById('prop-bg').value = sel.bgColor;
+            document.getElementById('bg-hex').textContent = sel.bgColor;
+            document.getElementById('prop-offset-x').value = sel.offsetX;
+            document.getElementById('prop-offset-y').value = sel.offsetY;
+            document.getElementById('prop-line-height').value = sel.lineHeight || 1.2;
+
+            const bgGroup = document.getElementById('bg-color-group');
+            if (sel.type === 'patch') {
+                bgGroup.classList.remove('hidden');
+            } else {
+                bgGroup.classList.add('hidden');
+            }
+        }
+
+        // Oppdater forskyvningsverdi for "Flytt innhold"
+        function updateShiftValue(val) {
+            if (isNaN(val)) return;
+            const pageAnns = annotations[currentPage] || [];
+            const sel = pageAnns.find(a => a.id === selectedId);
+            if (!sel || sel.type !== 'shift') return;
+
+            sel.shiftY = val;
+            document.getElementById('prop-shift-range').value = val;
+            document.getElementById('prop-shift-num').value = val;
+            document.getElementById('shift-val-label').textContent = (val >= 0 ? '+' : '') + val + ' pt';
+
+            composePageWithShifts();
+            drawOverlay();
+            updateAnnotationsList();
+        }
+
+        // Oppdater egenskap på valgt boks
+        function updateSelectedProp(prop, value) {
+            if (!selectedId || !annotations[currentPage]) return;
+            const sel = annotations[currentPage].find(a => a.id === selectedId);
+            if (!sel) return;
+
+            if (typeof value === 'number' && isNaN(value)) return;
+            sel[prop] = value;
+
+            if (prop === 'color') document.getElementById('color-hex').textContent = value;
+            if (prop === 'bgColor') document.getElementById('bg-hex').textContent = value;
+
+            drawOverlay();
+            updateAnnotationsList();
+        }
+
+        // Slett valgt boks eller forskyvningslinje
+        function deleteSelected() {
+            if (!selectedId || !annotations[currentPage]) return;
+            annotations[currentPage] = annotations[currentPage].filter(a => a.id !== selectedId);
+            selectedId = null;
+            composePageWithShifts();
+            updatePropertiesPanel();
+            drawOverlay();
+            updateAnnotationsList();
+        }
+
+        // Oppdater listen over endringer på siden
+        function updateAnnotationsList() {
+            const container = document.getElementById('annotations-list-container');
+            const list = document.getElementById('annotations-list');
+            const pageAnns = annotations[currentPage] || [];
+
+            if (pageAnns.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            list.innerHTML = '';
+
+            pageAnns.forEach((ann, index) => {
+                const item = document.createElement('div');
+                const isSel = ann.id === selectedId;
+                item.className = `flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition ${isSel ? 'bg-indigo-100 text-indigo-900 font-medium' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`;
+                item.onclick = () => {
+                    selectedId = ann.id;
+                    updatePropertiesPanel();
+                    drawOverlay();
+                    updateAnnotationsList();
+                };
+
+                if (ann.type === 'shift') {
+                    const sign = (ann.shiftY || 0) >= 0 ? '+' : '';
+                    item.innerHTML = `
+                        <span class="truncate text-amber-700 font-medium">↕ Forskyvning</span>
+                        <span class="text-[10px] opacity-75 ml-2">${sign}${ann.shiftY || 0}pt</span>
+                    `;
+                } else {
+                    const label = ann.text ? ann.text.substring(0, 22) + (ann.text.length > 22 ? '...' : '') : `(Tomt ${ann.type === 'patch' ? 'dekkfelt' : 'tekstfelt'} #${index + 1})`;
+                    item.innerHTML = `
+                        <span class="truncate">${label}</span>
+                        <span class="text-[10px] opacity-60 ml-2">${ann.size}pt</span>
+                    `;
+                }
+                list.appendChild(item);
+            });
+        }
+
+        // Konverter HEX-farge til RGB verdier (0-1) for pdf-lib
+        function hexToRgbNormalized(hex) {
+            const cleanHex = hex.replace('#', '');
+            const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+            const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+            const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
+            return PDFLib.rgb(r, g, b);
+        }
+
+        // Eksporter og last ned den redigerte PDF-filen
+        async function exportPDF() {
+            if (!pdfBytes) return;
+            
+            try {
+                showToast('Genererer ny PDF...');
+                const { PDFDocument, StandardFonts, rgb } = PDFLib;
+                
+                // Last inn original-PDF i pdf-lib
+                const origPdfDoc = await PDFDocument.load(pdfBytes);
+                const outPdfDoc = await PDFDocument.create();
+                
+                // Bygg inn standardfonter (inkl. fet skrift)
+                const fonts = {
+                    Helvetica: await outPdfDoc.embedFont(StandardFonts.Helvetica),
+                    HelveticaBold: await outPdfDoc.embedFont(StandardFonts.HelveticaBold),
+                    TimesRoman: await outPdfDoc.embedFont(StandardFonts.TimesRoman),
+                    TimesRomanBold: await outPdfDoc.embedFont(StandardFonts.TimesRomanBold),
+                    Courier: await outPdfDoc.embedFont(StandardFonts.Courier)
+                };
+
+                const origPages = origPdfDoc.getPages();
+
+                for (let pageIndex = 0; pageIndex < origPages.length; pageIndex++) {
+                    const pageNum = pageIndex + 1;
+                    const origPage = origPages[pageIndex];
+                    const { width: pageWidth, height: pageHeight } = origPage.getSize();
+                    const pageAnns = annotations[pageNum] || [];
+
+                    const shifts = pageAnns
+                        .filter(a => a.type === 'shift' && (a.shiftY || 0) !== 0)
+                        .sort((a, b) => a.y - b.y);
+
+                    let targetPage;
+
+                    if (shifts.length === 0) {
+                        // Ingen sideforskyvning: kopier original-siden direkte (bevarer 100% vektorgrafikk)
+                        const [copiedPage] = await outPdfDoc.copyPages(origPdfDoc, [pageIndex]);
+                        targetPage = outPdfDoc.addPage(copiedPage);
+                    } else {
+                        // Sideforskyvning aktiv: klipp opp og forskyv seksjonene på siden
+                        targetPage = outPdfDoc.addPage([pageWidth, pageHeight]);
+                        targetPage.drawRectangle({ x: 0, y: 0, width: pageWidth, height: pageHeight, color: rgb(1, 1, 1) });
+
+                        let lastTopY = 0; // i topp-ned koordinater
+                        let cumulativeShift = 0;
+
+                        const allSlices = [...shifts.map(s => ({ y: s.y, shift: s.shiftY })), { y: pageHeight, shift: 0 }];
+
+                        for (const slice of allSlices) {
+                            const sliceH = slice.y - lastTopY;
+                            if (sliceH > 0) {
+                                // Konverter topp-ned klipp til PDF bunn-opp bounding box
+                                const bboxBottom = pageHeight - slice.y;
+                                const bboxTop = pageHeight - lastTopY;
+
+                                const embeddedSlice = await outPdfDoc.embedPage(origPage, {
+                                    left: 0,
+                                    bottom: bboxBottom,
+                                    right: pageWidth,
+                                    top: bboxTop
+                                });
+
+                                targetPage.drawPage(embeddedSlice, {
+                                    x: 0,
+                                    y: bboxBottom - cumulativeShift
+                                });
+                            }
+                            cumulativeShift += slice.shift;
+                            lastTopY = slice.y;
+                        }
+                    }
+
+                    // Tegn alle tekst- og dekkbokser på siden
+                    const textAnns = pageAnns.filter(a => a.type !== 'shift');
+                    for (const ann of textAnns) {
+                        const selectedFont = fonts[ann.font] || fonts.Helvetica;
+                        const lhMult = ann.lineHeight || 1.2;
+                        const lineHeight = ann.size * lhMult;
+
+                        // Beregn automatisk linjebryting akkurat som i forhåndsvisningen
+                        const availWidth = ann.w - (ann.offsetX * 2);
+                        const lines = ann.text 
+                            ? wrapTextLines(ann.text, availWidth, (txt) => selectedFont.widthOfTextAtSize(txt, ann.size))
+                            : [];
+
+                        const neededHeight = lines.length > 0
+                            ? Math.max(ann.h, ann.offsetY + (lines.length * lineHeight) + 2)
+                            : ann.h;
+
+                        const pdfX = ann.x;
+                        const pdfY = pageHeight - ann.y - neededHeight;
+
+                        // 1. Tegn bakgrunnsboks for å dekke gammel tekst
+                        if (ann.type === 'patch') {
+                            targetPage.drawRectangle({
+                                x: pdfX,
+                                y: pdfY,
+                                width: ann.w,
+                                height: neededHeight,
+                                color: hexToRgbNormalized(ann.bgColor)
+                            });
+                        }
+
+                        // 2. Tegn ny tekst oppå
+                        if (lines.length > 0) {
+                            const textColor = hexToRgbNormalized(ann.color);
+                            lines.forEach((line, idx) => {
+                                const textY = (pageHeight - ann.y) - ann.offsetY - (ann.size * 0.85) - (idx * lineHeight);
+                                targetPage.drawText(line, {
+                                    x: pdfX + ann.offsetX,
+                                    y: textY,
+                                    size: ann.size,
+                                    font: selectedFont,
+                                    color: textColor
+                                });
+                            });
+                        }
+                    }
+                }
+
+                // Lagre og trigge nedlasting
+                const modifiedPdfBytes = await outPdfDoc.save();
+                const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'redigert_dokument.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                showToast('Ferdig! Den nye PDF-en er lastet ned.');
+            } catch (err) {
+                console.error(err);
+                showToast('Noe gikk galt under lagring av PDF-en. Sjekk at teksten ikke inneholder spesialtegn som ikke støttes.');
+            }
+        }
+    </script>
+</body>
+</html>
