@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tysk 10. trinn: Presens futurum (werden + infinitiv)</title>
+    <!-- Laster inn Tailwind CSS for moderne og responsiv utforming -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Laster inn Google Font 'Inter' for god lesbarhet -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Grunnleggende fontinnstillinger */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Egendefinerte stiler for utskrift (A4-vennlig) */
+        @media print {
+            body {
+                background-color: white !important;
+                color: black !important;
+                font-size: 11pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            input[type="text"], textarea {
+                border: none !important;
+                border-bottom: 1.5px solid #4b5563 !important;
+                background: transparent !important;
+                border-radius: 0 !important;
+                padding-left: 2px !important;
+                padding-right: 2px !important;
+            }
+            .writing-lines {
+                background-image: repeating-linear-gradient(transparent, transparent 27px, #9ca3af 28px);
+                line-height: 28px;
+                border: none !important;
+            }
+        }
+
+        /* Skrivelinjer for friskriving på skjerm og utskrift */
+        .writing-lines {
+            background-image: repeating-linear-gradient(transparent, transparent 31px, #cbd5e1 32px);
+            line-height: 32px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased py-6 px-3 sm:px-6 lg:px-8">
+
+    <!-- Topplinje med knapper for digital bruk og utskrift (skjules ved utskrift) -->
+    <div class="no-print max-w-4xl mx-auto mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">10. trinn • Tysk</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+            <!-- Knapp for å vise/skjule fasit -->
+            <button id="toggleAnswerBtn" onclick="toggleAnswers()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl transition shadow-sm cursor-pointer">
+                <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span id="toggleBtnText">Vis fasit</span>
+            </button>
+            <!-- Utskriftsknapp -->
+            <button onclick="window.print()" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-xl transition shadow-sm cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>Skriv ut ark</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Hovedark (A4-proporsjoner) -->
+    <main class="print-container max-w-4xl mx-auto bg-white rounded-2xl shadow-md border border-slate-200 p-6 sm:p-10">
+        
+        <!-- Topptekst med navn og dato for utskrift -->
+        <header class="border-b-2 border-slate-800 pb-5 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <!-- Tysk flagg-inspirert dekorasjon -->
+                    <span class="inline-block w-3 h-3 rounded-full bg-slate-900"></span>
+                    <span class="inline-block w-3 h-3 rounded-full bg-red-600"></span>
+                    <span class="inline-block w-3 h-3 rounded-full bg-amber-400"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Grammatikk • 10. Klasse</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Presens futurum (Framtidsform)</h1>
+                <p class="text-slate-600 text-sm mt-1">Hvordan snakke om framtiden på tysk med <strong>werden + infinitiv</strong></p>
+            </div>
+            <div class="flex flex-col sm:items-end gap-2 text-sm text-slate-700">
+                <div class="flex items-center gap-2">
+                    
+                </div>
+                <div class="flex items-center gap-2">
+                    
+                </div>
+            </div>
+        </header>
+
+        <!-- Innledning og viktig obs-boks om norsk vs. tysk -->
+        <section class="mb-8 bg-amber-50/80 border-l-4 border-amber-500 p-5 rounded-r-xl">
+            <h2 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <span>💡</span> Pass på! Norsk «skal» og «kommer til å».
+            </h2>
+            <p class="text-slate-700 text-sm sm:text-base leading-relaxed mb-3">
+                Når vi snakker om framtiden på norsk, bruker vi nesten alltid uttrykkene <strong>«skal»</strong> eller <strong>«kommer til å»</strong> (f.eks. <em>«Jeg skal reise til Berlin»</em> eller <em>«Det kommer til å regne»</em>). 
+            </p>
+            <p class="text-slate-700 text-sm sm:text-base leading-relaxed">
+                Dette skaper ofte forvirring når vi oversetter til tysk. Mange tenker automatisk på <em>sollen</em> (skal) eller <em>kommen</em> (kommer), men på tysk bruker vi i stedet hjelpeverbet <strong>werden</strong> (bøyd etter subjektet) + <strong>hovedverbet i infinitiv helt sist i setningen</strong>.
+            </p>
+            <div class="mt-3 pt-3 border-t border-amber-200/80 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <div class="bg-white/80 p-2.5 rounded-lg border border-amber-200">
+                    <span class="text-slate-500 block text-xs uppercase font-semibold">Norsk:</span>
+                    «Jeg <strong>skal</strong> spille fotball i morgen.»
+                </div>
+                <div class="bg-white/80 p-2.5 rounded-lg border border-amber-200">
+                    <span class="text-emerald-700 block text-xs uppercase font-semibold">Tysk (werden + infinitiv):</span>
+                    «Ich <strong>werde</strong> morgen Fußball <strong>spielen</strong>.»
+                </div>
+            </div>
+        </section>
+
+        <!-- Grammatikkboks: Bøying av werden + setningsstruktur -->
+        <section class="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
+            <h3 class="font-bold text-slate-900 text-base mb-3">Slik bøyer du hjelpeverbet <span class="text-red-700 font-mono">werden</span> (å bli / skal / kommer til å):</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between">
+                    <span class="text-slate-500">ich</span>
+                    <span class="font-bold text-slate-900">werde</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between">
+                    <span class="text-slate-500">du</span>
+                    <span class="font-bold text-red-700">wirst</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between">
+                    <span class="text-slate-500">er / sie / es</span>
+                    <span class="font-bold text-red-700">wird</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between">
+                    <span class="text-slate-500">wir</span>
+                    <span class="font-bold text-slate-900">werden</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between">
+                    <span class="text-slate-500">ihr</span>
+                    <span class="font-bold text-slate-900">werdet</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between">
+                    <span class="text-slate-500">sie / Sie</span>
+                    <span class="font-bold text-slate-900">werden</span>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-3">
+                <strong>Huskeregelen:</strong> Bøyd form av <em>werden</em> står på <strong>2. plass</strong> i helsetninger, og hovedverbet står i <strong>infinitiv (-en) helt til slutt</strong>.
+            </p>
+        </section>
+
+        <!-- OPPGAVE 1: Innsettingsoppgaver (Bøy werden) -->
+        <section class="mb-9">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="bg-slate-900 text-white font-bold text-sm px-2.5 py-1 rounded-lg">Oppgave 1</span>
+                <h2 class="text-lg font-bold text-slate-900">Sett inn riktig form av <em class="text-red-700">werden</em></h2>
+            </div>
+            <p class="text-sm text-slate-600 mb-4">Se nøye på hvem som gjør noe (subjektet), og fyll inn riktig bøyd form av <em>werden</em>.</p>
+
+            <div class="space-y-3.5 text-sm sm:text-base">
+                <!-- 1a -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">1.</span>
+                        <span>Ich</span>
+                        <input type="text" aria-label="Svar 1" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800 font-medium text-slate-900">
+                        <span>am Wochenende meine Oma besuchen.</span>
+                        <span class="text-xs text-slate-500 italic">(Jeg skal besøke bestemoren min i helgen.)</span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: werde
+                    </div>
+                </div>
+
+                <!-- 1b -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">2.</span>
+                        <span>Wann</span>
+                        <input type="text" aria-label="Svar 2" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800 font-medium text-slate-900">
+                        <span>du für die Deutschprüfung lernen?</span>
+                        <span class="text-xs text-slate-500 italic">(Når skal du øve til tyskprøven?)</span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: wirst
+                    </div>
+                </div>
+
+                <!-- 1c -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">3.</span>
+                        <span>Es</span>
+                        <input type="text" aria-label="Svar 3" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800 font-medium text-slate-900">
+                        <span>morgen den ganzen Tag regnen.</span>
+                        <span class="text-xs text-slate-500 italic">(Det kommer til å regne hele dagen i morgen.)</span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: wird
+                    </div>
+                </div>
+
+                <!-- 1d -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">4.</span>
+                        <span>Wir</span>
+                        <input type="text" aria-label="Svar 4" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800 font-medium text-slate-900">
+                        <span>im Sommer nach Deutschland fahren.</span>
+                        <span class="text-xs text-slate-500 italic">(Vi skal reise til Tyskland i sommer.)</span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: werden
+                    </div>
+                </div>
+
+                <!-- 1e -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">5.</span>
+                        <span>Was</span>
+                        <input type="text" aria-label="Svar 5" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800 font-medium text-slate-900">
+                        <span>ihr heute Abend essen?</span>
+                        <span class="text-xs text-slate-500 italic">(Hva skal dere spise i kveld?)</span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: werdet
+                    </div>
+                </div>
+
+                <!-- 1f -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">6.</span>
+                        <span>Meine Freunde</span>
+                        <input type="text" aria-label="Svar 6" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800 font-medium text-slate-900">
+                        <span>mir beim Umzug helfen.</span>
+                        <span class="text-xs text-slate-500 italic">(Vennene mine kommer til å hjelpe meg med flyttingen.)</span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: werden
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OPPGAVE 2: Sett inn både werden og infinitiv -->
+        <section class="mb-9">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="bg-slate-900 text-white font-bold text-sm px-2.5 py-1 rounded-lg">Oppgave 2</span>
+                <h2 class="text-lg font-bold text-slate-900">Gjør om setningene til framtid (presens futurum)</h2>
+            </div>
+            <p class="text-sm text-slate-600 mb-4">Bruk verbet i parentes og skriv setningen ferdig med <strong>werden + infinitiv</strong>. Husk at infinitiven skal stå helt til slutt!</p>
+
+            <div class="space-y-3.5 text-sm sm:text-base">
+                <!-- 2a -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">1.</span>
+                        <span>Lukas</span>
+                        <input type="text" aria-label="Oppgave 2.1a" class="w-24 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>nächstes Jahr ein neues Handy</span>
+                        <input type="text" aria-label="Oppgave 2.1b" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>. <strong class="text-slate-600">(kaufen)</strong></span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Lukas <u>wird</u> nächstes Jahr ein neues Handy <u>kaufen</u>.
+                    </div>
+                </div>
+
+                <!-- 2b -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">2.</span>
+                        <span>Ich</span>
+                        <input type="text" aria-label="Oppgave 2.2a" class="w-24 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>heute Nachmittag meine Hausaufgaben</span>
+                        <input type="text" aria-label="Oppgave 2.2b" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>. <strong class="text-slate-600">(machen)</strong></span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Ich <u>werde</u> heute Nachmittag meine Hausaufgaben <u>machen</u>.
+                    </div>
+                </div>
+
+                <!-- 2c -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">3.</span>
+                        <span>Wir</span>
+                        <input type="text" aria-label="Oppgave 2.3a" class="w-24 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>am Samstag ins Kino</span>
+                        <input type="text" aria-label="Oppgave 2.3b" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>. <strong class="text-slate-600">(gehen)</strong></span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Wir <u>werden</u> am Samstag ins Kino <u>gehen</u>.
+                    </div>
+                </div>
+
+                <!-- 2d -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">4.</span>
+                        <input type="text" aria-label="Oppgave 2.4a" class="w-24 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>du morgen mit dem Bus</span>
+                        <input type="text" aria-label="Oppgave 2.4b" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>? <strong class="text-slate-600">(fahren)</strong></span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: <u>Wirst</u> du morgen mit dem Bus <u>fahren</u>?
+                    </div>
+                </div>
+
+                <!-- 2e -->
+                <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="font-semibold text-slate-500 w-6">5.</span>
+                        <span>Sara und Mia</span>
+                        <input type="text" aria-label="Oppgave 2.5a" class="w-24 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>bald sehr gut Deutsch</span>
+                        <input type="text" aria-label="Oppgave 2.5b" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded-md focus:outline-none focus:border-slate-800">
+                        <span>. <strong class="text-slate-600">(sprechen)</strong></span>
+                    </div>
+                    <div class="answer-key hidden mt-2 pl-7 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Sara und Mia <u>werden</u> bald sehr gut Deutsch <u>sprechen</u>.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OPPGAVE 3: Oversettelse (Norsk -> Tysk) -->
+        <section class="mb-9">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="bg-slate-900 text-white font-bold text-sm px-2.5 py-1 rounded-lg">Oppgave 3</span>
+                <h2 class="text-lg font-bold text-slate-900">Oversett til tysk</h2>
+            </div>
+            <p class="text-sm text-slate-600 mb-3">
+                <strong>Husk tipset fra innledningen!</strong> Ikke la deg lure av det norske ordet «skal» eller «kommer til å». Bruk <em>werden + infinitiv</em>.
+            </p>
+            
+
+            <div class="space-y-4 text-sm sm:text-base">
+                <!-- 3.1 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">1. Jeg skal spille fotball i morgen.</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Ich werde morgen Fußball spielen. (eller: Morgen werde ich Fußball spielen.)
+                    </div>
+                </div>
+
+                <!-- 3.2 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">2. Hun kommer til å besøke Berlin til sommeren.</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Sie wird im Sommer Berlin besuchen.
+                    </div>
+                </div>
+
+                <!-- 3.3 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">3. Vi skal se en film i kveld.</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Wir werden heute Abend einen Film sehen.
+                    </div>
+                </div>
+
+                <!-- 3.4 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">4. Skal du sove lenge i helgen?</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Wirst du am Wochenende lange schlafen?
+                    </div>
+                </div>
+
+                <!-- 3.5 (Litt nøtt med werden + werden) -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">5.  Han kommer til å bli lege. </p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Er wird Arzt werden.
+                    </div>
+                </div>
+
+                <!-- 3.6 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">6. Kommer dere til å kjøpe en ny bil i år?</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Werdet ihr dieses Jahr ein neues Auto kaufen?
+                    </div>
+                </div>
+
+                <!-- 3.7 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">7. I morgen skal jeg rydde rommet mitt.</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Morgen werde ich mein Zimmer aufräumen.
+                    </div>
+                </div>
+
+                <!-- 3.8 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">8. De kommer til å reise til Sveits med tog.</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Sie werden mit dem Zug in die Schweiz fahren. (eller: reisen.)
+                    </div>
+                </div>
+
+                <!-- 3.9 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">9. Hva skal du gjøre etter skolen i dag?</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Was wirst du heute nach der Schule machen?
+                    </div>
+                </div>
+
+                <!-- 3.10 -->
+                <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/80">
+                    <p class="font-medium text-slate-800 mb-2">10. Jeg tror at det kommer til å snø i natt.</p>
+                    <input type="text" placeholder="Skriv den tyske setningen her..." class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-800">
+                    <div class="answer-key hidden mt-2 text-sm font-semibold text-emerald-700">
+                        ✓ Fasit: Ich glaube, dass es heute Nacht schneien wird. (eller uten leddsetning: Ich glaube, es wird heute Nacht schneien.)
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OPPGAVE 4: Friskriving -->
+        <section class="mb-4">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="bg-slate-900 text-white font-bold text-sm px-2.5 py-1 rounded-lg">Oppgave 4</span>
+                <h2 class="text-lg font-bold text-slate-900">Friskriving: Meine Pläne für die Zukunft (Planene mine for framtiden)</h2>
+            </div>
+            <p class="text-sm text-slate-600 mb-3">
+                Skriv <strong>4–6 setninger</strong> på tysk om hva du skal gjøre i helgen, i sommerferien eller etter 10. klasse. Bruk <strong>werden + infinitiv</strong> i alle setningene dine.
+            </p>
+           
+
+            <textarea rows="5" placeholder="Start f.eks. slik: Nach der 10. Klasse werde ich..." class="writing-lines w-full p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-slate-800 text-slate-900 text-base resize-y"></textarea>
+
+            <div class="answer-key hidden mt-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
+                <p class="font-bold mb-1">✓ Eksempel på løsning (sjekk at du har bøyd <em>werden</em> riktig og satt hovedverbet i infinitiv til slutt):</p>
+                <p class="italic leading-relaxed">
+                    «Am Wochenende <strong>werde</strong> ich lange <strong>schlafen</strong> und meine Freunde <strong>treffen</strong>. Im Sommer <strong>werden</strong> meine Familie und ich nach Spanien <strong>reisen</strong>. Nach der 10. Klasse <strong>werde</strong> ich aufs Gymnasium <strong>gehen</strong>. Dort <strong>werde</strong> ich viel <strong>lernen</strong>.»
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Enkel JavaScript for å vise/skjule fasiten -->
+    <script>
+        let answersVisible = false;
+
+        function toggleAnswers() {
+            answersVisible = !answersVisible;
+            const answerElements = document.querySelectorAll('.answer-key');
+            const btnText = document.getElementById('toggleBtnText');
+            const btn = document.getElementById('toggleAnswerBtn');
+
+            answerElements.forEach(el => {
+                if (answersVisible) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            if (answersVisible) {
+                btnText.textContent = 'Skjul fasit';
+                btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                btn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+            } else {
+                btnText.textContent = 'Vis fasit';
+                btn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            }
+        }
+    </script>
+</body>
+</html>
