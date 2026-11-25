@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interaktiv fasit: Sterke verb i presens</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f5f4;
+      color: #1c1917;
+    }
+
+    /* Smooth transitions for avsløring av svar */
+    .answer-box {
+      transition: all 0.25s ease-in-out;
+    }
+
+    /* Tilpasning for utskrift dersom lærer ønsker utskrift av fasit */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff;
+      }
+      .sheet {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body class="py-8 px-4 sm:px-6 lg:px-8">
+
+  <!-- Toppbar med globale kontroller -->
+  <div class="no-print max-w-4xl mx-auto mb-6 bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-stone-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div>
+      <span class="text-xs font-bold uppercase tracking-wider text-teal-700">Lærer- og elevressurs</span>
+      <h2 class="text-lg font-bold text-stone-900">Interaktiv fasit: Sterke verb i presens</h2>
+    </div>
+    <div class="flex flex-wrap items-center gap-2.5">
+      <button onclick="revealAll()" class="bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm">
+        Vis alle svar
+      </button>
+      <button onclick="resetAll()" class="bg-stone-200 hover:bg-stone-300 text-stone-800 text-sm font-medium px-4 py-2.5 rounded-xl transition cursor-pointer">
+        Nullstill alt
+      </button>
+      <button onclick="window.print()" class="bg-stone-900 hover:bg-stone-800 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        Skriv ut
+      </button>
+    </div>
+  </div>
+
+  <!-- Hovedinnhold -->
+  <main class="sheet max-w-4xl mx-auto bg-white p-6 sm:p-12 rounded-2xl shadow-md border border-stone-200 space-y-12">
+
+    <!-- Tittel -->
+    <header class="border-b-2 border-stone-800 pb-5">
+      <span class="text-xs font-bold uppercase tracking-widest text-amber-700">Tysk grammatikk • Fasit</span>
+      <h1 class="text-3xl font-bold text-stone-900 mt-1">Sterke verb i presens</h1>
+      <p class="text-sm text-stone-600 mt-2">
+        Skriv inn svarene dine i oppgave 1 for å sjekke om de er riktige, eller klikk på knappene for å avsløre fasiten med forklaringer.
+      </p>
+    </header>
+
+    <!-- OPPGAVE 1: Interaktiv innfylling -->
+    <section>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div class="flex items-baseline gap-3">
+          <span class="bg-stone-900 text-white text-sm font-bold px-2.5 py-0.5 rounded-lg">Oppgave 1</span>
+          <h2 class="text-xl font-bold text-stone-900">Bøy verbet i riktig form i presens</h2>
+        </div>
+        <div class="flex items-center gap-2 no-print">
+          <!-- Hurtigknapp for tyske spesialtegn -->
+          <span class="text-xs text-stone-500 mr-1">Sett inn tegn:</span>
+          <button type="button" onclick="insertSpecialChar('ä')" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-semibold px-2.5 py-1 rounded-lg text-sm cursor-pointer">ä</button>
+          <button type="button" onclick="insertSpecialChar('ö')" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-semibold px-2.5 py-1 rounded-lg text-sm cursor-pointer">ö</button>
+          <button type="button" onclick="insertSpecialChar('ü')" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-semibold px-2.5 py-1 rounded-lg text-sm cursor-pointer">ü</button>
+          <button type="button" onclick="insertSpecialChar('ß')" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-semibold px-2.5 py-1 rounded-lg text-sm cursor-pointer">ß</button>
+        </div>
+      </div>
+
+      <!-- Poengoversikt -->
+      <div id="score-banner" class="hidden mb-5 p-4 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 flex items-center justify-between">
+        <span class="font-semibold" id="score-text">Du fikk 0 av 10 riktige!</span>
+        <span class="text-sm text-teal-700">Hold musepekeren over eller klikk «Forklaring» for grammatikktips.</span>
+      </div>
+
+      <div id="task1-list" class="space-y-4">
+        <!-- Genereres dynamisk via JavaScript -->
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-3 no-print">
+        <button onclick="checkTask1()" class="bg-stone-900 hover:bg-stone-800 text-white font-medium px-5 py-2.5 rounded-xl transition cursor-pointer">
+          Sjekk mine svar
+        </button>
+        <button onclick="revealTask1()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-5 py-2.5 rounded-xl transition cursor-pointer">
+          Fyll inn fasit i oppgave 1
+        </button>
+      </div>
+    </section>
+
+    <!-- OPPGAVE 2: Oversettelser med klikk-for-å-avsløre -->
+    <section class="border-t border-stone-200 pt-10">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div class="flex items-baseline gap-3">
+          <span class="bg-stone-900 text-white text-sm font-bold px-2.5 py-0.5 rounded-lg">Oppgave 2</span>
+          <h2 class="text-xl font-bold text-stone-900">Oversett setningene til tysk</h2>
+        </div>
+        <button onclick="toggleAllTask2()" class="no-print text-sm font-medium text-teal-700 hover:text-teal-900 underline cursor-pointer self-start sm:self-auto">
+          Vis / skjul alle oversettelser
+        </button>
+      </div>
+
+      <div id="task2-list" class="space-y-4">
+        <!-- Genereres dynamisk via JavaScript -->
+      </div>
+    </section>
+
+    <!-- OPPGAVE 3: Eksempelbesvarelse for friskriving -->
+    <section class="border-t border-stone-200 pt-10">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div class="flex items-baseline gap-3">
+          <span class="bg-stone-900 text-white text-sm font-bold px-2.5 py-0.5 rounded-lg">Oppgave 3</span>
+          <h2 class="text-xl font-bold text-stone-900">Friskriving: Mein Winter (Eksempeltekst)</h2>
+        </div>
+        <button onclick="toggleTask3()" id="btn-task3" class="no-print bg-stone-100 hover:bg-stone-200 text-stone-800 text-sm font-medium px-4 py-2 rounded-xl border border-stone-300 transition cursor-pointer self-start sm:self-auto">
+          Vis eksempeltekst og sjekkliste
+        </button>
+      </div>
+
+      <p class="text-sm text-stone-600 mb-4">
+        I oppgave 3 finnes det mange riktige løsninger. Under kan du åpne et eksempel på en god elevtekst (ca. 75 ord) der de sterke verbene er uthevet.
+      </p>
+
+      <div id="task3-content" class="hidden bg-amber-50/70 border border-amber-200 rounded-2xl p-6 space-y-5">
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-amber-800 mb-2">Eksempeltekst på tysk:</h3>
+          <p class="text-stone-900 leading-relaxed text-base bg-white p-4 rounded-xl border border-amber-200/80 shadow-xs">
+            Im Winter ist es in Norwegen oft kalt, und es liegt viel Schnee. Am Wochenende <strong class="text-red-700 underline decoration-amber-400 decoration-2">schlafe</strong> ich gerne lange. Danach <strong class="text-red-700 underline decoration-amber-400 decoration-2">esse</strong> ich ein gutes Frühstück mit meiner Familie. Mein Vater <strong class="text-red-700 underline decoration-amber-400 decoration-2">läuft</strong> sehr gerne Ski im Wald, und meine Mutter <strong class="text-red-700 underline decoration-amber-400 decoration-2">liest</strong> ein spannendes Buch auf dem Sofa. Am Nachmittag <strong class="text-red-700 underline decoration-amber-400 decoration-2">fährt</strong> mein Bruder oft Snowboard mit seinen Freunden. Abends <strong class="text-red-700 underline decoration-amber-400 decoration-2">sehen</strong> wir zusammen einen Film.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div class="bg-white p-4 rounded-xl border border-stone-200">
+            <h4 class="font-bold text-stone-900 mb-2">Sterke verb brukt i teksten:</h4>
+            <ul class="space-y-1 text-stone-700 list-disc list-inside">
+              <li><em>ich <strong>schlafe</strong></em> (1. pers. entall – ingen omlyd)</li>
+              <li><em>ich <strong>esse</strong></em> (1. pers. entall – ingen omlyd)</li>
+              <li><em>mein Vater <strong>läuft</strong></em> (3. pers. entall – omlyd au → äu)</li>
+              <li><em>meine Mutter <strong>liest</strong></em> (3. pers. entall – vokalskifte e → ie)</li>
+              <li><em>mein Bruder <strong>fährt</strong></em> (3. pers. entall – omlyd a → ä)</li>
+              <li><em>wir <strong>sehen</strong></em> (1. pers. flertall – ingen omlyd)</li>
+            </ul>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-stone-200">
+            <h4 class="font-bold text-stone-900 mb-2">Vurderingskriterier for egen tekst:</h4>
+            <ul class="space-y-1.5 text-stone-700">
+              <li>✓ Har du brukt minst 4 sterke verb?</li>
+              <li>✓ Har du husket omlyd når subjektet er <em>er, sie, es</em> eller et navn/substantiv i entall?</li>
+              <li>✓ Har du unngått omlyd i <em>ich</em> og <em>wir</em>?</li>
+              <li>✓ Står det bøyde verbet på plass 2 i setningen?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Data for Oppgave 1
+    const task1Data = [
+      {
+        id: 1,
+        before: "Mein Vater",
+        after: "(fahren) jeden Tag mit dem Auto zur Arbeit.",
+        answer: "fährt",
+        explanation: "«Mein Vater» = er (3. person entall). Verbet «fahren» får omlyd a → ä: fährt."
+      },
+      {
+        id: 2,
+        before: "Was",
+        after: "(lesen) du gerade für ein Buch?",
+        answer: "liest",
+        explanation: "«du» (2. person entall). «lesen» får vokalskifte e → ie. Siden stammen slutter på -s, legger vi bare til -t: liest."
+      },
+      {
+        id: 3,
+        before: "Am Wochenende",
+        after: "(schlafen) wir immer sehr lange.",
+        answer: "schlafen",
+        explanation: "«wir» (1. person flertall). Ingen omlyd i flertall: schlafen."
+      },
+      {
+        id: 4,
+        before: "Lena",
+        after: "(sprechen) schon sehr gut Deutsch und Englisch.",
+        answer: "spricht",
+        explanation: "«Lena» = sie (3. person entall). «sprechen» får vokalskifte e → i: spricht."
+      },
+      {
+        id: 5,
+        before: "Warum",
+        after: "(essen) ihr keine Pizza zum Abendessen?",
+        answer: "esst",
+        explanation: "«ihr» (2. person flertall). Ingen omlyd i flertall: esst."
+      },
+      {
+        id: 6,
+        before: "Markus",
+        after: "(laufen) im Winter gern Ski im Wald.",
+        answer: "läuft",
+        explanation: "«Markus» = er (3. person entall). «laufen» får omlyd au → äu: läuft."
+      },
+      {
+        id: 7,
+        before: "",
+        after: "(helfen) du mir bitte mit den Hausaufgaben?",
+        answer: "Hilfst",
+        altAnswer: "hilfst",
+        explanation: "«du» (2. person entall). «helfen» får vokalskifte e → i: Hilfst (stor forbokstav fordi det starter setningen)."
+      },
+      {
+        id: 8,
+        before: "Er",
+        after: "(nehmen) heute den Bus, weil es stark schneit.",
+        answer: "nimmt",
+        explanation: "«Er» (3. person entall). «nehmen» endrer både vokal og konsonant: nimmt (dobbel m, uten h)."
+      },
+      {
+        id: 9,
+        before: "Meine Mutter",
+        after: "(sehen) am Abend oft einen Film.",
+        answer: "sieht",
+        explanation: "«Meine Mutter» = sie (3. person entall). «sehen» får vokalskifte e → ie: sieht."
+      },
+      {
+        id: 10,
+        before: "Du",
+        after: "(tragen) heute eine sehr warme Winterjacke.",
+        answer: "trägst",
+        explanation: "«Du» (2. person entall). «tragen» får omlyd a → ä: trägst."
+      }
+    ];
+
+    // Data for Oppgave 2
+    const task2Data = [
+      {
+        id: 1,
+        norwegian: "1. Han kjører fort til skolen.",
+        german: "Er fährt schnell zur Schule.",
+        note: "fahren → er fährt (omlyd a → ä). «zur» er sammentrekning av zu + der."
+      },
+      {
+        id: 2,
+        norwegian: "2. Leser dere avisen om morgenen?",
+        german: "Lest ihr am Morgen (morgens) die Zeitung?",
+        note: "lesen → ihr lest (ingen omlyd i 2. person flertall!)."
+      },
+      {
+        id: 3,
+        norwegian: "3. Hun spiser alltid et eple til lunsj.",
+        german: "Sie isst immer einen Apfel zu Mittag (zum Mittagessen).",
+        note: "essen → sie isst (e → i). «Apfel» er hankjønn (der Apfel) og står i akkusativ: einen Apfel."
+      },
+      {
+        id: 4,
+        norwegian: "4. Hva gir du broren din til jul?",
+        german: "Was gibst du deinem Bruder zu Weihnachten?",
+        note: "geben → du gibst (e → i). «deinem Bruder» står i dativ (til hvem?)."
+      },
+      {
+        id: 5,
+        norwegian: "5. Barnet sover godt i sengen sin.",
+        german: "Das Kind schläft gut in seinem Bett.",
+        note: "«Das Kind» = es (3. person entall), derfor schlafen → schläft (a → ä)."
+      },
+      {
+        id: 6,
+        norwegian: "6. Vi snakker tysk i timen, men han snakker norsk.",
+        german: "Wir sprechen Deutsch im Unterricht (in der Stunde), aber er spricht Norwegisch.",
+        note: "Legg merke til forskjellen: wir sprechen (flertall, uten omlyd) vs. er spricht (entall, e → i)."
+      }
+    ];
+
+    let activeInput = null;
+
+    // Bygg opp Oppgave 1 i DOM
+    function renderTask1() {
+      const container = document.getElementById('task1-list');
+      container.innerHTML = task1Data.map(item => `
+        <div class="p-3.5 rounded-xl bg-stone-50 border border-stone-200/80 transition" id="row-t1-${item.id}">
+          <div class="flex flex-wrap items-center gap-2 text-base text-stone-800">
+            <span class="font-bold text-stone-400 w-6">${item.id}.</span>
+            ${item.before ? `<span>${item.before}</span>` : ''}
+            <input 
+              type="text" 
+              id="input-t1-${item.id}" 
+              onfocus="activeInput = this"
+              onkeydown="if(event.key === 'Enter') checkTask1()"
+              placeholder="..." 
+              autocomplete="off"
+              spellcheck="false"
+              class="border-b-2 border-stone-400 bg-white px-3 py-1 rounded-t-md w-36 text-center font-semibold text-stone-900 focus:outline-none focus:border-teal-700 transition"
+            />
+            <span>${item.after}</span>
+            <button 
+              type="button"
+              onclick="toggleExplanation1(${item.id})" 
+              class="no-print ml-auto text-xs font-medium text-stone-500 hover:text-stone-900 bg-white border border-stone-200 px-2.5 py-1 rounded-lg cursor-pointer"
+            >
+              Fasit / tips
+            </button>
+          </div>
+          <div id="exp-t1-${item.id}" class="hidden mt-2.5 pl-8 text-sm text-stone-700 bg-white p-3 rounded-lg border border-stone-200">
+            <span class="font-bold text-teal-800">Riktig svar: ${item.answer}</span> — ${item.explanation}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Bygg opp Oppgave 2 i DOM
+    function renderTask2() {
+      const container = document.getElementById('task2-list');
+      container.innerHTML = task2Data.map(item => `
+        <div class="p-4 rounded-xl bg-stone-50 border border-stone-200">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <p class="font-semibold text-stone-900">${item.norwegian}</p>
+            <button 
+              type="button"
+              onclick="toggleTask2Item(${item.id})" 
+              id="btn-t2-${item.id}"
+              class="no-print text-xs font-medium bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 px-3 py-1.5 rounded-lg transition cursor-pointer self-start sm:self-auto"
+            >
+              Vis fasit
+            </button>
+          </div>
+          <div id="ans-t2-${item.id}" class="hidden mt-3 pt-3 border-t border-stone-200/80">
+            <p class="text-base font-bold text-teal-800">${item.german}</p>
+            <p class="text-xs text-stone-600 mt-1">${item.note}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Sett inn spesialtegn (ä, ö, ü, ß) i aktivt tekstfelt
+    function insertSpecialChar(char) {
+      if (!activeInput) {
+        activeInput = document.getElementById('input-t1-1');
+      }
+      const start = activeInput.selectionStart;
+      const end = activeInput.selectionEnd;
+      const val = activeInput.value;
+      activeInput.value = val.substring(0, start) + char + val.substring(end);
+      activeInput.focus();
+      activeInput.setSelectionRange(start + 1, start + 1);
+    }
+
+    // Sjekk brukerens svar i Oppgave 1
+    function checkTask1() {
+      let score = 0;
+      task1Data.forEach(item => {
+        const inputEl = document.getElementById(`input-t1-${item.id}`);
+        const rowEl = document.getElementById(`row-t1-${item.id}`);
+        const userVal = inputEl.value.trim();
+
+        const isCorrect = userVal.toLowerCase() === item.answer.toLowerCase();
+
+        rowEl.classList.remove('bg-stone-50', 'bg-emerald-50', 'border-emerald-300', 'bg-red-50', 'border-red-300');
+        inputEl.classList.remove('border-stone-400', 'border-emerald-600', 'text-emerald-800', 'border-red-500', 'text-red-700');
+
+        if (isCorrect) {
+          score++;
+          rowEl.classList.add('bg-emerald-50', 'border-emerald-300');
+          inputEl.classList.add('border-emerald-600', 'text-emerald-800');
+        } else {
+          rowEl.classList.add('bg-red-50', 'border-red-300');
+          inputEl.classList.add('border-red-500', 'text-red-700');
+          // Vis forklaring automatisk ved feil svar
+          document.getElementById(`exp-t1-${item.id}`).classList.remove('hidden');
+        }
+      });
+
+      const banner = document.getElementById('score-banner');
+      const scoreText = document.getElementById('score-text');
+      banner.classList.remove('hidden');
+      scoreText.textContent = `Resultat: Du fikk ${score} av ${task1Data.length} riktige!`;
+    }
+
+    // Fyll inn fasit i Oppgave 1
+    function revealTask1() {
+      task1Data.forEach(item => {
+        const inputEl = document.getElementById(`input-t1-${item.id}`);
+        const rowEl = document.getElementById(`row-t1-${item.id}`);
+        inputEl.value = item.answer;
+
+        rowEl.classList.remove('bg-stone-50', 'bg-red-50', 'border-red-300');
+        rowEl.classList.add('bg-emerald-50', 'border-emerald-300');
+        inputEl.classList.remove('border-stone-400', 'border-red-500', 'text-red-700');
+        inputEl.classList.add('border-emerald-600', 'text-emerald-800');
+        document.getElementById(`exp-t1-${item.id}`).classList.remove('hidden');
+      });
+    }
+
+    function toggleExplanation1(id) {
+      const expEl = document.getElementById(`exp-t1-${id}`);
+      expEl.classList.toggle('hidden');
+    }
+
+    function toggleTask2Item(id) {
+      const ansEl = document.getElementById(`ans-t2-${id}`);
+      const btnEl = document.getElementById(`btn-t2-${id}`);
+      const isHidden = ansEl.classList.contains('hidden');
+      if (isHidden) {
+        ansEl.classList.remove('hidden');
+        btnEl.textContent = 'Skjul fasit';
+      } else {
+        ansEl.classList.add('hidden');
+        btnEl.textContent = 'Vis fasit';
+      }
+    }
+
+    let allTask2Open = false;
+    function toggleAllTask2() {
+      allTask2Open = !allTask2Open;
+      task2Data.forEach(item => {
+        const ansEl = document.getElementById(`ans-t2-${item.id}`);
+        const btnEl = document.getElementById(`btn-t2-${item.id}`);
+        if (allTask2Open) {
+          ansEl.classList.remove('hidden');
+          btnEl.textContent = 'Skjul fasit';
+        } else {
+          ansEl.classList.add('hidden');
+          btnEl.textContent = 'Vis fasit';
+        }
+      });
+    }
+
+    function toggleTask3() {
+      const contentEl = document.getElementById('task3-content');
+      const btnEl = document.getElementById('btn-task3');
+      const isHidden = contentEl.classList.contains('hidden');
+      if (isHidden) {
+        contentEl.classList.remove('hidden');
+        btnEl.textContent = 'Skjul eksempeltekst';
+      } else {
+        contentEl.classList.add('hidden');
+        btnEl.textContent = 'Vis eksempeltekst og sjekkliste';
+      }
+    }
+
+    function revealAll() {
+      revealTask1();
+      allTask2Open = false;
+      toggleAllTask2();
+      document.getElementById('task3-content').classList.remove('hidden');
+      document.getElementById('btn-task3').textContent = 'Skjul eksempeltekst';
+    }
+
+    function resetAll() {
+      document.getElementById('score-banner').classList.add('hidden');
+      renderTask1();
+      allTask2Open = true;
+      toggleAllTask2();
+      document.getElementById('task3-content').classList.add('hidden');
+      document.getElementById('btn-task3').textContent = 'Vis eksempeltekst og sjekkliste';
+    }
+
+    // Initialiser ved sidelast
+    window.addEventListener('DOMContentLoaded', () => {
+      renderTask1();
+      renderTask2();
+    });
+  </script>
+</body>
+</html>
