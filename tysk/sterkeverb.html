@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oppgaveark: Sterke verb i presens</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #1c1917;
+      background-color: #f5f5f4;
+    }
+
+    /* Tilpasninger for pen A4-utskrift */
+    @media print {
+      body {
+        background-color: #ffffff;
+        padding: 0;
+        margin: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .sheet {
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 15mm 20mm !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+    }
+
+    /* Skrivelinjer */
+    .write-line {
+      border-bottom: 1px solid #78716c;
+      height: 2.1rem;
+      width: 100%;
+    }
+    .inline-blank {
+      display: inline-block;
+      border-bottom: 1.5px solid #44403c;
+      width: 120px;
+      margin: 0 4px;
+      height: 1.1em;
+    }
+  </style>
+</head>
+<body class="py-8 px-4 sm:px-6 lg:px-8">
+
+  <!-- Verktøylinje for utskrift (skjules ved utskrift) -->
+  <div class="no-print max-w-4xl mx-auto mb-6 flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-stone-200 gap-4">
+    <div>
+      <h2 class="font-semibold text-stone-800">Utskriftsvennlig oppgaveark</h2>
+      <p class="text-sm text-stone-500">Tilpasset A4-format. Bruk knappen for å skrive ut eller lagre som PDF.</p>
+    </div>
+    <button onclick="window.print()" class="bg-stone-900 hover:bg-stone-800 text-white font-medium px-5 py-2.5 rounded-lg transition flex items-center gap-2 cursor-pointer">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+      </svg>
+      Skriv ut / Lagre som PDF
+    </button>
+  </div>
+
+  <!-- Selve A4-arket -->
+  <main class="sheet max-w-4xl mx-auto bg-white p-8 sm:p-14 rounded-2xl shadow-md border border-stone-200">
+    
+    <!-- Topptekst med navn og dato -->
+    <header class="border-b-2 border-stone-800 pb-6 mb-8">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-amber-700">Tysk grammatikk</span>
+          <h1 class="text-3xl font-bold text-stone-900 mt-1">Sterke verb i presens</h1>
+        </div>
+        <div class="text-sm text-stone-600 font-medium bg-stone-100 px-3 py-1.5 rounded-md border border-stone-200">
+          Hjelpemiddel: Ordbok
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm text-stone-700">
+        <div class="flex items-end gap-2">
+          <span class="font-semibold">Navn:</span>
+          <div class="border-b border-stone-400 flex-grow h-5"></div>
+        </div>
+        <div class="flex items-end gap-2">
+          <span class="font-semibold">Dato / Klasse:</span>
+          <div class="border-b border-stone-400 flex-grow h-5"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Oppgave 1: Innfylling -->
+    <section class="mb-10">
+      <div class="flex items-baseline gap-3 mb-4">
+        <span class="bg-stone-900 text-white text-sm font-bold px-2.5 py-0.5 rounded">Oppgave 1</span>
+        <h2 class="text-xl font-bold text-stone-900">Bøy verbet i riktig form i presens</h2>
+      </div>
+      <p class="text-sm text-stone-600 mb-5">Sett inn verbet i parentes i riktig presensform. Husk omlyd der det skal være.</p>
+
+      <ol class="list-decimal list-inside space-y-4 text-base text-stone-800">
+        <li>Mein Vater <span class="inline-blank"></span> (fahren) jeden Tag mit dem Auto zur Arbeit.</li>
+        <li>Was <span class="inline-blank"></span> (lesen) du gerade für ein Buch?</li>
+        <li>Am Wochenende <span class="inline-blank"></span> (schlafen) wir immer sehr lange.</li>
+        <li>Lena <span class="inline-blank"></span> (sprechen) schon sehr gut Deutsch und Englisch.</li>
+        <li>Warum <span class="inline-blank"></span> (essen) ihr keine Pizza zum Abendessen?</li>
+        <li>Markus <span class="inline-blank"></span> (laufen) im Winter gern Ski im Wald.</li>
+        <li><span class="inline-blank"></span> (helfen) du mir bitte mit den Hausaufgaben?</li>
+        <li>Er <span class="inline-blank"></span> (nehmen) heute den Bus, weil es stark schneit.</li>
+        <li>Meine Mutter <span class="inline-blank"></span> (sehen) am Abend oft einen Film.</li>
+        <li>Du <span class="inline-blank"></span> (tragen) heute eine sehr warme Winterjacke.</li>
+      </ol>
+    </section>
+
+    <!-- Oppgave 2: Oversettelse -->
+    <section class="mb-10">
+      <div class="flex items-baseline gap-3 mb-4">
+        <span class="bg-stone-900 text-white text-sm font-bold px-2.5 py-0.5 rounded">Oppgave 2</span>
+        <h2 class="text-xl font-bold text-stone-900">Oversett setningene til tysk</h2>
+      </div>
+      <p class="text-sm text-stone-600 mb-5">Bruk ordboka til å finne ordene du trenger, og pass på riktig verbbøying.</p>
+
+      <div class="space-y-5">
+        <div>
+          <p class="font-medium text-stone-800 mb-1">1. Han kjører fort til skolen.</p>
+          <div class="write-line"></div>
+        </div>
+        <div>
+          <p class="font-medium text-stone-800 mb-1">2. Leser dere avisen om morgenen?</p>
+          <div class="write-line"></div>
+        </div>
+        <div>
+          <p class="font-medium text-stone-800 mb-1">3. Hun spiser alltid et eple til lunsj.</p>
+          <div class="write-line"></div>
+        </div>
+        <div>
+          <p class="font-medium text-stone-800 mb-1">4. Hva gir du broren din til jul?</p>
+          <div class="write-line"></div>
+        </div>
+        <div>
+          <p class="font-medium text-stone-800 mb-1">5. Barnet sover godt i sengen sin.</p>
+          <div class="write-line"></div>
+        </div>
+        <div>
+          <p class="font-medium text-stone-800 mb-1">6. Vi snakker tysk i timen, men han snakker norsk.</p>
+          <div class="write-line"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Oppgave 3: Friskriving -->
+    <section>
+      <div class="flex items-baseline gap-3 mb-4">
+        <span class="bg-stone-900 text-white text-sm font-bold px-2.5 py-0.5 rounded">Oppgave 3</span>
+        <h2 class="text-xl font-bold text-stone-900">Friskriving: Mein Winter</h2>
+      </div>
+      <p class="text-sm text-stone-700 mb-5 leading-relaxed">
+        Skriv en liten tekst på tysk (ca. 60–80 ord) om hva du og familien din eller vennene dine liker å gjøre om vinteren. 
+        Bruk ordboka aktivt, og prøv å få med minst <strong>fire sterke verb</strong> i teksten din (gjerne både i 1. person og 3. person entall).
+      </p>
+
+      <div class="space-y-1">
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+        <div class="write-line"></div>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>
