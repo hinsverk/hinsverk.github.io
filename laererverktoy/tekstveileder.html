@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skriveveileder – Visuell tilbakemelding for norsklærere</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Merriweather (for elevteksten) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js for å lese PDF-filer lokalt i nettleseren -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Egendefinerte markeringstyper for elevteksten */
+        .hl-span {
+            border-radius: 0.25rem;
+            padding: 0.1rem 0.2rem;
+            margin: 0 0.05rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-bottom-width: 2px;
+            position: relative;
+        }
+        .hl-span:hover {
+            filter: brightness(0.92);
+            transform: translateY(-1px);
+        }
+        .hl-active {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            font-weight: 500;
+        }
+
+        /* Fargekoder */
+        .cat-styrke { background-color: #dcfce7; border-bottom-color: #16a34a; color: #14532d; } /* Grønn */
+        .cat-saerskriving { background-color: #fef08a; border-bottom-color: #ca8a04; color: #713f12; } /* Gul */
+        .cat-tegnsetting { background-color: #fed7aa; border-bottom-color: #ea580c; color: #7c2d12; } /* Oransje */
+        .cat-setning { background-color: #e9d5ff; border-bottom-color: #9333ea; color: #581c87; } /* Lilla */
+        .cat-rettskriving { background-color: #fecdd3; border-bottom-color: #e11d48; color: #881337; } /* Rød/Rosa */
+        .cat-innhold { background-color: #bae6fd; border-bottom-color: #0284c7; color: #0c4a6e; } /* Blå */
+
+        /* Tilpasset rullefelt */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Utskriftsregler */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            #print-sheet {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Toppbar / Header -->
+    <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
+                    <i data-lucide="highlighter" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900 leading-tight">Skriveveileder</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Visuelt samtaleverktøy for vurdering i norsk</p>
+                </div>
+            </div>
+
+            <!-- Navigasjon / Modus-velger -->
+            <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                <button id="btn-tab-input" onclick="switchView('input')" class="px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-white text-indigo-700 shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="file-plus-2" class="w-4 h-4"></i>
+                    <span>1. Legg inn tekst</span>
+                </button>
+                <button id="btn-tab-workspace" onclick="switchView('workspace')" class="px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                    <i data-lucide="message-square-text" class="w-4 h-4"></i>
+                    <span>2. Samtale og fargelegging</span>
+                </button>
+            </div>
+
+            <!-- Fagvelger (Norsk / Engelsk) og Elevmodus-bryter -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/70" title="Velg fag for tilpassede fargekoder og KI-analyse">
+                    <button id="btn-subj-no" onclick="setSubject('no')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all bg-white text-indigo-700 shadow-xs">
+                        Norsk
+                    </button>
+                    <button id="btn-subj-en" onclick="setSubject('en')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
+                        Engelsk
+                    </button>
+                </div>
+
+                <button id="btn-student-mode" onclick="toggleStudentMode()" title="Skjul eller vis lærerens notater under samtalen med eleven" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors">
+                    <i data-lucide="eye" id="icon-student-mode" class="w-4 h-4 text-indigo-600"></i>
+                    <span id="text-student-mode">Samtalemodus: Lærer</span>
+                </button>
+
+                <button onclick="openSettingsModal()" title="Innstillinger og egen API-nøkkel (for bruk utenfor Gemini)" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-indigo-600 transition-colors relative">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span id="api-key-indicator" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" title="Egen API-nøkkel er lagret"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Varslingsboks (Erstatter alert) -->
+    <div id="toast-container" class="no-print fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- HOVEDINNHOLD -->
+    <main class="no-print flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- VISNING 1: LEGG INN TEKST (OPPGAVE + ELEVBESVARELSE) -->
+        <section id="view-input" class="space-y-6">
+            <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-indigo-950">Klargjør til fagsamtale</h2>
+                    <p class="text-sm text-indigo-800/80 mt-1">Lim inn teksten eller last opp en PDF. Velg deretter hva og hvor mye du vil ha markert før du starter.</p>
+                </div>
+                <button onclick="loadDemoData()" class="shrink-0 px-4 py-2 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-sm font-medium shadow-sm transition-all flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Fyll inn eksempeltekst</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Kort 1: Oppgavetekst / Vurderingskriterier -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <label for="task-input" class="font-semibold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 text-indigo-600"></i>
+                            Oppgavetekst og kriterier
+                        </label>
+                        <label class="cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                            <span>Last opp PDF</span>
+                            <input type="file" accept=".pdf" class="hidden" onchange="handlePdfUpload(event, 'task-input')">
+                        </label>
+                    </div>
+                    <textarea id="task-input" rows="7" placeholder="Lim inn oppgaveteksten eller kjennetegn på måloppnåelse her (valgfritt, men hjelper KI-en med å vurdere relevans og sjanger)..." class="w-full flex-1 rounded-xl border border-slate-200 p-3.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"></textarea>
+                </div>
+
+                <!-- Kort 2: Elevbesvarelse -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <label for="student-input" class="font-semibold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4 text-emerald-600"></i>
+                            Elevbesvarelse
+                        </label>
+                        <label class="cursor-pointer text-xs font-medium text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                            <span>Last opp PDF</span>
+                            <input type="file" accept=".pdf" class="hidden" onchange="handlePdfUpload(event, 'student-input')">
+                        </label>
+                    </div>
+                    <textarea id="student-input" rows="7" placeholder="Lim inn elevens tekst her, eller last opp PDF..." class="w-full flex-1 rounded-xl border border-slate-200 p-3.5 text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- PANEL: FOKUS OG OMFANG FOR TILBAKEMELDINGEN -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-600"></i>
+                            Fokus og omfang for analysen
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Huk av hvilke kategorier som er relevante for denne oppgaven, og velg omtrent hvor mange markeringer du ønsker.</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                        <button type="button" onclick="toggleAllAiCategories(true)" class="text-indigo-600 hover:text-indigo-800 font-medium">Velg alle</button>
+                        <span class="text-slate-300">|</span>
+                        <button type="button" onclick="toggleAllAiCategories(false)" class="text-slate-500 hover:text-slate-800 font-medium">Fjern alle</button>
+                    </div>
+                </div>
+
+                <!-- Avhakingsbokser for fargekoder -->
+                <div id="ai-category-checkboxes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    <!-- Fylles ut dynamisk av JS -->
+                </div>
+
+                <!-- Antall markeringer & ekstra instruks -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 pt-2">
+                    <div class="md:col-span-4">
+                        <label for="ai-count-select" class="block text-xs font-semibold text-slate-600 mb-1.5">
+                            Omtrentlig antall markeringer
+                        </label>
+                        <select id="ai-count-select" class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="3-5">Få og fokuserte (3–5 markeringer)</option>
+                            <option value="6-9" selected>Passe til en samtale (6–9 markeringer)</option>
+                            <option value="10-14">Grundig gjennomgang (10–14 markeringer)</option>
+                            <option value="all">Så mange som mulig (uttømmende)</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-8">
+                        <label for="ai-extra-focus" class="block text-xs font-semibold text-slate-600 mb-1.5">
+                            Ekstra ønske eller spesifikt fokus (valgfritt)
+                        </label>
+                        <input type="text" id="ai-extra-focus" placeholder="F.eks. «Se spesielt på bruken av skildringer og sanser» eller «Vær ekstra oppmuntrende»..." class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Handlingsknapper nederst -->
+            <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-1">
+                <button onclick="startManualWorkspace()" class="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="pen-tool" class="w-4 h-4"></i>
+                    <span>Gå videre (fargelegg selv)</span>
+                </button>
+                <button id="btn-ai-analyze" onclick="analyzeWithAI()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-md shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="wand-2" class="w-4 h-4"></i>
+                    <span>Analyser og foreslå fargekoder</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- VISNING 2: ARBEIDSFLATEN (FARGELEGGING OG SAMTALE) -->
+        <section id="view-workspace" class="hidden space-y-4">
+            
+            <!-- Verktøylinje for fargekoder (Pensler) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-xs font-medium text-slate-500 block mb-1.5">Marker tekst med musen for å legge til farge, eller klikk på en farge for å filtrere:</span>
+                        <div class="flex flex-wrap items-center gap-2" id="category-palette">
+                            <!-- Fylles ut av JS -->
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 self-end md:self-center shrink-0">
+                        <button onclick="openExerciseModal()" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-medium flex items-center gap-1.5 transition-colors">
+                            <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i>
+                            <span>Lag øvingsoppgave</span>
+                        </button>
+                        <button onclick="openPrintModal()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-medium flex items-center gap-1.5 transition-colors">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                            <span>Skriv ut / lagre PDF</span>
+                        </button>
+                        <button onclick="toggleFilterAll()" id="btn-clear-filter" class="hidden text-xs px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium">
+                            Vis alle farger
+                        </button>
+                        <button onclick="clearAllHighlights()" class="text-xs px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-medium flex items-center gap-1 transition-colors">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>Nullstill</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hovedarbeidsflate: Elevtekst til venstre, Samtalestøtte/Detaljer til høyre -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Venstre kolonne: Elevens tekst -->
+                <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-sm text-slate-700">Elevbesvarelse</span>
+                            <span id="word-count-badge" class="text-xs bg-slate-200/70 text-slate-600 px-2 py-0.5 rounded-full">0 ord</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeFontSize(-1)" class="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-200/50" title="Mindre skrift"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+                            <button onclick="changeFontSize(1)" class="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-200/50" title="Større skrift"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Selve tekstområdet der markeringer vises -->
+                    <div id="essay-container" class="p-6 sm:p-8 font-serif text-slate-800 leading-relaxed text-base sm:text-lg whitespace-pre-wrap select-text min-h-[450px]">
+                        <!-- Teksten rendres her -->
+                    </div>
+                </div>
+
+                <!-- Høyre kolonne: Samtalepanel og oversikt -->
+                <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-20">
+                    
+                    <!-- Kort for valgt markering (Dialogboks for samtalen) -->
+                    <div id="selected-annotation-card" class="bg-white rounded-2xl border-2 border-indigo-200 shadow-md p-5 transition-all">
+                        <div id="no-selection-state" class="text-center py-6 space-y-2">
+                            <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto">
+                                <i data-lucide="mouse-pointer-click" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="font-semibold text-slate-800 text-sm">Klikk på en farget tekstbit</h3>
+                            <p class="text-xs text-slate-500 max-w-xs mx-auto">
+                                Klikk på et markert ord eller en setning i teksten til venstre for å se samtalepunktet, eller marker ny tekst med musen for å fargelegge.
+                            </p>
+                        </div>
+
+                        <div id="active-selection-state" class="hidden space-y-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <span id="detail-badge" class="text-xs font-semibold px-2.5 py-1 rounded-md">Kategori</span>
+                                <button onclick="deleteSelectedHighlight()" class="text-xs text-slate-400 hover:text-rose-600 flex items-center gap-1 transition-colors" title="Fjern denne markeringen">
+                                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                    <span>Fjern</span>
+                                </button>
+                            </div>
+
+                            <!-- Selve tekstutdraget -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 font-serif italic text-slate-800 text-sm">
+                                «<span id="detail-quote"></span>»
+                            </div>
+
+                            <!-- Lærerens samtalehjelp (Skjules hvis "Elevvisning" er aktivert) -->
+                            <div id="teacher-notes-wrapper" class="space-y-3">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 mb-1">
+                                        <i data-lucide="help-circle" class="w-3.5 h-3.5 text-indigo-600"></i>
+                                        Spørsmål til eleven (undring)
+                                    </label>
+                                    <textarea id="detail-question" rows="2" onchange="updateActiveHighlight()" class="w-full rounded-xl border border-slate-200 p-2.5 text-sm text-slate-800 bg-indigo-50/30 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="F.eks. Hva skjer med betydningen her hvis vi setter ordene sammen?"></textarea>
+                                </div>
+
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-600 flex items-center gap-1.5 mb-1">
+                                        <i data-lucide="book-open" class="w-3.5 h-3.5 text-slate-600"></i>
+                                        Lærernotat og faglig forklaring
+                                    </label>
+                                    <textarea id="detail-note" rows="2" onchange="updateActiveHighlight()" class="w-full rounded-xl border border-slate-200 p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Skriv et kort notat til deg selv..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Melding når elevmodus er på -->
+                            <div id="student-mode-placeholder" class="hidden bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-900 flex items-start gap-2.5">
+                                <i data-lucide="users" class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"></i>
+                                <div>
+                                    <p class="font-semibold">Samtalemodus med elev er aktiv</p>
+                                    <p class="mt-0.5 text-emerald-800">Lærerens notater er skjult slik at dere kan utforske dette tekstutdraget sammen uten fasit.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Oversikt over alle funn / fargefordeling -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-sm text-slate-800 flex items-center gap-2">
+                                <i data-lucide="list-checks" class="w-4 h-4 text-indigo-600"></i>
+                                Oversikt over markeringer (<span id="total-highlights-count">0</span>)
+                            </h3>
+                            <button onclick="copySummaryToClipboard()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span>Kopier oppsummering</span>
+                            </button>
+                        </div>
+
+                        <!-- Liste over markeringer -->
+                        <div id="highlights-list" class="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                            <!-- Rendres av JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Flytende hurtigmeny når brukeren markerer ny tekst med musen -->
+    <div id="selection-popover" class="no-print hidden fixed z-50 bg-slate-900 text-white rounded-xl shadow-xl p-2 flex items-center gap-1.5 transform -translate-x-1/2 -translate-y-full transition-opacity">
+        <!-- Fylles dynamisk med fargeknapper -->
+    </div>
+
+    <!-- MODAL FOR UTSKRIFT / NEDLASTING AV FARGERESULTAT -->
+    <div id="print-modal" class="no-print hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-xl border border-slate-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4 text-indigo-600"></i>
+                    Skriv ut eller lagre som PDF
+                </h3>
+                <button onclick="closePrintModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-slate-600">Velg hva du vil ha med på utskriften. I utskriftsvinduet kan du velge «Lagre som PDF» hvis du vil laste ned filen.</p>
+                
+                <div class="space-y-2.5">
+                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                        <input type="radio" name="print-mode" value="student" checked class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                        <div>
+                            <span class="block text-sm font-semibold text-slate-800">Elevark (kun farger og fargeforklaring)</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Perfekt for eleven å se på under samtalen, uten at spørsmål og kommentarer avsløres.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                        <input type="radio" name="print-mode" value="teacher" class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                        <div>
+                            <span class="block text-sm font-semibold text-slate-800">Komplett ark (inkl. spørsmål og kommentarer)</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Tar med farget tekst, fargeforklaring og en ryddig liste med alle spørsmål og notater under.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div>
+                    <label for="print-student-name" class="block text-xs font-semibold text-slate-600 mb-1">Navn eller tittel øverst på arket (valgfritt)</label>
+                    <input type="text" id="print-student-name" placeholder="F.eks. Skriveoppgave – Høstskildring" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+            </div>
+
+            <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button onclick="closePrintModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-200/60 transition-colors">
+                    Avbryt
+                </button>
+                <button onclick="executePrint()" class="px-4 py-2 rounded-xl text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition-colors">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Åpne utskrift / PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SKJULT UTSKRIFTSMAL (Vises kun ved utskrift) -->
+    <div id="print-sheet" class="hidden max-w-3xl mx-auto p-8 bg-white text-slate-900">
+        <!-- Fylles ut dynamisk før window.print() -->
+    </div>
+
+    <!-- MODAL FOR INNSTILLINGER / EGEN API-NØKKEL (GITHUB BACKUP) -->
+    <div id="settings-modal" class="no-print hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-xl border border-slate-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="key-round" class="w-4 h-4 text-indigo-600"></i>
+                    Innstillinger for KI-tilkobling
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Hvis du kjører appen inne i Gemini, trenger du ikke å fylle inn noe her. Hvis du legger appen på <strong>GitHub Pages</strong> eller åpner den lokalt, kan du lime inn din egen gratis API-nøkkel fra <em>Google AI Studio</em> her.
+                </p>
+
+                <div>
+                    <label for="custom-api-key-input" class="block text-xs font-semibold text-slate-700 mb-1">Gemini API-nøkkel (lagres kun i din nettleser)</label>
+                    <input type="password" id="custom-api-key-input" placeholder="AIzaSy..." class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none font-mono">
+                    <p class="text-[11px] text-slate-500 mt-1">Nøkkelen lagres lokalt på denne PC-en (localStorage) og deles ikke med andre.</p>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                    <p><strong>Personvern i skolen:</strong> Husk å fjerne elevens navn og annen personidentifiserbar informasjon før du analyserer teksten med KI.</p>
+                </div>
+            </div>
+
+            <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button onclick="clearCustomApiKey()" class="text-xs font-medium text-rose-600 hover:text-rose-800">
+                    Slett lagret nøkkel
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeSettingsModal()" class="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-200/60 transition-colors">
+                        Avbryt
+                    </button>
+                    <button onclick="saveCustomApiKey()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors">
+                        Lagre nøkkel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FOR OPPGAVEGENERATOR (FINN OG RETT FEIL) -->
+    <div id="exercise-modal" class="no-print hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div>
+                    <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="file-check-2" class="w-4 h-4 text-emerald-600"></i>
+                        Oppgavegenerator: Finn og rett opp
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Lag en målrettet øvingsoppgave til eleven basert på fargeleggingen i teksten.</p>
+                </div>
+                <button onclick="closeExerciseModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-5 overflow-y-auto space-y-4 flex-1">
+                <!-- Innstillinger for oppgavegenerering -->
+                <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3">
+                    <div>
+                        <span class="block text-xs font-semibold text-slate-700 mb-2">1. Velg hvilke områder eleven skal øve på:</span>
+                        <div id="exercise-cat-checkboxes" class="flex flex-wrap gap-2">
+                            <!-- Fylles dynamisk -->
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <label for="exercise-source-select" class="block text-xs font-semibold text-slate-700 mb-1">2. Utgangspunkt for øvingen</label>
+                            <select id="exercise-source-select" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+                                <option value="student">Tilpasset elevens egen tekst og tema</option>
+                                <option value="new">Helt nye øvingssetninger / tekst</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="exercise-count-select" class="block text-xs font-semibold text-slate-700 mb-1">3. Antall oppgaver / setninger</label>
+                            <select id="exercise-count-select" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+                                <option value="5">5 øvingsoppgaver (rask økt)</option>
+                                <option value="8" selected>8 øvingsoppgaver (passe økt)</option>
+                                <option value="12">12 øvingsoppgaver (grundig trening)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pt-1 flex justify-end">
+                        <button id="btn-generate-exercise" onclick="generatePracticeExercises()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                            <span>Generer øvingsoppgaver</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultatvisning for øvingsoppgaver -->
+                <div id="exercise-result-container" class="hidden space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                        <h4 id="exercise-sheet-title" class="font-bold text-sm text-slate-900">Øvingsark</h4>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleExerciseAnswers()" id="btn-toggle-ex-answers" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium flex items-center gap-1">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                <span>Vis fasit</span>
+                            </button>
+                            <button onclick="copyExerciseToClipboard()" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium flex items-center gap-1">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span>Kopier</span>
+                            </button>
+                            <button onclick="printExerciseSheet()" class="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium flex items-center gap-1">
+                                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                <span>Skriv ut ark</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p id="exercise-sheet-intro" class="text-xs text-slate-600 bg-emerald-50/60 border border-emerald-100 p-3 rounded-xl"></p>
+
+                    <div id="exercise-items-list" class="space-y-3">
+                        <!-- Oppgavene rendres her -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                <button onclick="closeExerciseModal()" class="px-4 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-200/60 transition-colors">
+                    Lukk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASJON AV FARGEKODER PER FAG ---
+        const SUBJECT_CONFIG = {
+            no: {
+                name: 'Norsk',
+                subtitle: 'Visuelt samtaleverktøy for vurdering i norsk',
+                categories: [
+                    {
+                        id: 'styrke',
+                        label: 'Godt grep / styrke',
+                        shortLabel: 'Styrke',
+                        desc: 'Gode formuleringer, skildringer og flyt',
+                        cssClass: 'cat-styrke',
+                        dotColor: 'bg-green-500',
+                        badgeClass: 'bg-green-100 text-green-800 border border-green-300',
+                        defaultQuestion: 'Hva synes du selv fungerer ekstra godt i denne setningen?',
+                        aiPrompt: '- "styrke": Gode skildringer, treffende ordvalg, god flyt eller fine virkemidler.'
+                    },
+                    {
+                        id: 'saerskriving',
+                        label: 'Særskriving (orddeling)',
+                        shortLabel: 'Særskriving',
+                        desc: 'Sammensatte ord skrevet hver for seg',
+                        cssClass: 'cat-saerskriving',
+                        dotColor: 'bg-yellow-500',
+                        badgeClass: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+                        defaultQuestion: 'Les disse ordene høyt – uttaler vi dem som ett eller to ord? Hva skjer med betydningen?',
+                        aiPrompt: '- "saerskriving": Sammensatte ord som er skrevet hver for seg (f.eks. "høst dag", "tre topp").'
+                    },
+                    {
+                        id: 'tegnsetting',
+                        label: 'Tegnsetting og komma',
+                        shortLabel: 'Tegnsetting',
+                        desc: 'Kommaregler, punktum og tegnbruk',
+                        cssClass: 'cat-tegnsetting',
+                        dotColor: 'bg-orange-500',
+                        badgeClass: 'bg-orange-100 text-orange-800 border border-orange-300',
+                        defaultQuestion: 'Hvor trenger leseren en liten pause her? Mangler det et tegn?',
+                        aiPrompt: '- "tegnsetting": Manglende komma (f.eks. foran "men", etter leddsetning først), kommasplice, eller manglende punktum.'
+                    },
+                    {
+                        id: 'setning',
+                        label: 'Setningsoppbygging og flyt',
+                        shortLabel: 'Setningsflyt',
+                        desc: 'Lange setninger, variasjon og sammenheng',
+                        cssClass: 'cat-setning',
+                        dotColor: 'bg-purple-500',
+                        badgeClass: 'bg-purple-100 text-purple-800 border border-purple-300',
+                        defaultQuestion: 'Prøv å lese setningen høyt. Blir den veldig lang, eller kan vi binde den bedre sammen?',
+                        aiPrompt: '- "setning": Lange, oppramsende setninger, ufullstendige setninger eller tung flyt.'
+                    },
+                    {
+                        id: 'rettskriving',
+                        label: 'Rettskriving og bøying',
+                        shortLabel: 'Rettskriving',
+                        desc: 'Stavefeil og grammatisk bøying',
+                        cssClass: 'cat-rettskriving',
+                        dotColor: 'bg-rose-500',
+                        badgeClass: 'bg-rose-100 text-rose-800 border border-rose-300',
+                        defaultQuestion: 'Se nærmere på dette ordet. Hvordan bøyes det, eller hvilken bokstav mangler?',
+                        aiPrompt: '- "rettskriving": Stavefeil eller feil bøying av ord.'
+                    },
+                    {
+                        id: 'innhold',
+                        label: 'Innhold og utdyping',
+                        shortLabel: 'Utdyping',
+                        desc: 'Steder som kan utdypes eller knyttes til oppgaven',
+                        cssClass: 'cat-innhold',
+                        dotColor: 'bg-sky-500',
+                        badgeClass: 'bg-sky-100 text-sky-800 border border-sky-300',
+                        defaultQuestion: 'Her blir jeg nysgjerrig! Kan du fortelle litt mer eller gi et eksempel?',
+                        aiPrompt: '- "innhold": Steder der eleven med fordel kunne utdypet, vist mer enn fortalt, eller svart tydeligere på oppgaven.'
+                    }
+                ],
+                demoTask: `Oppgave: Skriv en skildring fra en høstdag i skogen. Bruk sansene dine (syn, hørsel, lukt) for å skape stemning. Pass på god setningsbygning, riktig tegnsetting og unngå særskrivingsfeil.`,
+                demoStudent: `Det var en kald høst dag da jeg gikk inn i den mørke skogen. Bladene på trærne hadde blitt helt gule og røde og de knaste under skoene mine når jeg gikk på den smale stien. Luften luktet friskt av våt mose og råtne epler.
+
+Plutselig hørte jeg en høy lyd fra en tre topp rett over meg. Jeg stoppet opp og kikket opp mot himmelen, det var en stor kråke som satt der og så ned på meg med svarte øyne. Jeg ble litt skremt men samtidig var det veldig spennende å være helt alene ute i naturen på denne tiden av året.
+
+Etter hvert begynte det å regne litt og jeg bestemte meg for å gå hjemover mot den varme stua vår.`
+            },
+            en: {
+                name: 'Engelsk',
+                subtitle: 'Visuelt samtaleverktøy for vurdering i engelsk',
+                categories: [
+                    {
+                        id: 'styrke',
+                        label: 'Godt grep / idiomatisk språk',
+                        shortLabel: 'Strength',
+                        desc: 'Variert ordforråd, gode formuleringer og flyt',
+                        cssClass: 'cat-styrke',
+                        dotColor: 'bg-green-500',
+                        badgeClass: 'bg-green-100 text-green-800 border border-green-300',
+                        defaultQuestion: 'What do you think works particularly well in this sentence or choice of words?',
+                        aiPrompt: '- "styrke": Idiomatic expressions, rich vocabulary, good linking words, or strong descriptions.'
+                    },
+                    {
+                        id: 'saerskriving',
+                        label: 'Ordvalg og «norwenglish»',
+                        shortLabel: 'Vocabulary',
+                        desc: 'Direkte oversatte ord, preposisjoner og ordvalg',
+                        cssClass: 'cat-saerskriving',
+                        dotColor: 'bg-yellow-500',
+                        badgeClass: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+                        defaultQuestion: 'Is this translated directly from Norwegian? What is a more natural English word or preposition here?',
+                        aiPrompt: '- "saerskriving": Unnatural word choices, "Norwenglish" direct translations, false friends, or wrong prepositions (e.g. "in the weekend", "learn away").'
+                    },
+                    {
+                        id: 'tegnsetting',
+                        label: 'Tegnsetting og stor bokstav',
+                        shortLabel: 'Punctuation',
+                        desc: 'Kommabruk, apostrof (it’s/its) og stor forbokstav',
+                        cssClass: 'cat-tegnsetting',
+                        dotColor: 'bg-orange-500',
+                        badgeClass: 'bg-orange-100 text-orange-800 border border-orange-300',
+                        defaultQuestion: 'Take a look at the punctuation or capitalization here – is an apostrophe, comma, or capital letter missing?',
+                        aiPrompt: '- "tegnsetting": Missing apostrophes in contractions/possessives, lowercase "i", missing capital letters for days/languages, or comma splices.'
+                    },
+                    {
+                        id: 'setning',
+                        label: 'Setningsstruktur og bindeord',
+                        shortLabel: 'Sentence flow',
+                        desc: 'Ordstilling, lange setninger og sammenheng',
+                        cssClass: 'cat-setning',
+                        dotColor: 'bg-purple-500',
+                        badgeClass: 'bg-purple-100 text-purple-800 border border-purple-300',
+                        defaultQuestion: 'Read this sentence aloud. How is the word order, or could we split/connect it better?',
+                        aiPrompt: '- "setning": Norwegian V2 word order errors in English, run-on sentences, or lack of linking words.'
+                    },
+                    {
+                        id: 'rettskriving',
+                        label: 'Verbtid, samsvar og staving',
+                        shortLabel: 'Grammar & spelling',
+                        desc: 'Samsvarsbøying (s-ending), verbtider og staving',
+                        cssClass: 'cat-rettskriving',
+                        dotColor: 'bg-rose-500',
+                        badgeClass: 'bg-rose-100 text-rose-800 border border-rose-300',
+                        defaultQuestion: 'Check the verb tense or subject-verb agreement here (he/she/it, was/were) – does it match?',
+                        aiPrompt: '- "rettskriving": Subject-verb agreement errors (e.g., "they was", "he walk"), inconsistent verb tenses, or spelling mistakes.'
+                    },
+                    {
+                        id: 'innhold',
+                        label: 'Innhold og utdyping',
+                        shortLabel: 'Content',
+                        desc: 'Steder som kan utdypes eller begrunnes bedre',
+                        cssClass: 'cat-innhold',
+                        dotColor: 'bg-sky-500',
+                        badgeClass: 'bg-sky-100 text-sky-800 border border-sky-300',
+                        defaultQuestion: 'This is an interesting point! Can you elaborate or give a concrete example here?',
+                        aiPrompt: '- "innhold": Places where the student could expand on their ideas, give examples, or answer the prompt more thoroughly.'
+                    }
+                ],
+                demoTask: `Task: Write a short reflection about how social media affects young people today. Give examples of both positive and negative sides. Focus on varied vocabulary, correct verb tenses, and good sentence structure.`,
+                demoStudent: `Social media is a big part of youths everyday life today. Almost everyone have a smartphone and spend several hours on apps like TikTok and Snapchat every day. One positive thing is that it is very easy to keep contact with friends who lives far away.
+
+On the other hand, social media can also make young people feel stressed because everyone only post pictures when they look happy and successful. Yesterday i read an article that said many teenagers sleep bad because they scroll on their phones late in the evening. In my opinion we need to be more aware of how much time we use online.`
+            }
+        };
+
+        function getCategories() {
+            return SUBJECT_CONFIG[state.subject].categories;
+        }
+
+        // --- APPLIKASJONSTILSTAND (STATE) ---
+        let state = {
+            subject: 'no',
+            taskText: '',
+            studentText: '',
+            highlights: [],
+            activeHighlightId: null,
+            filterCategory: null,
+            studentMode: false,
+            fontSizeIndex: 1
+        };
+
+        const FONT_SIZES = ['text-sm sm:text-base', 'text-base sm:text-lg', 'text-lg sm:text-xl', 'text-xl sm:text-2xl'];
+
+        // --- INITIALISERING ---
+        window.onload = function() {
+            renderAiCategoryCheckboxes();
+            renderCategoryPalette();
+            renderPopoverButtons();
+            setupTextSelectionListener();
+            updateApiKeyIndicator();
+            lucide.createIcons();
+        };
+
+        // --- EGEN API-NØKKEL (FOR GITHUB / LOKAL BRUK) ---
+        function getStoredApiKey() {
+            try {
+                return localStorage.getItem('skriveveileder_gemini_key') || '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function updateApiKeyIndicator() {
+            const indicator = document.getElementById('api-key-indicator');
+            if (!indicator) return;
+            if (getStoredApiKey()) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('custom-api-key-input').value = getStoredApiKey();
+            document.getElementById('settings-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveCustomApiKey() {
+            const val = document.getElementById('custom-api-key-input').value.trim();
+            try {
+                if (val) {
+                    localStorage.setItem('skriveveileder_gemini_key', val);
+                    showToast('API-nøkkel er lagret i nettleseren!', 'success');
+                } else {
+                    localStorage.removeItem('skriveveileder_gemini_key');
+                    showToast('API-nøkkel er fjernet.', 'info');
+                }
+            } catch (e) {
+                showToast('Kunne ikke lagre i nettleseren.', 'error');
+            }
+            updateApiKeyIndicator();
+            closeSettingsModal();
+        }
+
+        function clearCustomApiKey() {
+            document.getElementById('custom-api-key-input').value = '';
+            saveCustomApiKey();
+        }
+
+        // --- BYTT FAG (NORSK / ENGELSK) ---
+        function setSubject(subj) {
+            if (state.subject === subj) return;
+            state.subject = subj;
+            state.filterCategory = null;
+
+            const btnNo = document.getElementById('btn-subj-no');
+            const btnEn = document.getElementById('btn-subj-en');
+            const subtitleEl = document.querySelector('header p');
+
+            if (subj === 'no') {
+                btnNo.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all bg-white text-indigo-700 shadow-xs';
+                btnEn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900';
+            } else {
+                btnEn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all bg-white text-indigo-700 shadow-xs';
+                btnNo.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900';
+            }
+
+            if (subtitleEl) {
+                subtitleEl.textContent = SUBJECT_CONFIG[subj].subtitle;
+            }
+
+            renderAiCategoryCheckboxes();
+            renderCategoryPalette();
+            renderPopoverButtons();
+
+            if (!document.getElementById('view-workspace').classList.contains('hidden')) {
+                renderWorkspace();
+            }
+
+            showToast(`Byttet til ${SUBJECT_CONFIG[subj].name.toLowerCase()}fag.`, 'info');
+        }
+
+        // --- RENDRE AVHAKINGSPANEL FOR AI-FOKUS ---
+        function renderAiCategoryCheckboxes() {
+            const container = document.getElementById('ai-category-checkboxes');
+            container.innerHTML = getCategories().map(cat => `
+                <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-slate-50/70 cursor-pointer transition-all select-none">
+                    <input type="checkbox" name="ai-cat" value="${cat.id}" checked class="mt-0.5 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full ${cat.dotColor} shrink-0"></span>
+                            <span class="text-xs font-semibold text-slate-800">${cat.label}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">${cat.desc}</p>
+                    </div>
+                </label>
+            `).join('');
+        }
+
+        function toggleAllAiCategories(checkedState) {
+            document.querySelectorAll('input[name="ai-cat"]').forEach(cb => {
+                cb.checked = checkedState;
+            });
+        }
+
+        // --- TOAST VARSLER (Erstatter alert) ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                info: 'bg-slate-800 text-white',
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                warning: 'bg-amber-600 text-white'
+            };
+            toast.className = `${colors[type] || colors.info} px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center justify-between gap-3 pointer-events-auto transition-all transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // --- BYTT MELLOM VISNINGER ---
+        function switchView(viewName) {
+            const inputSec = document.getElementById('view-input');
+            const workSec = document.getElementById('view-workspace');
+            const btnInput = document.getElementById('btn-tab-input');
+            const btnWork = document.getElementById('btn-tab-workspace');
+
+            if (viewName === 'input') {
+                inputSec.classList.remove('hidden');
+                workSec.classList.add('hidden');
+                btnInput.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-white text-indigo-700 shadow-sm flex items-center gap-1.5';
+                btnWork.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
+            } else {
+                const currentText = document.getElementById('student-input').value.trim();
+                if (!currentText) {
+                    showToast('Lim inn eller last opp en elevbesvarelse først.', 'warning');
+                    return;
+                }
+                if (state.studentText !== currentText) {
+                    state.studentText = currentText;
+                    state.highlights = [];
+                    state.activeHighlightId = null;
+                }
+                state.taskText = document.getElementById('task-input').value.trim();
+
+                inputSec.classList.add('hidden');
+                workSec.classList.remove('hidden');
+                btnWork.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-white text-indigo-700 shadow-sm flex items-center gap-1.5';
+                btnInput.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5';
+                
+                renderWorkspace();
+            }
+        }
+
+        function startManualWorkspace() {
+            switchView('workspace');
+        }
+
+        // --- PDF OPPLASTING MED PDF.JS ---
+        async function handlePdfUpload(event, targetTextareaId) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.type !== 'application/pdf') {
+                showToast('Vennligst velg en gyldig PDF-fil.', 'error');
+                return;
+            }
+
+            showToast('Leser PDF-fil...', 'info');
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let extractedText = '';
+
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    const pageStrings = textContent.items.map(item => item.str);
+                    extractedText += pageStrings.join(' ') + '\n\n';
+                }
+
+                document.getElementById(targetTextareaId).value = extractedText.trim();
+                showToast(`Hentet tekst fra ${pdf.numPages} side(r).`, 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('Kunne ikke lese PDF-filen. Prøv å kopiere og lime inn teksten.', 'error');
+            }
+            event.target.value = '';
+        }
+
+        // --- EKSEMPELTEKST FOR RASK TESTING ---
+        function loadDemoData() {
+            const cfg = SUBJECT_CONFIG[state.subject];
+            document.getElementById('task-input').value = cfg.demoTask;
+            document.getElementById('student-input').value = cfg.demoStudent;
+
+            showToast(`Eksempeltekst i ${cfg.name.toLowerCase()} er lagt inn!`, 'success');
+        }
+
+        // --- AI-ANALYSE MED GEMINI API ---
+        async function analyzeWithAI() {
+            const studentText = document.getElementById('student-input').value.trim();
+            const taskText = document.getElementById('task-input').value.trim();
+
+            if (!studentText) {
+                showToast('Du må legge inn en elevbesvarelse først.', 'warning');
+                return;
+            }
+
+            const selectedCats = Array.from(document.querySelectorAll('input[name="ai-cat"]:checked')).map(cb => cb.value);
+            if (selectedCats.length === 0) {
+                showToast('Velg minst én fargekategori som analysen skal se etter.', 'warning');
+                return;
+            }
+
+            const countPreference = document.getElementById('ai-count-select').value;
+            const extraFocus = document.getElementById('ai-extra-focus').value.trim();
+
+            let countInstruction = '';
+            if (countPreference === '3-5') {
+                countInstruction = 'Velg ut KUN de 3 til 5 aller viktigste og mest lærerike punktene totalt. Ikke overveld eleven.';
+            } else if (countPreference === '6-9') {
+                countInstruction = 'Velg ut mellom 6 og 9 balanserte punkter totalt.';
+            } else if (countPreference === '10-14') {
+                countInstruction = 'Velg ut mellom 10 og 14 punkter totalt for en grundig gjennomgang.';
+            } else {
+                countInstruction = `VIKTIG – UTTØMMENDE ANALYSE: Du skal IKKE begrense deg til 10–12 punkter! Gå gjennom hele elevbesvarelsen systematisk fra første til siste setning, og plukk ut SÅ MANGE relevante forekomster som mulig innenfor HVER ENESTE av de ${selectedCats.length} valgte kategoriene. Hver valgte kategori skal være grundig dekket gjennom hele teksten (sikte på minst 4–8 treff per kategori dersom teksten har grunnlag for det, gjerne 15–30+ punkter totalt i lengre tekster).`;
+            }
+
+            const btn = document.getElementById('btn-ai-analyze');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Analyserer elevtekst...</span>`;
+            lucide.createIcons();
+
+            const currentCats = getCategories();
+            const activeCategoriesPrompt = selectedCats
+                .map(id => currentCats.find(c => c.id === id)?.aiPrompt)
+                .filter(Boolean)
+                .join('\n');
+
+            const isEnglish = state.subject === 'en';
+            const rolePrompt = isEnglish
+                ? `Du er en erfaren, varm og konstruktiv engelsklærer i norsk skole (ungdomstrinnet eller videregående).
+Din oppgave er å analysere en engelsk elevbesvarelse opp mot oppgaveteksten, og plukke ut konkrete tekstutdrag som læreren kan fargekode og snakke med eleven om.
+VIKTIG FOR SPRÅK I SVARET:
+- Feltet "question" (spørsmål til eleven) skal skrives på naturlig, oppmuntrende ENGELSK slik at engelsklæreren kan stille det direkte til eleven i fagsamtalen.
+- Feltet "note" (faglig kommentar/forklaring til læreren) skal skrives på NORSK.`
+                : `Du er en erfaren, varm og konstruktiv norsklærer på ungdomstrinnet eller videregående. 
+Din oppgave er å analysere en elevbesvarelse opp mot oppgaveteksten, og plukke ut konkrete tekstutdrag (ord, uttrykk eller enkeltsetninger) som læreren kan fargekode og snakke med eleven om i en fagsamtale.`;
+
+            const systemPrompt = `${rolePrompt}
+
+OMFANG OG ANTALL:
+${countInstruction}
+
+TILLATTE KATEGORIER (Bruk KUN disse kategori-ID-ene):
+${activeCategoriesPrompt}
+
+${extraFocus ? `LÆRERENS EKSTRA FOKUS FOR DENNE OPPGAVEN:\n${extraFocus}\n` : ''}
+VIKTIG REGEL FOR "exactQuote":
+1. Feltet "exactQuote" MÅ være en 100 % ordrett, eksakt substring fra elevbesvarelsen (inkludert tegnsetting og mellomrom slik det står i originalteksten), ellers finner ikke programmet hvor det skal fargelegges.
+2. Unngå at to utdrag overlapper hverandre (f.eks. ikke marker en hel setning og samtidig et enkeltord inni den samme setningen – velg heller presise ord/fraser slik at flere funn får plass side om side i samme setning).`;
+
+            const userQuery = `Oppgavetekst:\n${taskText || (isEnglish ? 'Ikke oppgitt (vurder generell skrivekompetanse i engelsk)' : 'Ikke oppgitt (vurder generell skrivekompetanse på norsk)')}\n\nElevbesvarelse:\n${studentText}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                exactQuote: { type: "STRING", description: "Eksakt ordrett utdrag fra elevbesvarelsen" },
+                                categoryId: { type: "STRING", enum: selectedCats },
+                                question: { type: "STRING", description: "Et åpent, undrende spørsmål læreren kan stille eleven i samtalen" },
+                                note: { type: "STRING", description: "Kort faglig forklaring til læreren" }
+                            },
+                            required: ["exactQuote", "categoryId", "question", "note"]
+                        }
+                    }
+                }
+            };
+
+            try {
+                const responseData = await fetchGeminiWithRetry(payload);
+                const rawJson = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawJson) throw new Error('Tomt svar fra KI');
+
+                const suggestions = JSON.parse(rawJson);
+                
+                state.studentText = studentText;
+                state.taskText = taskText;
+                state.highlights = [];
+
+                let usedRanges = [];
+                suggestions.forEach((item, idx) => {
+                    if (!selectedCats.includes(item.categoryId)) return;
+                    const pos = findAvailableSubstring(studentText, item.exactQuote, usedRanges);
+                    if (pos) {
+                        usedRanges.push(pos);
+                        state.highlights.push({
+                            id: 'hl-' + Date.now() + '-' + idx,
+                            start: pos.start,
+                            end: pos.end,
+                            text: studentText.slice(pos.start, pos.end),
+                            categoryId: item.categoryId,
+                            question: item.question,
+                            note: item.note
+                        });
+                    }
+                });
+
+                state.highlights.sort((a, b) => a.start - b.start);
+                state.activeHighlightId = state.highlights.length > 0 ? state.highlights[0].id : null;
+
+                switchView('workspace');
+                showToast(`Ferdig! Fant ${state.highlights.length} punkter til samtalen.`, 'success');
+
+            } catch (error) {
+                console.error(error);
+                showToast('Noe gikk galt under analysen. Du kan fortsatt fargelegge manuelt.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                lucide.createIcons();
+            }
+        }
+
+        function findAvailableSubstring(fullText, sub, usedRanges) {
+            if (!sub) return null;
+            let searchFrom = 0;
+            while (searchFrom < fullText.length) {
+                const idx = fullText.indexOf(sub, searchFrom);
+                if (idx === -1) return null;
+                const end = idx + sub.length;
+                const overlaps = usedRanges.some(r => !(end <= r.start || idx >= r.end));
+                if (!overlaps) {
+                    return { start: idx, end: end };
+                }
+                searchFrom = idx + 1;
+            }
+            return null;
+        }
+
+        async function fetchGeminiWithRetry(payload, maxRetries = 4) {
+            const apiKey = getStoredApiKey(); 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            let delay = 1000;
+
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (err) {
+                    if (attempt === maxRetries) throw err;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // --- RENDERING AV ARBEIDSFLATE ---
+        function renderWorkspace() {
+            renderCategoryPalette();
+            renderEssayText();
+            renderHighlightsList();
+            renderActiveDetailCard();
+            updateWordCount();
+        }
+
+        function updateWordCount() {
+            const words = state.studentText.trim().split(/\s+/).filter(Boolean).length;
+            document.getElementById('word-count-badge').textContent = `${words} ord`;
+        }
+
+        function changeFontSize(delta) {
+            state.fontSizeIndex = Math.max(0, Math.min(FONT_SIZES.length - 1, state.fontSizeIndex + delta));
+            const container = document.getElementById('essay-container');
+            FONT_SIZES.forEach(cls => cls.split(' ').forEach(c => container.classList.remove(c)));
+            FONT_SIZES[state.fontSizeIndex].split(' ').forEach(c => container.classList.add(c));
+        }
+
+        function renderCategoryPalette() {
+            const palette = document.getElementById('category-palette');
+            palette.innerHTML = getCategories().map(cat => {
+                const count = state.highlights.filter(h => h.categoryId === cat.id).length;
+                const isFiltered = state.filterCategory === cat.id;
+                return `
+                    <button onclick="toggleCategoryFilter('${cat.id}')" 
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                            isFiltered 
+                            ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50 text-indigo-950 shadow-sm' 
+                            : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                        }" title="Klikk for å filtrere på denne fargen">
+                        <span class="w-3 h-3 rounded-full ${cat.dotColor}"></span>
+                        <span>${cat.shortLabel}</span>
+                        <span class="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded-md text-[11px] font-semibold">${count}</span>
+                    </button>
+                `;
+            }).join('');
+
+            const clearFilterBtn = document.getElementById('btn-clear-filter');
+            if (state.filterCategory) {
+                clearFilterBtn.classList.remove('hidden');
+            } else {
+                clearFilterBtn.classList.add('hidden');
+            }
+        }
+
+        function toggleCategoryFilter(catId) {
+            state.filterCategory = (state.filterCategory === catId) ? null : catId;
+            renderWorkspace();
+        }
+
+        function toggleFilterAll() {
+            state.filterCategory = null;
+            renderWorkspace();
+        }
+
+        function buildHighlightedHtml(respectFilter = true, interactive = true) {
+            const text = state.studentText;
+            const sorted = [...state.highlights].sort((a, b) => a.start - b.start);
+            const currentCats = getCategories();
+            
+            let html = '';
+            let cursor = 0;
+
+            sorted.forEach(hl => {
+                if (hl.start > cursor) {
+                    html += escapeHtml(text.slice(cursor, hl.start));
+                }
+
+                const cat = currentCats.find(c => c.id === hl.categoryId) || currentCats[0];
+                const isDimmed = respectFilter && state.filterCategory && state.filterCategory !== hl.categoryId;
+                const isActive = interactive && state.activeHighlightId === hl.id;
+
+                const styleClass = isDimmed ? 'opacity-30' : cat.cssClass;
+                const activeClass = isActive ? 'hl-active' : '';
+                const attrs = interactive ? `data-hl-id="${hl.id}" onclick="selectHighlight('${hl.id}')"` : '';
+
+                html += `<span ${attrs} class="hl-span ${styleClass} ${activeClass}">${escapeHtml(text.slice(hl.start, hl.end))}</span>`;
+                cursor = hl.end;
+            });
+
+            if (cursor < text.length) {
+                html += escapeHtml(text.slice(cursor));
+            }
+
+            return html;
+        }
+
+        function renderEssayText() {
+            const container = document.getElementById('essay-container');
+            container.innerHTML = buildHighlightedHtml(true, true);
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // --- MANUELL MARKERING MED MUSEN (POPOVER) ---
+        function renderPopoverButtons() {
+            const popover = document.getElementById('selection-popover');
+            popover.innerHTML = getCategories().map(cat => `
+                <button onmousedown="applyManualHighlight(event, '${cat.id}')" 
+                    class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-700 text-xs font-medium whitespace-nowrap transition-colors"
+                    title="Marker som ${cat.label}">
+                    <span class="w-2.5 h-2.5 rounded-full ${cat.dotColor}"></span>
+                    <span>${cat.shortLabel}</span>
+                </button>
+            `).join('');
+        }
+
+        let currentSelectionRange = null;
+
+        function setupTextSelectionListener() {
+            const essayContainer = document.getElementById('essay-container');
+            const popover = document.getElementById('selection-popover');
+
+            document.addEventListener('mouseup', (e) => {
+                if (popover.contains(e.target)) return;
+
+                const selection = window.getSelection();
+                if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+                    popover.classList.add('hidden');
+                    currentSelectionRange = null;
+                    return;
+                }
+
+                const range = selection.getRangeAt(0);
+                if (!essayContainer.contains(range.commonAncestorContainer)) {
+                    popover.classList.add('hidden');
+                    return;
+                }
+
+                const selectedText = selection.toString();
+                if (!selectedText.trim()) {
+                    popover.classList.add('hidden');
+                    return;
+                }
+
+                const offsets = getSelectionCharacterOffsets(essayContainer);
+                if (!offsets || offsets.start === offsets.end) {
+                    popover.classList.add('hidden');
+                    return;
+                }
+
+                currentSelectionRange = {
+                    start: offsets.start,
+                    end: offsets.end,
+                    text: state.studentText.slice(offsets.start, offsets.end)
+                };
+
+                const rect = range.getBoundingClientRect();
+                popover.style.left = `${Math.max(160, Math.min(window.innerWidth - 160, rect.left + rect.width / 2))}px`;
+                popover.style.top = `${Math.max(50, rect.top - 8)}px`;
+                popover.classList.remove('hidden');
+            });
+        }
+
+        function getSelectionCharacterOffsets(element) {
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) return null;
+            const range = selection.getRangeAt(0);
+            
+            const preSelectionRange = range.cloneRange();
+            preSelectionRange.selectNodeContents(element);
+            preSelectionRange.setEnd(range.startContainer, range.startOffset);
+            const start = preSelectionRange.toString().length;
+            const end = start + range.toString().length;
+
+            return { start, end };
+        }
+
+        function applyManualHighlight(event, categoryId) {
+            event.preventDefault();
+            if (!currentSelectionRange) return;
+
+            const { start, end, text } = currentSelectionRange;
+            state.highlights = state.highlights.filter(hl => (end <= hl.start || start >= hl.end));
+
+            const currentCats = getCategories();
+            const cat = currentCats.find(c => c.id === categoryId) || currentCats[0];
+            const newId = 'hl-' + Date.now();
+
+            state.highlights.push({
+                id: newId,
+                start: start,
+                end: end,
+                text: text,
+                categoryId: categoryId,
+                question: cat.defaultQuestion,
+                note: ''
+            });
+
+            state.highlights.sort((a, b) => a.start - b.start);
+            state.activeHighlightId = newId;
+
+            window.getSelection().removeAllRanges();
+            document.getElementById('selection-popover').classList.add('hidden');
+            currentSelectionRange = null;
+
+            renderWorkspace();
+        }
+
+        // --- HÅNDTERING AV VALGT MARKERING & SAMTALEPANEL ---
+        function selectHighlight(id) {
+            state.activeHighlightId = id;
+            renderEssayText();
+            renderHighlightsList();
+            renderActiveDetailCard();
+        }
+
+        function renderActiveDetailCard() {
+            const noSel = document.getElementById('no-selection-state');
+            const activeSel = document.getElementById('active-selection-state');
+            const teacherNotesWrapper = document.getElementById('teacher-notes-wrapper');
+            const studentPlaceholder = document.getElementById('student-mode-placeholder');
+
+            const hl = state.highlights.find(h => h.id === state.activeHighlightId);
+
+            if (!hl) {
+                noSel.classList.remove('hidden');
+                activeSel.classList.add('hidden');
+                return;
+            }
+
+            noSel.classList.add('hidden');
+            activeSel.classList.remove('hidden');
+
+            const currentCats = getCategories();
+            const cat = currentCats.find(c => c.id === hl.categoryId) || currentCats[0];
+            const badge = document.getElementById('detail-badge');
+            badge.textContent = cat.label;
+            badge.className = `text-xs font-semibold px-2.5 py-1 rounded-md ${cat.badgeClass}`;
+
+            document.getElementById('detail-quote').textContent = hl.text;
+            document.getElementById('detail-question').value = hl.question || '';
+            document.getElementById('detail-note').value = hl.note || '';
+
+            if (state.studentMode) {
+                teacherNotesWrapper.classList.add('hidden');
+                studentPlaceholder.classList.remove('hidden');
+            } else {
+                teacherNotesWrapper.classList.remove('hidden');
+                studentPlaceholder.classList.add('hidden');
+            }
+        }
+
+        function updateActiveHighlight() {
+            const hl = state.highlights.find(h => h.id === state.activeHighlightId);
+            if (!hl) return;
+            hl.question = document.getElementById('detail-question').value;
+            hl.note = document.getElementById('detail-note').value;
+        }
+
+        function deleteSelectedHighlight() {
+            if (!state.activeHighlightId) return;
+            state.highlights = state.highlights.filter(h => h.id !== state.activeHighlightId);
+            state.activeHighlightId = state.highlights.length > 0 ? state.highlights[0].id : null;
+            renderWorkspace();
+        }
+
+        function clearAllHighlights() {
+            if (state.highlights.length === 0) return;
+            state.highlights = [];
+            state.activeHighlightId = null;
+            renderWorkspace();
+            showToast('Alle markeringer er fjernet.', 'info');
+        }
+
+        // --- LISTE OVER ALLE MARKERINGER ---
+        function renderHighlightsList() {
+            const listEl = document.getElementById('highlights-list');
+            const countEl = document.getElementById('total-highlights-count');
+
+            const filtered = state.filterCategory 
+                ? state.highlights.filter(h => h.categoryId === state.filterCategory)
+                : state.highlights;
+
+            countEl.textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Ingen markeringer å vise ennå. Marker tekst i besvarelsen med musen for å starte.</p>`;
+                return;
+            }
+            const currentCats = getCategories();
+            listEl.innerHTML = filtered.map(hl => {
+                const cat = currentCats.find(c => c.id === hl.categoryId) || currentCats[0];
+                const isActive = hl.id === state.activeHighlightId;
+                return `
+                    <div onclick="selectHighlight('${hl.id}')" 
+                        class="p-2.5 rounded-xl border cursor-pointer transition-all flex items-start gap-2.5 ${
+                            isActive 
+                            ? 'bg-indigo-50/70 border-indigo-300 shadow-sm' 
+                            : 'bg-white border-slate-100 hover:bg-slate-50'
+                        }">
+                        <span class="w-2.5 h-2.5 rounded-full ${cat.dotColor} shrink-0 mt-1.5"></span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[11px] font-semibold text-slate-500">${cat.shortLabel}</span>
+                            </div>
+                            <p class="text-xs font-serif text-slate-800 truncate mt-0.5">«${escapeHtml(hl.text)}»</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- SAMTALEMODUS (SKJUL/VIS LÆRERNOTATER) ---
+        function toggleStudentMode() {
+            state.studentMode = !state.studentMode;
+            const textEl = document.getElementById('text-student-mode');
+            const iconEl = document.getElementById('icon-student-mode');
+            const btn = document.getElementById('btn-student-mode');
+
+            if (state.studentMode) {
+                textEl.textContent = 'Samtalemodus: Elev (skjul fasit)';
+                btn.classList.add('border-emerald-300', 'bg-emerald-50', 'text-emerald-900');
+                iconEl.setAttribute('data-lucide', 'eye-off');
+                showToast('Lærerens notater er nå skjult for eleven.', 'info');
+            } else {
+                textEl.textContent = 'Samtalemodus: Lærer';
+                btn.classList.remove('border-emerald-300', 'bg-emerald-50', 'text-emerald-900');
+                iconEl.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+            renderActiveDetailCard();
+        }
+
+        // --- UTSKRIFT OG PDF-EKSPORT ---
+        function openPrintModal() {
+            if (!state.studentText) {
+                showToast('Ingen tekst å skrive ut.', 'warning');
+                return;
+            }
+            document.getElementById('print-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closePrintModal() {
+            document.getElementById('print-modal').classList.add('hidden');
+        }
+
+        function executePrint() {
+            const mode = document.querySelector('input[name="print-mode"]:checked').value;
+            const titleText = document.getElementById('print-student-name').value.trim() || 'Elevbesvarelse med visuell tilbakemelding';
+            const printSheet = document.getElementById('print-sheet');
+            const currentCats = getCategories();
+
+            // Finn hvilke fargekategorier som faktisk er brukt i teksten
+            const usedCatIds = new Set(state.highlights.map(h => h.categoryId));
+            const usedCategories = currentCats.filter(c => usedCatIds.has(c.id));
+
+            // Bygg fargeforklaring
+            let legendHtml = '';
+            if (usedCategories.length > 0) {
+                legendHtml = `
+                    <div class="mt-8 pt-5 border-t border-slate-300">
+                        <h3 class="text-sm font-bold text-slate-800 mb-3">Fargekoder i teksten</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            ${usedCategories.map(cat => `
+                                <div class="flex items-start gap-2.5 text-xs">
+                                    <span class="inline-block px-2 py-0.5 rounded font-semibold shrink-0 ${cat.cssClass}">${cat.shortLabel}</span>
+                                    <span class="text-slate-600 pt-0.5">${cat.desc}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Bygg eventuell oversikt over spørsmål og notater
+            let notesHtml = '';
+            if (mode === 'teacher' && state.highlights.length > 0) {
+                const sorted = [...state.highlights].sort((a, b) => a.start - b.start);
+                notesHtml = `
+                    <div class="mt-8 pt-5 border-t border-slate-300 break-inside-auto">
+                        <h3 class="text-sm font-bold text-slate-800 mb-3">Samtalepunkter, spørsmål og kommentarer</h3>
+                        <div class="space-y-3">
+                            ${sorted.map((hl, idx) => {
+                                const cat = currentCats.find(c => c.id === hl.categoryId) || currentCats[0];
+                                return `
+                                    <div class="p-3 rounded-lg border border-slate-200 bg-slate-50/50 break-inside-avoid">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-xs font-bold text-slate-500">#${idx + 1}</span>
+                                            <span class="text-xs font-semibold px-2 py-0.5 rounded ${cat.cssClass}">${cat.label}</span>
+                                        </div>
+                                        <p class="font-serif italic text-sm text-slate-900 mb-1.5">«${escapeHtml(hl.text)}»</p>
+                                        ${hl.question ? `<p class="text-xs text-slate-800"><span class="font-semibold">Spørsmål:</span> ${escapeHtml(hl.question)}</p>` : ''}
+                                        ${hl.note ? `<p class="text-xs text-slate-700 mt-0.5"><span class="font-semibold">Kommentar:</span> ${escapeHtml(hl.note)}</p>` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const dateStr = new Date().toLocaleDateString('nb-NO');
+            printSheet.innerHTML = `
+                <div class="mb-6 pb-4 border-b border-slate-300 flex items-baseline justify-between">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">${escapeHtml(titleText)}</h1>
+                        <p class="text-xs text-slate-500 mt-1">${mode === 'student' ? 'Elevark til fagsamtale' : 'Oversikt med spørsmål og kommentarer'}</p>
+                    </div>
+                    <span class="text-xs text-slate-500">${dateStr}</span>
+                </div>
+                <div class="font-serif text-base leading-relaxed whitespace-pre-wrap text-slate-900">${buildHighlightedHtml(false, false)}</div>
+                ${legendHtml}
+                ${notesHtml}
+            `;
+
+            closePrintModal();
+            setTimeout(() => {
+                window.print();
+            }, 150);
+        }
+
+        // --- OPPGAVEGENERATOR (FINN OG RETT FEIL) ---
+        let generatedExerciseData = null;
+        let showExerciseAnswers = false;
+
+        function openExerciseModal() {
+            if (!state.studentText) {
+                showToast('Legg inn en elevbesvarelse først.', 'warning');
+                return;
+            }
+
+            const currentCats = getCategories();
+            const highlightedCatIds = new Set(state.highlights.map(h => h.categoryId));
+            // Forhåndsvelg kategorier som faktisk er markert i teksten (unntatt rene styrker, med mindre det er det eneste)
+            const improvementCats = currentCats.filter(c => c.id !== 'styrke' && highlightedCatIds.has(c.id));
+            const preselectedIds = improvementCats.length > 0
+                ? new Set(improvementCats.map(c => c.id))
+                : new Set(currentCats.filter(c => c.id !== 'styrke').slice(0, 2).map(c => c.id));
+
+            const container = document.getElementById('exercise-cat-checkboxes');
+            container.innerHTML = currentCats
+                .filter(c => c.id !== 'styrke')
+                .map(cat => {
+                    const count = state.highlights.filter(h => h.categoryId === cat.id).length;
+                    const isChecked = preselectedIds.has(cat.id) ? 'checked' : '';
+                    return `
+                        <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer text-xs select-none">
+                            <input type="checkbox" name="ex-cat" value="${cat.id}" ${isChecked} class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span class="w-2 h-2 rounded-full ${cat.dotColor}"></span>
+                            <span class="font-medium text-slate-800">${cat.shortLabel}</span>
+                            ${count > 0 ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 rounded font-semibold">${count} i tekst</span>` : ''}
+                        </label>
+                    `;
+                }).join('');
+
+            document.getElementById('exercise-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeExerciseModal() {
+            document.getElementById('exercise-modal').classList.add('hidden');
+        }
+
+        async function generatePracticeExercises() {
+            const selectedCatIds = Array.from(document.querySelectorAll('input[name="ex-cat"]:checked')).map(cb => cb.value);
+            if (selectedCatIds.length === 0) {
+                showToast('Velg minst ett område eleven skal øve på.', 'warning');
+                return;
+            }
+
+            const sourceType = document.getElementById('exercise-source-select').value;
+            const itemCount = parseInt(document.getElementById('exercise-count-select').value, 10);
+            const currentCats = getCategories();
+            const isEnglish = state.subject === 'en';
+
+            const focusDescriptions = selectedCatIds
+                .map(id => {
+                    const c = currentCats.find(cat => cat.id === id);
+                    return c ? `- ${c.label}: ${c.desc}` : '';
+                })
+                .filter(Boolean)
+                .join('\n');
+
+            // Hent ut eksempler fra lærerens markeringer for å gjøre øvingen ekstra treffsikker
+            const relevantExamples = state.highlights
+                .filter(h => selectedCatIds.includes(h.categoryId))
+                .slice(0, 10)
+                .map(h => `«${h.text}» (${h.categoryId})`)
+                .join(', ');
+
+            const btn = document.getElementById('btn-generate-exercise');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Lager oppgaver...</span>`;
+            lucide.createIcons();
+
+            const targetLang = isEnglish ? 'engelsk (English)' : 'norsk';
+            const sourceInstruction = sourceType === 'student'
+                ? 'Ta utgangspunkt i temaet, ordforrådet og typiske feil fra elevbesvarelsen nedenfor (men lag tydelige, avgrensede øvingssetninger som eleven kan jobbe med på et arbeidsark).'
+                : 'Lag helt nye, varierte og realistiske øvingssetninger på ungdomstrinn-/videregåendenivå som øver på nøyaktig de samme feiltypene.';
+
+            const systemPrompt = `Du er en dyktig ${isEnglish ? 'engelsklærer' : 'norsklærer'} som lager målrettede øvingsoppgaver der eleven selv skal finne og rette opp feil i setninger skrevet på ${targetLang}.
+
+MÅL FOR ØVINGEN:
+Lag nøyaktig ${itemCount} øvingsoppgaver som trener på følgende områder:
+${focusDescriptions}
+
+${relevantExamples ? `Eksempler fra elevens egen tekst som inspirerer øvingen: ${relevantExamples}\n` : ''}
+${sourceInstruction}
+
+REGLER:
+1. Hver oppgave skal inneholde en setning (eller 2 korte setninger) på ${targetLang} med 1 til 2 tydelige feil/forbedringspunkter innenfor de valgte kategoriene. IKKE marker eller avslør feilen i selve oppgaveteksten ("sentenceWithError")!
+2. Feltet "correctedSentence" skal vise den ferdig rettede setningen på ${targetLang}.
+3. Feltet "explanation" skal kort forklare regelen på ${isEnglish ? 'norsk eller engelsk' : 'norsk'}.
+4. Feltet "instructions" skal være en kort, tydelig elevinstruks øverst på arket (på ${isEnglish ? 'engelsk' : 'norsk'}) som ber eleven bruke fargekategorien på hver oppgave som ledetråd til å finne og rette feilen selv.`;
+
+            const userQuery = `Elevbesvarelse (kontekst):\n${state.studentText}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            title: { type: "STRING" },
+                            instructions: { type: "STRING" },
+                            items: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        categoryId: { type: "STRING", enum: selectedCatIds },
+                                        sentenceWithError: { type: "STRING" },
+                                        correctedSentence: { type: "STRING" },
+                                        explanation: { type: "STRING" }
+                                    },
+                                    required: ["categoryId", "sentenceWithError", "correctedSentence", "explanation"]
+                                }
+                            }
+                        },
+                        required: ["title", "instructions", "items"]
+                    }
+                }
+            };
+
+            try {
+                const responseData = await fetchGeminiWithRetry(payload);
+                const rawJson = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawJson) throw new Error('Tomt svar fra KI');
+
+                generatedExerciseData = JSON.parse(rawJson);
+                showExerciseAnswers = false;
+                renderExerciseResult();
+                showToast('Øvingsoppgaver er klare!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Kunne ikke generere øvingsoppgaver akkurat nå.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                lucide.createIcons();
+            }
+        }
+
+        function renderExerciseResult() {
+            if (!generatedExerciseData) return;
+
+            const resultContainer = document.getElementById('exercise-result-container');
+            const titleEl = document.getElementById('exercise-sheet-title');
+            const introEl = document.getElementById('exercise-sheet-intro');
+            const listEl = document.getElementById('exercise-items-list');
+            const toggleBtn = document.getElementById('btn-toggle-ex-answers');
+
+            resultContainer.classList.remove('hidden');
+            titleEl.textContent = generatedExerciseData.title || 'Øvingsoppgaver: Finn og rett';
+            introEl.textContent = generatedExerciseData.instructions || 'Les setningene nøye, finn feilen(e) og skriv setningen riktig.';
+
+            toggleBtn.innerHTML = showExerciseAnswers
+                ? `<i data-lucide="eye-off" class="w-3.5 h-3.5"></i><span>Skjul fasit</span>`
+                : `<i data-lucide="eye" class="w-3.5 h-3.5"></i><span>Vis fasit</span>`;
+
+            const currentCats = getCategories();
+
+            listEl.innerHTML = generatedExerciseData.items.map((item, idx) => {
+                const cat = currentCats.find(c => c.id === item.categoryId) || currentCats[0];
+                return `
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-bold text-slate-500">Oppgave ${idx + 1}</span>
+                            <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded ${cat.cssClass}">${cat.shortLabel}</span>
+                        </div>
+                        <p class="font-serif text-sm text-slate-900 leading-relaxed">${escapeHtml(item.sentenceWithError)}</p>
+                        
+                        ${showExerciseAnswers ? `
+                            <div class="mt-2 pt-2 border-t border-emerald-100 bg-emerald-50/60 rounded-lg p-2.5 text-xs space-y-1">
+                                <p class="text-emerald-950 font-medium"><span class="font-bold">Fasit:</span> ${escapeHtml(item.correctedSentence)}</p>
+                                <p class="text-emerald-800">${escapeHtml(item.explanation)}</p>
+                            </div>
+                        ` : `
+                            <div class="pt-1">
+                                <div class="border-b border-dashed border-slate-300 h-5"></div>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function toggleExerciseAnswers() {
+            showExerciseAnswers = !showExerciseAnswers;
+            renderExerciseResult();
+        }
+
+        function copyExerciseToClipboard() {
+            if (!generatedExerciseData) return;
+            const currentCats = getCategories();
+            let text = `${generatedExerciseData.title}\n${generatedExerciseData.instructions}\n\n`;
+            generatedExerciseData.items.forEach((item, idx) => {
+                const cat = currentCats.find(c => c.id === item.categoryId) || currentCats[0];
+                text += `${idx + 1}. [${cat.shortLabel}] ${item.sentenceWithError}\n`;
+                if (showExerciseAnswers) {
+                    text += `   Fasit: ${item.correctedSentence} (${item.explanation})\n`;
+                }
+                text += '\n';
+            });
+
+            const tempArea = document.createElement('textarea');
+            tempArea.value = text;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Øvingsoppgavene er kopiert!', 'success');
+            } catch (e) {
+                showToast('Kunne ikke kopiere oppgavene.', 'error');
+            }
+            document.body.removeChild(tempArea);
+        }
+
+        function printExerciseSheet() {
+            if (!generatedExerciseData) return;
+            const printSheet = document.getElementById('print-sheet');
+            const currentCats = getCategories();
+            const dateStr = new Date().toLocaleDateString('nb-NO');
+
+            printSheet.innerHTML = `
+                <div class="mb-6 pb-4 border-b border-slate-300 flex items-baseline justify-between">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">${escapeHtml(generatedExerciseData.title)}</h1>
+                        <p class="text-xs text-slate-600 mt-1">${escapeHtml(generatedExerciseData.instructions)}</p>
+                    </div>
+                    <span class="text-xs text-slate-500">${dateStr}</span>
+                </div>
+                <div class="space-y-5">
+                    ${generatedExerciseData.items.map((item, idx) => {
+                        const cat = currentCats.find(c => c.id === item.categoryId) || currentCats[0];
+                        return `
+                            <div class="break-inside-avoid">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs font-bold text-slate-700">${idx + 1}.</span>
+                                    <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded ${cat.cssClass}">${cat.shortLabel}</span>
+                                </div>
+                                <p class="font-serif text-base text-slate-900 mb-2">${escapeHtml(item.sentenceWithError)}</p>
+                                ${showExerciseAnswers ? `
+                                    <p class="text-xs text-emerald-900 bg-emerald-50 p-2 rounded border border-emerald-200">
+                                        <strong>Fasit:</strong> ${escapeHtml(item.correctedSentence)} – <em>${escapeHtml(item.explanation)}</em>
+                                    </p>
+                                ` : `
+                                    <div class="border-b border-slate-400 h-6 mt-2"></div>
+                                    <div class="border-b border-slate-400 h-6 mt-2"></div>
+                                `}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            closeExerciseModal();
+            setTimeout(() => {
+                window.print();
+            }, 150);
+        }
+
+        // --- KOPIER OPPSUMMERING TIL UTKLIPPSTAVLE ---
+        function copySummaryToClipboard() {
+            if (state.highlights.length === 0) {
+                showToast('Ingen markeringer å kopiere.', 'warning');
+                return;
+            }
+
+            const subjName = SUBJECT_CONFIG[state.subject].name.toLowerCase();
+            let summary = `Oppsummering fra fagsamtale i ${subjName}\n`;
+            summary += '====================================\n\n';
+
+            getCategories().forEach(cat => {
+                const items = state.highlights.filter(h => h.categoryId === cat.id);
+                if (items.length > 0) {
+                    summary += `• ${cat.label}:\n`;
+                    items.forEach(item => {
+                        summary += `  - Utdrag: «${item.text}»\n`;
+                        if (item.note) summary += `    Kommentar: ${item.note}\n`;
+                    });
+                    summary += '\n';
+                }
+            });
+
+            const tempArea = document.createElement('textarea');
+            tempArea.value = summary;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Oppsummering kopiert til utklippstavlen!', 'success');
+            } catch (err) {
+                showToast('Kunne ikke kopiere teksten.', 'error');
+            }
+            document.body.removeChild(tempArea);
+        }
+    </script>
+</body>
+</html>
